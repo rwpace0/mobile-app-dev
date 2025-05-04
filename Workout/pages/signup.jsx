@@ -2,10 +2,10 @@ import React from "react";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import styles from "../styles/login.styles";
 
-const LoginPage = () => {
+const SignUpPage = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
+      <Text style={styles.title}>Welcome</Text>
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Email</Text>
@@ -29,7 +29,7 @@ const LoginPage = () => {
       </View>
 
       <TouchableOpacity style={styles.button} activeOpacity={0.8}>
-        <Text style={styles.buttonText}>Log In</Text>
+        <Text style={styles.buttonText}>Sign Up </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.googleButton} activeOpacity={0.8}>
@@ -41,10 +41,8 @@ const LoginPage = () => {
         />
         <Text style={styles.googleText}>Continue with Google</Text>
       </TouchableOpacity>
-
-      <Text style={styles.footerText}>Forgot your password?</Text>
     </View>
   );
 };
 
-export default LoginPage;
+export default SignUpPage;
