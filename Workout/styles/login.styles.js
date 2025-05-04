@@ -1,11 +1,12 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import colors from '../constants/colors';
 
 const { width } = Dimensions.get('window');
 
 export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212', // Dark background
+    backgroundColor: colors.backgroundDark,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -14,7 +15,7 @@ export default StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.textWhite,
     marginBottom: 40,
   },
 
@@ -24,7 +25,7 @@ export default StyleSheet.create({
   },
 
   inputLabel: {
-    color: '#BBBBBB',
+    color: colors.textLight,
     fontSize: 14,
     marginBottom: 6,
   },
@@ -32,17 +33,17 @@ export default StyleSheet.create({
   textInput: {
     width: '100%',
     height: 50,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.inputBackground,
     borderRadius: 8,
     paddingHorizontal: 15,
-    color: '#FFFFFF',
+    color: colors.textWhite,
     fontSize: 16,
   },
 
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#1E90FF', // Blue secondary color
+    backgroundColor: colors.primaryBlue,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -50,7 +51,7 @@ export default StyleSheet.create({
   },
 
   buttonText: {
-    color: '#FFFFFF',
+    color: colors.textWhite,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -59,11 +60,13 @@ export default StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     height: 50,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.inputBackground,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
+    borderWidth: 1,
+    borderColor: colors.primaryBlue,
   },
 
   googleIcon: {
@@ -71,13 +74,13 @@ export default StyleSheet.create({
   },
 
   googleText: {
-    color: '#FFFFFF',
+    color: colors.textWhite,
     fontSize: 16,
     fontWeight: '600',
   },
 
   footerText: {
-    color: '#777777',
+    color: colors.footerText,
     fontSize: 12,
     marginTop: 30,
   },
