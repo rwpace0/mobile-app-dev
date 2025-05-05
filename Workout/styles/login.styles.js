@@ -1,87 +1,69 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import colors from '../constants/colors';
+import { Spacing, BorderRadius, FontSize } from '../constants/theme';
+import components from '../constants/components';
+import layout from '../constants/layout';
 
 const { width } = Dimensions.get('window');
 
 export default StyleSheet.create({
+  // reuse the layout container
   container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    ...layout.screenCenter,
+    paddingHorizontal: Spacing.m,
   },
 
   title: {
-    fontSize: 32,
+    fontSize: FontSize.large,
     fontWeight: '700',
     color: colors.textWhite,
-    marginBottom: 40,
+    marginBottom: Spacing.xl,
   },
 
   inputContainer: {
     width: '100%',
-    marginBottom: 20,
   },
 
   inputLabel: {
     color: colors.textLight,
-    fontSize: 14,
-    marginBottom: 6,
+    fontSize: FontSize.small,
+    marginBottom: Spacing.xs,
   },
 
+  // reuse the input variant
   textInput: {
-    width: '100%',
-    height: 50,
-    backgroundColor: colors.inputBackground,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    color: colors.textWhite,
-    fontSize: 16,
+    ...components.input,
   },
 
+  // base button + primary variant
   button: {
+    ...components.button,
+    ...components.buttonPrimary,
     width: '100%',
-    height: 50,
-    backgroundColor: colors.primaryBlue,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
   },
 
   buttonText: {
-    color: colors.textWhite,
-    fontSize: 16,
-    fontWeight: '600',
+    ...components.buttonText,
   },
 
   googleButton: {
+    ...components.button,
+    ...components.buttonOutline,
     flexDirection: 'row',
     width: '100%',
-    height: 50,
-    backgroundColor: colors.inputBackground,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: colors.primaryBlue,
   },
 
   googleIcon: {
-    marginRight: 10,
+    marginRight: Spacing.s,
   },
 
   googleText: {
-    color: colors.textWhite,
-    fontSize: 16,
-    fontWeight: '600',
+    ...components.buttonText,
   },
 
   footerText: {
     color: colors.footerText,
-    fontSize: 12,
-    marginTop: 30,
+    fontSize: FontSize.small,
+    marginTop: Spacing.l,
   },
 });

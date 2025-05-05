@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import styles from "../styles/login.styles";
 
 const LoginPage = () => {
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome Back</Text>
