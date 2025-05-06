@@ -19,5 +19,4 @@ export const BorderRadius = {
   lg: 12,
 };
 
-
 export default { Spacing, FontSize, BorderRadius };
