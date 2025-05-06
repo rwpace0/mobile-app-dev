@@ -3,7 +3,11 @@ import { View, Text, FlatList } from "react-native";
 import exercises from "../assets/data/exersises.json";
 import styles from "../styles/display.styles";
 
+
+
 const DisplayPage = () => {
+  
+
   const renderExerciseItem = ({ item }) => {
     return (
       <View style={styles.exerciseItem}>
