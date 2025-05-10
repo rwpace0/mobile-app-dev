@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 // route imports
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
-import exerciseRouter from './routes/exercise.js';
+import exerciseRouter from './routes/exercises.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // set routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/exercise', exerciseRouter);
+app.use('/exercises', exerciseRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

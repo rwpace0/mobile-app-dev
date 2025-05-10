@@ -8,7 +8,7 @@ const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
 
 // Add error checking
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Missing Supabase credentials. Check your .env file.');
+  console.error('Missing Supabase credentials.');
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
