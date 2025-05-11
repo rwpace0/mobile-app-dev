@@ -1,7 +1,7 @@
-import { BACKEND_URL } from "@env";
+import getBaseUrl from "./getBaseUrl";
 
 export default async function getExercises() {
-  const response = await fetch(`${BACKEND_URL}/exercises`);
+  const response = await fetch(`${getBaseUrl()}/exercises`);
   if (!response.ok) {
     throw new Error("Failed to fetch exercise data");
   }

@@ -3,6 +3,8 @@ import { View, Text, FlatList, ActivityIndicator } from "react-native";
 import styles from "../styles/display.styles";
 import getExercises from "../API/getExercises";
 
+// exercise data should load upon opening the app
+// and be stored in state
 const DisplayPage = () => {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);

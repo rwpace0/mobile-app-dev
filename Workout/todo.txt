@@ -1,0 +1,32 @@
+wtf going on
+
+make db have progress rows with sets reps and weight
+
+still need per user db
+merge both dbs with ui
+
+need to load exercise data locally on open
+check for new exercises depending on last date created
+
+async function getLastSyncedAt() {
+  return (await AsyncStorage.getItem('lastSyncedAt')) || '1970-01-01T00:00:00Z';
+}
+async function setLastSyncedAt(ts) {
+  await AsyncStorage.setItem('lastSyncedAt', ts);
+}
+
+write to local db right when user adds something new
+push that into db after
+
+using react-native-sqlite-storage for local storage
+
+sync somehow
+
+after this store the exercise progress
+
+make active workout with timer
+
+the user can create their own workout templates that will store somehow with db
+temlates just a list of exercises they chose and their recent progress
+
+ui and styles needs a complete redo its so bad
