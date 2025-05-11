@@ -1,24 +1,24 @@
 import { supabase } from "../database/supabaseClient.js";
+import dotenv from "dotenv";
+dotenv.config();
+
+// eventually have to merge public db with user db somehow
 
 export async function getExercises(req, res) {
   try {
     // Query the exercises table
     const { data, error } = await supabase
       .from("exercises")
-      .select()
-      .contains("muscle_group", ["chest"])
-      .order("muscle_group", { ascending: true });
+      .select("*")
+      .order("name", { ascending: true });
       
     if (error) {
       console.error("Database query error:", error);
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({
-      message: "Database connection successful",
-      status: "connected",
-      data: data,
-    });
+    res.json(data);
+
   } catch (err) {
     console.error("Network or unexpected error:", err);
     res.status(500).json({
@@ -26,4 +26,8 @@ export async function getExercises(req, res) {
       message: err.message,
     });
   }
+}
+
+export async function searchExercises(req, res) {
+  
 }

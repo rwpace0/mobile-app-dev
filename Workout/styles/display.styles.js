@@ -64,4 +64,36 @@ export default StyleSheet.create({
   buttonText: {
     ...components.buttonText,
   },
+
+  heading: {
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  item: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  desc: {
+    marginTop: 4,
+    color: '#555',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#DDD',
+    marginVertical: 4,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

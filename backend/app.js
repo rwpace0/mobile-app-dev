@@ -4,6 +4,9 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import { fileURLToPath } from 'url';
+import cors from 'cors';
+import dotenv from "dotenv";
+dotenv.config();
 
 // route imports
 import indexRouter from './routes/index.js';
@@ -18,6 +21,14 @@ const app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
+
+
+const FRONTEND_URL = process.env.SUPABASE_URL;
+app.use(cors({
+  origin: [`${FRONTEND_URL}`],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
 app.use(logger('dev'));
 app.use(express.json());
