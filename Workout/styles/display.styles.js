@@ -1,99 +1,175 @@
-import { StyleSheet, Dimensions } from 'react-native';
-import colors from '../constants/colors';
-import { Spacing, BorderRadius, FontSize } from '../constants/theme';
-import components from '../constants/components';
-import layout from '../constants/layout';
+import { StyleSheet, Dimensions } from "react-native";
+import colors from "../constants/colors";
+import {
+  Spacing,
+  BorderRadius,
+  FontSize,
+  FontWeight,
+} from "../constants/theme";
 
 export default StyleSheet.create({
-  // reuse the layout container
   container: {
-    ...layout.screenCenter,
+    flex: 1,
+    backgroundColor: colors.backgroundDark,
+  },
+
+  centerContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.backgroundDark,
+  },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: Spacing.m,
+    paddingTop: Spacing.l,
+    paddingBottom: Spacing.m,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+
+  closeButton: {
+    padding: Spacing.xs,
+  },
+
+  headerActions: {
+    flexDirection: "row",
+  },
+
+  headerActionText: {
+    color: colors.textFaded,
+    fontSize: FontSize.large,
+    fontWeight: FontWeight.medium,
+  },
+
+  headerActionTextActive: {
+    color: colors.primaryLight,
+    fontSize: FontSize.medium,
+    fontWeight: FontWeight.semiBold,
+  },
+
+  searchContainer: {
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.m,
+  },
+
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.inputBackground,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.m,
+    height: 40,
+  },
+
+  searchIcon: {
+    marginRight: Spacing.s,
+  },
+
+  searchInput: {
+    flex: 1,
+    height: "100%",
+    color: colors.textWhite,
+    fontSize: FontSize.base,
+  },
+
+  filterContainer: {
+    flexDirection: "row",
+    paddingHorizontal: Spacing.m,
+    paddingBottom: Spacing.m,
+    width: "100%",
+    justifyContent: "space-between",
+  },
+
+  filterButton: {
+    backgroundColor: colors.cardBackground,
+    paddingVertical: Spacing.xxs,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.lg,
+    marginRight: Spacing.xs,
+    flex: 1,
+  },
+
+  filterText: {
+    color: colors.textLight,
+    fontSize: FontSize.caption,
+    textAlign: "center",
+  },
+
+  exerciseListContainer: {
+    flex: 1,
     paddingHorizontal: Spacing.m,
   },
 
-  title: {
-    fontSize: FontSize.large,
-    fontWeight: '700',
-    color: colors.textWhite,
-    marginBottom: Spacing.xl,
+  listContentContainer: {
+    paddingBottom: Spacing.xl,
+  },
+
+  exerciseList: {
+    flex: 1,
   },
 
   exerciseItem: {
-    padding: Spacing.m,
+    paddingVertical: Spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border || '#333',
-    marginBottom: Spacing.s,
-    width: '100%',
+    borderBottomColor: colors.divider,
+  },
+
+  exerciseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  exerciseIconContainer: {
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.cardBackground,
+    borderRadius: BorderRadius.md,
+  },
+
+  exerciseDetails: {
+    flex: 1,
+    marginLeft: Spacing.m,
   },
 
   exerciseName: {
-    fontSize: FontSize.medium,
-    fontWeight: '600',
     color: colors.textWhite,
-    marginBottom: Spacing.xs,
+    fontSize: FontSize.large,
+    fontWeight: FontWeight.medium,
+    marginBottom: Spacing.xxs,
   },
 
-  displayText: {
-    fontSize: FontSize.base,
-    color: colors.textWhite,
-    marginBottom: Spacing.s,
-  },
-  
-  inputContainer: {
-    width: '100%',
-  },
-
-  inputLabel: {
+  exerciseMuscleGroup: {
     color: colors.textLight,
-    fontSize: FontSize.small,
-    marginBottom: Spacing.xs,
+    fontSize: FontSize.medium,
   },
 
-  // reuse the input variant
-  textInput: {
-    ...components.input,
-  },
-
-  // base button + primary variant
-  button: {
-    ...components.button,
-    ...components.buttonPrimary,
-    width: '100%',
-  },
-
-  buttonText: {
-    ...components.buttonText,
-  },
-
-  heading: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  item: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '500',
-  },
-  desc: {
-    marginTop: 4,
-    color: '#555',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#DDD',
-    marginVertical: 4,
-  },
   errorText: {
-    color: 'red',
-    fontSize: 16,
+    color: colors.accentRed,
+    fontSize: FontSize.large,
   },
-  center: {
+
+  // Style for highlighted search text
+  highlightedText: {
+    fontWeight: FontWeight.bold,
+    color: colors.primaryLight,
+  },
+
+  // Empty list state
+  emptyListContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: Spacing.xxl,
+  },
+
+  emptyListText: {
+    color: colors.textLight,
+    fontSize: FontSize.large,
   },
 });
