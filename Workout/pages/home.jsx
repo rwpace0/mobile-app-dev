@@ -18,6 +18,14 @@ const HomePage = () => {
         title="Go to Display"
         onPress={() => navigation.navigate("Display")}
       />
+      <Button
+        title="Go to Start"
+        onPress={() => navigation.navigate("Start")}
+      />
+      <Button
+        title="Go to Active"
+        onPress={() => navigation.navigate("ActiveWorkout")}
+      />
     </View>
   );
 }; 

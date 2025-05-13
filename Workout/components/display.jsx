@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, SafeAreaView, TextInput } from "react-native";
-import { useNavigation } from "@react-navigation/native"; // Import for navigation
+import { useNavigation } from "@react-navigation/native";
 import styles from "../styles/display.styles";
 import getExercises from "../API/getExercises";
 import { Ionicons } from "@expo/vector-icons";
