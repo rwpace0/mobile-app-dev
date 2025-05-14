@@ -1,16 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import styles from "../styles/start.styles";
+import SlideUpWorkout from "../animations/slideUp"; 
+import colors from "../constants/colors";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
+  const [workoutActive, setWorkoutActive] = useState(false);
 
   const handleStartEmptyWorkout = () => {
     console.log("Starting empty workout");
-    // Will navigate to workout page later when implemented
-    // navigation.navigate("WorkoutPage");
+    setWorkoutActive(true);
+  };
+
+  const handleCloseWorkout = () => {
+    setWorkoutActive(false);
   };
 
   const handleNewRoutine = () => {
@@ -39,7 +45,7 @@ const WorkoutStartPage = () => {
             style={styles.startEmptyWorkoutButton}
             onPress={handleStartEmptyWorkout}
           >
-            <Ionicons name="add" size={20} color="#FFFFFF" />
+            <Ionicons name="add" size={20} color={colors.textWhite} />
             <Text style={styles.startEmptyWorkoutText}>Start Empty Workout</Text>
           </TouchableOpacity>
         </View>
@@ -49,7 +55,7 @@ const WorkoutStartPage = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Routines</Text>
             <TouchableOpacity>
-              <Ionicons name="grid-outline" size={22} color="#BBBBBB" />
+              <Ionicons name="grid-outline" size={22} color={colors.textLight} />
             </TouchableOpacity>
           </View>
 
@@ -59,7 +65,7 @@ const WorkoutStartPage = () => {
               style={styles.routineActionButton}
               onPress={handleNewRoutine}
             >
-              <Ionicons name="document-text-outline" size={22} color="#BBBBBB" />
+              <Ionicons name="document-text-outline" size={22} color={colors.textLight} />
               <Text style={styles.routineActionText}>New Routine</Text>
             </TouchableOpacity>
             
@@ -67,7 +73,7 @@ const WorkoutStartPage = () => {
               style={styles.routineActionButton}
               onPress={handleExplore}
             >
-              <Ionicons name="search-outline" size={22} color="#BBBBBB" />
+              <Ionicons name="search-outline" size={22} color={colors.textLight} />
               <Text style={styles.routineActionText}>Explore</Text>
             </TouchableOpacity>
           </View>
@@ -80,6 +86,14 @@ const WorkoutStartPage = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Render the sliding workout panel */}
+      {workoutActive && (
+        <SlideUpWorkout 
+          visible={workoutActive} 
+          onClose={handleCloseWorkout} 
+        />
+      )}
     </SafeAreaView>
   );
 };

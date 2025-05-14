@@ -5,7 +5,6 @@ import LoginPage from "./pages/login";
 import HomePage from "./pages/home";
 import SignUpPage from "./pages/signup";
 import DisplayPage from "./components/display";
-import StartPage from "./pages/workoutStart";
 import WorkoutStartPage from "./pages/workoutStart";
 import WorkoutActivePage from "./pages/workoutActive";
 
@@ -15,7 +14,11 @@ export default function App() {
   
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
         <Stack.Screen name="Home" component={HomePage} />
         <Stack.Screen name="Login" component={LoginPage} />
         <Stack.Screen name="SignUp" component={SignUpPage} />
