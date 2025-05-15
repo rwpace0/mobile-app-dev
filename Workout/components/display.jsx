@@ -25,13 +25,14 @@ const HighlightText = ({ text, highlight, style }) => {
   );
 };
 
-const DisplayPage = () => {
+const DisplayPage = ({ route }) => {
   const navigation = useNavigation();
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [filteredExercises, setFilteredExercises] = useState([]);
+  const [selectedExercises, setSelectedExercises] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,57 +75,81 @@ const DisplayPage = () => {
     }
   }, [searchText, exercises]);
 
-  const handleNewPress = () => {
-    console.log("Navigate to new exercise page");
-    // navigation.navigate("NewExercisePage");
+  const handleExerciseSelect = (exercise) => {
+    setSelectedExercises(prev => {
+      const isSelected = prev.some(e => e.id === exercise.id);
+      if (isSelected) {
+        return prev.filter(e => e.id !== exercise.id);
+      } else {
+        return [...prev, exercise];
+      }
+    });
   };
 
-  if (loading) {
-    return (
-      <View style={styles.centerContent}>
-        <ActivityIndicator size="large" color="#47A3FF" />
-      </View>
-    );
-  }
-  
-  if (error) {
-    return (
-      <View style={styles.centerContent}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
+  const handleAddSelected = () => {
+    if (selectedExercises.length > 0) {
+      navigation.navigate('ActiveWorkout', {
+        selectedExercises: selectedExercises
+      });
+    }
+  };
 
-  const renderExerciseItem = ({ item }) => (
-    <TouchableOpacity style={styles.exerciseItem}>
-      <View style={styles.exerciseRow}>
-        <View style={styles.exerciseIconContainer}>
-          <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
-        </View>
-        <View style={styles.exerciseDetails}>
-          <HighlightText 
-            text={item.name} 
-            highlight={searchText}
-            style={styles.exerciseName}
+  const renderExerciseItem = ({ item }) => {
+    const isSelected = selectedExercises.some(e => e.id === item.id);
+    
+    return (
+      <TouchableOpacity 
+        style={[styles.exerciseItem, isSelected && styles.selectedExerciseItem]}
+        onPress={() => handleExerciseSelect(item)}
+      >
+        <View style={styles.exerciseRow}>
+          <View style={styles.exerciseIconContainer}>
+            <Ionicons 
+              name={isSelected ? "checkmark-circle" : "fitness-outline"} 
+              size={28} 
+              color={isSelected ? "#47A3FF" : "#BBBBBB"} 
+            />
+          </View>
+          <View style={styles.exerciseDetails}>
+            <HighlightText 
+              text={item.name} 
+              highlight={searchText}
+              style={styles.exerciseName}
+            />
+            <Text style={styles.exerciseMuscleGroup}>
+              {item.muscle_group.charAt(0).toUpperCase() + item.muscle_group.slice(1)}
+            </Text>
+          </View>
+          <Ionicons 
+            name="chevron-forward" 
+            size={24} 
+            color={isSelected ? "#47A3FF" : "#777777"} 
           />
-          <Text style={styles.exerciseMuscleGroup}>
-            {item.muscle_group.charAt(0).toUpperCase() + item.muscle_group.slice(1)} {/* capitalize first letter */}
-          </Text>
         </View>
-        <Ionicons name="chevron-forward" size={24} color="#777777" />
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeButton}>
+        <TouchableOpacity 
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="close-outline" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={handleNewPress}>
-            <Text style={styles.headerActionTextActive}>New</Text>
+          <TouchableOpacity 
+            onPress={handleAddSelected}
+            disabled={selectedExercises.length === 0}
+          >
+            <Text style={[
+              styles.headerActionText,
+              selectedExercises.length > 0 && styles.headerActionTextActive
+            ]}>
+              Add ({selectedExercises.length})
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

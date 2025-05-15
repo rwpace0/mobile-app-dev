@@ -89,6 +89,10 @@ export default StyleSheet.create({
     textAlign: "center",
     marginBottom: Spacing.l,
   },
+
+  exercisesContainer: {
+    padding: Spacing.m,
+  },
   
   addExerciseButton: {
     flexDirection: "row",

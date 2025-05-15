@@ -1,10 +1,9 @@
 import React, { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import styles from "../styles/start.styles";
-import SlideUpWorkout from "../animations/slideUp"; 
 import colors from "../constants/colors";
+import styles from "../styles/start.styles";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();

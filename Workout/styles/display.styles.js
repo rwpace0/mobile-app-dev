@@ -118,6 +118,10 @@ export default StyleSheet.create({
     borderBottomColor: colors.divider,
   },
 
+  selectedExerciseItem: {
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+  },
+
   exerciseRow: {
     flexDirection: "row",
     alignItems: "center",
