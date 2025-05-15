@@ -26,7 +26,7 @@ const HighlightText = ({ text, highlight, style }) => {
 };
 
 const DisplayPage = () => {
-  const navigation = useNavigation(); // Initialize navigation
+  const navigation = useNavigation();
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,7 +74,6 @@ const DisplayPage = () => {
     }
   }, [searchText, exercises]);
 
-  // Handle navigation to new page (to be implemented later)
   const handleNewPress = () => {
     console.log("Navigate to new exercise page");
     // navigation.navigate("NewExercisePage");

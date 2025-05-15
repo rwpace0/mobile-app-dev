@@ -1,32 +1,31 @@
 import * as React from "react";
 import {NavigationContainer} from "@react-navigation/native";
-import {createNativeStackNavigator} from "@react-navigation/native-stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import LoginPage from "./pages/login";
 import HomePage from "./pages/home";
 import SignUpPage from "./pages/signup";
 import DisplayPage from "./components/display";
 import WorkoutStartPage from "./pages/workoutStart";
 import WorkoutActivePage from "./pages/workoutActive";
+import Navbar from "./components/navbar"; 
 
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
+      <Tab.Navigator
+        screenOptions={{headerShown: false}}
+        tabBar={(props) => <Navbar {...props} />}
       >
-        <Stack.Screen name="Home" component={HomePage} />
-        <Stack.Screen name="Login" component={LoginPage} />
-        <Stack.Screen name="SignUp" component={SignUpPage} />
-        <Stack.Screen name="Display" component={DisplayPage} />
-        <Stack.Screen name="Start" component={WorkoutStartPage} />
-        <Stack.Screen name="ActiveWorkout" component={WorkoutActivePage} />
-      </Stack.Navigator>
+        <Tab.Screen name="Home" component={HomePage} />
+        <Tab.Screen name="Login" component={LoginPage} />
+        <Tab.Screen name="SignUp" component={SignUpPage} />
+        <Tab.Screen name="Display" component={DisplayPage} />
+        <Tab.Screen name="Start" component={WorkoutStartPage} />
+        <Tab.Screen name="ActiveWorkout" component={WorkoutActivePage} />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }
-

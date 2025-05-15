@@ -19,7 +19,6 @@ const WorkoutActivePage = () => {
 
   const handleFinish = () => {
     console.log("Finish workout");
-    // Save workout and navigate home
     // navigation.navigate("WorkoutSummaryPage");
   };
 

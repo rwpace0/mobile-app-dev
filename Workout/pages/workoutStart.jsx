@@ -21,13 +21,11 @@ const WorkoutStartPage = () => {
 
   const handleNewRoutine = () => {
     console.log("Create new routine");
-    // Will navigate to routine creation page later when implemented
     // navigation.navigate("NewRoutinePage");
   };
 
   const handleExplore = () => {
     console.log("Explore routines");
-    // Will navigate to explore page later when implemented
     // navigation.navigate("ExploreRoutinesPage");
   };
 
@@ -78,7 +76,7 @@ const WorkoutStartPage = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Message indicating no routines yet */}
+          {/* Message: no routines yet */}
           <View style={styles.emptyRoutinesContainer}>
             <Text style={styles.emptyRoutinesText}>
               No routines created yet. Create a new routine to get started.
@@ -87,13 +85,7 @@ const WorkoutStartPage = () => {
         </View>
       </ScrollView>
 
-      {/* Render the sliding workout panel */}
-      {workoutActive && (
-        <SlideUpWorkout 
-          visible={workoutActive} 
-          onClose={handleCloseWorkout} 
-        />
-      )}
+      
     </SafeAreaView>
   );
 };
