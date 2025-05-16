@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import styles from "../styles/workoutActive.styles";
+import styles from "../styles/active.styles";
 import RoutineExerciseComponent from "../components/routineExercise";
 
 const RoutineCreate = () => {
@@ -22,14 +22,16 @@ const RoutineCreate = () => {
   useEffect(() => {
     // Handle receiving new exercises from DisplayPage
     if (route.params?.selectedExercises) {
-      setExercises(prev => [...prev, ...route.params.selectedExercises]);
+      setExercises((prev) => [...prev, ...route.params.selectedExercises]);
       // Clear the params to prevent re-adding on re-render
       navigation.setParams({ selectedExercises: undefined });
     }
   }, [route.params?.selectedExercises]);
 
   const handleAddExercise = () => {
-    navigation.navigate('Display');
+    navigation.navigate("Display", {
+      returnTo: "RoutineCreate",
+    });
   };
 
   const handleRemoveExercise = (exerciseId) => {
@@ -57,7 +59,7 @@ const RoutineCreate = () => {
 
   // Update total sets when exercises change
   const updateTotals = (exerciseId, sets) => {
-    setTotalSets(prev => prev + sets);
+    setTotalSets((prev) => prev + sets);
   };
 
   return (

@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, SafeAreaView, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+  SafeAreaView,
+  TextInput,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import styles from "../styles/display.styles";
 import getExercises from "../API/getExercises";
@@ -10,13 +18,15 @@ const HighlightText = ({ text, highlight, style }) => {
   if (!highlight.trim()) {
     return <Text style={style}>{text}</Text>;
   }
-  
-  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+
+  const parts = text.split(new RegExp(`(${highlight})`, "gi"));
   return (
     <Text style={style}>
-      {parts.map((part, index) => 
+      {parts.map((part, index) =>
         part.toLowerCase() === highlight.toLowerCase() ? (
-          <Text key={index} style={[style, styles.highlightedText]}>{part}</Text>
+          <Text key={index} style={[style, styles.highlightedText]}>
+            {part}
+          </Text>
         ) : (
           <Text key={index}>{part}</Text>
         )
@@ -61,13 +71,23 @@ const DisplayPage = ({ route }) => {
   useEffect(() => {
     if (searchText.trim()) {
       const searchTermLower = searchText.toLowerCase();
-      const filtered = exercises.filter(exercise => {
-        const nameMatch = exercise.name?.toLowerCase().includes(searchTermLower);
-        const bodyPartMatch = exercise.bodyPart?.toLowerCase().includes(searchTermLower);
-        const muscleGroupMatch = exercise.muscle_group?.toLowerCase().includes(searchTermLower);
-        const instructionMatch = exercise.instruction?.toLowerCase().includes(searchTermLower);
-        
-        return nameMatch || bodyPartMatch || muscleGroupMatch || instructionMatch;
+      const filtered = exercises.filter((exercise) => {
+        const nameMatch = exercise.name
+          ?.toLowerCase()
+          .includes(searchTermLower);
+        const bodyPartMatch = exercise.bodyPart
+          ?.toLowerCase()
+          .includes(searchTermLower);
+        const muscleGroupMatch = exercise.muscle_group
+          ?.toLowerCase()
+          .includes(searchTermLower);
+        const instructionMatch = exercise.instruction
+          ?.toLowerCase()
+          .includes(searchTermLower);
+
+        return (
+          nameMatch || bodyPartMatch || muscleGroupMatch || instructionMatch
+        );
       });
       setFilteredExercises(filtered);
     } else {
@@ -76,10 +96,10 @@ const DisplayPage = ({ route }) => {
   }, [searchText, exercises]);
 
   const handleExerciseSelect = (exercise) => {
-    setSelectedExercises(prev => {
-      const isSelected = prev.some(e => e.id === exercise.id);
+    setSelectedExercises((prev) => {
+      const isSelected = prev.some((e) => e.id === exercise.id);
       if (isSelected) {
-        return prev.filter(e => e.id !== exercise.id);
+        return prev.filter((e) => e.id !== exercise.id);
       } else {
         return [...prev, exercise];
       }
@@ -88,42 +108,53 @@ const DisplayPage = ({ route }) => {
 
   const handleAddSelected = () => {
     if (selectedExercises.length > 0) {
-      navigation.navigate('ActiveWorkout', {
-        selectedExercises: selectedExercises
-      });
+      if (route && route.params && route.params.returnTo) {
+        navigation.navigate(route.params.returnTo, {
+          selectedExercises: selectedExercises,
+        });
+      } else {
+        navigation.navigate(
+          navigation.getState().routes[navigation.getState().routes.length - 2]
+            ?.name || "Home",
+          {
+            selectedExercises: selectedExercises,
+          }
+        );
+      }
     }
   };
 
   const renderExerciseItem = ({ item }) => {
-    const isSelected = selectedExercises.some(e => e.id === item.id);
-    
+    const isSelected = selectedExercises.some((e) => e.id === item.id);
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.exerciseItem, isSelected && styles.selectedExerciseItem]}
         onPress={() => handleExerciseSelect(item)}
       >
         <View style={styles.exerciseRow}>
           <View style={styles.exerciseIconContainer}>
-            <Ionicons 
-              name={isSelected ? "checkmark-circle" : "fitness-outline"} 
-              size={28} 
-              color={isSelected ? "#47A3FF" : "#BBBBBB"} 
+            <Ionicons
+              name={isSelected ? "checkmark-circle" : "fitness-outline"}
+              size={28}
+              color={isSelected ? "#47A3FF" : "#BBBBBB"}
             />
           </View>
           <View style={styles.exerciseDetails}>
-            <HighlightText 
-              text={item.name} 
+            <HighlightText
+              text={item.name}
               highlight={searchText}
               style={styles.exerciseName}
             />
             <Text style={styles.exerciseMuscleGroup}>
-              {item.muscle_group.charAt(0).toUpperCase() + item.muscle_group.slice(1)}
+              {item.muscle_group.charAt(0).toUpperCase() +
+                item.muscle_group.slice(1)}
             </Text>
           </View>
-          <Ionicons 
-            name="chevron-forward" 
-            size={24} 
-            color={isSelected ? "#47A3FF" : "#777777"} 
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={isSelected ? "#47A3FF" : "#777777"}
           />
         </View>
       </TouchableOpacity>
@@ -133,21 +164,23 @@ const DisplayPage = ({ route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="close-outline" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleAddSelected}
             disabled={selectedExercises.length === 0}
           >
-            <Text style={[
-              styles.headerActionText,
-              selectedExercises.length > 0 && styles.headerActionTextActive
-            ]}>
+            <Text
+              style={[
+                styles.headerActionText,
+                selectedExercises.length > 0 && styles.headerActionTextActive,
+              ]}
+            >
               Add ({selectedExercises.length})
             </Text>
           </TouchableOpacity>
@@ -157,11 +190,11 @@ const DisplayPage = ({ route }) => {
       {/* Search Box */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Ionicons 
-            name="search-outline" 
-            size={22} 
-            color="#999999" 
-            style={styles.searchIcon} 
+          <Ionicons
+            name="search-outline"
+            size={22}
+            color="#999999"
+            style={styles.searchIcon}
           />
           <TextInput
             style={styles.searchInput}

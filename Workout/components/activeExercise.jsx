@@ -18,7 +18,7 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise })
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
 
-  // Update total completed sets whenever sets change
+  // update total completed sets whenever sets change
   useEffect(() => {
     const completedSets = sets.filter(set => set.completed && set.id !== "W").length;
     const totalVolume = sets.reduce((acc, set) => {

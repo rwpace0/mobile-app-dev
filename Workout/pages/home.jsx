@@ -26,6 +26,10 @@ const HomePage = () => {
         title="Go to Active"
         onPress={() => navigation.navigate("ActiveWorkout")}
       />
+      <Button
+        title="Go to Routine"
+        onPress={() => navigation.navigate("RoutineCreate")}
+      />
     </View>
   );
 }; 

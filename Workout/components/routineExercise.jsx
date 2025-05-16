@@ -7,7 +7,7 @@ import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 
 const RoutineExerciseComponent = ({ exercise, onRemoveExercise }) => {
-  const [sets, setSets] = useState([{ id: "1" }, { id: "2" }, { id: "3" }]);
+  const [sets, setSets] = useState([{ id: "1" }]);
   const [notes, setNotes] = useState("");
   const [restTime, setRestTime] = useState(150); // 2:30 default
   const [showRestTimer, setShowRestTimer] = useState(false);
