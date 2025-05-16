@@ -2,23 +2,22 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import styles from "../styles/active.styles";
-import ActiveExerciseComponent from "../components/activeExercise";
+import styles from "../styles/workoutActive.styles";
+import RoutineExerciseComponent from "../components/routineExercise";
 
-const WorkoutActivePage = () => {
+const RoutineCreate = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
-  const [workoutDuration, setWorkoutDuration] = useState(0);
-  const [totalVolume, setTotalVolume] = useState(0);
   const [totalSets, setTotalSets] = useState(0);
-  const [timer, setTimer] = useState(null);
 
   useEffect(() => {
     // Handle receiving new exercises from DisplayPage
@@ -29,22 +28,6 @@ const WorkoutActivePage = () => {
     }
   }, [route.params?.selectedExercises]);
 
-  // Start timer when page loads
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWorkoutDuration((prev) => prev + 1);
-    }, 1000);
-    setTimer(interval);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const formatDuration = (seconds) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}min`;
-  };
-
   const handleAddExercise = () => {
     navigation.navigate('Display');
   };
@@ -53,49 +36,52 @@ const WorkoutActivePage = () => {
     setExercises(exercises.filter((ex) => ex.id !== exerciseId));
   };
 
+  const handleCancel = () => {
+    navigation.goBack();
+  };
+
+  const handleSave = () => {
+    if (!routineName.trim()) {
+      // Show error that routine name is required
+      return;
+    }
+    // TODO: Save routine
+    navigation.goBack();
+  };
+
   const handleDiscard = () => {
-    // Reset workout state
     setExercises([]);
-    setTotalVolume(0);
+    setRoutineName("");
     setTotalSets(0);
-    setWorkoutDuration(0);
   };
 
-  const handleFinish = () => {
-    // In a real app, save workout data and navigate to summary
-    console.log("Finish workout");
-  };
-
-  // Update total volume and sets when exercises change
-  const updateTotals = (exerciseId, volume, sets) => {
-    setTotalVolume(prev => prev + volume);
+  // Update total sets when exercises change
+  const updateTotals = (exerciseId, sets) => {
     setTotalSets(prev => prev + sets);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-down-outline" size={24} color="#FFFFFF" />
+        <TouchableOpacity onPress={handleCancel}>
+          <Text style={[styles.headerButton, styles.cancelButton]}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Log Workout</Text>
-        <TouchableOpacity onPress={handleFinish}>
-          <Text style={styles.finishButton}>Finish</Text>
+        <Text style={styles.headerTitle}>Create Routine</Text>
+        <TouchableOpacity onPress={handleSave}>
+          <Text style={[styles.headerButton, styles.saveButton]}>Save</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
+        <TextInput
+          style={styles.routineNameInput}
+          placeholder="Routine Name"
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          value={routineName}
+          onChangeText={setRoutineName}
+        />
+
         <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Duration</Text>
-            <Text style={styles.statValue}>
-              {formatDuration(workoutDuration)}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>{totalVolume} kg</Text>
-          </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Sets</Text>
             <Text style={styles.statValue}>{totalSets}</Text>
@@ -109,7 +95,7 @@ const WorkoutActivePage = () => {
             </View>
             <Text style={styles.getStartedText}>Get started</Text>
             <Text style={styles.instructionText}>
-              Add an exercise to start your workout
+              Add an exercise to create your routine
             </Text>
 
             <TouchableOpacity
@@ -123,7 +109,7 @@ const WorkoutActivePage = () => {
         ) : (
           <View style={styles.exercisesContainer}>
             {exercises.map((exercise) => (
-              <ActiveExerciseComponent
+              <RoutineExerciseComponent
                 key={exercise.id}
                 exercise={exercise}
                 onUpdateTotals={updateTotals}
@@ -148,11 +134,11 @@ const WorkoutActivePage = () => {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-          <Text style={styles.discardText}>Discard Workout</Text>
+          <Text style={styles.discardText}>Discard Routine</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
-export default WorkoutActivePage;
+export default RoutineCreate;

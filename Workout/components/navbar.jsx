@@ -35,7 +35,8 @@ const Navbar = ({ state, descriptors, navigation }) => {
         if (
           route.name === "Login" ||
           route.name === "SignUp" ||
-          route.name === "ActiveWorkout"
+          route.name === "ActiveWorkout" ||
+          route.name === "RoutineCreate"
         ) {
           return null;
         }
