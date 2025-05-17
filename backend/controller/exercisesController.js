@@ -6,7 +6,7 @@ export async function getExercises(req, res) {
   try {
     // Query the exercises table
     const { data, error } = await supabase
-      .from("exercises")
+      .from("public_exercises")
       .select("*")
       .order("name", { ascending: true });
 

@@ -23,7 +23,7 @@ const WorkoutActivePage = () => {
   useEffect(() => {
     // Handle receiving new exercises from DisplayPage
     if (route.params?.selectedExercises) {
-      setExercises(prev => [...prev, ...route.params.selectedExercises]);
+      setExercises((prev) => [...prev, ...route.params.selectedExercises]);
       // Clear the params to prevent re-adding on re-render
       navigation.setParams({ selectedExercises: undefined });
     }
@@ -46,8 +46,9 @@ const WorkoutActivePage = () => {
   };
 
   const handleAddExercise = () => {
-    navigation.navigate('Display', {
-      returnTo: 'WorkoutActivePage',});
+    navigation.navigate("Display", {
+      returnTo: "WorkoutActive",
+    });
   };
 
   const handleRemoveExercise = (exerciseId) => {
@@ -69,8 +70,8 @@ const WorkoutActivePage = () => {
 
   // Update total volume and sets when exercises change
   const updateTotals = (exerciseId, volume, sets) => {
-    setTotalVolume(prev => prev + volume);
-    setTotalSets(prev => prev + sets);
+    setTotalVolume((prev) => prev + volume);
+    setTotalSets((prev) => prev + sets);
   };
 
   return (

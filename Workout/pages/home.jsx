@@ -24,7 +24,7 @@ const HomePage = () => {
       />
       <Button
         title="Go to Active"
-        onPress={() => navigation.navigate("ActiveWorkout")}
+        onPress={() => navigation.navigate("WorkoutActive")}
       />
       <Button
         title="Go to Routine"

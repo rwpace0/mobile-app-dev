@@ -108,7 +108,7 @@ const DisplayPage = ({ route }) => {
 
   const handleAddSelected = () => {
     if (selectedExercises.length > 0) {
-      if (route && route.params && route.params.returnTo) {
+      if (route?.params?.returnTo) {
         navigation.navigate(route.params.returnTo, {
           selectedExercises: selectedExercises,
         });

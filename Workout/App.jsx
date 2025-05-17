@@ -24,7 +24,7 @@ export default function App() {
         <Tab.Screen name="SignUp" component={SignUpPage} />
         <Tab.Screen name="Display" component={DisplayPage} />
         <Tab.Screen name="Start" component={WorkoutStartPage} />
-        <Tab.Screen name="ActiveWorkout" component={WorkoutActivePage} />
+        <Tab.Screen name="WorkoutActive" component={WorkoutActivePage} />
         <Tab.Screen name="RoutineCreate" component={RoutineCreate} />
       </Tab.Navigator>
     </NavigationContainer>
