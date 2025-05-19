@@ -35,7 +35,7 @@ const RoutineCreate = () => {
   };
 
   const handleRemoveExercise = (exerciseId) => {
-    setExercises(exercises.filter((ex) => ex.id !== exerciseId));
+    setExercises(exercises.filter((ex) => ex.exercise_id !== exerciseId));
   };
 
   const handleCancel = () => {
@@ -112,10 +112,10 @@ const RoutineCreate = () => {
           <View style={styles.exercisesContainer}>
             {exercises.map((exercise) => (
               <RoutineExerciseComponent
-                key={exercise.id}
+                key={exercise.exercise_id}
                 exercise={exercise}
                 onUpdateTotals={updateTotals}
-                onRemoveExercise={() => handleRemoveExercise(exercise.id)}
+                onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
               />
             ))}
 

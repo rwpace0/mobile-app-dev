@@ -1,12 +1,11 @@
 import { supabase } from "../database/supabaseClient.js";
 
-// eventually have to merge public db with user db somehow
 
 export async function getExercises(req, res) {
   try {
-    // Query the exercises table
+    // query the exercises table
     const { data, error } = await supabase
-      .from("public_exercises")
+      .from("exercises")
       .select("*")
       .order("name", { ascending: true });
 

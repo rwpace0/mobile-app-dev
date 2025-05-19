@@ -75,9 +75,6 @@ const DisplayPage = ({ route }) => {
         const nameMatch = exercise.name
           ?.toLowerCase()
           .includes(searchTermLower);
-        const bodyPartMatch = exercise.bodyPart
-          ?.toLowerCase()
-          .includes(searchTermLower);
         const muscleGroupMatch = exercise.muscle_group
           ?.toLowerCase()
           .includes(searchTermLower);
@@ -86,7 +83,7 @@ const DisplayPage = ({ route }) => {
           .includes(searchTermLower);
 
         return (
-          nameMatch || bodyPartMatch || muscleGroupMatch || instructionMatch
+          nameMatch || muscleGroupMatch || instructionMatch
         );
       });
       setFilteredExercises(filtered);
@@ -97,9 +94,9 @@ const DisplayPage = ({ route }) => {
 
   const handleExerciseSelect = (exercise) => {
     setSelectedExercises((prev) => {
-      const isSelected = prev.some((e) => e.id === exercise.id);
+      const isSelected = prev.some((e) => e.exercise_id === exercise.exercise_id);
       if (isSelected) {
-        return prev.filter((e) => e.id !== exercise.id);
+        return prev.filter((e) => e.exercise_id !== exercise.exercise_id);
       } else {
         return [...prev, exercise];
       }
@@ -125,7 +122,7 @@ const DisplayPage = ({ route }) => {
   };
 
   const renderExerciseItem = ({ item }) => {
-    const isSelected = selectedExercises.some((e) => e.id === item.id);
+    const isSelected = selectedExercises.some((e) => e.exercise_id === item.exercise_id);
 
     return (
       <TouchableOpacity
@@ -223,7 +220,7 @@ const DisplayPage = ({ route }) => {
       <View style={styles.exerciseListContainer}>
         <FlatList
           data={filteredExercises}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => String(item.exercise_id)}
           renderItem={renderExerciseItem}
           style={styles.exerciseList}
           showsVerticalScrollIndicator={false}

@@ -52,7 +52,7 @@ const WorkoutActivePage = () => {
   };
 
   const handleRemoveExercise = (exerciseId) => {
-    setExercises(exercises.filter((ex) => ex.id !== exerciseId));
+    setExercises(exercises.filter((ex) => ex.exercise_id !== exerciseId));
   };
 
   const handleDiscard = () => {
@@ -126,10 +126,10 @@ const WorkoutActivePage = () => {
           <View style={styles.exercisesContainer}>
             {exercises.map((exercise) => (
               <ActiveExerciseComponent
-                key={exercise.id}
+                key={exercise.exercise_id}
                 exercise={exercise}
                 onUpdateTotals={updateTotals}
-                onRemoveExercise={() => handleRemoveExercise(exercise.id)}
+                onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
               />
             ))}
 
