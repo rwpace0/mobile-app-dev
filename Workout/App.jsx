@@ -9,7 +9,7 @@ import WorkoutStartPage from "./pages/workoutStart";
 import WorkoutActivePage from "./pages/workoutActive";
 import RoutineCreate from "./pages/routineCreate";
 import Navbar from "./components/navbar";
-
+import CreateExercise from "./components/createExercise";
 const Tab = createBottomTabNavigator();
 
 export default function App() {
@@ -26,6 +26,7 @@ export default function App() {
         <Tab.Screen name="Start" component={WorkoutStartPage} />
         <Tab.Screen name="WorkoutActive" component={WorkoutActivePage} />
         <Tab.Screen name="RoutineCreate" component={RoutineCreate} />
+        <Tab.Screen name="CreateExercise" component={CreateExercise} />
       </Tab.Navigator>
     </NavigationContainer>
   );

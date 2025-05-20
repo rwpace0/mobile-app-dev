@@ -181,6 +181,12 @@ const DisplayPage = ({ route }) => {
               Add ({selectedExercises.length})
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginLeft: 16 }}
+            onPress={() => navigation.navigate('CreateExercise')}
+          >
+            <Text style={styles.headerActionText}>Create</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
