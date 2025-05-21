@@ -7,63 +7,74 @@ import layout from '../constants/layout';
 const { width } = Dimensions.get('window');
 
 export default StyleSheet.create({
-  // reuse the layout container
   container: {
     ...layout.screenCenter,
     paddingHorizontal: Spacing.m,
   },
-
   title: {
     fontSize: FontSize.large,
     fontWeight: '700',
     color: colors.textWhite,
     marginBottom: Spacing.xl,
   },
-
-  inputContainer: {
-    width: '100%',
-  },
-
-  inputLabel: {
+  subtitle: {
+    fontSize: FontSize.medium,
     color: colors.textLight,
-    fontSize: FontSize.small,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.xxl,
+    textAlign: 'center',
   },
-
-  // reuse the input variant
-  textInput: {
-    ...components.input,
+  buttonContainer: {
+    width: '100%',
+    gap: Spacing.m,
   },
-
-  // base button + primary variant
   button: {
     ...components.button,
     ...components.buttonPrimary,
     width: '100%',
   },
-
+  primaryButton: {
+    backgroundColor: '#007AFF',
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
   buttonText: {
     ...components.buttonText,
   },
-
+  secondaryButtonText: {
+    color: '#007AFF',
+  },
+  inputContainer: {
+    width: '100%',
+  },
+  inputLabel: {
+    color: colors.textLight,
+    fontSize: FontSize.small,
+    marginBottom: Spacing.xs,
+  },
+  textInput: {
+    ...components.input,
+  },
   googleButton: {
     ...components.button,
     ...components.buttonOutline,
     flexDirection: 'row',
     width: '100%',
   },
-
   googleIcon: {
     marginRight: Spacing.s,
   },
-
   googleText: {
     ...components.buttonText,
   },
-
   footerText: {
     color: colors.footerText,
     fontSize: FontSize.small,
     marginTop: Spacing.l,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });

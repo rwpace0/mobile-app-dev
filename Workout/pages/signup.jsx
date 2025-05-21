@@ -1,8 +1,47 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from "react-native";
+import { useAuth } from "../API/AuthContext";
 import styles from "../styles/login.styles";
 
-const SignUpPage = () => {
+const SignUpPage = ({ navigation }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signup, error } = useAuth();
+
+  const handleSignup = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await signup(email, password);
+      Alert.alert(
+        "Success",
+        "Registration successful! Please check your email to verify your account.",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("Login"),
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert("Error", error.message || "Failed to sign up");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome</Text>
@@ -15,6 +54,9 @@ const SignUpPage = () => {
           placeholderTextColor="#999999"
           keyboardType="email-address"
           autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+          editable={!loading}
         />
       </View>
 
@@ -25,21 +67,36 @@ const SignUpPage = () => {
           placeholder="Enter your password"
           placeholderTextColor="#999999"
           secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          editable={!loading}
         />
       </View>
 
-      <TouchableOpacity style={styles.button} activeOpacity={0.8}>
-        <Text style={styles.buttonText}>Sign Up </Text>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        activeOpacity={0.8}
+        onPress={handleSignup}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Signing up..." : "Sign Up"}
+        </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.googleButton} activeOpacity={0.8}>
-        <Image
-          source={{
-            uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png",
-          }}
-          style={[styles.googleIcon, { width: 24, height: 24 }]}
-        />
+      <TouchableOpacity
+        style={styles.googleButton}
+        activeOpacity={0.8}
+        disabled={loading}
+      >
         <Text style={styles.googleText}>Continue with Google</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => navigation.navigate("Login")}
+        disabled={loading}
+      >
+        <Text style={styles.footerText}>Already have an account? Log in</Text>
       </TouchableOpacity>
     </View>
   );
