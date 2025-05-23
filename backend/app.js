@@ -36,7 +36,7 @@ app.use(helmet()); // Adds various HTTP headers for security
 
 // Configure CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Replace with your frontend URL
+  origin: process.env.FRONTEND_URL || process.env.BACKEND_URL || process.env.IOS,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -49,18 +49,14 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later'
 });
 
-// Apply rate limiting to all routes
-app.use(limiter);
-
-// More strict rate limiting for auth routes
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 requests per windowMs
-  message: 'Too many login attempts, please try again later'
+// Apply rate limiting to all routes except auth routes
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/auth')) {
+    limiter(req, res, next);
+  } else {
+    next();
+  }
 });
-
-// Apply stricter rate limiting to auth routes
-app.use('/auth', authLimiter);
 
 // set routes
 app.use("/", indexRouter);

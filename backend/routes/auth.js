@@ -4,14 +4,19 @@ import { login } from '../auth/login.js';
 import { logout } from '../auth/logout.js';
 import { resetPassword } from '../auth/resetPassword.js';
 import { verifyEmail } from '../auth/verifyEmail.js';
+import { resendVerification } from '../auth/resendVerification.js';
+import { getMe } from '../auth/me.js';
+import { authLimiter, emailVerificationLimiter, authMeLimiter, verificationLimiter } from '../auth/rateLimiter.js';
 
 const router = express.Router();
 
-// Auth routes
-router.post('/signup', signup);
-router.post('/login', login);
-router.post('/logout', logout);
-router.post('/reset-password', resetPassword);
-router.get('/verify-email', verifyEmail);
+// Auth routes with specific rate limiters
+router.post('/signup', authLimiter, signup);
+router.post('/login', authLimiter, login);
+router.post('/logout', authLimiter, logout);
+router.post('/reset-password', authLimiter, resetPassword);
+router.get('/verify-email', verificationLimiter, verifyEmail);
+router.post('/resend-verification', emailVerificationLimiter, resendVerification);
+router.get('/me', authMeLimiter, getMe);
 
 export default router; 

@@ -48,23 +48,6 @@ export const signup = async (req, res) => {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    // Check if email already exists
-    const { data: existingUser, error: checkError } = await supabase
-      .from('users')
-      .select('email')
-      .eq('email', email)
-      .single();
-
-    if (checkError) {
-      console.log('Error checking existing user:', checkError);
-      return res.status(500).json({ error: 'Error checking existing user' });
-    }
-
-    if (existingUser) {
-      console.log('Email already exists:', email);
-      return res.status(400).json({ error: 'Email already in use' });
-    }
-
     // Validate password strength
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
@@ -78,15 +61,21 @@ export const signup = async (req, res) => {
       email,
       password,
       options: {
-        emailRedirectTo: `${process.env.FRONTEND_URL}/auth/verify-email`,
+        emailRedirectTo: `${process.env.FRONTEND_URL}/auth/verify-email`, //need to fix redirect
         data: {
           email_verified: false
-        }
+        },
+        // Set longer expiration time (24 hours)
+        expiresIn: 86400
       },
     });
 
     if (error) {
       console.log('Supabase signup error:', error);
+      // Check if error is due to existing user
+      if (error.message.includes('already registered')) {
+        return res.status(400).json({ error: 'Email already in use' });
+      }
       return res.status(400).json({ error: error.message });
     }
 

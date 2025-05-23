@@ -7,7 +7,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../API/AuthContext";
 import styles from "../styles/login.styles";
 
 const LoginPage = ({ navigation }) => {

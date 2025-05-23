@@ -2,11 +2,12 @@ import * as React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./API/AuthContext";
 import WelcomePage from "./pages/welcome";
 import LoginPage from "./pages/login";
 import HomePage from "./pages/home";
 import SignUpPage from "./pages/signup";
+import EmailVerification from "./pages/EmailVerification";
 import DisplayPage from "./components/display";
 import WorkoutStartPage from "./pages/workoutStart";
 import WorkoutActivePage from "./pages/workoutActive";
@@ -53,7 +54,11 @@ const RootNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
-        <Stack.Screen name="Main" component={MainStack} />
+        user.isAuthenticated ? (
+          <Stack.Screen name="Main" component={MainStack} />
+        ) : (
+          <Stack.Screen name="EmailVerification" component={EmailVerification} />
+        )
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
       )}
