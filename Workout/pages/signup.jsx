@@ -16,7 +16,22 @@ const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState(false);
   const { signup, error } = useAuth();
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    if (text && !validateEmail(text)) {
+      setEmailError(true);
+    } else {
+      setEmailError(false);
+    }
+  };
 
   const passwordRequirements = useMemo(() => {
     const minLength = password.length >= 8;
@@ -48,6 +63,11 @@ const SignUpPage = ({ navigation }) => {
   const handleSignup = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setEmailError(true);
       return;
     }
 
@@ -83,15 +103,21 @@ const SignUpPage = ({ navigation }) => {
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
-          style={styles.textInput}
+          style={[
+            styles.textInput,
+            emailError ? styles.textInputError : null
+          ]}
           placeholder="Enter your email"
           placeholderTextColor="#999999"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={handleEmailChange}
           editable={!loading}
         />
+        {emailError ? (
+          <Text style={styles.errorText}>{emailError}</Text>
+        ) : null}
       </View>
 
       <View style={styles.inputContainer}>
@@ -117,7 +143,7 @@ const SignUpPage = ({ navigation }) => {
             <View key={index} style={styles.requirementItem}>
               <Ionicons
                 name={requirement.met ? "checkmark-circle" : "close-circle"}
-                size={16}
+                size={20}
                 color={requirement.met ? "#4CAF50" : colors.textLight}
               />
               <Text

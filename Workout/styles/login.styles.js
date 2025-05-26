@@ -57,6 +57,10 @@ export default StyleSheet.create({
   textInput: {
     ...components.input,
   },
+  textInputError: {
+    borderColor: '#FF3B30',
+    borderWidth: 1,
+  },
   googleButton: {
     ...components.button,
     ...components.buttonOutline,
@@ -94,7 +98,7 @@ export default StyleSheet.create({
   },
   requirementText: {
     color: colors.textLight,
-    fontSize: FontSize.small,
+    fontSize: FontSize.medium,
     marginLeft: Spacing.xs,
   },
   requirementMet: {
@@ -107,8 +111,8 @@ export default StyleSheet.create({
     height: 4,
     backgroundColor: colors.textLight,
     borderRadius: BorderRadius.small,
-    marginTop: Spacing.s,
-    marginBottom: Spacing.m,
+    
+    marginBottom: Spacing.l,
   },
   strengthBar: {
     height: '100%',
