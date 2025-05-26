@@ -74,7 +74,45 @@ export default StyleSheet.create({
     fontSize: FontSize.small,
     marginTop: Spacing.l,
   },
+  blueFooterText: {
+    color: '#007AFF',
+    fontSize: FontSize.small,
+    marginTop: Spacing.l,
+  },
   buttonDisabled: {
     opacity: 0.7,
+  },
+  passwordRequirementsContainer: {
+    marginTop: Spacing.s,
+    marginBottom: Spacing.m,
+    width: '100%',
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  requirementText: {
+    color: colors.textLight,
+    fontSize: FontSize.small,
+    marginLeft: Spacing.xs,
+  },
+  requirementMet: {
+    color: '#4CAF50', // Success green
+  },
+  requirementUnmet: {
+    color: colors.textLight,
+  },
+  strengthBarContainer: {
+    height: 4,
+    backgroundColor: colors.textLight,
+    borderRadius: BorderRadius.small,
+    marginTop: Spacing.s,
+    marginBottom: Spacing.m,
+  },
+  strengthBar: {
+    height: '100%',
+    borderRadius: BorderRadius.small,
+    backgroundColor: '#4CAF50',
   },
 });

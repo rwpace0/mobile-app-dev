@@ -44,6 +44,7 @@ const CreateExercise = () => {
   const [primaryMuscle, setPrimaryMuscle] = useState("");
   const [errors, setErrors] = useState({});
   const [openDropdown, setOpenDropdown] = useState(null); // 'equipment' or 'muscle' or null
+  
 
   const validate = () => {
     const newErrors = {};
