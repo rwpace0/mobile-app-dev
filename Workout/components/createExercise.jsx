@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import createStyles from '../styles/createExercise.styles';
+import { createExercise as createExerciseAPI } from '../API/getExercises';
 
 const equipmentOptions = [
   "Dumbbell",
@@ -55,9 +56,24 @@ const CreateExercise = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (validate()) {
-      console.log({ name, equipment, primaryMuscle });
+      try {
+        await createExerciseAPI({
+          name,
+          equipment,
+          muscle_group: primaryMuscle,
+        });
+        navigation.goBack();
+      } catch (error) {
+        // Show validation errors if present
+        if (error && error.error === 'Missing required fields') {
+          setErrors({ form: 'Please fill in all required fields.' });
+        } else {
+          setErrors({ form: 'Failed to create exercise.' });
+        }
+        console.log('Create exercise error:', error);
+      }
     }
   };
 
@@ -178,6 +194,8 @@ const CreateExercise = () => {
             </View>
           )}
           {errors.primaryMuscle && <Text style={createStyles.errorText}>{errors.primaryMuscle}</Text>}
+
+          {errors.form && <Text style={createStyles.errorText}>{errors.form}</Text>}
         </View>
       </ScrollView>
     </SafeAreaView>
