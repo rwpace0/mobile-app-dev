@@ -8,6 +8,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import workoutsRouter from './routes/workouts.js';
 dotenv.config();
 
 // route imports
@@ -63,6 +64,7 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/exercises", exerciseRouter);
 app.use('/auth', authRoutes);
+app.use('/workouts', workoutsRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

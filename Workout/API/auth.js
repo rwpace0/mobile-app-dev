@@ -62,10 +62,11 @@ export const authAPI = {
   login: async (email, password) => {
     try {
       const response = await api.post('/login', { email, password });
-      console.log('Login response:', response.data);
+      
       if (response.data.session?.access_token) {
         await storage.setItem('auth_token', response.data.session.access_token);
       }
+      console.log("Login response:", response.data);
       return response.data;
     } catch (error) {
       console.error('Login error:', error);

@@ -23,8 +23,6 @@ export async function getExercises(req, res) {
   }
 }
 
-export async function searchExercises(req, res) {}
-
 export async function createExercise(req, res) {
   try {
     // Get the token from the Authorization header

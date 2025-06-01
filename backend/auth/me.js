@@ -27,6 +27,7 @@ export const getMe = async (req, res) => {
       }
 
       console.log('User data retrieved:', user);
+      console.log(token);
 
       // Return user data including verification status
       return res.status(200).json({
