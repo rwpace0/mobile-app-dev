@@ -7,7 +7,7 @@ import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 
-const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise }) => {
+const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, onStateChange }) => {
   const [sets, setSets] = useState([
     { id: "1", weight: "", reps: "", total: "", completed: false },
   ]);
@@ -46,6 +46,13 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise })
     }
     return () => clearInterval(interval);
   }, [isTimerActive, remainingTime, restTime]);
+
+  // Call onStateChange whenever sets or notes change
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({ sets, notes });
+    }
+  }, [sets, notes]);
 
   const formatTime = (seconds) => {
     if (seconds === 0) return "Off";

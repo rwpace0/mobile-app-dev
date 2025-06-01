@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import styles from "../styles/active.styles";
 import ActiveExerciseComponent from "../components/activeExercise";
+import { finishWorkout } from "../API/finishWorkout";
 
 const WorkoutActivePage = () => {
   const navigation = useNavigation();
@@ -19,6 +20,7 @@ const WorkoutActivePage = () => {
   const [totalVolume, setTotalVolume] = useState(0);
   const [totalSets, setTotalSets] = useState(0);
   const [timer, setTimer] = useState(null);
+  const [exerciseStates, setExerciseStates] = useState({});
 
   useEffect(() => {
     // Handle receiving new exercises from DisplayPage
@@ -63,9 +65,52 @@ const WorkoutActivePage = () => {
     setWorkoutDuration(0);
   };
 
-  const handleFinish = () => {
-    // In a real app, save workout data and navigate to summary
-    console.log("Finish workout");
+  const handleExerciseStateChange = (exercise_id, { sets, notes }) => {
+    setExerciseStates((prev) => ({
+      ...prev,
+      [exercise_id]: { sets, notes },
+    }));
+  };
+
+  const handleFinish = async () => {
+    try {
+      // Build workout name and date
+      const now = new Date();
+      const workoutName = `Workout on ${now.toLocaleDateString()}`;
+      const datePerformed = now.toISOString();
+      // Build exercises array
+      const exercisesPayload = exercises.map((exercise) => {
+        const state = exerciseStates[exercise.exercise_id] || {
+          sets: [],
+          notes: "",
+        };
+        // Only include sets with weight and reps
+        const sets = (state.sets || [])
+          .filter((set) => set.weight && set.reps)
+          .map((set, idx) => ({
+            weight: Number(set.weight),
+            reps: Number(set.reps),
+            set_order: idx + 1,
+          }));
+        return {
+          exercise_id: exercise.exercise_id,
+          notes: state.notes || "",
+          sets,
+        };
+      });
+      const payload = {
+        name: workoutName,
+        date_performed: datePerformed,
+        duration: workoutDuration,
+        exercises: exercisesPayload,
+      };
+      console.log(payload);
+      await finishWorkout.finishWorkout(payload);
+      console.log("Workout saved successfully!");
+      navigation.goBack();
+    } catch (err) {
+      console.error("Failed to save workout:", err);
+    }
   };
 
   // Update total volume and sets when exercises change
@@ -129,7 +174,12 @@ const WorkoutActivePage = () => {
                 key={exercise.exercise_id}
                 exercise={exercise}
                 onUpdateTotals={updateTotals}
-                onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
+                onRemoveExercise={() =>
+                  handleRemoveExercise(exercise.exercise_id)
+                }
+                onStateChange={(state) =>
+                  handleExerciseStateChange(exercise.exercise_id, state)
+                }
               />
             ))}
 
