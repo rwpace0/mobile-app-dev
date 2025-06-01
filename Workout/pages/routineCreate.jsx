@@ -29,7 +29,7 @@ const RoutineCreate = () => {
   }, [route.params?.selectedExercises]);
 
   const handleAddExercise = () => {
-    navigation.navigate("Display", {
+    navigation.navigate("AddExercise", {
       returnTo: "RoutineCreate",
     });
   };

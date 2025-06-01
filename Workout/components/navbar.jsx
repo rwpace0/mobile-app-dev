@@ -23,7 +23,7 @@ const Navbar = ({ state, descriptors, navigation }) => {
           iconName = isFocused ? "home" : "home-outline";
         } else if (route.name === "Start" || route.name === "ActiveWorkout") {
           iconName = isFocused ? "barbell" : "barbell-outline";
-        } else if (route.name === "Display") {
+        } else if (route.name === "AddExercise") {
           iconName = isFocused ? "stats-chart" : "stats-chart-outline";
         } else if (route.name === "Login" || route.name === "SignUp") {
           iconName = isFocused ? "person" : "person-outline";

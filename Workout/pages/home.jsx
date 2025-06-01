@@ -15,8 +15,8 @@ const HomePage = () => {
         onPress={() => navigation.navigate("SignUp")}
       />
       <Button
-        title="Go to Display"
-        onPress={() => navigation.navigate("Display")}
+        title="Go to Add Exercise"
+        onPress={() => navigation.navigate("AddExercise")}
       />
       <Button
         title="Go to Start"

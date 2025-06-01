@@ -8,7 +8,7 @@ import LoginPage from "./pages/login";
 import HomePage from "./pages/home";
 import SignUpPage from "./pages/signup";
 import EmailVerification from "./pages/EmailVerification";
-import DisplayPage from "./components/display";
+import AddExercisePage from "./components/addExercise";
 import WorkoutStartPage from "./pages/workoutStart";
 import WorkoutActivePage from "./pages/workoutActive";
 import RoutineCreate from "./pages/routineCreate";
@@ -35,7 +35,7 @@ const MainStack = () => (
     tabBar={(props) => <Navbar {...props} />}
   >
     <Tab.Screen name="Home" component={HomePage} />
-    <Tab.Screen name="Display" component={DisplayPage} />
+    <Tab.Screen name="AddExercise" component={AddExercisePage} />
     <Tab.Screen name="Start" component={WorkoutStartPage} />
     <Tab.Screen name="WorkoutActive" component={WorkoutActivePage} />
     <Tab.Screen name="RoutineCreate" component={RoutineCreate} />

@@ -46,7 +46,7 @@ const WorkoutActivePage = () => {
   };
 
   const handleAddExercise = () => {
-    navigation.navigate("Display", {
+    navigation.navigate("AddExercise", {
       returnTo: "WorkoutActive",
     });
   };

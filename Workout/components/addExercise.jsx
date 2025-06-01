@@ -35,7 +35,7 @@ const HighlightText = ({ text, highlight, style }) => {
   );
 };
 
-const DisplayPage = ({ route }) => {
+const AddExercisePage = ({ route }) => {
   const navigation = useNavigation();
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -242,4 +242,4 @@ const DisplayPage = ({ route }) => {
   );
 };
 
-export default DisplayPage;
+export default AddExercisePage;
