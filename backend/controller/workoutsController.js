@@ -1,6 +1,8 @@
 import { supabase } from "../database/supabaseClient.js";
 import { getClientToken } from "../database/supabaseClient.js";
 
+
+
 export async function createWorkout(req, res) {
   try {
     // Get the token from the Authorization header
@@ -59,6 +61,7 @@ export async function createWorkout(req, res) {
 }
 
 export async function getWorkouts(req, res) {
+
   try {
     // Get the token from the Authorization header
     const authHeader = req.headers.authorization;
@@ -78,7 +81,7 @@ export async function getWorkouts(req, res) {
     if (userError || !user) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
-
+    
     // Query the workouts table for the user's workouts
     const { data, error } = await supabase
       .from("workouts")
@@ -90,7 +93,7 @@ export async function getWorkouts(req, res) {
       console.error("Database query error:", error);
       return res.status(500).json({ error: error.message });
     }
-
+    
     res.json(data);
   } catch (err) {
     console.error("Network or unexpected error:", err);
