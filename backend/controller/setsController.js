@@ -1,4 +1,5 @@
 import { supabase } from "../database/supabaseClient.js";
+import { getClientToken } from "../database/supabaseClient.js";
 
 export async function createSets(req, res) {
   try {
@@ -105,8 +106,11 @@ export async function getSetsForExercise(req, res) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
 
+    // Create authenticated client
+    const supabaseWithAuth = getClientToken(token);
+
     // Diagnostic query to check workout_exercises
-    const { data: diagnosticWE, error: diagnosticError } = await supabase
+    const { data: diagnosticWE, error: diagnosticError } = await supabaseWithAuth
       .from("workout_exercises")
       .select("*")
       .eq("exercise_id", exercise_id);
@@ -118,7 +122,7 @@ export async function getSetsForExercise(req, res) {
     });
 
     // Step 1: Get workout_exercises for this exercise that belong to the user
-    const workoutExercisesQuery = supabase
+    const { data: workoutExercises, error: workoutExercisesError } = await supabaseWithAuth
       .from("workout_exercises")
       .select(
         `
@@ -138,9 +142,6 @@ export async function getSetsForExercise(req, res) {
       .eq("exercise_id", exercise_id)
       .eq("workouts.user_id", user.id);
 
-    const { data: workoutExercises, error: workoutExercisesError } =
-      await workoutExercisesQuery;
-
     if (workoutExercisesError) {
       console.error("Workout exercises lookup error:", workoutExercisesError);
       return res.status(500).json({ error: workoutExercisesError.message });
@@ -155,7 +156,7 @@ export async function getSetsForExercise(req, res) {
       (we) => we.workout_exercises_id
     );
 
-    const { data: sets, error: setsError } = await supabase
+    const { data: sets, error: setsError } = await supabaseWithAuth
       .from("sets")
       .select("*")
       .in("workout_exercises_id", workoutExerciseIds)

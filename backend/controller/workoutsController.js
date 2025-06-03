@@ -1,8 +1,6 @@
 import { supabase } from "../database/supabaseClient.js";
 import { getClientToken } from "../database/supabaseClient.js";
 
-
-
 export async function createWorkout(req, res) {
   try {
     // Get the token from the Authorization header
@@ -61,7 +59,6 @@ export async function createWorkout(req, res) {
 }
 
 export async function getWorkouts(req, res) {
-
   try {
     // Get the token from the Authorization header
     const authHeader = req.headers.authorization;
@@ -79,21 +76,38 @@ export async function getWorkouts(req, res) {
       error: userError,
     } = await supabase.auth.getUser(token);
     if (userError || !user) {
+      console.log("Authentication error:", userError);
       return res.status(401).json({ error: "Invalid or expired token" });
     }
+
     
-    // Query the workouts table for the user's workouts
-    const { data, error } = await supabase
+
+    // Create a client with the user's token
+    const supabaseWithAuth = getClientToken(token);
+
+    // Diagnostic query to check all workouts with detailed logging
+    const { data: allWorkouts, error: allWorkoutsError } =
+      await supabaseWithAuth
+        .from("workouts")
+        .select("workout_id, user_id, name, date_performed")
+        .limit(5);
+
+    
+
+    // Query the workouts table for the user's workouts with explicit user check
+    const { data, error } = await supabaseWithAuth
       .from("workouts")
-      .select("*")
+      .select("workout_id, user_id, name, date_performed, duration")
       .eq("user_id", user.id)
       .order("date_performed", { ascending: false });
+
+    
 
     if (error) {
       console.error("Database query error:", error);
       return res.status(500).json({ error: error.message });
     }
-    
+
     res.json(data);
   } catch (err) {
     console.error("Network or unexpected error:", err);
@@ -127,25 +141,29 @@ export async function getWorkoutById(req, res) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
 
+    // Create authenticated client
+    const supabaseWithAuth = getClientToken(token);
+
     // Query the workouts table for the specific workout
-    const { data: workout, error: workoutError } = await supabase
+    const { data: workouts, error: workoutError } = await supabaseWithAuth
       .from("workouts")
       .select("*")
       .eq("workout_id", id)
-      .eq("user_id", user.id)
-      .single();
+      .eq("user_id", user.id);
 
     if (workoutError) {
       console.error("Database query error:", workoutError);
       return res.status(500).json({ error: workoutError.message });
     }
 
-    if (!workout) {
+    if (!workouts || workouts.length === 0) {
       return res.status(404).json({ error: "Workout not found" });
     }
 
+    const workout = workouts[0]; // Get the first (and should be only) workout
+
     // Get the exercises for this workout
-    const { data: workoutExercises, error: exercisesError } = await supabase
+    const { data: workoutExercises, error: exercisesError } = await supabaseWithAuth
       .from("workout_exercises")
       .select(
         `
@@ -163,7 +181,7 @@ export async function getWorkoutById(req, res) {
     }
 
     // Get the sets for each exercise in this workout
-    const { data: sets, error: setsError } = await supabase
+    const { data: sets, error: setsError } = await supabaseWithAuth
       .from("sets")
       .select("*")
       .eq("workout_id", id);
@@ -302,12 +320,10 @@ export async function finishWorkout(req, res) {
         .insert(setsToInsert)
         .select();
       if (setsError) {
-        return res
-          .status(500)
-          .json({
-            error: "Failed to create sets",
-            details: setsError?.message || "Unknown Error",
-          });
+        return res.status(500).json({
+          error: "Failed to create sets",
+          details: setsError?.message || "Unknown Error",
+        });
       }
       insertedSets = setsData;
     }

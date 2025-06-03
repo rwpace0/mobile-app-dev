@@ -38,8 +38,8 @@ const Navbar = ({ state, descriptors, navigation }) => {
           route.name === "WorkoutActive" ||
           route.name === "RoutineCreate" ||
           route.name === "CreateExercise" ||
-          route.name === "WorkoutDetail"
-          
+          route.name === "WorkoutDetail" ||
+          route.name === "ExerciseDetail" 
         ) {
           return null;
         }
