@@ -23,6 +23,27 @@ export async function getExercises(req, res) {
   }
 }
 
+export async function getExerciseById(req, res) {
+  try {
+    const { exerciseId } = req.params;
+    const { data, error } = await supabase
+      .from("exercises")
+      .select("*")
+      .eq("exercise_id", exerciseId)
+      .single();
+
+    if (error) {
+      console.error("Database query error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("Network or unexpected error:", err);
+    res.status(500).json({ error: "Failed to connect to Supabase API" });
+  }
+}
+
 export async function createExercise(req, res) {
   try {
     // Get the token from the Authorization header

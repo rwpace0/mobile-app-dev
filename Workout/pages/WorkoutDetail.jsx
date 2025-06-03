@@ -1,63 +1,139 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import styles from '../styles/display.styles';
+import styles from '../styles/workout.styles';
+import colors from '../constants/colors';
+import { WorkoutAPI } from '../API/WorkoutAPI';
 
 const formatDate = (isoString) => {
   const date = new Date(isoString);
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const day = date.toLocaleDateString(undefined, { weekday: 'long' });
+  const month = date.toLocaleDateString(undefined, { month: 'long' });
+  const dateNum = date.getDate();
+  return `${day}, ${month} ${dateNum}`;
+};
+
+const calculateVolume = (sets) => {
+  return sets.reduce((total, set) => {
+    return total + (set.weight * set.reps || 0);
+  }, 0);
 };
 
 const WorkoutDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { workout } = route.params;
+  const { workout_id } = route.params?.workout || {};
+  const [workout, setWorkout] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!workout) {
+  useEffect(() => {
+    const fetchWorkoutDetails = async () => {
+      try {
+        if (!workout_id) {
+          throw new Error('No workout ID provided');
+        }
+        const response = await WorkoutAPI.getWorkoutById(workout_id);
+        setWorkout(response);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching workout:', err);
+        setError('Failed to load workout details');
+        setLoading(false);
+      }
+    };
+
+    fetchWorkoutDetails();
+  }, [workout_id]);
+
+  if (loading) {
     return (
-      <View style={styles.centerContent}>
-        <Text style={styles.errorText}>Workout not found</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primaryLight} />
       </View>
     );
   }
 
-  const totalSets = workout.exercises ? workout.exercises.reduce((sum, ex) => sum + (ex.sets ? ex.sets.length : 0), 0) : 0;
+  if (error || !workout) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>{error || 'Workout not found'}</Text>
+      </View>
+    );
+  }
+
+  const totalVolume = workout.exercises?.reduce((total, ex) => {
+    return total + calculateVolume(ex.sets || []);
+  }, 0);
+
+  const totalSets = workout.exercises?.reduce((total, ex) => {
+    return total + (ex.sets?.length || 0);
+  }, 0);
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, { borderBottomWidth: 0 }]}> 
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+    <View style={styles.detailContainer}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.headerButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.textWhite} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Workout Detail</Text>
-        <TouchableOpacity>
-          <Text style={styles.headerActionText}>Edit Workout</Text>
+        <TouchableOpacity style={styles.headerButton}>
+          <Text style={styles.headerAction}>Edit</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-        <Text style={[styles.exerciseName, { fontSize: 22, marginBottom: 2 }]}>{workout.name}</Text>
-        <Text style={[styles.exerciseMuscleGroup, { fontSize: 15, marginBottom: 2 }]}>{formatDate(workout.date_performed)}</Text>
-        <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-          <Text style={[styles.exerciseMuscleGroup, { marginRight: 16 }]}>Duration: {Math.round(workout.duration / 60)} min</Text>
-          <Text style={[styles.exerciseMuscleGroup, { marginRight: 16 }]}>Volume: {workout.total_volume || 0} lbs</Text>
-          <Text style={styles.exerciseMuscleGroup}>Sets: {totalSets}</Text>
-        </View>
-        {workout.exercises && workout.exercises.map((ex, idx) => (
-          <View key={idx} style={{ marginBottom: 18, backgroundColor: '#181A20', borderRadius: 10, padding: 12 }}>
-            <Text style={[styles.exerciseName, { color: '#47A3FF', fontSize: 18, marginBottom: 4 }]}>{ex.name}</Text>
-            <View style={{ flexDirection: 'row', marginBottom: 4 }}>
-              <Text style={[styles.exerciseMuscleGroup, { fontSize: 14, marginRight: 10 }]}>SET</Text>
-              <Text style={[styles.exerciseMuscleGroup, { fontSize: 14, marginRight: 10 }]}>WEIGHT & REPS</Text>
+
+      <ScrollView style={{ flex: 1 }}>
+        <View style={styles.detailHeader}>
+          <Text style={styles.detailTitle}>{workout.name}</Text>
+          <Text style={styles.detailDate}>{formatDate(workout.date_performed)}</Text>
+          
+          <View style={styles.statsRow}>
+            <View style={styles.statItemWithIcon}>
+              <Ionicons name="time-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+              <Text style={styles.statText}>{Math.round(workout.duration / 60)}m</Text>
             </View>
-            {ex.sets && ex.sets.map((set, setIdx) => (
-              <View key={setIdx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                <Text style={[styles.exerciseMuscleGroup, { width: 30, fontSize: 15 }]}>{setIdx + 1}</Text>
-                <Text style={[styles.exerciseMuscleGroup, { fontSize: 15 }]}>{set.weight}lbs x {set.reps} reps</Text>
-              </View>
-            ))}
+            <View style={styles.statItemWithIcon}>
+              <Ionicons name="barbell-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+              <Text style={styles.statText}>{Math.round(totalVolume)} lb</Text>
+            </View>
+            <View style={styles.statItemWithIcon}>
+              <Ionicons name="list-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+              <Text style={styles.statText}>{totalSets} sets</Text>
+            </View>
           </View>
-        ))}
+        </View>
+
+        {workout.exercises?.map((exerciseData, idx) => {
+          const exercise = exerciseData.exercises; // Get the exercise details from the joined data
+          return (
+            <View key={exerciseData.workout_exercises_id} style={styles.exerciseCard}>
+              <Text style={styles.exerciseCardTitle}>{exercise.name}</Text>
+              
+              {exerciseData.notes && (
+                <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
+              )}
+              
+              <View style={styles.setHeader}>
+                <Text style={styles.setHeaderText}>SET</Text>
+                <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
+              </View>
+
+              {exerciseData.sets?.map((set, setIdx) => (
+                <View key={set.set_id} style={styles.setRow}>
+                  <Text style={styles.setNumber}>{set.set_order || setIdx + 1}</Text>
+                  <Text style={styles.setValue}>
+                    {set.weight}lb × {set.reps} reps
+                    {set.rir ? ` @RIR ${set.rir}` : ''}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );

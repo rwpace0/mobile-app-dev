@@ -9,7 +9,17 @@ export default async function getExercises() {
   }
 
   const responseData = await response.json();
-  return responseData.data || responseData;
+  return responseData;
+}
+
+export async function getExerciseById(exerciseId) {
+  const response = await fetch(`${getBaseUrl()}/exercises/${exerciseId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch exercise data");
+  }
+
+  const responseData = await response.json();
+  return responseData;
 }
 
 export async function createExercise({ name, equipment, muscle_group }) {
@@ -30,5 +40,29 @@ export async function createExercise({ name, equipment, muscle_group }) {
   } catch (error) {
     console.error('Create exercise error:', error.response?.data || error.message);
     throw error.response?.data || error;
+  }
+}
+
+export async function getExerciseHistory(exerciseId) {
+  try {
+    const token = await storage.getItem('auth_token');
+    if (!token) throw new Error('No auth token found');
+    
+    const response = await fetch(`${getBaseUrl()}/exercises/${exerciseId}/history`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch exercise history");
+    }
+
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error('Get exercise history error:', error.response?.data || error.message);
+    throw error;
   }
 }

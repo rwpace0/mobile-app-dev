@@ -5,19 +5,20 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { WorkoutAPI } from "../API/WorkoutAPI";
-import styles from "../styles/display.styles";
+import styles from "../styles/workout.styles";
+import colors from "../constants/colors";
+import { Spacing } from "../constants/theme";
+import { Ionicons } from '@expo/vector-icons';
 
 const formatDate = (isoString) => {
   const date = new Date(isoString);
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const day = date.toLocaleDateString(undefined, { weekday: 'long' });
+  const month = date.toLocaleDateString(undefined, { month: 'long' });
+  const dateNum = date.getDate();
+  return `${day}, ${month} ${dateNum}`;
 };
 
 const WorkoutHistory = () => {
@@ -41,132 +42,90 @@ const WorkoutHistory = () => {
     fetchWorkouts();
   }, []);
 
-  const renderExercisePreview = (exercises) => {
-    if (!exercises || exercises.length === 0) return null;
-    return exercises.slice(0, 3).map((ex, idx) => {
-      const setCount = ex.sets ? ex.sets.length : 0;
-      let firstSet = "";
-      if (
-        ex.sets &&
-        ex.sets.length > 0 &&
-        ex.sets[0].weight &&
-        ex.sets[0].reps
-      ) {
-        firstSet = `${ex.sets[0].weight} lbs x ${ex.sets[0].reps} reps`;
-      }
-      return (
-        <View
-          key={idx}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 2,
-          }}
-        >
-          <Text style={[styles.exerciseName, { fontSize: 15, marginRight: 6 }]}>
-            {setCount} sets{" "}
-          </Text>
-          <Text
-            style={[
-              styles.exerciseMuscleGroup,
-              { fontSize: 15, marginRight: 6 },
-            ]}
-          >
-            {ex.name}
-          </Text>
-          {firstSet ? (
-            <Text style={[styles.exerciseMuscleGroup, { fontSize: 15 }]}>
-              {firstSet}
-            </Text>
-          ) : null}
-        </View>
-      );
-    });
-  };
-
   const renderWorkoutCard = ({ item }) => {
-    const totalSets = item.exercises
-      ? item.exercises.reduce(
-          (sum, ex) => sum + (ex.sets ? ex.sets.length : 0),
-          0
-        )
-      : 0;
+    const duration = Math.round(item.duration / 60);
+    const volume = item.total_volume || 0;
+    const prs = item.personal_records?.length || 0;
+
     return (
       <TouchableOpacity
-        style={[
-          styles.exerciseItem,
-          {
-            backgroundColor: "#181A20",
-            borderRadius: 12,
-            marginBottom: 16,
-            padding: 16,
-          },
-        ]}
+        style={styles.workoutCard}
         onPress={() => navigation.navigate("WorkoutDetail", { workout: item })}
       >
-        <Text style={[styles.exerciseName, { fontSize: 20, marginBottom: 2 }]}>
-          {item.name}
-        </Text>
-        <Text
-          style={[
-            styles.exerciseMuscleGroup,
-            { fontSize: 15, marginBottom: 2 },
-          ]}
-        >
-          {formatDate(item.date_performed)}
-        </Text>
-        <View style={{ flexDirection: "row", marginBottom: 4 }}>
-          <Text style={[styles.exerciseMuscleGroup, { marginRight: 16 }]}>
-            Duration: {Math.round(item.duration / 60)} min
-          </Text>
-          <Text style={[styles.exerciseMuscleGroup, { marginRight: 16 }]}>
-            Volume: {item.total_volume || 0} lbs
-          </Text>
-          <Text style={styles.exerciseMuscleGroup}>Sets: {totalSets}</Text>
+        <Text style={styles.workoutTitle}>{item.name}</Text>
+        <Text style={styles.workoutDate}>{formatDate(item.date_performed)}</Text>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statItemWithIcon}>
+            <Ionicons name="time-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+            <Text style={styles.statText}>{duration}m</Text>
+          </View>
+          <View style={styles.statItemWithIcon}>
+            <Ionicons name="barbell-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+            <Text style={styles.statText}>{volume} lb</Text>
+          </View>
+          <View style={styles.statItemWithIcon}>
+            <Ionicons name="trophy-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+            <Text style={styles.statText}>{prs} PRs</Text>
+          </View>
         </View>
-        {renderExercisePreview(item.exercises)}
-        {item.exercises && item.exercises.length > 3 && (
-          <Text
-            style={[styles.exerciseMuscleGroup, { fontSize: 14, marginTop: 2 }]}
-          >
-            See {item.exercises.length - 3} more exercises
-          </Text>
-        )}
+
+        <View style={styles.exerciseList}>
+          {item.exercises && item.exercises.map((exercise, index) => {
+            const sets = exercise.sets?.length || 0;
+            const bestSet = exercise.sets?.reduce((best, current) => 
+              (current.weight > best.weight) ? current : best
+            , exercise.sets[0]);
+            
+            return (
+              <View key={index} style={styles.exerciseRow}>
+                <View style={styles.exerciseInfo}>
+                  <Text style={styles.exerciseTitle}>
+                    {sets} × {exercise.name}
+                  </Text>
+                </View>
+                <Text style={styles.bestSet}>
+                  {bestSet ? `${bestSet.weight} lb × ${bestSet.reps}` : ''}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </TouchableOpacity>
     );
   };
 
   if (loading) {
     return (
-      <View style={styles.centerContent}>
-        <ActivityIndicator size="large" color="#47A3FF" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primaryLight} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centerContent}>
+      <View style={styles.loadingContainer}>
         <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
 
-  if (!workouts || workouts.length === 0) {
-    return (
-      <View style={styles.centerContent}>
-        <Text style={styles.emptyListText}>No workout history</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.container, { paddingTop: 16 }]}>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={{ width: 40 }} /> {/* Empty view for spacing */}
+        <Text style={styles.headerTitle}>History</Text>
+        <TouchableOpacity>
+          <Text style={styles.headerAction}>Calendar</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={workouts}
         keyExtractor={(item) => String(item.workout_id || item.id)}
         renderItem={renderWorkoutCard}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingVertical: Spacing.m }}
         showsVerticalScrollIndicator={false}
       />
     </View>

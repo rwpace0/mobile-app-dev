@@ -34,6 +34,14 @@ const HomePage = () => {
         title="Go to Create"
         onPress={() => navigation.navigate("CreateExercise")}
       />
+      <Button
+        title="Go to Exercise Detail"
+        onPress={() => navigation.navigate("ExerciseDetail")}
+      />
+      <Button
+        title="Go to View Exercises"
+        onPress={() => navigation.navigate("ViewExercises")}
+      />
     </View>
   );
 }; 

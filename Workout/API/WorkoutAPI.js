@@ -21,8 +21,6 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-
-
 export const WorkoutAPI = {
   finishWorkout: async (workoutData) => {
     try {
@@ -39,6 +37,15 @@ export const WorkoutAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch workouts:', error.response?.data || error.message);
+      throw error.response?.data || error.message;
+    }
+  },
+  getWorkoutById: async (workoutId) => {
+    try {
+      const response = await api.get(`/${workoutId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch workout details:', error.response?.data || error.message);
       throw error.response?.data || error.message;
     }
   },
