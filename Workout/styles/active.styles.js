@@ -18,50 +18,48 @@ export default StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    paddingVertical: Spacing.l,
   },
   
   headerTitle: {
     color: colors.textWhite,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
+    textAlign: 'center',
+    flex: 1,
   },
-  
-  finishButton: {
-    color: colors.primaryLight,
+
+  headerButton: {
     fontSize: FontSize.medium,
-    fontWeight: FontWeight.semiBold,
+    fontWeight: FontWeight.medium,
+    minWidth: 60,
+  },
+
+  cancelButton: {
+    color: colors.primaryBlue,
+  },
+
+  saveButton: {
+    color: colors.textWhite,
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.s,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    textAlign: 'center',
   },
   
   content: {
     flex: 1,
   },
   
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  
-  statItem: {
-    alignItems: "center",
-  },
-  
-  statLabel: {
-    color: colors.textLight,
-    fontSize: FontSize.small,
-    marginBottom: Spacing.xxs,
-  },
-  
-  statValue: {
+  routineNameInput: {
     color: colors.textWhite,
-    fontSize: FontSize.medium,
-    fontWeight: FontWeight.medium,
+    fontSize: FontSize.large,
+    fontWeight: FontWeight.regular,
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.l,
+    marginBottom: Spacing.m,
   },
   
   emptyWorkoutContainer: {
@@ -98,7 +96,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.primaryBlue,
     paddingVertical: Spacing.s,
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.md,

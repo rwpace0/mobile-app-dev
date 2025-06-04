@@ -99,5 +99,46 @@ export default StyleSheet.create({
     fontSize: FontSize.medium,
     textAlign: "center",
   },
-  
+
+  // Template list styles
+  templateContainer: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.m,
+    marginBottom: Spacing.m,
+  },
+
+  templateHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xs,
+  },
+
+  templateName: {
+    color: colors.textWhite,
+    fontSize: FontSize.large,
+    fontWeight: FontWeight.semiBold,
+  },
+
+  templateExercises: {
+    color: colors.textLight,
+    fontSize: FontSize.base,
+    marginBottom: Spacing.m,
+    lineHeight: 22,
+  },
+
+  startRoutineButton: {
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+  },
+
+  startRoutineText: {
+    color: colors.textWhite,
+    fontSize: FontSize.medium,
+    fontWeight: FontWeight.semiBold,
+  },
 });

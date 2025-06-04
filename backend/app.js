@@ -16,6 +16,7 @@ import indexRouter from "./routes/index.js";
 import usersRouter from "./routes/users.js";
 import exerciseRouter from "./routes/exercises.js";
 import authRoutes from './routes/auth.js';
+import templatesRouter from './routes/templates.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,6 +66,7 @@ app.use("/users", usersRouter);
 app.use("/exercises", exerciseRouter);
 app.use('/auth', authRoutes);
 app.use('/workouts', workoutsRouter);
+app.use('/templates', templatesRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

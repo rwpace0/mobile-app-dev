@@ -7,9 +7,9 @@ export default {
   divider: '#2A2A2A',
   
   // primary colors
-  primaryBlue: '#1E90FF',     // main action color
-  primaryLight: '#47A3FF',    // lighter variant for hover states
-  primaryDark: '#0070D6',     // darker variant for pressed states
+  primaryBlue: '#007AFF',     // iOS blue
+  primaryLight: '#409CFF',    // lighter iOS blue
+  primaryDark: '#0062CC',     // darker iOS blue
   
   // Text colors
   textWhite: '#FFFFFF',       // primary text
@@ -29,4 +29,7 @@ export default {
   overlayDark: 'rgba(0, 0, 0, 0.7)',
   overlayMedium: 'rgba(0, 0, 0, 0.5)',
   overlayLight: 'rgba(0, 0, 0, 0.3)',
+
+  // iOS specific
+  iosGray: '#AEAEB2',        // iOS gray for buttons
 };

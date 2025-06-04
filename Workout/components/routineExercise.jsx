@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "../styles/activeExercise.styles";
@@ -6,8 +6,12 @@ import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 
-const RoutineExerciseComponent = ({ exercise, onRemoveExercise }) => {
-  const [sets, setSets] = useState([{ id: "1" }]);
+const RoutineExerciseComponent = ({ exercise, onRemoveExercise, onUpdateSets }) => {
+  // Initialize sets based on exercise.sets or default to 1 set
+  const [sets, setSets] = useState(() => {
+    const numSets = exercise.sets || 1;
+    return Array.from({ length: numSets }, (_, i) => ({ id: (i + 1).toString() }));
+  });
   const [notes, setNotes] = useState("");
   const [restTime, setRestTime] = useState(150); // 2:30 default
   const [showRestTimer, setShowRestTimer] = useState(false);
@@ -16,11 +20,15 @@ const RoutineExerciseComponent = ({ exercise, onRemoveExercise }) => {
   const handleAddSet = () => {
     const lastSet = sets[sets.length - 1];
     const newSetId = (parseInt(lastSet.id) + 1).toString();
-    setSets([...sets, { id: newSetId }]);
+    const newSets = [...sets, { id: newSetId }];
+    setSets(newSets);
+    onUpdateSets?.(exercise.exercise_id, newSets.length);
   };
 
   const handleDeleteSet = (setId) => {
-    setSets(prev => prev.filter(set => set.id !== setId));
+    const newSets = sets.filter(set => set.id !== setId);
+    setSets(newSets);
+    onUpdateSets?.(exercise.exercise_id, newSets.length);
   };
 
   const handleRestTimeSelect = (seconds) => {

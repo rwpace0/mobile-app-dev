@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import styles from "../styles/active.styles";
 import RoutineExerciseComponent from "../components/routineExercise";
+import { templateAPI } from "../API/createTemplate";
+import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 
 const RoutineCreate = () => {
   const navigation = useNavigation();
@@ -18,6 +21,8 @@ const RoutineCreate = () => {
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
   const [totalSets, setTotalSets] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     // Handle receiving new exercises from DisplayPage
@@ -39,16 +44,72 @@ const RoutineCreate = () => {
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    if (routineName.trim() || exercises.length > 0) {
+      setShowCancelConfirm(true);
+    } else {
+      navigation.goBack();
+    }
   };
 
-  const handleSave = () => {
+  const handleUpdateSets = (exerciseId, numSets) => {
+    setExercises((prev) =>
+      prev.map((ex) =>
+        ex.exercise_id === exerciseId ? { ...ex, sets: numSets } : ex
+      )
+    );
+  };
+
+  const handleSave = async () => {
+    console.log("Save button pressed");
+
+    // Validate routine name
     if (!routineName.trim()) {
-      // Show error that routine name is required
+      Alert.alert("Error", "Please enter a routine name");
       return;
     }
-    // TODO: Save routine
-    navigation.goBack();
+
+    if (exercises.length === 0) {
+      Alert.alert("Error", "Please add at least one exercise");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      console.log("Current exercises:", exercises);
+
+      // Transform exercises to match backend format
+      const exercisesPayload = exercises.map((exercise, index) => ({
+        exercise_id: exercise.exercise_id,
+        exercise_order: index + 1,
+        sets: exercise.sets || 1,
+      }));
+
+      console.log("Exercises payload:", exercisesPayload);
+
+      const templateData = {
+        name: routineName.trim(), // Make sure name is properly set
+        is_public: false,
+        exercises: exercisesPayload,
+      };
+
+      console.log("Sending template data:", templateData);
+      const response = await templateAPI.createTemplate(templateData);
+      console.log("Template save response:", response);
+
+      Alert.alert("Success", "Template saved successfully!", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
+    } catch (error) {
+      console.error("Failed to save template:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.error ||
+          error.message ||
+          "Failed to save template. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDiscard = () => {
@@ -69,8 +130,17 @@ const RoutineCreate = () => {
           <Text style={[styles.headerButton, styles.cancelButton]}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Routine</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={[styles.headerButton, styles.saveButton]}>Save</Text>
+        <TouchableOpacity
+          onPress={() => {
+            console.log("Save button pressed - immediate log");
+            Alert.alert("Debug", "Save button pressed");
+            handleSave();
+          }}
+          disabled={isSaving}
+        >
+          <Text style={[styles.headerButton, styles.saveButton]}>
+            {isSaving ? "Saving..." : "Save"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -82,13 +152,6 @@ const RoutineCreate = () => {
           value={routineName}
           onChangeText={setRoutineName}
         />
-
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Sets</Text>
-            <Text style={styles.statValue}>{totalSets}</Text>
-          </View>
-        </View>
 
         {exercises.length === 0 ? (
           <View style={styles.emptyWorkoutContainer}>
@@ -115,7 +178,10 @@ const RoutineCreate = () => {
                 key={exercise.exercise_id}
                 exercise={exercise}
                 onUpdateTotals={updateTotals}
-                onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
+                onRemoveExercise={() =>
+                  handleRemoveExercise(exercise.exercise_id)
+                }
+                onUpdateSets={handleUpdateSets}
               />
             ))}
 
@@ -130,15 +196,12 @@ const RoutineCreate = () => {
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Text style={styles.settingsText}>Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-          <Text style={styles.discardText}>Discard Routine</Text>
-        </TouchableOpacity>
-      </View>
+      <DeleteConfirmModal
+        visible={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={() => navigation.goBack()}
+        title="Discard Changes?"
+      />
     </SafeAreaView>
   );
 };

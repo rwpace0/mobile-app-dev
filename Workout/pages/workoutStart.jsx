@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import {
   View,
@@ -6,14 +6,37 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../constants/colors";
 import styles from "../styles/start.styles";
+import { templateAPI } from "../API/createTemplate";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
   const [workoutActive, setWorkoutActive] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const fetchTemplates = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await templateAPI.getTemplates();
+      setTemplates(data);
+    } catch (err) {
+      console.error("Failed to fetch templates:", err);
+      setError("Failed to load templates");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStartEmptyWorkout = () => {
     console.log("Starting empty workout");
@@ -32,6 +55,59 @@ const WorkoutStartPage = () => {
   const handleExplore = () => {
     console.log("Explore routines");
     // navigation.navigate("ExploreRoutinesPage");
+  };
+
+  const handleStartRoutine = (template) => {
+    // TODO: Implement start routine functionality
+    console.log("Starting routine:", template.name);
+  };
+
+  const renderTemplateList = () => {
+    if (loading) {
+      return (
+        <View style={styles.emptyRoutinesContainer}>
+          <ActivityIndicator color={colors.primaryBlue} />
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.emptyRoutinesContainer}>
+          <Text style={styles.emptyRoutinesText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (!templates || templates.length === 0) {
+      return (
+        <View style={styles.emptyRoutinesContainer}>
+          <Text style={styles.emptyRoutinesText}>
+            No routines created yet. Create a new routine to get started.
+          </Text>
+        </View>
+      );
+    }
+
+    return templates.map((template) => (
+      <View key={template.template_id} style={styles.templateContainer}>
+        <View style={styles.templateHeader}>
+          <Text style={styles.templateName}>{template.name}</Text>
+          <TouchableOpacity>
+            <Ionicons name="ellipsis-horizontal" size={24} color={colors.textLight} />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.templateExercises}>
+          {template.exercises.map(ex => ex.name).join(", ")}
+        </Text>
+        <TouchableOpacity
+          style={styles.startRoutineButton}
+          onPress={() => handleStartRoutine(template)}
+        >
+          <Text style={styles.startRoutineText}>Start Routine</Text>
+        </TouchableOpacity>
+      </View>
+    ));
   };
 
   return (
@@ -95,12 +171,8 @@ const WorkoutStartPage = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Message: no routines yet */}
-          <View style={styles.emptyRoutinesContainer}>
-            <Text style={styles.emptyRoutinesText}>
-              No routines created yet. Create a new routine to get started.
-            </Text>
-          </View>
+          {/* Templates List */}
+          {renderTemplateList()}
         </View>
       </ScrollView>
     </SafeAreaView>
