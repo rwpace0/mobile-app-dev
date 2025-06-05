@@ -21,13 +21,20 @@ const WorkoutActivePage = () => {
   const [totalSets, setTotalSets] = useState(0);
   const [timer, setTimer] = useState(null);
   const [exerciseStates, setExerciseStates] = useState({});
+  const [workoutName, setWorkoutName] = useState("");
 
   useEffect(() => {
     // Handle receiving new exercises from DisplayPage
     if (route.params?.selectedExercises) {
       setExercises((prev) => [...prev, ...route.params.selectedExercises]);
+
+      // Set workout name if provided from template
+      if (route.params?.workoutName) {
+        setWorkoutName(route.params.workoutName);
+      }
+
       // Clear the params to prevent re-adding on re-render
-      navigation.setParams({ selectedExercises: undefined });
+      navigation.setParams({ selectedExercises: undefined, workoutName: undefined });
     }
   }, [route.params?.selectedExercises]);
 
@@ -76,7 +83,7 @@ const WorkoutActivePage = () => {
     try {
       // Build workout name and date
       const now = new Date();
-      const workoutName = `Workout on ${now.toLocaleDateString()}`;
+      const workoutName = this.workoutName || `Workout on ${now.toLocaleDateString()}`;
       const datePerformed = now.toISOString();
       // Build exercises array
       const exercisesPayload = exercises.map((exercise) => {

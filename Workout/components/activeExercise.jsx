@@ -8,9 +8,9 @@ import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 
 const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, onStateChange }) => {
-  const [sets, setSets] = useState([
-    { id: "1", weight: "", reps: "", total: "", completed: false },
-  ]);
+  const [sets, setSets] = useState(
+    exercise.sets || [{ id: "1", weight: "", reps: "", total: "", completed: false }]
+  );
   const [notes, setNotes] = useState("");
   const [restTime, setRestTime] = useState(150); // 2:30 default
   const [showRestTimer, setShowRestTimer] = useState(false);

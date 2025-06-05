@@ -58,8 +58,29 @@ const WorkoutStartPage = () => {
   };
 
   const handleStartRoutine = (template) => {
-    // TODO: Implement start routine functionality
-    console.log("Starting routine:", template.name);
+    // Transform template exercises into the format expected by WorkoutActive
+    const selectedExercises = template.exercises.map(exercise => {
+      // Create empty sets array based on the template's set count
+      const emptySets = Array(exercise.sets).fill().map((_, idx) => ({
+        id: (idx + 1).toString(),
+        weight: "",
+        reps: "",
+        total: "",
+        completed: false
+      }));
+
+      return {
+        exercise_id: exercise.exercise_id,
+        name: exercise.name,
+        sets: emptySets
+      };
+    });
+
+    // Navigate to WorkoutActive with the exercises
+    navigation.navigate("WorkoutActive", {
+      selectedExercises,
+      workoutName: template.name
+    });
   };
 
   const renderTemplateList = () => {
