@@ -8,9 +8,9 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import styles from "../styles/workout.styles";
+import styles from "../styles/workoutHistory.styles";
 import colors from "../constants/colors";
-import { WorkoutAPI } from "../API/WorkoutAPI";
+import { WorkoutAPI } from "../API/workoutAPI";
 
 const formatDate = (isoString) => {
   const date = new Date(isoString);

@@ -234,11 +234,11 @@ export async function finishWorkout(req, res) {
       return res.status(401).json({ error: "No token provided" });
     }
     // Get user data from Supabase
-    const supabase = getClientToken(token);
+    const supabaseWithAuth = getClientToken(token);
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } = await supabaseWithAuth.auth.getUser(token);
     if (userError || !user) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
@@ -259,7 +259,7 @@ export async function finishWorkout(req, res) {
       date_performed,
       duration: duration || 0,
     });
-    const { data: workoutData, error: workoutError } = await supabase
+    const { data: workoutData, error: workoutError } = await supabaseWithAuth
       .from("workouts")
       .insert([
         {
@@ -287,7 +287,7 @@ export async function finishWorkout(req, res) {
       notes: ex.notes || "",
     }));
     const { data: workoutExercisesData, error: workoutExercisesError } =
-      await supabase
+      await supabaseWithAuth
         .from("workout_exercises")
         .insert(workoutExercisesToInsert)
         .select();
@@ -315,7 +315,7 @@ export async function finishWorkout(req, res) {
     });
     let insertedSets = [];
     if (setsToInsert.length > 0) {
-      const { data: setsData, error: setsError } = await supabase
+      const { data: setsData, error: setsError } = await supabaseWithAuth
         .from("sets")
         .insert(setsToInsert)
         .select();

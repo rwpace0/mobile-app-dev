@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { getExerciseById, getExerciseHistory } from "../API/getExercises";
+import { getExerciseById, getExerciseHistory } from "../API/exercisesAPI";
 import styles from "../styles/exerciseDetail.styles";
 import { format } from "date-fns";
 

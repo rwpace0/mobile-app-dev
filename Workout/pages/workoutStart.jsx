@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../constants/colors";
 import styles from "../styles/start.styles";
-import { templateAPI } from "../API/createTemplate";
+import { templateAPI } from "../API/templateAPI";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();

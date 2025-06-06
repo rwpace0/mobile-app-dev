@@ -7,7 +7,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-import { useAuth } from "../API/AuthContext";
+import { useAuth } from "../API/authContext";
 import styles from "../styles/login.styles";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../constants/colors";

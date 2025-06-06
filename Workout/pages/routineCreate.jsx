@@ -10,9 +10,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import styles from "../styles/active.styles";
-import RoutineExerciseComponent from "../components/routineExercise";
-import { templateAPI } from "../API/createTemplate";
+import styles from "../styles/workoutPages.styles";
+import RoutineExerciseComponent from "../components/routineExerciseCard";
+import { templateAPI } from "../API/templateAPI";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 
 const RoutineCreate = () => {

@@ -7,8 +7,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { WorkoutAPI } from "../API/WorkoutAPI";
-import styles from "../styles/workout.styles";
+import { WorkoutAPI } from "../API/workoutAPI";
+import styles from "../styles/workoutHistory.styles";
 import colors from "../constants/colors";
 import { Spacing } from "../constants/theme";
 import { Ionicons } from '@expo/vector-icons';

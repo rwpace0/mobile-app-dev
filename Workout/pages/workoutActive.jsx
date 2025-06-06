@@ -8,9 +8,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import styles from "../styles/active.styles";
-import ActiveExerciseComponent from "../components/activeExercise";
-import { finishWorkout } from "../API/finishWorkout";
+import styles from "../styles/workoutPages.styles";
+import ActiveExerciseComponent from "../components/activeExerciseCard";
+import { WorkoutAPI } from "../API/workoutAPI";
 
 const WorkoutActivePage = () => {
   const navigation = useNavigation();
@@ -112,7 +112,7 @@ const WorkoutActivePage = () => {
         exercises: exercisesPayload,
       };
       console.log(payload);
-      await finishWorkout.finishWorkout(payload);
+      await WorkoutAPI.finishWorkout(payload);
       console.log("Workout saved successfully!");
       navigation.goBack();
     } catch (err) {

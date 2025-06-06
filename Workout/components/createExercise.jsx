@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import createStyles from '../styles/createExercise.styles';
-import { createExercise as createExerciseAPI } from '../API/getExercises';
+import { createExercise as createExerciseAPI } from '../API/exercisesAPI';
 
 const equipmentOptions = [
   "Dumbbell",

@@ -9,7 +9,7 @@ import {
   Spacing,
   BorderRadius,
 } from "../constants/theme";
-import { getWorkoutCountsByWeek } from "../API/finishWorkout";
+import { WorkoutAPI } from "../API/workoutAPI";
 
 const CHART_HEIGHT = 180;
 const CHART_MARGIN = Spacing.m;
@@ -28,7 +28,7 @@ const WorkoutCountGraph = ({ timeRange = 8 }) => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getWorkoutCountsByWeek();
+        const response = await WorkoutAPI.getWorkoutCountsByWeek();
         setData(response);
       } catch (err) {
         setError(err.message || "Failed to fetch workout data");

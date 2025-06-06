@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useAuth } from '../API/AuthContext';
+import { useAuth } from '../API/authContext';
 import getBaseUrl from '../API/getBaseUrl';
 
 const EmailVerification = () => {

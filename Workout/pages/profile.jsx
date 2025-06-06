@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../API/AuthContext';
+import { useAuth } from '../API/authContext';
 import styles from '../styles/profile.styles';
 import colors from '../constants/colors';
 import WorkoutCountGraph from '../graphs/WorkoutCountGraph';

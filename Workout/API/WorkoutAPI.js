@@ -2,6 +2,7 @@ import axios from 'axios';
 import { storage } from './tokenStorage';
 import getBaseUrl from './getBaseUrl';
 
+
 const API_URL = `${getBaseUrl()}/workouts`;
 
 const api = axios.create({
@@ -46,6 +47,15 @@ export const WorkoutAPI = {
       return response.data;
     } catch (error) {
       console.error('Failed to fetch workout details:', error.response?.data || error.message);
+      throw error.response?.data || error.message;
+    }
+  },
+  getWorkoutCountsByWeek: async () => {
+    try {
+      const response = await api.get('/weekly-counts');
+      return response.data;
+    } catch (error) {
+      console.error('Workout counts error:', error.response?.data || error.message);
       throw error.response?.data || error.message;
     }
   },
