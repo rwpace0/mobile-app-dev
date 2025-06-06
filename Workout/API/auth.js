@@ -47,9 +47,9 @@ api.interceptors.response.use(
 
 export const authAPI = {
   // Sign up new user
-  signup: async (email, password) => {
+  signup: async (email, password, username) => {
     try {
-      const response = await api.post('/signup', { email, password });
+      const response = await api.post('/signup', { email, password, username });
       console.log('Signup response:', response.data);
       return response.data;
     } catch (error) {
@@ -127,6 +127,17 @@ export const authAPI = {
       // If token is invalid, remove it
       await storage.removeItem('auth_token');
       return false;
+    }
+  },
+
+  // Update username
+  updateUsername: async (username) => {
+    try {
+      const response = await api.post('/auth/update-username', { username });
+      return response.data;
+    } catch (error) {
+      console.error('Update username error:', error);
+      throw error;
     }
   },
 }; 

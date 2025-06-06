@@ -339,3 +339,88 @@ export async function finishWorkout(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
+export async function getWorkoutCountsByWeek(req, res) {
+  try {
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "No authorization header" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+    const supabaseWithAuth = getClientToken(token);
+    // Get user data from Supabase
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseWithAuth.auth.getUser(token);
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    // Create a client with the user's token
+    
+
+    // Calculate date range (8 weeks ago from now)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (8 * 7)); // 8 weeks ago
+
+    // Query workouts within date range
+    const { data: workouts, error } = await supabaseWithAuth
+      .from("workouts")
+      .select("date_performed")
+      .eq("user_id", user.id)
+      .gte("date_performed", startDate.toISOString())
+      .lte("date_performed", endDate.toISOString())
+      .order("date_performed", { ascending: true });
+
+    if (error) {
+      console.error("Database query error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    // Initialize weeks array with dates and counts
+    const weeks = [];
+    for (let i = 0; i < 8; i++) {
+      const weekStart = new Date(endDate);
+      weekStart.setDate(weekStart.getDate() - (7 * (7 - i)));
+      weeks.push({
+        weekStart: weekStart.toISOString().split("T")[0],
+        count: 0
+      });
+    }
+
+    // Count workouts per week
+    workouts.forEach(workout => {
+      const workoutDate = new Date(workout.date_performed);
+      for (let i = 0; i < weeks.length; i++) {
+        const weekStart = new Date(weeks[i].weekStart);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        
+        if (workoutDate >= weekStart && workoutDate < weekEnd) {
+          weeks[i].count++;
+          break;
+        }
+      }
+    });
+
+    // Format response
+    const response = {
+      weeks: weeks.map(w => w.weekStart),
+      counts: weeks.map(w => w.count)
+    };
+
+    res.json(response);
+  } catch (err) {
+    console.error("Network or unexpected error:", err);
+    res.status(500).json({
+      error: "Failed to fetch workout counts",
+      message: err.message,
+    });
+  }
+}

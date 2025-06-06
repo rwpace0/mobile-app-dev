@@ -129,11 +129,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (email, password) => {
+  const signup = async (email, password, username) => {
     try {
       setError(null);
-      console.log('Attempting signup for:', email);
-      const data = await authAPI.signup(email, password);
+      console.log('Attempting signup for:', email, 'with username:', username);
+      const data = await authAPI.signup(email, password, username);
       console.log('Signup successful:', data);
       
       // Set user as unverified after signup
@@ -190,6 +190,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUsername = async (username) => {
+    try {
+      setError(null);
+      const response = await authAPI.updateUsername(username);
+      setUser(prev => ({ ...prev, username }));
+      return response;
+    } catch (error) {
+      console.error('Username update failed:', error);
+      const errorMessage = error.message || 'Failed to update username. Please try again.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -199,6 +213,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     resetPassword,
     verifyEmail,
+    updateUsername,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

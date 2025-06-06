@@ -41,6 +41,7 @@ const WorkoutStartPage = () => {
   const handleStartEmptyWorkout = () => {
     console.log("Starting empty workout");
     setWorkoutActive(true);
+    navigation.navigate("WorkoutActive");
   };
 
   const handleCloseWorkout = () => {

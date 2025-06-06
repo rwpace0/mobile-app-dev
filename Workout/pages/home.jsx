@@ -38,6 +38,10 @@ const HomePage = () => {
         title="Go to View Exercises"
         onPress={() => navigation.navigate("ViewExercises")}
       />
+      <Button
+        title="Go to History"
+        onPress={() => navigation.navigate("WorkoutHistory")}
+      />
     </View>
   );
 }; 

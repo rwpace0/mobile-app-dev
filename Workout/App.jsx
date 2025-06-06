@@ -19,6 +19,8 @@ import WorkoutHistory from "./pages/WorkoutHistory";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import ExerciseDetail from "./pages/exerciseDetail";
 import ViewExercises from "./pages/viewExercises";
+import Profile from "./pages/profile";
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +42,7 @@ const MainStack = () => (
     <Tab.Screen name="Home" component={HomePage} />
     <Tab.Screen name="AddExercise" component={AddExercisePage} />
     <Tab.Screen name="Start" component={WorkoutStartPage} />
+    <Tab.Screen name="Profile" component={Profile} />
     <Tab.Screen name="WorkoutActive" component={WorkoutActivePage} />
     <Tab.Screen name="RoutineCreate" component={RoutineCreate} />
     <Tab.Screen name="CreateExercise" component={CreateExercise} />

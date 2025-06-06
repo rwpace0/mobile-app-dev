@@ -29,13 +29,26 @@ export const getMe = async (req, res) => {
       console.log('User data retrieved:', user);
       console.log(token);
 
-      // Return user data including verification status
+      // Get profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error getting profile data:', profileError);
+        return res.status(500).json({ error: 'Failed to get profile data' });
+      }
+
+      // Return user data including verification status and profile
       return res.status(200).json({
         id: user.id,
         email: user.email,
         email_confirmed_at: user.email_confirmed_at,
         created_at: user.created_at,
-        updated_at: user.updated_at
+        updated_at: user.updated_at,
+        ...profile
       });
     } catch (error) {
       console.error('Token validation error:', error);

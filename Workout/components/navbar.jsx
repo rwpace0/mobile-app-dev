@@ -25,7 +25,7 @@ const Navbar = ({ state, descriptors, navigation }) => {
           iconName = isFocused ? "barbell" : "barbell-outline";
         } else if (route.name === "AddExercise") {
           iconName = isFocused ? "stats-chart" : "stats-chart-outline";
-        } else if (route.name === "Login" || route.name === "SignUp") {
+        } else if (route.name === "Profile") {
           iconName = isFocused ? "person" : "person-outline";
         } else {
           iconName = isFocused ? "apps" : "apps-outline";
@@ -39,7 +39,9 @@ const Navbar = ({ state, descriptors, navigation }) => {
           route.name === "RoutineCreate" ||
           route.name === "CreateExercise" ||
           route.name === "WorkoutDetail" ||
-          route.name === "ExerciseDetail" 
+          route.name === "ExerciseDetail" ||
+          route.name === "WorkoutHistory" ||
+          route.name === "ViewExercises"
         ) {
           return null;
         }
