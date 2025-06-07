@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import createStyles from '../styles/createExercise.styles';
-import { createExercise as createExerciseAPI } from '../API/exercisesAPI';
+import createStyles from "../styles/createExercise.styles";
+import { createExercise as createExerciseAPI } from "../API/exercisesAPI";
 
 const equipmentOptions = [
   "Dumbbell",
@@ -45,13 +45,13 @@ const CreateExercise = () => {
   const [primaryMuscle, setPrimaryMuscle] = useState("");
   const [errors, setErrors] = useState({});
   const [openDropdown, setOpenDropdown] = useState(null); // 'equipment' or 'muscle' or null
-  
 
   const validate = () => {
     const newErrors = {};
     if (!name.trim()) newErrors.name = "Exercise name is required.";
     if (!equipment.trim()) newErrors.equipment = "Equipment is required.";
-    if (!primaryMuscle.trim()) newErrors.primaryMuscle = "Primary muscle group is required.";
+    if (!primaryMuscle.trim())
+      newErrors.primaryMuscle = "Primary muscle group is required.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -67,12 +67,12 @@ const CreateExercise = () => {
         navigation.goBack();
       } catch (error) {
         // Show validation errors if present
-        if (error && error.error === 'Missing required fields') {
-          setErrors({ form: 'Please fill in all required fields.' });
+        if (error && error.error === "Missing required fields") {
+          setErrors({ form: "Please fill in all required fields." });
         } else {
-          setErrors({ form: 'Failed to create exercise.' });
+          setErrors({ form: "Failed to create exercise." });
         }
-        console.log('Create exercise error:', error);
+        console.log("Create exercise error:", error);
       }
     }
   };
@@ -88,7 +88,10 @@ const CreateExercise = () => {
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         <Text
-          style={[createStyles.headerActionText, { flex: 1, textAlign: "center" }]}
+          style={[
+            createStyles.headerActionText,
+            { flex: 1, textAlign: "center" },
+          ]}
         >
           Create Exercise
         </Text>
@@ -117,24 +120,34 @@ const CreateExercise = () => {
             value={name}
             onChangeText={setName}
           />
-          {errors.name && <Text style={createStyles.errorText}>{errors.name}</Text>}
+          {errors.name && (
+            <Text style={createStyles.errorText}>{errors.name}</Text>
+          )}
 
           {/* Equipment Dropdown */}
           <Text style={[createStyles.label, { marginTop: 16 }]}>Equipment</Text>
           <TouchableOpacity
-            style={[createStyles.input, createStyles.dropdown, errors.equipment && createStyles.inputError]}
-            onPress={() => setOpenDropdown(openDropdown === 'equipment' ? null : 'equipment')}
+            style={[
+              createStyles.input,
+              createStyles.dropdown,
+              errors.equipment && createStyles.inputError,
+            ]}
+            onPress={() =>
+              setOpenDropdown(openDropdown === "equipment" ? null : "equipment")
+            }
           >
-            <Text style={{ color: equipment ? '#fff' : '#999', flex: 1 }}>
+            <Text style={{ color: equipment ? "#fff" : "#999", flex: 1 }}>
               {equipment || "Select equipment"}
             </Text>
             <Ionicons
-              name={openDropdown === 'equipment' ? "chevron-up" : "chevron-down"}
+              name={
+                openDropdown === "equipment" ? "chevron-up" : "chevron-down"
+              }
               size={20}
               color="#999"
             />
           </TouchableOpacity>
-          {openDropdown === 'equipment' && (
+          {openDropdown === "equipment" && (
             <View style={createStyles.dropdownMenu}>
               <ScrollView style={{ maxHeight: 200 }}>
                 {equipmentOptions.map((option) => (
@@ -155,24 +168,34 @@ const CreateExercise = () => {
               </ScrollView>
             </View>
           )}
-          {errors.equipment && <Text style={createStyles.errorText}>{errors.equipment}</Text>}
+          {errors.equipment && (
+            <Text style={createStyles.errorText}>{errors.equipment}</Text>
+          )}
 
           {/* Primary Muscle Group Dropdown */}
-          <Text style={[createStyles.label, { marginTop: 16 }]}>Primary Muscle Group</Text>
+          <Text style={[createStyles.label, { marginTop: 16 }]}>
+            Primary Muscle Group
+          </Text>
           <TouchableOpacity
-            style={[createStyles.input, createStyles.dropdown, errors.primaryMuscle && createStyles.inputError]}
-            onPress={() => setOpenDropdown(openDropdown === 'muscle' ? null : 'muscle')}
+            style={[
+              createStyles.input,
+              createStyles.dropdown,
+              errors.primaryMuscle && createStyles.inputError,
+            ]}
+            onPress={() =>
+              setOpenDropdown(openDropdown === "muscle" ? null : "muscle")
+            }
           >
-            <Text style={{ color: primaryMuscle ? '#fff' : '#999', flex: 1 }}>
+            <Text style={{ color: primaryMuscle ? "#fff" : "#999", flex: 1 }}>
               {primaryMuscle || "Select muscle group"}
             </Text>
             <Ionicons
-              name={openDropdown === 'muscle' ? "chevron-up" : "chevron-down"}
+              name={openDropdown === "muscle" ? "chevron-up" : "chevron-down"}
               size={20}
               color="#999"
             />
           </TouchableOpacity>
-          {openDropdown === 'muscle' && (
+          {openDropdown === "muscle" && (
             <View style={createStyles.dropdownMenu}>
               <ScrollView style={{ maxHeight: 200 }}>
                 {muscleOptions.map((option) => (
@@ -180,7 +203,8 @@ const CreateExercise = () => {
                     key={option}
                     style={[
                       createStyles.dropdownItem,
-                      primaryMuscle === option && createStyles.dropdownItemSelected,
+                      primaryMuscle === option &&
+                        createStyles.dropdownItemSelected,
                     ]}
                     onPress={() => {
                       setPrimaryMuscle(option);
@@ -193,9 +217,13 @@ const CreateExercise = () => {
               </ScrollView>
             </View>
           )}
-          {errors.primaryMuscle && <Text style={createStyles.errorText}>{errors.primaryMuscle}</Text>}
+          {errors.primaryMuscle && (
+            <Text style={createStyles.errorText}>{errors.primaryMuscle}</Text>
+          )}
 
-          {errors.form && <Text style={createStyles.errorText}>{errors.form}</Text>}
+          {errors.form && (
+            <Text style={createStyles.errorText}>{errors.form}</Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

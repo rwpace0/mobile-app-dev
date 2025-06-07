@@ -62,7 +62,11 @@ const Navbar = ({ state, descriptors, navigation }) => {
           <TouchableOpacity
             key={route.key}
             onPress={onPress}
-            style={isFocused ? [styles.tabItem, styles.tabItemActive] : styles.tabItem}
+            style={
+              isFocused
+                ? [styles.tabItem, styles.tabItemActive]
+                : styles.tabItem
+            }
           >
             <Ionicons
               name={iconName}

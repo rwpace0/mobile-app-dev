@@ -81,9 +81,7 @@ const ViewExercisesPage = () => {
           ?.toLowerCase()
           .includes(searchTermLower);
 
-        return (
-          nameMatch || muscleGroupMatch || instructionMatch
-        );
+        return nameMatch || muscleGroupMatch || instructionMatch;
       });
       setFilteredExercises(filtered);
     } else {
@@ -93,7 +91,7 @@ const ViewExercisesPage = () => {
 
   const handleExercisePress = (exercise) => {
     navigation.navigate("ExerciseDetail", {
-      exerciseId: exercise.exercise_id
+      exerciseId: exercise.exercise_id,
     });
   };
 
@@ -105,11 +103,7 @@ const ViewExercisesPage = () => {
       >
         <View style={styles.exerciseRow}>
           <View style={styles.exerciseIconContainer}>
-            <Ionicons
-              name="fitness-outline"
-              size={28}
-              color="#BBBBBB"
-            />
+            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
           </View>
           <View style={styles.exerciseDetails}>
             <HighlightText
@@ -122,11 +116,7 @@ const ViewExercisesPage = () => {
                 item.muscle_group.slice(1)}
             </Text>
           </View>
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color="#777777"
-          />
+          <Ionicons name="chevron-forward" size={24} color="#777777" />
         </View>
       </TouchableOpacity>
     );
@@ -159,7 +149,7 @@ const ViewExercisesPage = () => {
         </TouchableOpacity>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('CreateExercise')}
+            onPress={() => navigation.navigate("CreateExercise")}
           >
             <Text style={styles.headerActionText}>Create</Text>
           </TouchableOpacity>
@@ -218,4 +208,4 @@ const ViewExercisesPage = () => {
   );
 };
 
-export default ViewExercisesPage; 
+export default ViewExercisesPage;

@@ -82,9 +82,7 @@ const AddExercisePage = ({ route }) => {
           ?.toLowerCase()
           .includes(searchTermLower);
 
-        return (
-          nameMatch || muscleGroupMatch || instructionMatch
-        );
+        return nameMatch || muscleGroupMatch || instructionMatch;
       });
       setFilteredExercises(filtered);
     } else {
@@ -94,7 +92,9 @@ const AddExercisePage = ({ route }) => {
 
   const handleExerciseSelect = (exercise) => {
     setSelectedExercises((prev) => {
-      const isSelected = prev.some((e) => e.exercise_id === exercise.exercise_id);
+      const isSelected = prev.some(
+        (e) => e.exercise_id === exercise.exercise_id
+      );
       if (isSelected) {
         return prev.filter((e) => e.exercise_id !== exercise.exercise_id);
       } else {
@@ -122,7 +122,9 @@ const AddExercisePage = ({ route }) => {
   };
 
   const renderExerciseItem = ({ item }) => {
-    const isSelected = selectedExercises.some((e) => e.exercise_id === item.exercise_id);
+    const isSelected = selectedExercises.some(
+      (e) => e.exercise_id === item.exercise_id
+    );
 
     return (
       <TouchableOpacity
@@ -183,7 +185,7 @@ const AddExercisePage = ({ route }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={{ marginLeft: 16 }}
-            onPress={() => navigation.navigate('CreateExercise')}
+            onPress={() => navigation.navigate("CreateExercise")}
           >
             <Text style={styles.headerActionText}>Create</Text>
           </TouchableOpacity>

@@ -7,9 +7,16 @@ import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 
-const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, onStateChange }) => {
+const ActiveExerciseComponent = ({
+  exercise,
+  onUpdateTotals,
+  onRemoveExercise,
+  onStateChange,
+}) => {
   const [sets, setSets] = useState(
-    exercise.sets || [{ id: "1", weight: "", reps: "", total: "", completed: false }]
+    exercise.sets || [
+      { id: "1", weight: "", reps: "", total: "", completed: false },
+    ]
   );
   const [notes, setNotes] = useState("");
   const [restTime, setRestTime] = useState(150); // 2:30 default
@@ -20,7 +27,9 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, o
 
   // update total completed sets whenever sets change
   useEffect(() => {
-    const completedSets = sets.filter(set => set.completed && set.id !== "W").length;
+    const completedSets = sets.filter(
+      (set) => set.completed && set.id !== "W"
+    ).length;
     const totalVolume = sets.reduce((acc, set) => {
       if (set.completed && set.id !== "W") {
         return acc + (parseFloat(set.total) || 0);
@@ -58,72 +67,81 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, o
     if (seconds === 0) return "Off";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   const handleWeightChange = (id, value) => {
-    setSets(prev => prev.map(set => {
-      if (set.id === id) {
-        const weight = parseFloat(value) || 0;
-        const reps = parseFloat(set.reps) || 0;
-        return {
-          ...set,
-          weight: value,
-          total: Math.round(weight * reps).toString()
-        };
-      }
-      return set;
-    }));
+    setSets((prev) =>
+      prev.map((set) => {
+        if (set.id === id) {
+          const weight = parseFloat(value) || 0;
+          const reps = parseFloat(set.reps) || 0;
+          return {
+            ...set,
+            weight: value,
+            total: Math.round(weight * reps).toString(),
+          };
+        }
+        return set;
+      })
+    );
   };
 
   const handleRepsChange = (id, value) => {
-    setSets(prev => prev.map(set => {
-      if (set.id === id) {
-        const weight = parseFloat(set.weight) || 0;
-        const reps = parseFloat(value) || 0;
-        return {
-          ...set,
-          reps: value,
-          total: Math.round(weight * reps).toString()
-        };
-      }
-      return set;
-    }));
+    setSets((prev) =>
+      prev.map((set) => {
+        if (set.id === id) {
+          const weight = parseFloat(set.weight) || 0;
+          const reps = parseFloat(value) || 0;
+          return {
+            ...set,
+            reps: value,
+            total: Math.round(weight * reps).toString(),
+          };
+        }
+        return set;
+      })
+    );
   };
 
   const handleAddSet = () => {
     const lastSet = sets.length > 0 ? sets[sets.length - 1] : null;
-    const newSetId = sets.length > 0 && lastSet.id !== "W" 
-      ? (parseInt(lastSet.id) + 1).toString() 
-      : "1";
-    
+    const newSetId =
+      sets.length > 0 && lastSet.id !== "W"
+        ? (parseInt(lastSet.id) + 1).toString()
+        : "1";
+
     const newSet = {
       id: newSetId,
       weight: lastSet ? lastSet.weight : "",
       reps: lastSet ? lastSet.reps : "",
       total: lastSet ? lastSet.total : "",
-      completed: false
+      completed: false,
     };
     setSets([...sets, newSet]);
   };
 
   const handleDeleteSet = (setId) => {
-    setSets(prev => prev.filter(set => set.id !== setId));
+    setSets((prev) => prev.filter((set) => set.id !== setId));
   };
 
   const toggleSetCompletion = (index) => {
-    setSets(prev => prev.map((set, idx) => {
-      if (idx === index) {
-        const newSet = { ...set, completed: !set.completed };
-        // Start rest timer if set was completed and timer is not off
-        if (newSet.completed && !set.completed && restTime !== 0) {
-          setRemainingTime(restTime);
-          setIsTimerActive(true);
+    setSets((prev) =>
+      prev.map((set, idx) => {
+        if (idx === index) {
+          const newSet = { ...set, completed: !set.completed };
+          // Start rest timer if set was completed and timer is not off
+          if (newSet.completed && !set.completed && restTime !== 0) {
+            setRemainingTime(restTime);
+            setIsTimerActive(true);
+          }
+          return newSet;
         }
-        return newSet;
-      }
-      return set;
-    }));
+        return set;
+      })
+    );
   };
 
   const handleRestTimeSelect = (seconds) => {
@@ -136,7 +154,9 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, o
     <View style={styles.container}>
       <View style={styles.exerciseHeader}>
         <View style={styles.exerciseInfo}>
-          <Text style={styles.exerciseName}>{exercise?.name || "Exercise"}</Text>
+          <Text style={styles.exerciseName}>
+            {exercise?.name || "Exercise"}
+          </Text>
         </View>
         <TouchableOpacity onPress={() => setShowDeleteConfirm(true)}>
           <Ionicons name="trash-outline" size={24} color="#FF4444" />
@@ -151,24 +171,31 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, o
         onChangeText={setNotes}
       />
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.restTimerContainer}
         onPress={() => setShowRestTimer(true)}
       >
-        <Ionicons 
-          name="time-outline" 
-          size={20} 
-          color={restTime === 0 ? colors.textFaded : (isTimerActive ? "#4CAF50" : "#2196F3")} 
-        />
-        <Text style={[
-          styles.restTimerText,
-          restTime === 0 && styles.timerOffText,
-          isTimerActive && styles.activeTimerText
-        ]}>
-          {isTimerActive 
-            ? `Rest Timer: ${formatTime(remainingTime)}`
-            : `Rest Timer: ${formatTime(restTime)}`
+        <Ionicons
+          name="time-outline"
+          size={20}
+          color={
+            restTime === 0
+              ? colors.textFaded
+              : isTimerActive
+              ? "#4CAF50"
+              : "#2196F3"
           }
+        />
+        <Text
+          style={[
+            styles.restTimerText,
+            restTime === 0 && styles.timerOffText,
+            isTimerActive && styles.activeTimerText,
+          ]}
+        >
+          {isTimerActive
+            ? `Rest Timer: ${formatTime(remainingTime)}`
+            : `Rest Timer: ${formatTime(restTime)}`}
         </Text>
       </TouchableOpacity>
 
@@ -189,7 +216,8 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, o
             onDelete={() => handleDeleteSet(set.id)}
             style={[
               styles.setRow,
-              set.completed && (set.id === "W" ? styles.warmupSetRow : styles.completedSetRow)
+              set.completed &&
+                (set.id === "W" ? styles.warmupSetRow : styles.completedSetRow),
             ]}
           >
             <Text style={[styles.setCell, styles.setNumberCell]}>{set.id}</Text>
@@ -213,11 +241,16 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, o
               />
             </View>
             <Text style={[styles.setCell, styles.totalCell]}>{set.total}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.completedCell}
               onPress={() => toggleSetCompletion(index)}
             >
-              <View style={[styles.checkmarkContainer, set.completed && styles.completedCheckmark]}>
+              <View
+                style={[
+                  styles.checkmarkContainer,
+                  set.completed && styles.completedCheckmark,
+                ]}
+              >
                 <Ionicons name="checkmark" size={18} color="#FFFFFF" />
               </View>
             </TouchableOpacity>
@@ -242,7 +275,7 @@ const ActiveExerciseComponent = ({ exercise, onUpdateTotals, onRemoveExercise, o
         visible={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={onRemoveExercise}
-        title={`Delete ${exercise?.name || 'Exercise'}?`}
+        title={`Delete ${exercise?.name || "Exercise"}?`}
       />
     </View>
   );

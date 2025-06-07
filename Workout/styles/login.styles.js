@@ -119,4 +119,19 @@ export default StyleSheet.create({
     borderRadius: BorderRadius.small,
     backgroundColor: '#4CAF50',
   },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: FontSize.small,
+    marginBottom: Spacing.s,
+  },
+  inputWrapper: {
+    position: 'relative',
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputIndicator: {
+    position: 'absolute',
+    right: Spacing.m,
+  },
 });

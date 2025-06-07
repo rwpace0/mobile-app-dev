@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,24 +8,75 @@ import {
   Alert,
 } from "react-native";
 import { useAuth } from "../API/authContext";
+import { authAPI } from "../API/authAPI";
 import styles from "../styles/login.styles";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../constants/colors";
+import debounce from "lodash/debounce";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState(false);
+  const [emailAvailabilityError, setEmailAvailabilityError] = useState("");
+  const [usernameError, setUsernameError] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const { signup, error } = useAuth();
+
+  // Debounced availability check
+  const checkAvailability = useCallback(
+    debounce(async (username) => {
+      if (!username || !validateUsername(username)) return;
+
+      setIsCheckingUsername(true);
+      try {
+        const result = await authAPI.checkAvailability(username, "");
+        setIsUsernameAvailable(result.available);
+        setAvailabilityError(
+          result.available ? "" : "Username is already taken"
+        );
+      } catch (error) {
+        console.error("Availability check failed:", error);
+        setAvailabilityError("Failed to check username availability");
+        setIsUsernameAvailable(false);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }, 800),
+    []
+  );
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
+  const validateUsername = (username) => {
+    // Username should be 3-20 characters, alphanumeric with underscores and hyphens
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+    return usernameRegex.test(username);
+  };
+
+  const handleUsernameChange = (text) => {
+    setUsername(text);
+    setIsUsernameAvailable(true); // Reset availability while typing
+    setAvailabilityError(""); // Clear any previous errors
+
+    if (text && !validateUsername(text)) {
+      setUsernameError(true);
+    } else {
+      setUsernameError(false);
+      checkAvailability(text);
+    }
+  };
+
   const handleEmailChange = (text) => {
     setEmail(text);
+    setEmailAvailabilityError(""); // Clear availability error when typing
     if (text && !validateEmail(text)) {
       setEmailError(true);
     } else {
@@ -60,14 +111,47 @@ const SignUpPage = ({ navigation }) => {
     return (metRequirements / passwordRequirements.length) * 100;
   }, [passwordRequirements]);
 
+  const canSubmit = useMemo(() => {
+    return (
+      isPasswordValid &&
+      !loading &&
+      isUsernameAvailable &&
+      !isCheckingUsername &&
+      !usernameError &&
+      username.length > 0
+    );
+  }, [
+    isPasswordValid,
+    loading,
+    isUsernameAvailable,
+    isCheckingUsername,
+    usernameError,
+    username,
+  ]);
+
   const handleSignup = async () => {
-    if (!email || !password) {
+    if (!email || !password || !username) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     if (!validateEmail(email)) {
       setEmailError(true);
+      Alert.alert("Error", "Please enter a valid email address");
+      return;
+    }
+
+    if (!validateUsername(username)) {
+      setUsernameError(true);
+      Alert.alert(
+        "Error",
+        "Username must be 3-20 characters and can only contain letters, numbers, underscores, and hyphens"
+      );
+      return;
+    }
+
+    if (!isUsernameAvailable || isCheckingUsername) {
+      Alert.alert("Error", "Please choose a different username");
       return;
     }
 
@@ -78,7 +162,15 @@ const SignUpPage = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const result = await signup(email, password);
+      // Check email availability right before signup
+      const emailCheck = await authAPI.checkAvailability("", email);
+      if (!emailCheck.available) {
+        setEmailAvailabilityError("Email is already registered");
+        setLoading(false);
+        return;
+      }
+
+      const result = await signup(email, password, username);
       Alert.alert(
         "Success",
         "Registration successful! Please check your email to verify your account.",
@@ -101,11 +193,39 @@ const SignUpPage = ({ navigation }) => {
       <Text style={styles.title}>Welcome</Text>
 
       <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Username</Text>
+        <TextInput
+          style={[
+            styles.textInput,
+            usernameError || !isUsernameAvailable
+              ? styles.textInputError
+              : null,
+          ]}
+          placeholder="Choose a username (3-20 characters)"
+          placeholderTextColor="#999999"
+          autoCapitalize="none"
+          value={username}
+          onChangeText={handleUsernameChange}
+          editable={!loading}
+        />
+        {usernameError ? (
+          <Text style={styles.errorText}>
+            Username must be 3-20 characters and can only contain letters,
+            numbers, underscores, and hyphens
+          </Text>
+        ) : !isUsernameAvailable ? (
+          <Text style={styles.errorText}>{availabilityError}</Text>
+        ) : null}
+      </View>
+
+      <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
           style={[
             styles.textInput,
-            emailError ? styles.textInputError : null
+            emailError || emailAvailabilityError
+              ? styles.textInputError
+              : null,
           ]}
           placeholder="Enter your email"
           placeholderTextColor="#999999"
@@ -116,7 +236,9 @@ const SignUpPage = ({ navigation }) => {
           editable={!loading}
         />
         {emailError ? (
-          <Text style={styles.errorText}>{emailError}</Text>
+          <Text style={styles.errorText}>Invalid email format</Text>
+        ) : emailAvailabilityError ? (
+          <Text style={styles.errorText}>{emailAvailabilityError}</Text>
         ) : null}
       </View>
 
@@ -164,11 +286,11 @@ const SignUpPage = ({ navigation }) => {
       <TouchableOpacity
         style={[
           styles.button,
-          (!isPasswordValid || loading) && styles.buttonDisabled,
+          (!canSubmit || loading) && styles.buttonDisabled,
         ]}
         activeOpacity={0.8}
         onPress={handleSignup}
-        disabled={!isPasswordValid || loading}
+        disabled={!canSubmit || loading}
       >
         <Text style={styles.buttonText}>
           {loading ? "Signing up..." : "Sign Up"}

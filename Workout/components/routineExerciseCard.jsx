@@ -6,11 +6,17 @@ import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 
-const RoutineExerciseComponent = ({ exercise, onRemoveExercise, onUpdateSets }) => {
+const RoutineExerciseComponent = ({
+  exercise,
+  onRemoveExercise,
+  onUpdateSets,
+}) => {
   // Initialize sets based on exercise.sets or default to 1 set
   const [sets, setSets] = useState(() => {
     const numSets = exercise.sets || 1;
-    return Array.from({ length: numSets }, (_, i) => ({ id: (i + 1).toString() }));
+    return Array.from({ length: numSets }, (_, i) => ({
+      id: (i + 1).toString(),
+    }));
   });
   const [notes, setNotes] = useState("");
   const [restTime, setRestTime] = useState(150); // 2:30 default
@@ -26,7 +32,7 @@ const RoutineExerciseComponent = ({ exercise, onRemoveExercise, onUpdateSets }) 
   };
 
   const handleDeleteSet = (setId) => {
-    const newSets = sets.filter(set => set.id !== setId);
+    const newSets = sets.filter((set) => set.id !== setId);
     setSets(newSets);
     onUpdateSets?.(exercise.exercise_id, newSets.length);
   };
@@ -40,14 +46,18 @@ const RoutineExerciseComponent = ({ exercise, onRemoveExercise, onUpdateSets }) 
     if (seconds === 0) return "Off";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.exerciseHeader}>
         <View style={styles.exerciseInfo}>
-          <Text style={styles.exerciseName}>{exercise?.name || "Exercise"}</Text>
+          <Text style={styles.exerciseName}>
+            {exercise?.name || "Exercise"}
+          </Text>
         </View>
         <TouchableOpacity onPress={() => setShowDeleteConfirm(true)}>
           <Ionicons name="trash-outline" size={24} color="#FF4444" />
@@ -62,19 +72,18 @@ const RoutineExerciseComponent = ({ exercise, onRemoveExercise, onUpdateSets }) 
         onChangeText={setNotes}
       />
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.restTimerContainer}
         onPress={() => setShowRestTimer(true)}
       >
-        <Ionicons 
-          name="time-outline" 
-          size={20} 
-          color={restTime === 0 ? "#999999" : "#2196F3"} 
+        <Ionicons
+          name="time-outline"
+          size={20}
+          color={restTime === 0 ? "#999999" : "#2196F3"}
         />
-        <Text style={[
-          styles.restTimerText,
-          restTime === 0 && styles.timerOffText
-        ]}>
+        <Text
+          style={[styles.restTimerText, restTime === 0 && styles.timerOffText]}
+        >
           {`Rest Timer: ${formatTime(restTime)}`}
         </Text>
       </TouchableOpacity>
@@ -117,7 +126,7 @@ const RoutineExerciseComponent = ({ exercise, onRemoveExercise, onUpdateSets }) 
         visible={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={onRemoveExercise}
-        title={`Delete ${exercise?.name || 'Exercise'}?`}
+        title={`Delete ${exercise?.name || "Exercise"}?`}
       />
     </View>
   );
