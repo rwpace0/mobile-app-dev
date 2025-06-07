@@ -20,6 +20,7 @@ import WorkoutDetail from "./pages/workoutDetail";
 import ExerciseDetail from "./pages/exerciseDetail";
 import ViewExercises from "./pages/viewExercises";
 import Profile from "./pages/profile";
+import Settings from "./pages/settings";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -50,6 +51,7 @@ const MainStack = () => (
     <Tab.Screen name="WorkoutDetail" component={WorkoutDetail} />
     <Tab.Screen name="ExerciseDetail" component={ExerciseDetail} />
     <Tab.Screen name="ViewExercises" component={ViewExercises} />
+    <Tab.Screen name="Settings" component={Settings} />
   </Tab.Navigator>
 );
 

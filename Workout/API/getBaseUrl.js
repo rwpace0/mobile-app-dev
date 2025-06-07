@@ -1,5 +1,3 @@
-//ios wont work until i host backend
-
 import { Platform } from "react-native";
 import { BACKEND_URL, IOS } from "@env";
 

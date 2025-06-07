@@ -38,7 +38,7 @@ const Profile = ({ navigation }) => {
       <TouchableOpacity style={styles.headerButton} onPress={handleEditProfile}>
         <Text style={{ color: colors.primaryBlue }}>Edit Profile</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.headerButton} onPress={handleLogout}>
+      <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('Settings')}>
         <Ionicons name="settings-outline" size={24} color={colors.textWhite} />
       </TouchableOpacity>
     </View>
