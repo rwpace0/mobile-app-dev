@@ -12,6 +12,7 @@ import { useAuth } from '../API/authContext';
 import styles from '../styles/profile.styles';
 import colors from '../constants/colors';
 import WorkoutCountGraph from '../graphs/WorkoutCountGraph';
+import Header from '../components/header';
 
 const Profile = ({ navigation }) => {
   const [activeMetric, setActiveMetric] = useState('Duration');
@@ -26,23 +27,11 @@ const Profile = ({ navigation }) => {
   };
 
   const handleEditProfile = () => {
-    // For now, just show an alert
     Alert.alert(
       'Edit Profile',
       'This feature will be available soon!'
     );
   };
-
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.headerButton} onPress={handleEditProfile}>
-        <Text style={{ color: colors.primaryBlue }}>Edit Profile</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('Settings')}>
-        <Ionicons name="settings-outline" size={24} color={colors.textWhite} />
-      </TouchableOpacity>
-    </View>
-  );
 
   const renderProfile = () => (
     <View style={styles.profileSection}>
@@ -60,7 +49,6 @@ const Profile = ({ navigation }) => {
       </View>
     </View>
   );
-
 
   const handleDashboardPress = (screen) => {
     switch (screen) {
@@ -116,7 +104,14 @@ const Profile = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {renderHeader()}
+      <Header
+        title="Profile"
+        rightComponent={{
+          type: 'icon',
+          icon: 'settings-outline',
+          onPress: () => navigation.navigate('Settings')
+        }}
+      />
       <ScrollView>
         {renderProfile()}
         {renderDashboard()}

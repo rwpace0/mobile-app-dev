@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import styles from '../styles/settings.styles';
+import Header from '../components/header';
 
 const SettingsItem = ({ icon, title, IconComponent = Ionicons }) => (
   <TouchableOpacity style={styles.settingsItem}>
@@ -19,56 +20,55 @@ const SectionHeader = ({ title }) => (
 
 const Settings = () => {
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <Header
+        title="Settings"
+        leftComponent={{ type: 'back' }}
+      />
+      <ScrollView>
+        <SectionHeader title="Account" />
+        <SettingsItem icon="person-outline" title="Profile" />
+        <SettingsItem icon="lock-closed-outline" title="Account" />
+        <SettingsItem icon="star-outline" title="Manage Subscription" />
+        <SettingsItem icon="notifications-outline" title="Notifications" />
 
-      <SectionHeader title="Account" />
-      <SettingsItem icon="person-outline" title="Profile" />
-      <SettingsItem icon="lock-closed-outline" title="Account" />
-      <SettingsItem icon="star-outline" title="Manage Subscription" />
-      <SettingsItem icon="notifications-outline" title="Notifications" />
-
-      <SectionHeader title="Preferences" />
-      <SettingsItem 
-        icon="barbell-outline" 
-        title="Workouts" 
-      />
-      <SettingsItem 
-        IconComponent={Feather}
-        icon="shield" 
-        title="Privacy & Social" 
-      />
-      <SettingsItem 
-        IconComponent={MaterialIcons}
-        icon="straighten" 
-        title="Units" 
-      />
-      <SettingsItem 
-        IconComponent={FontAwesome5}
-        icon="flag" 
-        title="Language" 
-      />
-      <SettingsItem 
-        IconComponent={Ionicons}
-        icon="heart-outline" 
-        title="Apple Health" 
-      />
-      <SettingsItem 
-        IconComponent={Feather}
-        icon="link" 
-        title="Integrations" 
-      />
-      <SettingsItem 
-        IconComponent={Ionicons}
-        icon="moon-outline" 
-        title="Theme" 
-      />
-    </ScrollView>
+        <SectionHeader title="Preferences" />
+        <SettingsItem 
+          icon="barbell-outline" 
+          title="Workouts" 
+        />
+        <SettingsItem 
+          IconComponent={Feather}
+          icon="shield" 
+          title="Privacy & Social" 
+        />
+        <SettingsItem 
+          IconComponent={MaterialIcons}
+          icon="straighten" 
+          title="Units" 
+        />
+        <SettingsItem 
+          IconComponent={FontAwesome5}
+          icon="flag" 
+          title="Language" 
+        />
+        <SettingsItem 
+          IconComponent={Ionicons}
+          icon="heart-outline" 
+          title="Apple Health" 
+        />
+        <SettingsItem 
+          IconComponent={Feather}
+          icon="link" 
+          title="Integrations" 
+        />
+        <SettingsItem 
+          IconComponent={Ionicons}
+          icon="moon-outline" 
+          title="Theme" 
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
