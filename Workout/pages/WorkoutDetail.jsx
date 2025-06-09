@@ -5,12 +5,14 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "../styles/workoutHistory.styles";
 import colors from "../constants/colors";
 import { WorkoutAPI } from "../API/workoutAPI";
+import Header from "../components/header";
 
 const formatDate = (isoString) => {
   const date = new Date(isoString);
@@ -78,19 +80,16 @@ const WorkoutDetail = () => {
   }, 0);
 
   return (
-    <View style={styles.detailContainer}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.textWhite} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Workout Detail</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <Text style={styles.headerAction}>Edit</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.detailContainer}>
+      <Header
+        title="Workout Detail"
+        leftComponent={{ type: 'back' }}
+        rightComponent={{
+          type: 'button',
+          text: 'Edit',
+          onPress: () => console.log('Edit workout')
+        }}
+      />
 
       <ScrollView style={{ flex: 1 }}>
         <View style={styles.detailHeader}>
@@ -160,7 +159,7 @@ const WorkoutDetail = () => {
           );
         })}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

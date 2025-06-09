@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import colors from "../constants/colors";
 import styles from "../styles/start.styles";
 import { templateAPI } from "../API/templateAPI";
+import Header from "../components/header";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
@@ -134,9 +135,7 @@ const WorkoutStartPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Workout</Text>
-      </View>
+      <Header title="Workout" />
 
       <ScrollView style={styles.content}>
         {/* Quick Start Section */}

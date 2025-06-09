@@ -11,6 +11,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import styles from "../styles/workoutPages.styles";
 import ActiveExerciseComponent from "../components/activeExerciseCard";
 import { WorkoutAPI } from "../API/workoutAPI";
+import Header from "../components/header";
 
 const WorkoutActivePage = () => {
   const navigation = useNavigation();
@@ -128,15 +129,18 @@ const WorkoutActivePage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-down-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Log Workout</Text>
-        <TouchableOpacity onPress={handleFinish}>
-          <Text style={styles.finishButton}>Finish</Text>
-        </TouchableOpacity>
-      </View>
+      <Header
+        title="Log Workout"
+        leftComponent={{
+          type: 'back',
+          icon: 'chevron-down-outline',
+        }}
+        rightComponent={{
+          type: 'button',
+          text: 'Finish',
+          onPress: handleFinish
+        }}
+      />
 
       <ScrollView style={styles.content}>
         <View style={styles.statsContainer}>
