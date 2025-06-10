@@ -7,6 +7,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import colors from '../constants/colors';
+import theme from '../constants/theme';
 import { useAuth } from '../API/authContext';
 import getBaseUrl from '../API/getBaseUrl';
 
@@ -100,13 +102,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundDark,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 30,
+    color: colors.textWhite,
   },
   messageContainer: {
     alignItems: 'center',
@@ -116,6 +119,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 10,
+    color: colors.textWhite,
   },
   email: {
     fontSize: 18,
@@ -126,7 +130,7 @@ const styles = StyleSheet.create({
   instructions: {
     fontSize: 14,
     textAlign: 'center',
-    color: '#666',
+    color: colors.textWhite,
   },
   errorContainer: {
     backgroundColor: '#FFE5E5',
@@ -135,20 +139,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   errorText: {
-    color: '#FF0000',
+    color: colors.accentRed,
     textAlign: 'center',
   },
   resendButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primaryBlue,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
   },
-  disabledButton: {
-    backgroundColor: '#ccc',
+  disabledButton: { 
+    backgroundColor: colors.textDisabled,
   },
   resendButtonText: {
-    color: '#fff',
+    color: colors.textWhite,
     fontSize: 16,
     fontWeight: '600',
   },
