@@ -133,7 +133,7 @@ export const signup = async (req, res) => {
     }
 
     // Create profile entry
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .insert([
         {

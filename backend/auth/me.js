@@ -34,7 +34,7 @@ export const getMe = async (req, res) => {
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error getting profile data:', profileError);
