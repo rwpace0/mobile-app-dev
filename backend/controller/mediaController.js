@@ -1,25 +1,6 @@
 import { MediaService } from '../media/mediaService.js';
 import { supabase } from '../database/supabaseClient.js';
-
-async function deleteOldFile(url) {
-  if (!url) return;
-  
-  // Extract bucket and filename from URL
-  const urlParts = url.split('/');
-  const bucket = urlParts.find(part => part === 'avatars' || part === 'exercise-media');
-  if (!bucket) return;
-
-  // The filename will be everything after the bucket name
-  const bucketIndex = urlParts.indexOf(bucket);
-  const fileName = urlParts.slice(bucketIndex).join('/');
-  
-  try {
-    await MediaService.deleteMedia(fileName, bucket);
-  } catch (error) {
-    console.error('Error deleting old file:', error);
-    // Don't throw error here, as we want to continue with the new upload
-  }
-}
+import { getClientToken } from '../database/supabaseClient.js';
 
 export const uploadAvatar = async (req, res) => {
   try {
@@ -28,44 +9,34 @@ export const uploadAvatar = async (req, res) => {
     }
 
     const userId = req.user.id;
-    
-    // Get current avatar URL before updating
-    const { data: currentProfile } = await supabase
-      .from('profiles')
-      .select('avatar_url')
-      .eq('user_id', userId)
-      .single();
-
     const fileName = MediaService.generateFileName(req.file.originalname, userId, 'avatar');
+    
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    const supabaseWithToken = getClientToken(token);
     
     // Compress the image
     const compressedBuffer = await MediaService.compressImage(req.file, { isAvatar: true });
     
     // Upload to Supabase
-    const uploadResult = await MediaService.uploadMedia(compressedBuffer, fileName, 'avatars');
+    const uploadResult = await MediaService.uploadMedia(compressedBuffer, fileName, 'avatars', supabaseWithToken);
     
     // Get the public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(fileName);
+    const publicUrl = MediaService.getPublicUrl('avatars', fileName, supabaseWithToken);
 
     // Update the user's profile with the new avatar URL
-    const { error } = await supabase
+    const { data, error } = await supabaseWithToken
       .from('profiles')
       .update({ avatar_url: publicUrl })
       .eq('user_id', userId);
 
     if (error) throw error;
 
-    // Delete old avatar after successful upload and database update
-    if (currentProfile?.avatar_url) {
-      await deleteOldFile(currentProfile.avatar_url);
-    }
-
     res.json({ url: publicUrl });
   } catch (error) {
     console.error('Error uploading avatar:', error);
-    res.status(500).json({ error: 'Failed to upload avatar' });
+    res.status(500).json({ error: 'Failed to upload avatar', details: error.message });
   }
 };
 
@@ -78,10 +49,15 @@ export const uploadExerciseMedia = async (req, res) => {
     const userId = req.user.id;
     const exerciseId = req.body.exerciseId;
 
-    // Verify exercise ownership and get current media URL
-    const { data: exercise, error: exerciseError } = await supabase
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    const supabaseWithToken = getClientToken(token);
+
+    // Verify exercise ownership
+    const { data: exercise, error: exerciseError } = await supabaseWithToken
       .from('exercises')
-      .select('created_by, media_url')
+      .select('created_by')
       .eq('exercise_id', exerciseId)
       .single();
 
@@ -100,26 +76,19 @@ export const uploadExerciseMedia = async (req, res) => {
     const processedBuffer = await MediaService.compressImage(req.file);
 
     // Upload to Supabase
-    const uploadResult = await MediaService.uploadMedia(processedBuffer, fileName, 'exercise-media');
+    const uploadResult = await MediaService.uploadMedia(processedBuffer, fileName, 'exercise-media', supabaseWithToken);
     
     // Get the public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('exercise-media')
-      .getPublicUrl(fileName);
+    const publicUrl = MediaService.getPublicUrl('exercise-media', fileName, supabaseWithToken);
 
     // Update the exercise with the new media URL
-    const { error } = await supabase
+    const { error } = await supabaseWithToken
       .from('exercises')
       .update({ media_url: publicUrl })
       .eq('exercise_id', exerciseId)
       .eq('created_by', userId);
 
     if (error) throw error;
-
-    // Delete old media after successful upload and database update
-    if (exercise.media_url) {
-      await deleteOldFile(exercise.media_url);
-    }
 
     res.json({ url: publicUrl });
   } catch (error) {
@@ -132,33 +101,54 @@ export const deleteMedia = async (req, res) => {
   try {
     const { bucket, fileName } = req.body;
     const userId = req.user.id;
+    
+    if (!bucket || !fileName) {
+      return res.status(400).json({ error: 'Missing required fields: bucket and fileName' });
+    }
 
-    // Verify ownership before deletion
+    // Check if the file belongs to the user by verifying the userId prefix
+    const fileUserId = fileName.split('/')[0];
+    if (fileUserId !== userId) {
+      return res.status(403).json({ 
+        error: 'Not authorized to delete this file',
+        filename: fileName,
+        bucket: bucket
+      });
+    }
+
+    // Get the authenticated client using the user's token
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    const supabaseWithAuth = getClientToken(token);
+
+    // Delete the file from storage using authenticated client
+    const { data, error } = await supabaseWithAuth.storage
+      .from(bucket)
+      .remove([fileName]);
+
+    if (error) {
+      console.error('Error deleting from storage:', error);
+      return res.status(500).json({ error: 'Failed to delete file from storage', details: error.message });
+    }
+
+    // If it was an avatar, also update the profile
     if (bucket === 'avatars') {
-      const { data: profile } = await supabase
+      const { error: profileError } = await supabaseWithAuth
         .from('profiles')
-        .select('avatar_url')
-        .eq('user_id', userId)
-        .single();
+        .update({ avatar_url: null })
+        .eq('user_id', userId);
 
-      if (!profile?.avatar_url?.includes(fileName)) {
-        return res.status(403).json({ error: 'Not authorized to delete this file' });
-      }
-    } else if (bucket === 'exercise-media') {
-      const { data: exercise } = await supabase
-        .from('exercises')
-        .select('media_url')
-        .eq('created_by', userId)
-        .eq('media_url', fileName)
-        .single();
-
-      if (!exercise) {
-        return res.status(403).json({ error: 'Not authorized to delete this file' });
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        // Don't return error since file was already deleted
       }
     }
 
-    await MediaService.deleteMedia(fileName, bucket);
-    res.json({ message: 'File deleted successfully' });
+    res.json({ 
+      message: 'File deleted successfully',
+      filename: fileName,
+      bucket: bucket
+    });
   } catch (error) {
     console.error('Error deleting media:', error);
     res.status(500).json({ error: 'Failed to delete media' });

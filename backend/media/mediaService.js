@@ -72,7 +72,7 @@ export class MediaService {
     });
   }
 
-  static async uploadMedia(fileBuffer, fileName, bucket) {
+  static async uploadMedia(fileBuffer, fileName, bucket, supabaseClient) {
     // Add content type detection based on file extension
     const ext = path.extname(fileName).toLowerCase();
     const contentType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
@@ -80,7 +80,7 @@ export class MediaService {
                        ext === '.gif' ? 'image/gif' :
                        'application/octet-stream';
 
-    const { data, error } = await supabase.storage
+    const { data, error } = await (supabaseClient || supabase).storage
       .from(bucket)
       .upload(fileName, fileBuffer, {
         cacheControl: '3600',
@@ -92,8 +92,8 @@ export class MediaService {
     return data;
   }
 
-  static async deleteMedia(fileName, bucket) {
-    const { data, error } = await supabase.storage
+  static async deleteMedia(fileName, bucket, supabaseClient) {
+    const { data, error } = await (supabaseClient || supabase).storage
       .from(bucket)
       .remove([fileName]);
 
@@ -109,8 +109,8 @@ export class MediaService {
     return `${userId}/${timestamp}${finalExtension}`;
   }
 
-  static getPublicUrl(bucket, fileName) {
-    const { data: { publicUrl } } = supabase.storage
+  static getPublicUrl(bucket, fileName, supabaseClient) {
+    const { data: { publicUrl } } = (supabaseClient || supabase).storage
       .from(bucket)
       .getPublicUrl(fileName);
     
