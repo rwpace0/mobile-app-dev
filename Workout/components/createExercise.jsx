@@ -7,11 +7,15 @@ import {
   SafeAreaView,
   Image,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import * as ImagePicker from 'expo-image-picker';
 import createStyles from "../styles/createExercise.styles";
 import { createExercise as createExerciseAPI } from "../API/exercisesAPI";
+import { mediaAPI } from "../API/mediaAPI";
+import { requestMediaLibraryPermission, validateImageFile } from "../utils/permissions";
 
 const equipmentOptions = [
   "Dumbbell",
@@ -45,6 +49,8 @@ const CreateExercise = () => {
   const [primaryMuscle, setPrimaryMuscle] = useState("");
   const [errors, setErrors] = useState({});
   const [openDropdown, setOpenDropdown] = useState(null); // 'equipment' or 'muscle' or null
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
     const newErrors = {};
@@ -56,23 +62,76 @@ const CreateExercise = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleImagePick = async () => {
+    try {
+      // Request permissions
+      await requestMediaLibraryPermission();
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        const imageUri = result.assets[0].uri;
+        
+        try {
+          // Validate the image
+          validateImageFile(imageUri, result.assets[0].fileSize);
+          
+          // Set the image if validation passes
+          setSelectedImage(imageUri);
+          setErrors(prev => ({ ...prev, image: null }));
+        } catch (error) {
+          setErrors(prev => ({ ...prev, image: error.message }));
+        }
+      }
+    } catch (error) {
+      setErrors(prev => ({ ...prev, image: error.message }));
+    }
+  };
+
   const handleCreate = async () => {
     if (validate()) {
+      setIsLoading(true);
       try {
-        await createExerciseAPI({
+        // Create exercise first
+        const exerciseData = await createExerciseAPI({
           name,
           equipment,
           muscle_group: primaryMuscle,
         });
+
+        console.log('Exercise creation response:', exerciseData);
+
+        // If we have an image, upload it
+        if (selectedImage && exerciseData.exercise_id) {
+          try {
+            console.log('Attempting to upload image for exercise:', exerciseData.exercise_id);
+            await mediaAPI.uploadExerciseMedia(exerciseData.exercise_id, selectedImage);
+          } catch (error) {
+            console.error('Image upload error:', error);
+            setErrors(prev => ({ ...prev, image: 'Failed to upload image. Please try again.' }));
+            // Continue with navigation even if image upload fails
+          }
+        } else if (selectedImage) {
+          console.error('No exercise_id received from exercise creation');
+          setErrors(prev => ({ ...prev, form: 'Failed to create exercise properly' }));
+        }
+
         navigation.goBack();
       } catch (error) {
-        // Show validation errors if present
+        console.error('Exercise creation error:', error);
         if (error && error.error === "Missing required fields") {
           setErrors({ form: "Please fill in all required fields." });
         } else {
           setErrors({ form: "Failed to create exercise." });
         }
-        console.log("Create exercise error:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -95,19 +154,41 @@ const CreateExercise = () => {
         >
           Create Exercise
         </Text>
-        <TouchableOpacity onPress={handleCreate}>
-          <Text style={createStyles.headerActionTextActive}>Create</Text>
+        <TouchableOpacity onPress={handleCreate} disabled={isLoading}>
+          <Text style={[
+            createStyles.headerActionTextActive,
+            isLoading && { opacity: 0.5 }
+          ]}>
+            {isLoading ? 'Creating...' : 'Create'}
+          </Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Image Placeholder */}
-        <View style={createStyles.imageSection}>
-          <View style={createStyles.imagePlaceholder}>
-            <Ionicons name="image-outline" size={48} color="#888" />
-          </View>
-          <Text style={createStyles.addImageText}>Add Image</Text>
-        </View>
+        {/* Image Section */}
+        <TouchableOpacity 
+          style={createStyles.imageSection}
+          onPress={handleImagePick}
+          disabled={isLoading}
+        >
+          {selectedImage ? (
+            <Image
+              source={{ uri: selectedImage }}
+              style={createStyles.imagePlaceholder}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={createStyles.imagePlaceholder}>
+              <Ionicons name="image-outline" size={48} color="#888" />
+            </View>
+          )}
+          <Text style={createStyles.addImageText}>
+            {selectedImage ? 'Change Image' : 'Add Image'}
+          </Text>
+          {errors.image && (
+            <Text style={createStyles.errorText}>{errors.image}</Text>
+          )}
+        </TouchableOpacity>
 
         {/* Form Fields */}
         <View style={createStyles.formContainer}>
@@ -225,6 +306,12 @@ const CreateExercise = () => {
             <Text style={createStyles.errorText}>{errors.form}</Text>
           )}
         </View>
+
+        {isLoading && (
+          <View style={createStyles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

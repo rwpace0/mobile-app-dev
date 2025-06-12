@@ -128,12 +128,21 @@ export default StyleSheet.create({
   },
 
   exerciseIconContainer: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.cardBackground,
-    borderRadius: BorderRadius.md,
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#2A2A2A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+
+  exerciseImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
 
   exerciseDetails: {

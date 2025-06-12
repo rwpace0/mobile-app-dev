@@ -109,11 +109,31 @@ export class MediaService {
     return `${userId}/${timestamp}${finalExtension}`;
   }
 
-  static getPublicUrl(bucket, fileName, supabaseClient) {
-    const { data: { publicUrl } } = (supabaseClient || supabase).storage
+  static async getPublicUrl(bucket, fileName, supabaseClient) {
+    console.log('Getting public URL for:', { bucket, fileName });
+    
+    // Try to get a signed URL first
+    try {
+      const { data: signedData, error: signedError } = await (supabaseClient || supabase).storage
+        .from(bucket)
+        .createSignedUrl(fileName, 60 * 60); // 1 hour expiry
+      
+      if (signedData?.signedUrl) {
+        console.log('Generated signed URL:', signedData.signedUrl);
+        return signedData.signedUrl;
+      }
+      
+      console.log('Signed URL error:', signedError);
+    } catch (error) {
+      console.log('Error generating signed URL:', error);
+    }
+    
+    // Fallback to public URL if signed URL fails
+    const { data } = (supabaseClient || supabase).storage
       .from(bucket)
       .getPublicUrl(fileName);
     
-    return publicUrl;
+    console.log('Fallback public URL:', data?.publicUrl);
+    return data?.publicUrl;
   }
 } 

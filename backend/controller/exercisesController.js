@@ -65,23 +65,43 @@ export async function createExercise(req, res) {
     if (!name || !equipment || !muscle_group) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
-    // Insert into exercises table
-    const { error: insertError } = await supabase.from('exercises').insert([
-      {
-        name,
-        equipment,
-        muscle_group,
-        media_url: '',
-        is_public: false,
-        created_by: user.id,
-        instruction: null,
-      },
-    ]);
+    console.log('Creating exercise with data:', {
+      name,
+      equipment,
+      muscle_group,
+      created_by: user.id
+    });
+
+    // Insert into exercises table and return the inserted row
+    const { data, error: insertError } = await supabase
+      .from('exercises')
+      .insert([
+        {
+          name,
+          equipment,
+          muscle_group,
+          media_url: '',
+          is_public: false,
+          created_by: user.id,
+          instruction: null,
+        },
+      ])
+      .select()
+      .single();
+
     if (insertError) {
-      console.error('Insert error:', insertError);
-      return res.status(500).json({ error: 'Failed to create exercise' });
+      console.error('Supabase insert error details:', insertError);
+      return res.status(500).json({ 
+        error: 'Failed to create exercise',
+        details: insertError.message || insertError
+      });
     }
-    return res.status(201).json({ success: true, message: 'Exercise created successfully' });
+
+    return res.status(201).json({ 
+      success: true, 
+      message: 'Exercise created successfully',
+      exercise_id: data.exercise_id
+    });
   } catch (err) {
     console.error('Unexpected error:', err);
     return res.status(500).json({ error: 'Internal server error' });

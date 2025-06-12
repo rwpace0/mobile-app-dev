@@ -26,6 +26,9 @@ export async function createExercise({ name, equipment, muscle_group }) {
   try {
     const token = await storage.getItem('auth_token');
     if (!token) throw new Error('No auth token found');
+
+    console.log('Creating exercise with:', { name, equipment, muscle_group });
+    
     const response = await axios.post(
       `${getBaseUrl()}/exercises/create`,
       { name, equipment, muscle_group },
@@ -36,9 +39,15 @@ export async function createExercise({ name, equipment, muscle_group }) {
         },
       }
     );
+    
+    console.log('Exercise creation response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Create exercise error:', error.response?.data || error.message);
+    console.error('Create exercise error details:', {
+      response: error.response?.data,
+      status: error.response?.status,
+      message: error.message
+    });
     throw error.response?.data || error;
   }
 }

@@ -79,7 +79,7 @@ export const uploadExerciseMedia = async (req, res) => {
     const uploadResult = await MediaService.uploadMedia(processedBuffer, fileName, 'exercise-media', supabaseWithToken);
     
     // Get the public URL
-    const publicUrl = MediaService.getPublicUrl('exercise-media', fileName, supabaseWithToken);
+    const publicUrl = await MediaService.getPublicUrl('exercise-media', fileName, supabaseWithToken);
 
     // Update the exercise with the new media URL
     const { error } = await supabaseWithToken
