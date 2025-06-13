@@ -23,17 +23,17 @@ export const uploadAvatar = async (req, res) => {
     const uploadResult = await MediaService.uploadMedia(compressedBuffer, fileName, 'avatars', supabaseWithToken);
     
     // Get the public URL
-    const publicUrl = MediaService.getPublicUrl('avatars', fileName, supabaseWithToken);
+    const signedUrl = await MediaService.getSignedUrl('avatars', fileName, supabaseWithToken);
 
     // Update the user's profile with the new avatar URL
     const { data, error } = await supabaseWithToken
       .from('profiles')
-      .update({ avatar_url: publicUrl })
+      .update({ avatar_url: signedUrl })
       .eq('user_id', userId);
 
     if (error) throw error;
 
-    res.json({ url: publicUrl });
+    res.json({ url: signedUrl });
   } catch (error) {
     console.error('Error uploading avatar:', error);
     res.status(500).json({ error: 'Failed to upload avatar', details: error.message });
@@ -79,18 +79,18 @@ export const uploadExerciseMedia = async (req, res) => {
     const uploadResult = await MediaService.uploadMedia(processedBuffer, fileName, 'exercise-media', supabaseWithToken);
     
     // Get the public URL
-    const publicUrl = await MediaService.getPublicUrl('exercise-media', fileName, supabaseWithToken);
+    const signedUrl = await MediaService.getSignedUrl('exercise-media', fileName, supabaseWithToken);
 
     // Update the exercise with the new media URL
     const { error } = await supabaseWithToken
       .from('exercises')
-      .update({ media_url: publicUrl })
+      .update({ media_url: signedUrl })
       .eq('exercise_id', exerciseId)
       .eq('created_by', userId);
 
     if (error) throw error;
 
-    res.json({ url: publicUrl });
+    res.json({ url: signedUrl });
   } catch (error) {
     console.error('Error uploading exercise media:', error);
     res.status(500).json({ error: 'Failed to upload exercise media' });
