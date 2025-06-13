@@ -5,11 +5,14 @@ import { supabase } from '../database/supabaseClient.js';
 import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
+import { getClientToken } from '../database/supabaseClient.js';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 const unlinkAsync = promisify(fs.unlink);
 
 export class MediaService {
+
+  
   static async compressImage(file, options = {}) {
     const {
       maxWidth = 1920,
@@ -109,31 +112,28 @@ export class MediaService {
     return `${userId}/${timestamp}${finalExtension}`;
   }
 
-  static async getPublicUrl(bucket, fileName, supabaseClient) {
-    console.log('Getting public URL for:', { bucket, fileName });
+  static async getSignedUrl(bucket, fileName, supabaseClient) {
+    console.log('Getting signed URL for:', { bucket, fileName });
     
-    // Try to get a signed URL first
     try {
-      const { data: signedData, error: signedError } = await (supabaseClient || supabase).storage
+      const { data, error } = await (supabaseClient || supabase).storage
         .from(bucket)
         .createSignedUrl(fileName, 60 * 60); // 1 hour expiry
       
-      if (signedData?.signedUrl) {
-        console.log('Generated signed URL:', signedData.signedUrl);
-        return signedData.signedUrl;
+      if (error) {
+        console.error('Error generating signed URL:', error);
+        throw error;
       }
       
-      console.log('Signed URL error:', signedError);
+      if (!data?.signedUrl) {
+        throw new Error('No signed URL generated');
+      }
+      
+      console.log('Generated signed URL successfully');
+      return data.signedUrl;
     } catch (error) {
-      console.log('Error generating signed URL:', error);
+      console.error('Error in getSignedUrl:', error);
+      throw error;
     }
-    
-    // Fallback to public URL if signed URL fails
-    const { data } = (supabaseClient || supabase).storage
-      .from(bucket)
-      .getPublicUrl(fileName);
-    
-    console.log('Fallback public URL:', data?.publicUrl);
-    return data?.publicUrl;
   }
 } 

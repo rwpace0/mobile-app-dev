@@ -40,7 +40,6 @@ const Settings = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      
     } catch (error) {
       Alert.alert("Error", error.message || "Failed to logout");
       console.log(error);
