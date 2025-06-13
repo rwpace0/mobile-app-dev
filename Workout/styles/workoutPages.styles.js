@@ -137,4 +137,49 @@ export default StyleSheet.create({
     color: colors.accentRed,
     fontSize: FontSize.medium,
   },
+
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: colors.cardBackground,
+    marginHorizontal: Spacing.m,
+    marginVertical: Spacing.m,
+    padding: Spacing.m,
+    borderRadius: BorderRadius.lg,
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: Spacing.s,
+  },
+
+  statLabel: {
+    color: colors.textLight,
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.medium,
+    marginBottom: Spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
+  statValue: {
+    color: colors.textWhite,
+    fontSize: FontSize.xlarge,
+    fontWeight: FontWeight.bold,
+  },
+
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.divider,
+    marginHorizontal: Spacing.s,
+  },
 });

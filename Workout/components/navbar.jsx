@@ -43,7 +43,8 @@ const Navbar = ({ state, descriptors, navigation }) => {
           route.name === "WorkoutHistory" ||
           route.name === "ViewExercises" ||
           route.name === "Settings" ||
-          route.name === "AddExercise"
+          route.name === "AddExercise" ||
+          route.name === "SettingsPage"
         ) {
           return null;
         }

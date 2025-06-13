@@ -46,15 +46,35 @@ const Settings = () => {
     }
   };
 
+  const navigateToSettings = (type) => {
+    navigation.navigate('SettingsPage', { type });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Settings" leftComponent={{ type: "back" }} />
       <ScrollView>
         <SectionHeader title="Account" />
-        <SettingsItem icon="person-outline" title="Profile" />
-        <SettingsItem icon="lock-closed-outline" title="Account" />
-        <SettingsItem icon="star-outline" title="Manage Subscription" />
-        <SettingsItem icon="notifications-outline" title="Notifications" />
+        <SettingsItem 
+          icon="person-outline" 
+          title="Profile" 
+          onPress={() => navigation.navigate('Profile')}
+        />
+        <SettingsItem 
+          icon="lock-closed-outline" 
+          title="Account" 
+          onPress={() => navigateToSettings('account')}
+        />
+        <SettingsItem 
+          icon="star-outline" 
+          title="Manage Subscription" 
+          onPress={() => navigateToSettings('account')}
+        />
+        <SettingsItem 
+          icon="notifications-outline" 
+          title="Notifications" 
+          onPress={() => navigateToSettings('account')}
+        />
         <SettingsItem
           color={colors.primaryBlue}
           icon="log-out-outline"
@@ -63,36 +83,34 @@ const Settings = () => {
         />
 
         <SectionHeader title="Preferences" />
-        <SettingsItem icon="barbell-outline" title="Workouts" />
+        <SettingsItem 
+          icon="barbell-outline" 
+          title="Workouts" 
+          onPress={() => navigateToSettings('workouts')}
+        />
         <SettingsItem
           IconComponent={Feather}
           icon="shield"
           title="Privacy & Social"
+          onPress={() => navigateToSettings('privacy')}
         />
         <SettingsItem
           IconComponent={MaterialIcons}
           icon="straighten"
           title="Units"
+          onPress={() => navigateToSettings('units')}
         />
         <SettingsItem
           IconComponent={FontAwesome5}
           icon="flag"
           title="Language"
-        />
-        <SettingsItem
-          IconComponent={Ionicons}
-          icon="heart-outline"
-          title="Apple Health"
-        />
-        <SettingsItem
-          IconComponent={Feather}
-          icon="link"
-          title="Integrations"
+          onPress={() => navigateToSettings('account')}
         />
         <SettingsItem
           IconComponent={Ionicons}
           icon="moon-outline"
           title="Theme"
+          onPress={() => navigateToSettings('theme')}
         />
       </ScrollView>
     </SafeAreaView>
