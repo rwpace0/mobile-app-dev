@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { getExerciseById, getExerciseHistory } from "../API/exercisesAPI";
+import exercisesAPI from "../API/exercisesAPI";
 import styles from "../styles/exerciseDetail.styles";
 import { format } from "date-fns";
 
@@ -29,8 +29,8 @@ const ExerciseDetailPage = () => {
   const fetchData = async () => {
     try {
       const [exerciseData, historyData] = await Promise.all([
-        getExerciseById(route.params.exerciseId),
-        getExerciseHistory(route.params.exerciseId)
+        exercisesAPI.getExerciseById(route.params.exerciseId),
+        exercisesAPI.getExerciseHistory(route.params.exerciseId)
       ]);
       
       setExercise(exerciseData);

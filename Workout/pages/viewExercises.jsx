@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import styles from "../styles/display.styles";
-import getExercises from "../API/exercisesAPI";
+import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 
 // highlight matching text in search results
@@ -46,7 +46,7 @@ const ViewExercisesPage = () => {
   useEffect(() => {
     let isMounted = true;
 
-    getExercises()
+    exercisesAPI.getExercises()
       .then((data) => {
         if (isMounted) {
           setExercises(data);

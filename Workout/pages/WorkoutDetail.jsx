@@ -11,7 +11,8 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "../styles/workoutHistory.styles";
 import colors from "../constants/colors";
-import { WorkoutAPI } from "../API/workoutAPI";
+import workoutAPI from "../API/workoutAPI";
+import exercisesAPI from "../API/exercisesAPI";
 import Header from "../components/header";
 
 const formatDate = (isoString) => {
@@ -42,7 +43,33 @@ const WorkoutDetail = () => {
         if (!workout_id) {
           throw new Error("No workout ID provided");
         }
-        const response = await WorkoutAPI.getWorkoutById(workout_id);
+        const response = await workoutAPI.getWorkoutById(workout_id);
+        
+        // Fetch exercise details for each exercise
+        if (response.exercises) {
+          const exercisesWithDetails = await Promise.all(
+            response.exercises.map(async (exercise) => {
+              if (!exercise || !exercise.exercise_id) return null;
+              try {
+                const details = await exercisesAPI.getExerciseById(exercise.exercise_id);
+                return {
+                  ...exercise,
+                  name: details?.name || 'Unknown Exercise',
+                  muscle_group: details?.muscle_group || ''
+                };
+              } catch (err) {
+                console.error(`Failed to fetch exercise ${exercise.exercise_id}:`, err);
+                return {
+                  ...exercise,
+                  name: 'Unknown Exercise',
+                  muscle_group: ''
+                };
+              }
+            })
+          );
+          response.exercises = exercisesWithDetails.filter(ex => ex !== null);
+        }
+        
         setWorkout(response);
         setLoading(false);
       } catch (err) {
@@ -130,13 +157,16 @@ const WorkoutDetail = () => {
           </View>
         </View>
         {workout.exercises?.map((exerciseData, idx) => {
-          const exercise = exerciseData.exercises; // Get the exercise details from the joined data
+          if (!exerciseData || !exerciseData.workout_exercises_id) return null;
           return (
             <View
               key={exerciseData.workout_exercises_id}
               style={styles.exerciseCard}
             >
-              <Text style={styles.exerciseCardTitle}>{exercise.name}</Text>
+              <Text style={styles.exerciseCardTitle}>{exerciseData.name || "Unknown Exercise"}</Text>
+              {exerciseData.muscle_group && (
+                <Text style={styles.exerciseSubtitle}>{exerciseData.muscle_group}</Text>
+              )}
               {exerciseData.notes && (
                 <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
               )}
@@ -144,8 +174,8 @@ const WorkoutDetail = () => {
                 <Text style={styles.setHeaderText}>SET</Text>
                 <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
               </View>
-              {exerciseData.sets?.map((set, setIdx) => (
-                <View key={set.set_id} style={styles.setRow}>
+              {(exerciseData.sets || []).map((set, setIdx) => (
+                <View key={set.set_id || setIdx} style={styles.setRow}>
                   <Text style={styles.setNumber}>
                     {set.set_order || setIdx + 1}
                   </Text>

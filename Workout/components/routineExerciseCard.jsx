@@ -1,40 +1,47 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import styles from "../styles/activeExercise.styles";
+import exercisesAPI from "../API/exercisesAPI";
+import styles from "../styles/workoutPages.styles";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 
 const RoutineExerciseComponent = ({
   exercise,
-  onRemoveExercise,
   onUpdateSets,
+  onRemoveExercise,
 }) => {
-  // Initialize sets based on exercise.sets or default to 1 set
-  const [sets, setSets] = useState(() => {
-    const numSets = exercise.sets || 1;
-    return Array.from({ length: numSets }, (_, i) => ({
-      id: (i + 1).toString(),
-    }));
-  });
+  const [numSets, setNumSets] = useState(exercise.sets || 1);
+  const [exerciseDetails, setExerciseDetails] = useState(null);
   const [notes, setNotes] = useState("");
   const [restTime, setRestTime] = useState(150); // 2:30 default
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleAddSet = () => {
-    const lastSet = sets[sets.length - 1];
-    const newSetId = (parseInt(lastSet.id) + 1).toString();
-    const newSets = [...sets, { id: newSetId }];
-    setSets(newSets);
-    onUpdateSets?.(exercise.exercise_id, newSets.length);
-  };
+  useEffect(() => {
+    const fetchExerciseDetails = async () => {
+      try {
+        const details = await exercisesAPI.getExerciseById(exercise.exercise_id);
+        setExerciseDetails(details);
+      } catch (error) {
+        console.error("Failed to fetch exercise details:", error);
+      }
+    };
 
-  const handleDeleteSet = (setId) => {
-    const newSets = sets.filter((set) => set.id !== setId);
-    setSets(newSets);
-    onUpdateSets?.(exercise.exercise_id, newSets.length);
+    fetchExerciseDetails();
+  }, [exercise.exercise_id]);
+
+  const handleSetChange = (value) => {
+    const sets = Math.max(1, Math.min(10, value));
+    setNumSets(sets);
+    onUpdateSets(exercise.exercise_id, sets);
   };
 
   const handleRestTimeSelect = (seconds) => {
@@ -52,15 +59,22 @@ const RoutineExerciseComponent = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.exerciseCard}>
       <View style={styles.exerciseHeader}>
         <View style={styles.exerciseInfo}>
           <Text style={styles.exerciseName}>
-            {exercise?.name || "Exercise"}
+            {exerciseDetails?.name || "Exercise"}
+          </Text>
+          <Text style={styles.exerciseDetail}>
+            {exerciseDetails?.muscle_group || ""}
           </Text>
         </View>
-        <TouchableOpacity onPress={() => setShowDeleteConfirm(true)}>
-          <Ionicons name="trash-outline" size={24} color="#FF4444" />
+
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => onRemoveExercise(exercise.exercise_id)}
+        >
+          <Ionicons name="close" size={24} color="#FF6B6B" />
         </TouchableOpacity>
       </View>
 
@@ -88,32 +102,24 @@ const RoutineExerciseComponent = ({
         </Text>
       </TouchableOpacity>
 
-      {/* Sets List */}
       <View style={styles.setsContainer}>
-        {/* Header Row */}
-        <View style={styles.setHeaderRow}>
-          <Text style={[styles.setHeaderCell, styles.setNumberCell]}>SET</Text>
-          <Text style={[styles.setHeaderCell, styles.weightCell]}>REPS</Text>
-        </View>
-
-        {/* Set Rows */}
-        {sets.map((set) => (
-          <SwipeToDelete
-            key={set.id}
-            onDelete={() => handleDeleteSet(set.id)}
-            style={styles.setRow}
+        <Text style={styles.setsLabel}>Sets:</Text>
+        <View style={styles.setsControls}>
+          <TouchableOpacity
+            style={styles.setButton}
+            onPress={() => handleSetChange(numSets - 1)}
           >
-            <Text style={[styles.setCell, styles.setNumberCell]}>{set.id}</Text>
-            <Text style={[styles.setCell, styles.weightCell]}>-</Text>
-          </SwipeToDelete>
-        ))}
+            <Ionicons name="remove" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.setsCount}>{numSets}</Text>
+          <TouchableOpacity
+            style={styles.setButton}
+            onPress={() => handleSetChange(numSets + 1)}
+          >
+            <Ionicons name="add" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
-
-      {/* Add Set Button */}
-      <TouchableOpacity style={styles.addSetButton} onPress={handleAddSet}>
-        <Ionicons name="add" size={20} color="#FFFFFF" />
-        <Text style={styles.addSetText}>Add Set</Text>
-      </TouchableOpacity>
 
       <RestTimerModal
         visible={showRestTimer}
@@ -126,7 +132,7 @@ const RoutineExerciseComponent = ({
         visible={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={onRemoveExercise}
-        title={`Delete ${exercise?.name || "Exercise"}?`}
+        title={`Delete ${exerciseDetails?.name || "Exercise"}?`}
       />
     </View>
   );

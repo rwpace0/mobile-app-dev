@@ -8,14 +8,16 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from 'expo-image-picker';
 import createStyles from "../styles/createExercise.styles";
-import { createExercise as createExerciseAPI } from "../API/exercisesAPI";
+import exercisesAPI from "../API/exercisesAPI";
 import { mediaAPI } from "../API/mediaAPI";
 import { requestMediaLibraryPermission, validateImageFile } from "../utils/permissions";
+import Header from "./header";
 
 const equipmentOptions = [
   "Dumbbell",
@@ -44,22 +46,49 @@ const muscleOptions = [
 
 const CreateExercise = () => {
   const navigation = useNavigation();
-  const [name, setName] = useState("");
-  const [equipment, setEquipment] = useState("");
-  const [primaryMuscle, setPrimaryMuscle] = useState("");
-  const [errors, setErrors] = useState({});
+  const [formData, setFormData] = useState({
+    name: "",
+    equipment: "",
+    muscle_group: "",
+    instruction: "",
+  });
+  const [loading, setLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null); // 'equipment' or 'muscle' or null
   const [selectedImage, setSelectedImage] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const validate = () => {
-    const newErrors = {};
-    if (!name.trim()) newErrors.name = "Exercise name is required.";
-    if (!equipment.trim()) newErrors.equipment = "Equipment is required.";
-    if (!primaryMuscle.trim())
-      newErrors.primaryMuscle = "Primary muscle group is required.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!formData.name.trim()) {
+      Alert.alert("Error", "Exercise name is required");
+      return;
+    }
+    if (!formData.muscle_group) {
+      Alert.alert("Error", "Please select a muscle group");
+      return;
+    }
+    if (!formData.equipment) {
+      Alert.alert("Error", "Please select equipment type");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await exercisesAPI.createExercise(formData);
+      console.log("Exercise created:", response);
+      Alert.alert(
+        "Success",
+        "Exercise created successfully!",
+        [{ text: "OK", onPress: () => navigation.goBack() }]
+      );
+    } catch (error) {
+      console.error("Failed to create exercise:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || "Failed to create exercise"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImagePick = async () => {
@@ -84,55 +113,13 @@ const CreateExercise = () => {
           
           // Set the image if validation passes
           setSelectedImage(imageUri);
-          setErrors(prev => ({ ...prev, image: null }));
+          setFormData(prev => ({ ...prev, image: null }));
         } catch (error) {
-          setErrors(prev => ({ ...prev, image: error.message }));
+          setFormData(prev => ({ ...prev, image: error.message }));
         }
       }
     } catch (error) {
-      setErrors(prev => ({ ...prev, image: error.message }));
-    }
-  };
-
-  const handleCreate = async () => {
-    if (validate()) {
-      setIsLoading(true);
-      try {
-        // Create exercise first
-        const exerciseData = await createExerciseAPI({
-          name,
-          equipment,
-          muscle_group: primaryMuscle,
-        });
-
-        console.log('Exercise creation response:', exerciseData);
-
-        // If we have an image, upload it
-        if (selectedImage && exerciseData.exercise_id) {
-          try {
-            console.log('Attempting to upload image for exercise:', exerciseData.exercise_id);
-            await mediaAPI.uploadExerciseMedia(exerciseData.exercise_id, selectedImage);
-          } catch (error) {
-            console.error('Image upload error:', error);
-            setErrors(prev => ({ ...prev, image: 'Failed to upload image. Please try again.' }));
-            // Continue with navigation even if image upload fails
-          }
-        } else if (selectedImage) {
-          console.error('No exercise_id received from exercise creation');
-          setErrors(prev => ({ ...prev, form: 'Failed to create exercise properly' }));
-        }
-
-        navigation.goBack();
-      } catch (error) {
-        console.error('Exercise creation error:', error);
-        if (error && error.error === "Missing required fields") {
-          setErrors({ form: "Please fill in all required fields." });
-        } else {
-          setErrors({ form: "Failed to create exercise." });
-        }
-      } finally {
-        setIsLoading(false);
-      }
+      setFormData(prev => ({ ...prev, image: error.message }));
     }
   };
 
@@ -154,12 +141,12 @@ const CreateExercise = () => {
         >
           Create Exercise
         </Text>
-        <TouchableOpacity onPress={handleCreate} disabled={isLoading}>
+        <TouchableOpacity onPress={handleSubmit} disabled={loading}>
           <Text style={[
             createStyles.headerActionTextActive,
-            isLoading && { opacity: 0.5 }
+            loading && { opacity: 0.5 }
           ]}>
-            {isLoading ? 'Creating...' : 'Create'}
+            {loading ? 'Creating...' : 'Create'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -169,7 +156,7 @@ const CreateExercise = () => {
         <TouchableOpacity 
           style={createStyles.imageSection}
           onPress={handleImagePick}
-          disabled={isLoading}
+          disabled={loading}
         >
           {selectedImage ? (
             <Image
@@ -185,8 +172,8 @@ const CreateExercise = () => {
           <Text style={createStyles.addImageText}>
             {selectedImage ? 'Change Image' : 'Add Image'}
           </Text>
-          {errors.image && (
-            <Text style={createStyles.errorText}>{errors.image}</Text>
+          {formData.image && (
+            <Text style={createStyles.errorText}>{formData.image}</Text>
           )}
         </TouchableOpacity>
 
@@ -195,14 +182,14 @@ const CreateExercise = () => {
           {/* Exercise Name */}
           <Text style={createStyles.label}>Exercise Name</Text>
           <TextInput
-            style={[createStyles.input, errors.name && createStyles.inputError]}
+            style={[createStyles.input, formData.name && createStyles.inputError]}
             placeholder="Enter exercise name"
             placeholderTextColor="#999"
-            value={name}
-            onChangeText={setName}
+            value={formData.name}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
           />
-          {errors.name && (
-            <Text style={createStyles.errorText}>{errors.name}</Text>
+          {formData.name && (
+            <Text style={createStyles.errorText}>{formData.name}</Text>
           )}
 
           {/* Equipment Dropdown */}
@@ -211,14 +198,14 @@ const CreateExercise = () => {
             style={[
               createStyles.input,
               createStyles.dropdown,
-              errors.equipment && createStyles.inputError,
+              formData.equipment && createStyles.inputError,
             ]}
             onPress={() =>
               setOpenDropdown(openDropdown === "equipment" ? null : "equipment")
             }
           >
-            <Text style={{ color: equipment ? "#fff" : "#999", flex: 1 }}>
-              {equipment || "Select equipment"}
+            <Text style={{ color: formData.equipment ? "#fff" : "#999", flex: 1 }}>
+              {formData.equipment || "Select equipment"}
             </Text>
             <Ionicons
               name={
@@ -236,10 +223,10 @@ const CreateExercise = () => {
                     key={option}
                     style={[
                       createStyles.dropdownItem,
-                      equipment === option && createStyles.dropdownItemSelected,
+                      formData.equipment === option && createStyles.dropdownItemSelected,
                     ]}
                     onPress={() => {
-                      setEquipment(option);
+                      setFormData(prev => ({ ...prev, equipment: option }));
                       setOpenDropdown(null);
                     }}
                   >
@@ -249,8 +236,8 @@ const CreateExercise = () => {
               </ScrollView>
             </View>
           )}
-          {errors.equipment && (
-            <Text style={createStyles.errorText}>{errors.equipment}</Text>
+          {formData.equipment && (
+            <Text style={createStyles.errorText}>{formData.equipment}</Text>
           )}
 
           {/* Primary Muscle Group Dropdown */}
@@ -261,14 +248,14 @@ const CreateExercise = () => {
             style={[
               createStyles.input,
               createStyles.dropdown,
-              errors.primaryMuscle && createStyles.inputError,
+              formData.muscle_group && createStyles.inputError,
             ]}
             onPress={() =>
               setOpenDropdown(openDropdown === "muscle" ? null : "muscle")
             }
           >
-            <Text style={{ color: primaryMuscle ? "#fff" : "#999", flex: 1 }}>
-              {primaryMuscle || "Select muscle group"}
+            <Text style={{ color: formData.muscle_group ? "#fff" : "#999", flex: 1 }}>
+              {formData.muscle_group || "Select muscle group"}
             </Text>
             <Ionicons
               name={openDropdown === "muscle" ? "chevron-up" : "chevron-down"}
@@ -284,11 +271,11 @@ const CreateExercise = () => {
                     key={option}
                     style={[
                       createStyles.dropdownItem,
-                      primaryMuscle === option &&
+                      formData.muscle_group === option &&
                         createStyles.dropdownItemSelected,
                     ]}
                     onPress={() => {
-                      setPrimaryMuscle(option);
+                      setFormData(prev => ({ ...prev, muscle_group: option }));
                       setOpenDropdown(null);
                     }}
                   >
@@ -298,16 +285,25 @@ const CreateExercise = () => {
               </ScrollView>
             </View>
           )}
-          {errors.primaryMuscle && (
-            <Text style={createStyles.errorText}>{errors.primaryMuscle}</Text>
+          {formData.muscle_group && (
+            <Text style={createStyles.errorText}>{formData.muscle_group}</Text>
           )}
 
-          {errors.form && (
-            <Text style={createStyles.errorText}>{errors.form}</Text>
+          {/* Instruction */}
+          <Text style={createStyles.label}>Instruction</Text>
+          <TextInput
+            style={[createStyles.input, formData.instruction && createStyles.inputError]}
+            placeholder="Enter exercise instruction"
+            placeholderTextColor="#999"
+            value={formData.instruction}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, instruction: text }))}
+          />
+          {formData.instruction && (
+            <Text style={createStyles.errorText}>{formData.instruction}</Text>
           )}
         </View>
 
-        {isLoading && (
+        {loading && (
           <View style={createStyles.loadingOverlay}>
             <ActivityIndicator size="large" color="#FFFFFF" />
           </View>

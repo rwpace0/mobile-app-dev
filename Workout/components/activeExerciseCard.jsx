@@ -6,6 +6,7 @@ import styles from "../styles/activeExercise.styles";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
+import exercisesAPI from "../API/exercisesAPI";
 
 const ActiveExerciseComponent = ({
   exercise,
@@ -13,17 +14,27 @@ const ActiveExerciseComponent = ({
   onRemoveExercise,
   onStateChange,
 }) => {
-  const [sets, setSets] = useState(
-    exercise.sets || [
-      { id: "1", weight: "", reps: "", total: "", completed: false },
-    ]
-  );
+  const [sets, setSets] = useState(exercise.sets || []);
   const [notes, setNotes] = useState("");
   const [restTime, setRestTime] = useState(150); // 2:30 default
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
+  const [exerciseDetails, setExerciseDetails] = useState(null);
+
+  useEffect(() => {
+    const fetchExerciseDetails = async () => {
+      try {
+        const details = await exercisesAPI.getExerciseById(exercise.exercise_id);
+        setExerciseDetails(details);
+      } catch (error) {
+        console.error("Failed to fetch exercise details:", error);
+      }
+    };
+
+    fetchExerciseDetails();
+  }, [exercise.exercise_id]);
 
   // update total completed sets whenever sets change
   useEffect(() => {
@@ -155,7 +166,7 @@ const ActiveExerciseComponent = ({
       <View style={styles.exerciseHeader}>
         <View style={styles.exerciseInfo}>
           <Text style={styles.exerciseName}>
-            {exercise?.name || "Exercise"}
+            {exerciseDetails?.name || "Exercise"}
           </Text>
         </View>
         <TouchableOpacity onPress={() => setShowDeleteConfirm(true)}>
@@ -275,7 +286,7 @@ const ActiveExerciseComponent = ({
         visible={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={onRemoveExercise}
-        title={`Delete ${exercise?.name || "Exercise"}?`}
+        title={`Delete ${exerciseDetails?.name || "Exercise"}?`}
       />
     </View>
   );
