@@ -11,7 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../constants/colors";
 import styles from "../styles/start.styles";
-import { templateAPI } from "../API/templateAPI";
+import templateAPI from "../API/templateAPI";
+import exercisesAPI from "../API/exercisesAPI";
 import Header from "../components/header";
 
 const WorkoutStartPage = () => {
@@ -30,10 +31,58 @@ const WorkoutStartPage = () => {
       setLoading(true);
       setError(null);
       const data = await templateAPI.getTemplates();
-      setTemplates(data);
+      
+      // Fetch exercise details for each template
+      const templatesWithExercises = await Promise.all(
+        data.map(async (template) => {
+          try {
+            // Filter out null exercises and ensure no duplicates by exercise_id
+            const uniqueExercises = template.exercises.filter(ex => ex && ex.exercise_id);
+            const exerciseMap = new Map();
+            uniqueExercises.forEach(ex => {
+              if (!exerciseMap.has(ex.exercise_id)) {
+                exerciseMap.set(ex.exercise_id, ex);
+              }
+            });
+            
+            const exercisesWithDetails = await Promise.all(
+              Array.from(exerciseMap.values()).map(async (exercise) => {
+                try {
+                  const details = await exercisesAPI.getExerciseById(exercise.exercise_id);
+                  return {
+                    ...exercise,
+                    name: details.name || "Unknown Exercise",
+                    muscle_group: details.muscle_group || ""
+                  };
+                } catch (err) {
+                  console.error(`Failed to fetch exercise ${exercise.exercise_id}:`, err);
+                  return {
+                    ...exercise,
+                    name: "Unknown Exercise",
+                    muscle_group: ""
+                  };
+                }
+              })
+            );
+            
+            // Sort exercises by their original order
+            exercisesWithDetails.sort((a, b) => a.exercise_order - b.exercise_order);
+            
+            return {
+              ...template,
+              exercises: exercisesWithDetails
+            };
+          } catch (err) {
+            console.error(`Failed to process template ${template.template_id}:`, err);
+            return template;
+          }
+        })
+      );
+      
+      setTemplates(templatesWithExercises);
     } catch (err) {
       console.error("Failed to fetch templates:", err);
-      setError("Failed to load templates");
+      setError("Failed to load templates. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -61,22 +110,18 @@ const WorkoutStartPage = () => {
 
   const handleStartRoutine = (template) => {
     // Transform template exercises into the format expected by WorkoutActive
-    const selectedExercises = template.exercises.map(exercise => {
-      // Create empty sets array based on the template's set count
-      const emptySets = Array(exercise.sets).fill().map((_, idx) => ({
+    const selectedExercises = template.exercises.map(exercise => ({
+      exercise_id: exercise.exercise_id,
+      name: exercise.name,
+      muscle_group: exercise.muscle_group,
+      sets: Array(exercise.sets || 1).fill().map((_, idx) => ({
         id: (idx + 1).toString(),
         weight: "",
         reps: "",
         total: "",
         completed: false
-      }));
-
-      return {
-        exercise_id: exercise.exercise_id,
-        name: exercise.name,
-        sets: emptySets
-      };
-    });
+      }))
+    }));
 
     // Navigate to WorkoutActive with the exercises
     navigation.navigate("WorkoutActive", {
@@ -121,7 +166,7 @@ const WorkoutStartPage = () => {
           </TouchableOpacity>
         </View>
         <Text style={styles.templateExercises}>
-          {template.exercises.map(ex => ex.name).join(", ")}
+          {template.exercises.map(ex => ex.name).join(" • ")}
         </Text>
         <TouchableOpacity
           style={styles.startRoutineButton}

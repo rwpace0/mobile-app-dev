@@ -8,10 +8,11 @@ import {
   SafeAreaView,
   TextInput,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import styles from "../styles/display.styles";
-import getExercises from "../API/exercisesAPI";
+import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
+import Header from "./header";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style }) => {
@@ -47,21 +48,25 @@ const AddExercisePage = ({ route }) => {
   useEffect(() => {
     let isMounted = true;
 
-    getExercises()
-      .then((data) => {
+    const loadExercises = async () => {
+      try {
+        setLoading(true);
+        const data = await exercisesAPI.getExercises();
         if (isMounted) {
           setExercises(data);
           setFilteredExercises(data);
           setLoading(false);
         }
-      })
-      .catch((err) => {
+      } catch (error) {
+        console.error("Failed to load exercises:", error);
         if (isMounted) {
-          console.error(err);
           setError("Failed to load exercises");
           setLoading(false);
         }
-      });
+      }
+    };
+
+    loadExercises();
     return () => {
       isMounted = false;
     };

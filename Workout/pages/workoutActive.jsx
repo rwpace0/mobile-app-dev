@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import styles from "../styles/workoutPages.styles";
 import ActiveExerciseComponent from "../components/activeExerciseCard";
-import { WorkoutAPI } from "../API/workoutAPI";
+import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
 
 const WorkoutActivePage = () => {
@@ -113,7 +113,7 @@ const WorkoutActivePage = () => {
         exercises: exercisesPayload,
       };
       console.log(payload);
-      await WorkoutAPI.finishWorkout(payload);
+      await workoutAPI.finishWorkout(payload);
       console.log("Workout saved successfully!");
       navigation.goBack();
     } catch (err) {
