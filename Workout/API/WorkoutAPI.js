@@ -28,20 +28,66 @@ class WorkoutAPI {
       // Check if we have any workouts in local db
       const localCount = await this.db.query("SELECT COUNT(*) as count FROM workouts");
       
+      console.log("Local workout count:", localCount[0].count);
+      
       if (localCount[0].count === 0) {
         // If empty, try to fetch initial data from server
         const netInfo = await NetInfo.fetch();
+        console.log("Network connected:", netInfo.isConnected);
+        
         if (netInfo.isConnected) {
           const token = await storage.getItem("auth_token");
           if (token) {
+            console.log("Fetching initial workouts from server...");
             const response = await axios.get(this.baseUrl, {
               headers: { Authorization: `Bearer ${token}` }
             });
 
-            // Store workouts and their exercises locally
-            for (const workout of response.data) {
-              await this.storeWorkoutLocally(workout);
+            console.log("Server returned", response.data.length, "workouts");
+            if (response.data.length > 0) {
+              console.log("First server workout:", JSON.stringify(response.data[0], null, 2));
+              console.log("Server workout structure - has exercises?", !!response.data[0].exercises);
+              console.log("Server workout exercises count:", response.data[0].exercises?.length || 0);
             }
+
+            // Store ALL workouts and try to fetch complete data if needed
+            for (const workout of response.data) {
+              console.log(`Processing workout ${workout.workout_id}:`);
+              console.log(`- Has exercises: ${!!workout.exercises}`);
+              console.log(`- Exercise count: ${workout.exercises?.length || 0}`);
+              
+              if (workout.exercises && workout.exercises.length > 0) {
+                console.log("- Storing workout with exercises");
+                await this.storeWorkoutLocally(workout);
+              } else {
+                console.log("- Trying to fetch complete workout data from server");
+                try {
+                  // Try to fetch complete workout data
+                  const completeResponse = await axios.get(`${this.baseUrl}/${workout.workout_id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  
+                  if (completeResponse.data.exercises && completeResponse.data.exercises.length > 0) {
+                    console.log(`- Found ${completeResponse.data.exercises.length} exercises for workout ${workout.workout_id}`);
+                    await this.storeWorkoutLocally(completeResponse.data);
+                  } else {
+                    console.log("- No exercises found even in detailed fetch, storing basic workout");
+                    await this.storeWorkoutLocally({
+                      ...workout,
+                      exercises: []
+                    });
+                  }
+                } catch (error) {
+                  console.log("- Failed to fetch detailed workout, storing basic version:", error.message);
+                  await this.storeWorkoutLocally({
+                    ...workout,
+                    exercises: []
+                  });
+                }
+              }
+            }
+          } else {
+            console.log("No auth token found");
           }
         }
       }
@@ -55,6 +101,29 @@ class WorkoutAPI {
 
   async storeWorkoutLocally(workout, syncStatus = "synced") {
     const now = new Date().toISOString();
+    
+    console.log("Storing workout locally:", workout.workout_id, "with", workout.exercises?.length || 0, "exercises");
+    
+    // Check if workout already exists locally and has more exercises than the new data
+    const [existingWorkout] = await this.db.query(
+      "SELECT workout_id FROM workouts WHERE workout_id = ?",
+      [workout.workout_id]
+    );
+    
+    if (existingWorkout) {
+      const existingExercises = await this.db.query(
+        "SELECT COUNT(*) as count FROM workout_exercises WHERE workout_id = ?",
+        [workout.workout_id]
+      );
+      
+      const existingCount = existingExercises[0]?.count || 0;
+      const newCount = workout.exercises?.length || 0;
+      
+      if (existingCount > 0 && newCount === 0) {
+        console.log(`Skipping overwrite of workout ${workout.workout_id} - existing has ${existingCount} exercises, new has ${newCount}`);
+        return;
+      }
+    }
     
     // Store workout
     await this.db.execute(
@@ -78,8 +147,54 @@ class WorkoutAPI {
 
     // Store workout exercises
     if (workout.exercises && Array.isArray(workout.exercises)) {
+      
+      
       for (const exercise of workout.exercises) {
-        if (!exercise || !exercise.exercise_id) continue;
+        // Handle nested exercise structure from server
+        let exerciseData;
+        let exerciseId;
+        let exerciseName;
+        
+        if (exercise.exercises && exercise.exercises.exercise_id) {
+          // Server returns nested structure: { exercises: { exercise_id, name, ... }, sets: [...] }
+          exerciseData = exercise.exercises;
+          exerciseId = exerciseData.exercise_id;
+          exerciseName = exerciseData.name;
+          console.log("Found nested exercise structure");
+        } else if (exercise.exercise_id) {
+          // Direct structure: { exercise_id, name, ... }
+          exerciseData = exercise;
+          exerciseId = exercise.exercise_id;
+          exerciseName = exercise.name;
+          console.log("Found direct exercise structure");
+        } else {
+          console.log("Skipping invalid exercise - no exercise_id found:", exercise);
+          continue;
+        }
+        
+        console.log("Processing exercise:", exerciseId, exerciseName);
+        
+        // First, ensure the exercise definition exists in the exercises table
+        if (exerciseData.name) {
+          await this.db.execute(
+            `INSERT OR REPLACE INTO exercises (
+              exercise_id, name, muscle_group, instruction, equipment,
+              media_url, is_public, created_by, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              exerciseId,
+              exerciseData.name,
+              exerciseData.muscle_group || null,
+              exerciseData.instruction || null,
+              exerciseData.equipment || null,
+              exerciseData.media_url || null,
+              exerciseData.is_public || 0,
+              exerciseData.created_by || null,
+              exerciseData.created_at || now,
+              exerciseData.updated_at || now
+            ]
+          );
+        }
         
         const workoutExerciseId = exercise.workout_exercises_id || uuid();
         await this.db.execute(
@@ -90,7 +205,7 @@ class WorkoutAPI {
           [
             workoutExerciseId,
             workout.workout_id,
-            exercise.exercise_id,
+            exerciseId,
             exercise.exercise_order || 0,
             exercise.notes || null,
             exercise.created_at || now,
@@ -98,10 +213,14 @@ class WorkoutAPI {
           ]
         );
 
+        console.log("Stored workout_exercise:", workoutExerciseId, "with", exercise.sets?.length || 0, "sets");
+
         // Store sets if they exist
         if (exercise.sets && Array.isArray(exercise.sets)) {
           for (const set of exercise.sets) {
             if (!set) continue;
+            
+            console.log("Storing set:", set);
             
             await this.db.execute(
               `INSERT OR REPLACE INTO sets (
@@ -124,75 +243,104 @@ class WorkoutAPI {
         }
       }
     }
+    
+    console.log("Finished storing workout locally:", workout.workout_id);
   }
 
   async getWorkouts() {
     try {
       await this.ensureInitialized();
 
-      // Get local workouts first
+      // Debug: Check what's in the tables
+      const allWorkoutExercises = await this.db.query("SELECT * FROM workout_exercises LIMIT 5");
+      const allExercises = await this.db.query("SELECT * FROM exercises LIMIT 5");
+      const allSets = await this.db.query("SELECT * FROM sets LIMIT 5");
+      
+      console.log("Sample workout_exercises in DB:", allWorkoutExercises);
+      console.log("Sample exercises in DB:", allExercises);
+      console.log("Sample sets in DB:", allSets);
+      
+      // Additional debugging - count all entries
+      const workoutCount = await this.db.query("SELECT COUNT(*) as count FROM workouts");
+      const exerciseCount = await this.db.query("SELECT COUNT(*) as count FROM exercises");
+      const workoutExerciseCount = await this.db.query("SELECT COUNT(*) as count FROM workout_exercises");
+      const setCount = await this.db.query("SELECT COUNT(*) as count FROM sets");
+      
+      console.log("Table counts:");
+      console.log(`- workouts: ${workoutCount[0].count}`);
+      console.log(`- exercises: ${exerciseCount[0].count}`);
+      console.log(`- workout_exercises: ${workoutExerciseCount[0].count}`);
+      console.log(`- sets: ${setCount[0].count}`);
+
+      // Get workouts first
       const workouts = await this.db.query(
-        `SELECT 
-          w.*,
-          json_group_array(
-            CASE 
-              WHEN we.workout_exercises_id IS NULL THEN json_object()
-              ELSE json_object(
-                'workout_exercises_id', we.workout_exercises_id,
-                'exercise_id', we.exercise_id,
-                'name', COALESCE(e.name, 'Unknown Exercise'),
-                'muscle_group', e.muscle_group,
-                'exercise_order', we.exercise_order,
-                'notes', we.notes,
-                'sets', (
-                  SELECT json_group_array(
-                    json_object(
-                      'set_id', s.set_id,
-                      'weight', s.weight,
-                      'reps', s.reps,
-                      'rir', s.rir,
-                      'set_order', s.set_order
-                    )
-                  )
-                  FROM sets s
-                  WHERE s.workout_exercises_id = we.workout_exercises_id
-                  ORDER BY s.set_order
-                )
-              )
-            END
-          ) as exercises
-        FROM workouts w
-        LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id
-        LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
-        WHERE w.sync_status != 'pending_delete'
-        GROUP BY w.workout_id
-        ORDER BY w.date_performed DESC`
+        `SELECT * FROM workouts 
+         WHERE sync_status != 'pending_delete'
+         ORDER BY date_performed DESC`
       );
 
-      // Parse exercises JSON for each workout and handle empty arrays
-      const processedWorkouts = workouts.map(workout => {
-        let exercises = [];
-        try {
-          const parsedExercises = JSON.parse(workout.exercises);
-          exercises = parsedExercises
-            .filter(ex => ex && Object.keys(ex).length > 0)
-            .map(ex => ({
-              ...ex,
-              sets: ex.sets ? JSON.parse(ex.sets) : []
-            }));
-        } catch (e) {
-          console.error('Error parsing exercises:', e);
-        }
-        return {
-          ...workout,
-          exercises
-        };
-      });
+      // Get exercises and sets for each workout
+      const workoutsWithExercises = await Promise.all(
+        workouts.map(async (workout) => {
+          console.log(`Fetching exercises for workout: ${workout.workout_id}`);
+          
+          // Debug: Check raw workout_exercises entries
+          const rawWorkoutExercises = await this.db.query(
+            "SELECT * FROM workout_exercises WHERE workout_id = ?",
+            [workout.workout_id]
+          );
+          console.log(`Raw workout_exercises for ${workout.workout_id}:`, rawWorkoutExercises);
+          
+          // Get workout exercises
+          const workoutExercises = await this.db.query(
+            `SELECT we.*, e.name, e.muscle_group
+             FROM workout_exercises we
+             LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
+             WHERE we.workout_id = ?
+             ORDER BY we.exercise_order`,
+            [workout.workout_id]
+          );
+
+          console.log(`Found ${workoutExercises.length} exercises for workout ${workout.workout_id}:`, workoutExercises);
+
+          // Get sets for each exercise
+          const exercisesWithSets = await Promise.all(
+            workoutExercises.map(async (exercise) => {
+              console.log(`Fetching sets for exercise: ${exercise.workout_exercises_id}`);
+              
+              const sets = await this.db.query(
+                `SELECT * FROM sets 
+                 WHERE workout_exercises_id = ?
+                 ORDER BY set_order`,
+                [exercise.workout_exercises_id]
+              );
+
+              console.log(`Found ${sets.length} sets for exercise ${exercise.workout_exercises_id}:`, sets);
+
+              return {
+                ...exercise,
+                sets: sets || []
+              };
+            })
+          );
+
+          return {
+            ...workout,
+            exercises: exercisesWithSets
+          };
+        })
+      );
 
       // Try to sync in background if needed
       syncManager.syncIfNeeded("workouts").catch(console.error);
 
-      return processedWorkouts;
+      // Debug logging
+      console.log("Workouts fetched:", workoutsWithExercises.length);
+      if (workoutsWithExercises.length > 0) {
+        console.log("First workout:", JSON.stringify(workoutsWithExercises[0], null, 2));
+      }
+
+      return workoutsWithExercises;
     } catch (error) {
       console.error("Get workouts error:", error);
       throw error;
@@ -201,60 +349,44 @@ class WorkoutAPI {
 
   async getWorkoutById(workoutId) {
     try {
+      // Get workout
       const [workout] = await this.db.query(
-        `SELECT 
-          w.*,
-          json_group_array(
-            CASE 
-              WHEN we.workout_exercises_id IS NULL THEN json_object()
-              ELSE json_object(
-                'workout_exercises_id', we.workout_exercises_id,
-                'exercise_id', we.exercise_id,
-                'name', COALESCE(e.name, 'Unknown Exercise'),
-                'muscle_group', e.muscle_group,
-                'exercise_order', we.exercise_order,
-                'notes', we.notes,
-                'sets', (
-                  SELECT json_group_array(
-                    json_object(
-                      'set_id', s.set_id,
-                      'weight', s.weight,
-                      'reps', s.reps,
-                      'rir', s.rir,
-                      'set_order', s.set_order
-                    )
-                  )
-                  FROM sets s
-                  WHERE s.workout_exercises_id = we.workout_exercises_id
-                  ORDER BY s.set_order
-                )
-              )
-            END
-          ) as exercises
-        FROM workouts w
-        LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id
-        LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
-        WHERE w.workout_id = ? AND w.sync_status != 'pending_delete'
-        GROUP BY w.workout_id`,
+        `SELECT * FROM workouts 
+         WHERE workout_id = ? AND sync_status != 'pending_delete'`,
         [workoutId]
       );
 
       if (workout) {
-        let exercises = [];
-        try {
-          const parsedExercises = JSON.parse(workout.exercises);
-          exercises = parsedExercises
-            .filter(ex => ex && Object.keys(ex).length > 0)
-            .map(ex => ({
-              ...ex,
-              sets: ex.sets ? JSON.parse(ex.sets) : []
-            }));
-        } catch (e) {
-          console.error('Error parsing exercises:', e);
-        }
+        // Get workout exercises
+        const workoutExercises = await this.db.query(
+          `SELECT we.*, e.name, e.muscle_group
+           FROM workout_exercises we
+           LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
+           WHERE we.workout_id = ?
+           ORDER BY we.exercise_order`,
+          [workout.workout_id]
+        );
+
+        // Get sets for each exercise
+        const exercisesWithSets = await Promise.all(
+          workoutExercises.map(async (exercise) => {
+            const sets = await this.db.query(
+              `SELECT * FROM sets 
+               WHERE workout_exercises_id = ?
+               ORDER BY set_order`,
+              [exercise.workout_exercises_id]
+            );
+
+            return {
+              ...exercise,
+              sets: sets || []
+            };
+          })
+        );
+
         return {
           ...workout,
-          exercises
+          exercises: exercisesWithSets
         };
       }
 

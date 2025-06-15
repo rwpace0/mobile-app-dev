@@ -31,56 +31,29 @@ const WorkoutHistoryPage = () => {
       setError(null);
       const workoutData = await workoutAPI.getWorkouts();
 
-      // Fetch exercise details for each workout
-      const workoutsWithDetails = await Promise.all(
-        workoutData.map(async (workout) => {
-          try {
-            const exercisesWithDetails = await Promise.all(
-              (workout.exercises || []).map(async (exercise) => {
-                if (!exercise || !exercise.exercise_id) {
-                  return {
-                    exercise_id: 'unknown',
-                    name: 'Unknown Exercise',
-                    muscle_group: '',
-                    sets: []
-                  };
-                }
+      
 
-                try {
-                  const details = await exercisesAPI.getExerciseById(exercise.exercise_id);
-                  return {
-                    ...exercise,
-                    name: details?.name || 'Unknown Exercise',
-                    muscle_group: details?.muscle_group || '',
-                    sets: exercise.sets || []
-                  };
-                } catch (err) {
-                  console.error(`Failed to fetch exercise ${exercise.exercise_id}:`, err);
-                  return {
-                    ...exercise,
-                    name: 'Unknown Exercise',
-                    muscle_group: '',
-                    sets: exercise.sets || []
-                  };
-                }
-              })
-            );
+      // Calculate total volume for each workout
+      const workoutsWithVolume = workoutData.map(workout => {
+        console.log(`Processing workout ${workout.workout_id}:`, workout);
+        const totalVolume = (workout.exercises || []).reduce((workoutTotal, exercise) => {
+          console.log(`Processing exercise:`, exercise);
+          const exerciseVolume = (exercise.sets || []).reduce((exerciseTotal, set) => {
+            console.log(`Processing set:`, set);
+            return exerciseTotal + ((set.weight || 0) * (set.reps || 0));
+          }, 0);
+          return workoutTotal + exerciseVolume;
+        }, 0);
 
-            return {
-              ...workout,
-              exercises: exercisesWithDetails.filter(ex => ex !== null && ex !== undefined)
-            };
-          } catch (err) {
-            console.error(`Failed to process workout ${workout.workout_id}:`, err);
-            return {
-              ...workout,
-              exercises: []
-            };
-          }
-        })
-      );
+        
 
-      setWorkouts(workoutsWithDetails);
+        return {
+          ...workout,
+          total_volume: totalVolume
+        };
+      });
+
+      setWorkouts(workoutsWithVolume);
     } catch (err) {
       console.error("Failed to fetch workouts:", err);
       setError("Failed to load workout history. Please try again later.");
@@ -127,6 +100,7 @@ const WorkoutHistoryPage = () => {
 
         <View style={styles.exerciseList}>
           {(workout.exercises || []).map((exercise, index) => {
+            console.log("Exercise:", exercise);
             if (!exercise) return null;
             const sets = exercise.sets?.length || 0;
             const exerciseName = exercise.name || "Unknown Exercise";

@@ -44,32 +44,6 @@ const WorkoutDetail = () => {
           throw new Error("No workout ID provided");
         }
         const response = await workoutAPI.getWorkoutById(workout_id);
-        
-        // Fetch exercise details for each exercise
-        if (response.exercises) {
-          const exercisesWithDetails = await Promise.all(
-            response.exercises.map(async (exercise) => {
-              if (!exercise || !exercise.exercise_id) return null;
-              try {
-                const details = await exercisesAPI.getExerciseById(exercise.exercise_id);
-                return {
-                  ...exercise,
-                  name: details?.name || 'Unknown Exercise',
-                  muscle_group: details?.muscle_group || ''
-                };
-              } catch (err) {
-                console.error(`Failed to fetch exercise ${exercise.exercise_id}:`, err);
-                return {
-                  ...exercise,
-                  name: 'Unknown Exercise',
-                  muscle_group: ''
-                };
-              }
-            })
-          );
-          response.exercises = exercisesWithDetails.filter(ex => ex !== null);
-        }
-        
         setWorkout(response);
         setLoading(false);
       } catch (err) {
