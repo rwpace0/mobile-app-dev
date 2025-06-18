@@ -7,7 +7,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
@@ -25,7 +25,7 @@ const WorkoutHistoryPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [visibleWorkouts, setVisibleWorkouts] = useState([]);
 
-  const fetchWorkouts = async (nextCursor = null, shouldRefresh = false) => {
+  const fetchWorkouts = useCallback(async (nextCursor = null, shouldRefresh = false) => {
     try {
       if (shouldRefresh) {
         setRefreshing(true);
@@ -51,31 +51,38 @@ const WorkoutHistoryPage = () => {
       setHasMore(response.hasMore);
     } catch (err) {
       console.error("Failed to fetch workouts:", err);
-      setError("Failed to load workout history. Please try again later.");
+      setError(err.message || "Failed to load workout history");
     } finally {
       setLoading(false);
       setRefreshing(false);
       setLoadingMore(false);
     }
-  };
+  }, []);
 
   const onRefresh = useCallback(() => {
     setCursor(null);
     fetchWorkouts(null, true);
-  }, []);
+  }, [fetchWorkouts]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore) return;
     fetchWorkouts(cursor);
-  }, [hasMore, loadingMore, cursor]);
+  }, [hasMore, loadingMore, cursor, fetchWorkouts]);
 
-  useEffect(() => {
-    fetchWorkouts();
-  }, []);
+  // Load workouts when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchWorkouts();
+      return () => {
+        // Clear workout cache when leaving the screen
+        workoutAPI.cache.clearPattern('^workouts:');
+      };
+    }, [fetchWorkouts])
+  );
 
   const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-    const visibleWorkouts = viewableItems.map(item => item.item);
-    setVisibleWorkouts(visibleWorkouts);
+    const newVisibleWorkouts = viewableItems.map(item => item.item);
+    setVisibleWorkouts(newVisibleWorkouts);
 
     // Update scroll direction and trigger smart prefetch
     if (viewableItems.length > 0) {
@@ -86,16 +93,16 @@ const WorkoutHistoryPage = () => {
         : 'up';
       
       workoutAPI.updateScrollDirection(direction);
-      workoutAPI.triggerSmartPrefetch(visibleWorkouts, workouts);
+      workoutAPI.triggerSmartPrefetch(newVisibleWorkouts, workouts);
     }
-  }, [workouts]);
+  }, [workouts, visibleWorkouts]);
 
   const viewabilityConfig = {
     itemVisiblePercentThreshold: 50,
     minimumViewTime: 500,
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = useCallback((dateString) => {
     try {
       const date = new Date(dateString);
       const day = date.toLocaleDateString(undefined, { weekday: 'long' });
@@ -103,18 +110,19 @@ const WorkoutHistoryPage = () => {
       const dateNum = date.getDate();
       return `${day}, ${month} ${dateNum}`;
     } catch (err) {
+      console.error("Date formatting error:", err);
       return "Invalid Date";
     }
-  };
+  }, []);
 
-  const renderWorkoutCard = ({ item: workout }) => {
+  const renderWorkoutCard = useCallback(({ item: workout }) => {
     const duration = Math.round((workout.duration || 0) / 60);
     const volume = workout.totalVolume || 0;
 
     return (
       <TouchableOpacity
         style={styles.workoutCard}
-        onPress={() => navigation.navigate("WorkoutDetail", { workout })}
+        onPress={() => navigation.navigate("WorkoutDetail", { workout_id: workout.workout_id })}
       >
         <Text style={styles.workoutTitle}>{workout.name || "Workout"}</Text>
         <Text style={styles.workoutDate}>{formatDate(workout.date_performed)}</Text>
@@ -141,14 +149,14 @@ const WorkoutHistoryPage = () => {
               : null;
             
             return (
-              <View key={index} style={styles.exerciseRow}>
+              <View key={exercise.workout_exercises_id || index} style={styles.exerciseRow}>
                 <View style={styles.exerciseInfo}>
                   <Text style={styles.exerciseTitle}>
                     {sets.length} × {exercise.name || 'Unknown Exercise'}
                   </Text>
                 </View>
                 <Text style={styles.bestSet}>
-                  {bestSet ? `${bestSet.weight} lb × ${bestSet.reps}` : ''}
+                  {bestSet ? `${bestSet.weight} kg × ${bestSet.reps}` : ''}
                 </Text>
               </View>
             );
@@ -156,18 +164,18 @@ const WorkoutHistoryPage = () => {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [navigation, formatDate]);
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!loadingMore) return null;
     return (
       <View style={styles.loadingMore}>
         <ActivityIndicator size="small" color={colors.primaryLight} />
       </View>
     );
-  };
+  }, [loadingMore]);
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
         <Header title="History" />
@@ -186,8 +194,6 @@ const WorkoutHistoryPage = () => {
           <Text style={styles.headerAction}>Calendar</Text>
         </TouchableOpacity>
       </View>
-      
-      
 
       <FlatList
         data={workouts}
@@ -206,6 +212,14 @@ const WorkoutHistoryPage = () => {
             <Text style={styles.errorText}>
               {error || "No workouts found"}
             </Text>
+            {error && (
+              <TouchableOpacity 
+                style={styles.retryButton} 
+                onPress={onRefresh}
+              >
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   TextInput,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import styles from "../styles/display.styles";
 import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
@@ -42,29 +42,36 @@ const ViewExercisesPage = () => {
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [filteredExercises, setFilteredExercises] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    exercisesAPI.getExercises()
-      .then((data) => {
-        if (isMounted) {
-          setExercises(data);
-          setFilteredExercises(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          console.error(err);
-          setError("Failed to load exercises");
-          setLoading(false);
-        }
-      });
-    return () => {
-      isMounted = false;
-    };
+  const loadExercises = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    try {
+      const data = await exercisesAPI.getExercises();
+      setExercises(data || []);
+      setFilteredExercises(data || []);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to load exercises:", err);
+      setError(err.message || "Failed to load exercises");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  // Load exercises when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadExercises();
+    }, [loadExercises])
+  );
+
+  // Handle pull-to-refresh
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadExercises(false);
+  }, [loadExercises]);
 
   // search function that properly filters results
   useEffect(() => {
@@ -89,11 +96,11 @@ const ViewExercisesPage = () => {
     }
   }, [searchText, exercises]);
 
-  const handleExercisePress = (exercise) => {
+  const handleExercisePress = useCallback((exercise) => {
     navigation.navigate("ExerciseDetail", {
       exerciseId: exercise.exercise_id,
     });
-  };
+  }, [navigation]);
 
   const renderExerciseItem = ({ item }) => {
     return (
@@ -122,7 +129,7 @@ const ViewExercisesPage = () => {
     );
   };
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.centerContent}>
         <ActivityIndicator size="large" color="#47A3FF" />
@@ -130,10 +137,16 @@ const ViewExercisesPage = () => {
     );
   }
 
-  if (error) {
+  if (error && !refreshing) {
     return (
       <View style={styles.centerContent}>
         <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => loadExercises()}
+        >
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -197,9 +210,13 @@ const ViewExercisesPage = () => {
           style={styles.exerciseList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContentContainer}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           ListEmptyComponent={
             <View style={styles.emptyListContainer}>
-              <Text style={styles.emptyListText}>No exercises found</Text>
+              <Text style={styles.emptyListText}>
+                {searchText ? "No matching exercises found" : "No exercises available"}
+              </Text>
             </View>
           }
         />

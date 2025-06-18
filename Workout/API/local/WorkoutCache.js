@@ -28,7 +28,7 @@ class LRUCache {
     return item.value;
   }
 
-  set(key, value, ttlMs = 300000) { // Default 5min TTL
+  set(key, value, ttlMs = 60000) { // 15min TTL
     this.cleanup();
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
@@ -73,10 +73,10 @@ class LRUCache {
 class WorkoutCache {
   constructor() {
     // Cache for detailed workout data
-    this.workoutDetailsCache = new LRUCache(100);
+    this.workoutDetailsCache = new LRUCache(200);
 
     // Cache for workout lists (e.g. paginated results)
-    this.workoutListCache = new LRUCache(10);
+    this.workoutListCache = new LRUCache(15);
 
     // Background cleanup interval - only clean expired items, don't clear everything
     setInterval(() => this.cleanupExpired(), 60000); // Run cleanup every minute
