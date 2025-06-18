@@ -44,7 +44,7 @@ class BackgroundProcessor {
   constructor() {
     this.taskQueue = new PriorityQueue();
     this.prefetchBuffer = new Set();
-    this.prefetchSize = 5; // Number of workouts to prefetch
+    this.prefetchSize = 15; // Number of workouts to prefetch
     this.isProcessing = false;
     this.currentScrollDirection = 'down';
     this.processingInterval = setInterval(() => this.processQueue(), 1000);

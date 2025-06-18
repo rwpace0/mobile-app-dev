@@ -132,16 +132,23 @@ const WorkoutHistoryPage = () => {
 
         <View style={styles.exerciseList}>
           {(workout.exercises || []).map((exercise, index) => {
+            // Find the heaviest set for this exercise
+            const sets = exercise.sets || [];
+            const bestSet = sets.length > 0 
+              ? sets.reduce((best, current) => {
+                  return (!best || current.weight > best.weight) ? current : best;
+                }, sets[0])
+              : null;
             
             return (
               <View key={index} style={styles.exerciseRow}>
                 <View style={styles.exerciseInfo}>
                   <Text style={styles.exerciseTitle}>
-                    {exercise.sets} × {exercise.name}
+                    {sets.length} × {exercise.name || 'Unknown Exercise'}
                   </Text>
                 </View>
                 <Text style={styles.bestSet}>
-                  {exercise.bestSet ? `${exercise.bestSet.weight} lb × ${exercise.bestSet.reps}` : ''}
+                  {bestSet ? `${bestSet.weight} lb × ${bestSet.reps}` : ''}
                 </Text>
               </View>
             );

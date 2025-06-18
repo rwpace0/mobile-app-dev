@@ -89,76 +89,48 @@ class WorkoutAPI {
 
   async ensureInitialized() {
     try {
-      // First check if we have any workouts in local DB
+      // Check if we have any workouts in local DB
       const [workoutCount] = await this.db.query(
         "SELECT COUNT(*) as count FROM workouts WHERE sync_status != 'pending_delete'"
       );
       
-      // If we have workouts locally, check if they have their exercises
+      // If we have workouts locally, we're considered initialized
       if (workoutCount.count > 0) {
-        // Check if we have workout_exercises records for these workouts
-        const [exerciseCount] = await this.db.query(`
-          SELECT COUNT(DISTINCT we.workout_id) as count 
-          FROM workouts w 
-          INNER JOIN workout_exercises we ON w.workout_id = we.workout_id 
-          WHERE w.sync_status != 'pending_delete'
-        `);
-
-        // If we have exercises for at least some workouts, we're initialized
-        if (exerciseCount.count > 0) {
-          console.log(`Found ${workoutCount.count} workouts with ${exerciseCount.count} having exercises`);
-          return;
-        }
+        console.log(`Found ${workoutCount.count} workouts locally - app initialized`);
+        return;
       }
 
-      // If we get here, we either have no workouts or no exercises - need to fetch from server
+      // Only if we have NO workouts at all, fetch basic list from server
       const netInfo = await NetInfo.fetch();
       const token = await storage.getItem("auth_token");
 
       if (netInfo.isConnected && token) {
-        console.log("No local data found, fetching from server...");
+        console.log("No local data found, fetching basic workout list...");
 
-        // Get basic workout list
-        const workoutList = await this._queueRequest(async () => {
-          return await axios.get(this.baseUrl, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        });
-
-        console.log(`Found ${workoutList.data.length} workouts from server`);
-
-        // Store all workouts first without exercises
-        for (const workout of workoutList.data) {
-          await this.storeWorkoutLocally({ ...workout, exercises: [] });
-        }
-
-        // CRITICAL: Only fetch details for the most recent 5 workouts to minimize API calls
-        const recentWorkouts = workoutList.data
-          .sort((a, b) => new Date(b.date_performed) - new Date(a.date_performed))
-          .slice(0, 5);
-
-        console.log(`Fetching details for ${recentWorkouts.length} most recent workouts...`);
-
-        // Fetch details one by one with strict queuing
-        for (const workout of recentWorkouts) {
-          try {
-            console.log(`Fetching details for workout ${workout.workout_id}...`);
-
-            const detailedWorkout = await this._queueRequest(async () => {
-              return await axios.get(`${this.baseUrl}/${workout.workout_id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
+        try {
+          // Get basic workout list only (no details)
+          const workoutList = await this._queueRequest(async () => {
+            return await axios.get(this.baseUrl, {
+              headers: { Authorization: `Bearer ${token}` },
             });
+          });
 
-            await this.storeWorkoutLocally(detailedWorkout.data);
-            console.log(`✓ Stored details for workout ${workout.workout_id}`);
-          } catch (error) {
-            console.error(`Failed to fetch workout ${workout.workout_id}:`, error.message);
-            // Continue with next workout instead of failing completely
+          console.log(`Found ${workoutList.data.length} workouts from server`);
+
+          // Store all workouts without exercises for instant app readiness
+          for (const workout of workoutList.data) {
+            await this.storeWorkoutLocally({ ...workout, exercises: [] });
           }
-        }
 
-        console.log("Initial sync complete");
+          console.log("Basic workout list cached - app ready for use");
+          
+          // Details will be lazily loaded as needed
+        } catch (error) {
+          console.error("Failed to fetch initial workout list:", error.message);
+          // App can still function without initial sync
+        }
+      } else {
+        console.log("No network or token - app will work offline only");
       }
     } catch (error) {
       console.error("Database initialization error:", error);
@@ -360,31 +332,31 @@ class WorkoutAPI {
       const cachedResult = this.cache.getWorkoutList(cacheKey);
       if (cachedResult) return cachedResult;
 
-      let query = `
-        SELECT w.*, ws.summary_data, ws.total_volume, ws.exercise_count
+      // First get the workout IDs we need
+      let workoutQuery = `
+        SELECT w.workout_id
         FROM workouts w
-        LEFT JOIN workout_summaries ws ON w.workout_id = ws.workout_id
         WHERE w.sync_status != 'pending_delete'
       `;
       const queryParams = [];
 
       if (cursor) {
-        query += ` AND w.date_performed < ?`;
+        workoutQuery += ` AND w.date_performed < ?`;
         queryParams.push(cursor);
       }
 
       if (dateFrom) {
-        query += ` AND w.date_performed >= ?`;
+        workoutQuery += ` AND w.date_performed >= ?`;
         queryParams.push(dateFrom);
       }
 
       if (dateTo) {
-        query += ` AND w.date_performed <= ?`;
+        workoutQuery += ` AND w.date_performed <= ?`;
         queryParams.push(dateTo);
       }
 
       if (searchTerm) {
-        query += ` AND (w.name LIKE ? OR EXISTS (
+        workoutQuery += ` AND (w.name LIKE ? OR EXISTS (
           SELECT 1 FROM workout_exercises we
           JOIN exercises e ON we.exercise_id = e.exercise_id
           WHERE we.workout_id = w.workout_id AND e.name LIKE ?
@@ -393,47 +365,122 @@ class WorkoutAPI {
         queryParams.push(searchPattern, searchPattern);
       }
 
-      query += ` ORDER BY w.date_performed DESC LIMIT ?`;
-      queryParams.push(limit + 1); // Get one extra to check if there's more
+      workoutQuery += ` ORDER BY w.date_performed DESC LIMIT ?`;
+      queryParams.push(limit + 1);
 
-      const workouts = await this.db.query(query, queryParams);
-      const hasMore = workouts.length > limit;
-      const results = workouts.slice(0, limit);
+      const workoutIds = await this.db.query(workoutQuery, queryParams);
+      const hasMore = workoutIds.length > limit;
+      const resultsIds = workoutIds.slice(0, limit).map(w => w.workout_id);
 
-      // Process workouts without summaries in background
-      this.backgroundProcessor.calculateMissingSummaries(results, this.db);
+      if (resultsIds.length === 0) {
+        return { workouts: [], hasMore: false, nextCursor: null, totalLoaded: 0 };
+      }
 
-      const nextCursor =
-        hasMore && results.length > 0
-          ? results[results.length - 1].date_performed
-          : null;
+      // Now get full workout data including exercises and sets
+      const workouts = await Promise.all(
+        resultsIds.map(async (workoutId) => {
+          const workoutData = await this.db.query(
+            `
+            SELECT 
+              w.*,
+              ws.summary_data,
+              ws.total_volume,
+              ws.exercise_count,
+              we.workout_exercises_id,
+              we.exercise_order,
+              we.notes as exercise_notes,
+              e.exercise_id,
+              e.name as exercise_name,
+              e.muscle_group,
+              s.set_id,
+              s.weight,
+              s.reps,
+              s.rir,
+              s.set_order
+            FROM workouts w
+            LEFT JOIN workout_summaries ws ON w.workout_id = ws.workout_id
+            LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id
+            LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
+            LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+            WHERE w.workout_id = ?
+            ORDER BY we.exercise_order, s.set_order
+            `,
+            [workoutId]
+          );
+
+          if (!workoutData.length) return null;
+
+          // Process workout data into structured format
+          const workout = {
+            workout_id: workoutData[0].workout_id,
+            user_id: workoutData[0].user_id,
+            name: workoutData[0].name,
+            date_performed: workoutData[0].date_performed,
+            duration: workoutData[0].duration,
+            created_at: workoutData[0].created_at,
+            updated_at: workoutData[0].updated_at,
+            totalVolume: workoutData[0].total_volume,
+            exerciseCount: workoutData[0].exercise_count,
+            exercises: []
+          };
+
+          if (workoutData[0].summary_data) {
+            Object.assign(workout, JSON.parse(workoutData[0].summary_data));
+          }
+
+          const exercisesMap = new Map();
+
+          workoutData.forEach((row) => {
+            if (!row.workout_exercises_id) return;
+
+            let exercise = exercisesMap.get(row.workout_exercises_id);
+
+            if (!exercise) {
+              exercise = {
+                workout_exercises_id: row.workout_exercises_id,
+                exercise_id: row.exercise_id,
+                name: row.exercise_name,
+                muscle_group: row.muscle_group,
+                exercise_order: row.exercise_order,
+                notes: row.exercise_notes,
+                sets: []
+              };
+              exercisesMap.set(row.workout_exercises_id, exercise);
+              workout.exercises.push(exercise);
+            }
+
+            if (row.set_id) {
+              exercise.sets.push({
+                set_id: row.set_id,
+                weight: row.weight,
+                reps: row.reps,
+                rir: row.rir,
+                set_order: row.set_order
+              });
+            }
+          });
+
+          // Sort exercises by order
+          workout.exercises.sort((a, b) => a.exercise_order - b.exercise_order);
+
+          return workout;
+        })
+      );
+
+      const results = workouts.filter(Boolean); // Remove any null results
+
+      const nextCursor = hasMore && results.length > 0
+        ? results[results.length - 1].date_performed
+        : null;
 
       const response = {
-        workouts: results.map((workout) => ({
-          ...workout,
-          ...JSON.parse(workout.summary_data || "{}"),
-        })),
+        workouts: results,
         hasMore,
         nextCursor,
-        totalLoaded: results.length,
+        totalLoaded: results.length
       };
 
       this.cache.setWorkoutList(cacheKey, response);
-
-      // Trigger background sync without waiting
-      syncManager.syncIfNeeded("workouts").catch(console.error);
-
-      // Start prefetching next page in background
-      if (hasMore) {
-        this.backgroundProcessor.addTask(async () => {
-          const nextParams = { ...params, cursor: nextCursor };
-          const nextKey = this.cache.generateListCacheKey(nextParams);
-          if (!this.cache.getWorkoutList(nextKey)) {
-            await this.getWorkoutsCursor(nextParams);
-          }
-        }, "low");
-      }
-
       return response;
     } catch (error) {
       console.error("Get workouts error:", error);
@@ -526,8 +573,7 @@ class WorkoutAPI {
       // Cache the result
       this.cache.setWorkoutDetails(workoutId, workout);
 
-      // Trigger background sync without waiting
-      syncManager.syncIfNeeded("workouts").catch(console.error);
+      // Removed aggressive sync trigger - only sync on app foreground or user request
 
       return workout;
     } catch (error) {
@@ -579,8 +625,7 @@ class WorkoutAPI {
 
       const hasMore = offset + limit < count;
 
-      // Trigger background sync without waiting
-      syncManager.syncIfNeeded("workouts").catch(console.error);
+      // Removed aggressive sync trigger - only sync on app foreground or user request
 
       return { workouts: processedWorkouts, hasMore };
     } catch (error) {
@@ -845,8 +890,11 @@ class WorkoutAPI {
       await this.db.execute("BEGIN TRANSACTION");
       try {
         await this.storeWorkoutLocally(workout, "pending_sync");
+        await this.calculateAndStoreSummary(workout);
         await this.db.execute("COMMIT");
-        this.cache.invalidateWorkout(workoutId);
+        
+        // Clear all caches since a new workout affects list views
+        this.cache.clearAll();
 
         const netInfo = await NetInfo.fetch();
         if (netInfo.isConnected) {
@@ -862,6 +910,8 @@ class WorkoutAPI {
               [response.data.version || 1, now, workoutId]
             );
 
+            // Clear caches again after successful sync
+            this.cache.clearAll();
             return response.data;
           } catch (error) {
             console.error(
@@ -895,7 +945,7 @@ class WorkoutAPI {
         ORDER BY week DESC
       `);
 
-      syncManager.syncIfNeeded("workouts").catch(console.error);
+      // Removed aggressive sync trigger - only sync on app foreground or user request
       return localCounts;
     } catch (error) {
       console.error("Get workout counts error:", error);

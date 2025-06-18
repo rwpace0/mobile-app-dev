@@ -73,7 +73,7 @@ class LRUCache {
 class WorkoutCache {
   constructor() {
     // Cache for detailed workout data
-    this.workoutDetailsCache = new LRUCache(50);
+    this.workoutDetailsCache = new LRUCache(100);
 
     // Cache for workout lists (e.g. paginated results)
     this.workoutListCache = new LRUCache(10);
