@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
+  FlatList,
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import workoutAPI from "../API/workoutAPI";
-import exercisesAPI from "../API/exercisesAPI";
 import Header from "../components/header";
 import styles from "../styles/workoutHistory.styles";
 import colors from "../constants/colors";
@@ -19,47 +18,81 @@ const WorkoutHistoryPage = () => {
   const navigation = useNavigation();
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [visibleWorkouts, setVisibleWorkouts] = useState([]);
 
-  useEffect(() => {
-    fetchWorkouts();
-  }, []);
-
-  const fetchWorkouts = async () => {
+  const fetchWorkouts = async (nextCursor = null, shouldRefresh = false) => {
     try {
-      setLoading(true);
+      if (shouldRefresh) {
+        setRefreshing(true);
+      } else if (!nextCursor) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
       setError(null);
-      const workoutData = await workoutAPI.getWorkouts();
 
-      
-
-      // Calculate total volume for each workout
-      const workoutsWithVolume = workoutData.map(workout => {
-        console.log(`Processing workout ${workout.workout_id}:`, workout);
-        const totalVolume = (workout.exercises || []).reduce((workoutTotal, exercise) => {
-          console.log(`Processing exercise:`, exercise);
-          const exerciseVolume = (exercise.sets || []).reduce((exerciseTotal, set) => {
-            console.log(`Processing set:`, set);
-            return exerciseTotal + ((set.weight || 0) * (set.reps || 0));
-          }, 0);
-          return workoutTotal + exerciseVolume;
-        }, 0);
-
-        
-
-        return {
-          ...workout,
-          total_volume: totalVolume
-        };
+      const response = await workoutAPI.getWorkoutsCursor({
+        cursor: nextCursor,
+        limit: 20
       });
 
-      setWorkouts(workoutsWithVolume);
+      if (shouldRefresh || !nextCursor) {
+        setWorkouts(response.workouts);
+      } else {
+        setWorkouts(prev => [...prev, ...response.workouts]);
+      }
+      
+      setCursor(response.nextCursor);
+      setHasMore(response.hasMore);
     } catch (err) {
       console.error("Failed to fetch workouts:", err);
       setError("Failed to load workout history. Please try again later.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      setLoadingMore(false);
     }
+  };
+
+  const onRefresh = useCallback(() => {
+    setCursor(null);
+    fetchWorkouts(null, true);
+  }, []);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore) return;
+    fetchWorkouts(cursor);
+  }, [hasMore, loadingMore, cursor]);
+
+  useEffect(() => {
+    fetchWorkouts();
+  }, []);
+
+  const onViewableItemsChanged = useCallback(({ viewableItems }) => {
+    const visibleWorkouts = viewableItems.map(item => item.item);
+    setVisibleWorkouts(visibleWorkouts);
+
+    // Update scroll direction and trigger smart prefetch
+    if (viewableItems.length > 0) {
+      const firstVisible = viewableItems[0].index;
+      const lastKnownFirst = visibleWorkouts[0]?.workout_id;
+      const direction = !lastKnownFirst || firstVisible >= workouts.findIndex(w => w.workout_id === lastKnownFirst)
+        ? 'down'
+        : 'up';
+      
+      workoutAPI.updateScrollDirection(direction);
+      workoutAPI.triggerSmartPrefetch(visibleWorkouts, workouts);
+    }
+  }, [workouts]);
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50,
+    minimumViewTime: 500,
   };
 
   const formatDate = (dateString) => {
@@ -74,13 +107,12 @@ const WorkoutHistoryPage = () => {
     }
   };
 
-  const renderWorkoutCard = (workout) => {
+  const renderWorkoutCard = ({ item: workout }) => {
     const duration = Math.round((workout.duration || 0) / 60);
-    const volume = workout.total_volume || 0;
+    const volume = workout.totalVolume || 0;
 
     return (
       <TouchableOpacity
-        key={workout.workout_id}
         style={styles.workoutCard}
         onPress={() => navigation.navigate("WorkoutDetail", { workout })}
       >
@@ -94,35 +126,37 @@ const WorkoutHistoryPage = () => {
           </View>
           <View style={styles.statItemWithIcon}>
             <Ionicons name="barbell-outline" size={20} color={colors.textLight} style={styles.statIcon} />
-            <Text style={styles.statText}>{volume} lb</Text>
+            <Text style={styles.statText}>{volume} kg</Text>
           </View>
         </View>
 
         <View style={styles.exerciseList}>
           {(workout.exercises || []).map((exercise, index) => {
-            console.log("Exercise:", exercise);
-            if (!exercise) return null;
-            const sets = exercise.sets?.length || 0;
-            const exerciseName = exercise.name || "Unknown Exercise";
-            const bestSet = exercise.sets?.reduce((best, current) => 
-              (current.weight > best.weight) ? current : best
-            , exercise.sets?.[0]);
-
+            
             return (
               <View key={index} style={styles.exerciseRow}>
                 <View style={styles.exerciseInfo}>
                   <Text style={styles.exerciseTitle}>
-                    {sets} × {exerciseName}
+                    {exercise.sets} × {exercise.name}
                   </Text>
                 </View>
                 <Text style={styles.bestSet}>
-                  {bestSet ? `${bestSet.weight} lb × ${bestSet.reps}` : ''}
+                  {exercise.bestSet ? `${exercise.bestSet.weight} lb × ${exercise.bestSet.reps}` : ''}
                 </Text>
               </View>
             );
           })}
         </View>
       </TouchableOpacity>
+    );
+  };
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.loadingMore}>
+        <ActivityIndicator size="small" color={colors.primaryLight} />
+      </View>
     );
   };
 
@@ -140,26 +174,34 @@ const WorkoutHistoryPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View style={{ width: 40 }} />
         <Text style={styles.headerTitle}>History</Text>
         <TouchableOpacity style={styles.headerButton}>
           <Text style={styles.headerAction}>Calendar</Text>
         </TouchableOpacity>
       </View>
+      
+      
 
-      <ScrollView contentContainerStyle={{ paddingVertical: 16 }}>
-        {error ? (
+      <FlatList
+        data={workouts}
+        renderItem={renderWorkoutCard}
+        keyExtractor={item => item.workout_id}
+        contentContainerStyle={{ paddingVertical: 16 }}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={
           <View style={styles.loadingContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorText}>
+              {error || "No workouts found"}
+            </Text>
           </View>
-        ) : workouts.length === 0 ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.errorText}>No workouts found</Text>
-          </View>
-        ) : (
-          workouts.map(workout => renderWorkoutCard(workout))
-        )}
-      </ScrollView>
+        }
+      />
     </SafeAreaView>
   );
 };
