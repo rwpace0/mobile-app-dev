@@ -57,9 +57,14 @@ class WorkoutAPI extends APIBase {
         searchTerm,
       } = params;
 
+      console.log('[WorkoutAPI] Fetching workouts cursor:', { cursor, limit, dateFrom, dateTo, searchTerm });
+
       const cacheKey = this.workoutCache.generateListCacheKey(params);
       const cachedResult = this.workoutCache.getWorkoutList(cacheKey);
-      if (cachedResult) return cachedResult;
+      if (cachedResult) {
+        console.log('[WorkoutAPI] Returning cached workout list');
+        return cachedResult;
+      }
 
       // Build query
       let workoutQuery = `
@@ -115,6 +120,8 @@ class WorkoutAPI extends APIBase {
         ? results[results.length - 1].date_performed
         : null;
 
+      console.log('[WorkoutAPI] Fetched', results.length, 'workouts from database');
+
       const response = {
         workouts: results,
         hasMore,
@@ -123,9 +130,10 @@ class WorkoutAPI extends APIBase {
       };
 
       this.workoutCache.setWorkoutList(cacheKey, response);
+      console.log('[WorkoutAPI] Cached new workout list results');
       return response;
     } catch (error) {
-      console.error("Get workouts cursor error:", error);
+      console.error("[WorkoutAPI] Get workouts cursor error:", error);
       throw error;
     }
   }
@@ -223,6 +231,7 @@ class WorkoutAPI extends APIBase {
 
   async finishWorkout(workoutData) {
     try {
+      console.log('[WorkoutAPI] Starting workout finish process');
       const userId = await this.getUserId();
       const workoutId = uuid();
       const now = new Date().toISOString();
@@ -244,39 +253,40 @@ class WorkoutAPI extends APIBase {
 
       await this.db.execute("BEGIN TRANSACTION");
       try {
+        console.log('[WorkoutAPI] Storing workout locally with ID:', workoutId);
         await this.storeLocally(workout, "pending_sync");
         await this.calculateAndStoreSummary(workout);
         await this.db.execute("COMMIT");
         
-        // Clear all caches since a new workout affects list views
+        console.log('[WorkoutAPI] Local workout storage successful, clearing caches');
         this.cache.clearPattern('^workouts:');
         this.workoutCache.clearAll();
 
-        // Try to sync if online
+        console.log('[WorkoutAPI] Attempting to sync workout with server');
         const response = await this.makeAuthenticatedRequest({
           method: 'POST',
           url: `${this.baseUrl}/finish`,
           data: workout
         }).catch(error => {
-          console.error("Server sync failed, but local save succeeded:", error);
+          console.warn("[WorkoutAPI] Server sync failed, but local save succeeded:", error);
           return { data: workout };
         });
 
-        // Update local record with server data if sync succeeded
         if (response.data !== workout) {
+          console.log('[WorkoutAPI] Server sync successful, updating local data');
           await this.storeLocally(response.data, "synced");
-          // Clear caches again after successful sync
           this.cache.clearPattern('^workouts:');
           this.workoutCache.clearAll();
         }
 
         return response.data;
       } catch (error) {
+        console.error('[WorkoutAPI] Error during workout finish, rolling back:', error);
         await this.db.execute("ROLLBACK");
         throw error;
       }
     } catch (error) {
-      console.error("Finish workout error:", error);
+      console.error("[WorkoutAPI] Finish workout error:", error);
       throw error;
     }
   }
@@ -381,10 +391,12 @@ class WorkoutAPI extends APIBase {
   }
 
   async _fetchFromServer() {
+    console.log('[WorkoutAPI] Fetching workouts from server');
     const response = await this.makeAuthenticatedRequest({
       method: 'GET',
       url: this.baseUrl
     });
+    console.log('[WorkoutAPI] Server fetch complete');
     return response.data;
   }
 

@@ -8,35 +8,37 @@ import {
 } from "../constants/theme";
 
 export default StyleSheet.create({
-tabBar: {
+  tabBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     alignItems: "center",
     borderTopWidth: 1,
     borderTopColor: colors.divider,
     paddingVertical: Spacing.s,
-    paddingHorizontal: Spacing.l,
+    
     backgroundColor: colors.backgroundDark,
   },
-  
+
   tabItem: {
     alignItems: "center",
     justifyContent: "center",
     padding: Spacing.xs,
+    flex: 1,
   },
-  
+
   tabItemActive: {
     alignItems: "center",
     justifyContent: "center",
     padding: Spacing.xs,
+    flex: 1,
   },
-  
+
   tabText: {
     color: colors.textFaded,
     fontSize: FontSize.small,
     marginTop: Spacing.xxs,
   },
-  
+
   tabTextActive: {
     color: colors.primaryLight,
     fontSize: FontSize.small,

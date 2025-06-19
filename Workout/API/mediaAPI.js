@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { storage } from './tokenStorage';
 import getBaseUrl from './getBaseUrl';
+import { mediaCache } from './local/MediaCache';
+import * as FileSystem from 'expo-file-system';
 
 const API_URL = `${getBaseUrl()}/media`;
 
@@ -30,6 +32,18 @@ export const mediaAPI = {
       // Get the filename from the URI
       const filename = imageUri.split('/').pop();
       
+      // Get file info for size validation
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      if (!fileInfo.exists) {
+        throw new Error('File does not exist');
+      }
+
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024;
+      if (fileInfo.size > maxSize) {
+        throw new Error('Image size must be less than 5MB');
+      }
+      
       // Append the file with correct field name
       formData.append('exerciseMedia', {
         uri: imageUri,
@@ -37,14 +51,81 @@ export const mediaAPI = {
         type: `image/${filename.split('.').pop().toLowerCase()}`
       });
       
-      // Append exercise ID and user exercise flag
+      // Append exercise ID
       formData.append('exerciseId', exerciseId);
       formData.append('isUserExercise', 'true');
 
       const response = await api.post('/exercise', formData);
-      return response.data;
+      const { url: mediaUrl } = response.data;
+
+      // Download and cache the file
+      const localPath = await mediaCache.downloadAndCacheFile(mediaUrl, 'exercises', exerciseId);
+      
+      // Update local database
+      await mediaCache.updateExerciseMedia(exerciseId, mediaUrl, localPath);
+
+      return { mediaUrl, localPath };
     } catch (error) {
       console.error('Upload exercise media error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+  },
+
+  uploadProfileAvatar: async (userId, imageUri) => {
+    try {
+      const formData = new FormData();
+      const filename = imageUri.split('/').pop();
+
+      // Get file info for size validation
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      if (!fileInfo.exists) {
+        throw new Error('File does not exist');
+      }
+
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024;
+      if (fileInfo.size > maxSize) {
+        throw new Error('Image size must be less than 5MB');
+      }
+
+      formData.append('avatar', {
+        uri: imageUri,
+        name: filename,
+        type: `image/${filename.split('.').pop().toLowerCase()}`
+      });
+
+      const response = await api.post('/avatar', formData);
+      const { url: avatarUrl } = response.data;
+
+      // Download and cache the file
+      const localPath = await mediaCache.downloadAndCacheFile(avatarUrl, 'avatars', userId);
+      
+      // Update local database
+      await mediaCache.updateProfileAvatar(userId, avatarUrl, localPath);
+
+      return { avatarUrl, localPath };
+    } catch (error) {
+      console.error('Upload avatar error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+  },
+
+  deleteExerciseMedia: async (exerciseId) => {
+    try {
+      await mediaCache.clearExerciseMedia(exerciseId);
+      await api.delete('/', { data: { type: 'exercise', id: exerciseId } });
+    } catch (error) {
+      console.error('Delete exercise media error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+  },
+
+  deleteProfileAvatar: async (userId) => {
+    try {
+      await mediaCache.clearProfileAvatar(userId);
+      await api.delete('/', { data: { type: 'avatar', id: userId } });
+    } catch (error) {
+      console.error('Delete avatar error:', error.response?.data || error.message);
       throw error.response?.data || error;
     }
   }

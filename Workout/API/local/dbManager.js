@@ -11,8 +11,21 @@ class DatabaseManager {
       // For Expo SQLite v13+
       this.db = await SQLite.openDatabaseAsync("workout_app.db");
 
-      // Create tables only if they don't exist (safe initialization)
+      // Create version table if it doesn't exist
       await this.db.execAsync(`
+        CREATE TABLE IF NOT EXISTS db_version (
+          version INTEGER PRIMARY KEY,
+          updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+        );
+      `);
+
+      // Check current version
+      const [versionRow] = await this.db.getAllAsync('SELECT version FROM db_version ORDER BY version DESC LIMIT 1');
+      const currentVersion = versionRow ? versionRow.version : 0;
+
+      if (currentVersion < 1) {
+        // Initial schema
+        await this.db.execAsync(`
                 -- All DATETIME fields store ISO8601 strings with timezone information
                 -- Format: YYYY-MM-DDTHH:mm:ss.sssZ
                 -- Example: 2024-03-14T12:00:00.000Z
@@ -24,10 +37,30 @@ class DatabaseManager {
                     muscle_group TEXT,
                     equipment TEXT,
                     media_url TEXT,
+                    local_media_path TEXT,
                     is_public INTEGER DEFAULT 0,
                     created_by TEXT,
                     created_at DATETIME NOT NULL,
                     updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                );
+
+                -- Add local_media_path column if it doesn't exist
+                ALTER TABLE exercises ADD COLUMN IF NOT EXISTS local_media_path TEXT;
+
+                CREATE TABLE IF NOT EXISTS profiles (
+                    user_id TEXT PRIMARY KEY,
+                    username TEXT UNIQUE,
+                    display_name TEXT,
+                    avatar_url TEXT,
+                    local_avatar_path TEXT,
+                    is_public INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    user_email TEXT UNIQUE,
                     sync_status TEXT DEFAULT 'synced'
                         CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
                     version INTEGER DEFAULT 1,
@@ -145,6 +178,28 @@ class DatabaseManager {
                 CREATE INDEX IF NOT EXISTS idx_sets_exercise ON sets(workout_exercises_id, weight, reps);
             `);
 
+        // Update version - check if version 1 exists first
+        const [version1Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 1');
+        if (!version1Exists) {
+          await this.db.execAsync('INSERT INTO db_version (version) VALUES (1)');
+        }
+      }
+
+      if (currentVersion < 2) {
+        // Add local_media_path if it doesn't exist
+        try {
+          await this.db.execAsync('ALTER TABLE exercises ADD COLUMN local_media_path TEXT;');
+        } catch (e) {
+          // Column might already exist, that's fine
+        }
+
+        // Update version - check if version 2 exists first
+        const [version2Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 2');
+        if (!version2Exists) {
+          await this.db.execAsync('INSERT INTO db_version (version) VALUES (2)');
+        }
+      }
+
       console.log("Database initialized successfully");
     } catch (error) {
       console.error("Database initialization failed:", error);
@@ -174,10 +229,27 @@ class DatabaseManager {
         throw new Error("Database not initialized");
       }
 
-      const result = await this.db.runAsync(sql, params);
+      // Replace placeholders with actual values to avoid parameter binding issues
+      let finalSql = sql;
+      params.forEach((param, index) => {
+        let value = param;
+        if (param === undefined || param === null) {
+          value = 'NULL';
+        } else if (typeof param === 'string') {
+          value = `'${param.replace(/'/g, "''")}'`; // Escape single quotes
+        } else if (typeof param === 'boolean') {
+          value = param ? 1 : 0;
+        }
+        finalSql = finalSql.replace('?', value);
+      });
+
+      console.log('[DatabaseManager] Final SQL:', finalSql);
+      
+      // Execute the query directly
+      const result = await this.db.execAsync(finalSql);
       return {
-        rowsAffected: result.changes,
-        insertId: result.lastInsertRowId,
+        rowsAffected: result ? 1 : 0,
+        insertId: null
       };
     } catch (error) {
       console.error("Execute failed:", error);
@@ -191,6 +263,15 @@ class DatabaseManager {
       this.db = null;
     }
   }
+
+  async reload() {
+    await this.close();
+    this.initializationPromise = this.initDatabase();
+    await this.initializationPromise;
+  }
 }
 
 export const dbManager = new DatabaseManager();
+
+// Force a database reload when the module is imported
+dbManager.reload().catch(console.error);

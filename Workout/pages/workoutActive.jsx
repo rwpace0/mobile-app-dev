@@ -128,7 +128,9 @@ const WorkoutActivePage = () => {
     setTotalSets((prev) => prev + sets);
   };
 
-  
+  const handleSettings = () => {
+    console.log("Settings");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -209,7 +211,7 @@ const WorkoutActivePage = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.settingsButton}>
+        <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
           <Text style={styles.settingsText}>Settings</Text>
         </TouchableOpacity>
 

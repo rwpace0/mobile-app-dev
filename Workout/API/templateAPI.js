@@ -36,6 +36,7 @@ class TemplateAPI extends APIBase {
   async getTemplates() {
     try {
       await this.ensureInitialized();
+      console.log('[TemplateAPI] Fetching all templates');
 
       return this.handleOfflineFirst('templates:all', async () => {
         const templates = await this.db.query(
@@ -57,6 +58,8 @@ class TemplateAPI extends APIBase {
           ORDER BY t.created_at DESC`
         );
 
+        console.log('[TemplateAPI] Found', templates.length, 'templates in database');
+
         // Parse exercises JSON for each template
         return templates.map(template => ({
           ...template,
@@ -64,7 +67,7 @@ class TemplateAPI extends APIBase {
         }));
       });
     } catch (error) {
-      console.error("Get templates error:", error);
+      console.error("[TemplateAPI] Get templates error:", error);
       throw error;
     }
   }
@@ -108,6 +111,7 @@ class TemplateAPI extends APIBase {
 
   async createTemplate(templateData) {
     try {
+      console.log('[TemplateAPI] Starting template creation');
       const userId = await this.getUserId();
       const template_id = uuid();
       const now = new Date().toISOString();
@@ -122,39 +126,41 @@ class TemplateAPI extends APIBase {
         updated_at: now
       };
 
-      // Save to local db first
+      console.log('[TemplateAPI] Storing template locally with ID:', template_id);
       await this.storeLocally(template, "pending_sync");
 
-      // Try to sync if online
+      console.log('[TemplateAPI] Attempting to sync template with server');
       const response = await this.makeAuthenticatedRequest({
         method: 'POST',
         url: `${this.baseUrl}/create`,
         data: template
       }).catch(error => {
-        console.error("Server sync failed, but local save succeeded:", error);
+        console.warn("[TemplateAPI] Server sync failed, but local save succeeded:", error);
         return { data: template };
       });
 
-      // Update local record with server data if sync succeeded
       if (response.data !== template) {
+        console.log('[TemplateAPI] Server sync successful, updating local data');
         await this.storeLocally(response.data, "synced");
       }
 
-      // Clear cache
+      console.log('[TemplateAPI] Template creation complete, clearing cache');
       this.cache.clearPattern('^templates:');
 
       return response.data;
     } catch (error) {
-      console.error("Create template error:", error);
+      console.error("[TemplateAPI] Create template error:", error);
       throw error;
     }
   }
 
   async _fetchFromServer() {
+    console.log('[TemplateAPI] Fetching templates from server');
     const response = await this.makeAuthenticatedRequest({
       method: 'GET',
       url: this.baseUrl
     });
+    console.log('[TemplateAPI] Server fetch complete');
     return response.data;
   }
 
