@@ -71,6 +71,8 @@ const WorkoutActivePage = () => {
     setTotalVolume(0);
     setTotalSets(0);
     setWorkoutDuration(0);
+    setExerciseStates({});
+    navigation.goBack();
   };
 
   const handleExerciseStateChange = (exercise_id, { sets, notes }) => {
@@ -112,7 +114,6 @@ const WorkoutActivePage = () => {
         duration: workoutDuration,
         exercises: exercisesPayload,
       };
-      console.log(payload);
       await workoutAPI.finishWorkout(payload);
       console.log("Workout saved successfully!");
       navigation.goBack();
@@ -126,6 +127,8 @@ const WorkoutActivePage = () => {
     setTotalVolume((prev) => prev + volume);
     setTotalSets((prev) => prev + sets);
   };
+
+  
 
   return (
     <SafeAreaView style={styles.container}>

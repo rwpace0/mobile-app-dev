@@ -188,12 +188,7 @@ const WorkoutHistoryPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>History</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <Text style={styles.headerAction}>Calendar</Text>
-        </TouchableOpacity>
-      </View>
+      <Header title="History" />
 
       <FlatList
         data={workouts}

@@ -113,10 +113,10 @@ const WorkoutStartPage = () => {
     navigation.navigate("RoutineCreate");
   }, [navigation]);
 
-  const handleExplore = useCallback(() => {
-    // TODO: Implement explore functionality
-    console.log("Explore routines");
-  }, []);
+  const handleExplore = () => {
+    console.log("Explore");
+  };
+  
 
   const handleStartRoutine = useCallback((template) => {
     // Transform template exercises into the format expected by WorkoutActive
