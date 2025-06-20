@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -86,39 +87,61 @@ const WorkoutActivePage = () => {
     try {
       // Build workout name and date
       const now = new Date();
-      const workoutName = this.workoutName || `Workout on ${now.toLocaleDateString()}`;
+      const finalWorkoutName = workoutName || `Workout on ${now.toLocaleDateString()}`;
       const datePerformed = now.toISOString();
+      
       // Build exercises array
-      const exercisesPayload = exercises.map((exercise) => {
+      const exercisesPayload = exercises.map((exercise, index) => {
         const state = exerciseStates[exercise.exercise_id] || {
           sets: [],
           notes: "",
         };
+        
         // Only include sets with weight and reps
         const sets = (state.sets || [])
           .filter((set) => set.weight && set.reps)
           .map((set, idx) => ({
             weight: Number(set.weight),
             reps: Number(set.reps),
+            rir: set.rir || 0,
             set_order: idx + 1,
           }));
+
         return {
           exercise_id: exercise.exercise_id,
+          exercise_order: index + 1,
           notes: state.notes || "",
           sets,
         };
       });
+
+      // Filter out exercises with no sets
+      const validExercises = exercisesPayload.filter(ex => ex.sets.length > 0);
+
+      if (validExercises.length === 0) {
+        Alert.alert(
+          "No Sets Recorded",
+          "Please add at least one set with weight and reps before finishing the workout."
+        );
+        return;
+      }
+
       const payload = {
-        name: workoutName,
+        name: finalWorkoutName,
         date_performed: datePerformed,
         duration: workoutDuration,
-        exercises: exercisesPayload,
+        exercises: validExercises,
       };
+
       await workoutAPI.finishWorkout(payload);
       console.log("Workout saved successfully!");
       navigation.goBack();
     } catch (err) {
       console.error("Failed to save workout:", err);
+      Alert.alert(
+        "Error",
+        "Failed to save workout. Please try again."
+      );
     }
   };
 

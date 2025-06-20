@@ -213,6 +213,18 @@ class BackgroundProcessor {
       this.isProcessing = false;
     }
   }
+
+  scheduleSync(resource, data) {
+    // Import syncManager lazily to avoid circular dependencies
+    import('./syncManager').then(({ syncManager }) => {
+      // Add to sync queue with a delay
+      setTimeout(() => {
+        syncManager.syncIfNeeded(resource, true);
+      }, 5 * 60 * 1000); // 5 minute delay for local-first approach
+    }).catch(error => {
+      console.error('[BackgroundProcessor] Failed to schedule sync:', error);
+    });
+  }
 }
 
 export const backgroundProcessor = new BackgroundProcessor(); 
