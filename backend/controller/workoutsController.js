@@ -424,3 +424,140 @@ export async function getWorkoutCountsByWeek(req, res) {
     });
   }
 }
+
+export async function getWorkoutsBatch(req, res) {
+  try {
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "No authorization header" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+    
+    // Get user data from Supabase
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    // Create a client with the user's token
+    const supabaseWithAuth = getClientToken(token);
+
+    // Get total count for pagination
+    const { count: totalCount } = await supabaseWithAuth
+      .from('workouts')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    // Query workouts with pagination
+    const { data: workouts, error: workoutsError } = await supabaseWithAuth
+      .from("workouts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("date_performed", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (workoutsError) {
+      console.error("Database query error:", workoutsError);
+      return res.status(500).json({ error: workoutsError.message });
+    }
+
+    if (!workouts || workouts.length === 0) {
+      return res.json({
+        workouts: [],
+        page,
+        limit,
+        total: totalCount,
+        hasMore: false
+      });
+    }
+
+    // Get all workout IDs for this batch
+    const workoutIds = workouts.map(w => w.workout_id);
+
+    // Get exercises for all workouts in this batch in a single query
+    const { data: workoutExercises, error: exercisesError } = await supabaseWithAuth
+      .from("workout_exercises")
+      .select(`
+        workout_exercises_id,
+        workout_id,
+        notes,
+        created_at,
+        exercises (*)
+      `)
+      .in("workout_id", workoutIds);
+
+    if (exercisesError) {
+      console.error("Database query error:", exercisesError);
+      return res.status(500).json({ error: exercisesError.message });
+    }
+
+    // Get all sets for these workouts in a single query
+    const { data: sets, error: setsError } = await supabaseWithAuth
+      .from("sets")
+      .select("*")
+      .in("workout_id", workoutIds)
+      .order("set_order", { ascending: true });
+
+    if (setsError) {
+      console.error("Database query error:", setsError);
+      return res.status(500).json({ error: setsError.message });
+    }
+
+    // Organize exercises and sets by workout_id
+    const exercisesByWorkout = {};
+    workoutExercises.forEach((we) => {
+      if (!exercisesByWorkout[we.workout_id]) {
+        exercisesByWorkout[we.workout_id] = [];
+      }
+      exercisesByWorkout[we.workout_id].push(we);
+    });
+
+    const setsByExercise = {};
+    sets.forEach((set) => {
+      if (!setsByExercise[set.workout_exercises_id]) {
+        setsByExercise[set.workout_exercises_id] = [];
+      }
+      setsByExercise[set.workout_exercises_id].push(set);
+    });
+
+    // Combine all data
+    const workoutsWithDetails = workouts.map(workout => {
+      const exercises = (exercisesByWorkout[workout.workout_id] || []).map(we => ({
+        ...we,
+        sets: setsByExercise[we.workout_exercises_id] || []
+      }));
+
+      return {
+        ...workout,
+        exercises
+      };
+    });
+
+    res.json({
+      workouts: workoutsWithDetails,
+      page,
+      limit,
+      total: totalCount,
+      hasMore: offset + workouts.length < totalCount
+    });
+
+  } catch (err) {
+    console.error("Network or unexpected error:", err);
+    res.status(500).json({
+      error: "Failed to connect to Supabase API",
+      message: err.message,
+    });
+  }
+}

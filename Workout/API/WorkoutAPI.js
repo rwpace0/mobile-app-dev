@@ -1,291 +1,241 @@
-import 'react-native-get-random-values';
-import axios from 'axios';
-import { storage } from './tokenStorage';
-import getBaseUrl from './getBaseUrl';
-import { dbManager } from './local/dbManager';
-import { syncManager } from './local/syncManager';
-import NetInfo from '@react-native-community/netinfo';
-import { v4 as uuid } from 'uuid';
+import "react-native-get-random-values";
+import getBaseUrl from "./getBaseUrl";
+import APIBase from './utils/APIBase';
+import { dbManager } from "./local/dbManager";
+import { workoutCache } from "./local/WorkoutCache";
+import { backgroundProcessor } from "./local/BackgroundProcessor";
+import { v4 as uuid } from "uuid";
 
-class WorkoutAPI {
+class WorkoutAPI extends APIBase {
   constructor() {
-    this.baseUrl = `${getBaseUrl()}/workouts`;
-    this.db = dbManager;
-    this.isInitialized = false;
-    this.setupSync();
+    super(`${getBaseUrl()}/workouts`, dbManager, {
+      minDelay: 3000,
+      maxRetries: 2,
+      cacheConfig: {
+        maxSize: 2000,
+        ttl: 10 * 60 * 1000 // 10 minutes
+      }
+    });
+    this.workoutCache = workoutCache; // Keep the specialized workout cache
+    this.backgroundProcessor = backgroundProcessor;
   }
 
-  setupSync() {
-    syncManager.registerSyncFunction("workouts", async () => {
-      await this.syncWorkouts();
+  getTableName() {
+    return 'workouts';
+  }
+
+  async storeLocally(workout, syncStatus = "synced") {
+    return this.storage.storeEntity(workout, {
+      table: 'workouts',
+      fields: ['user_id', 'name', 'date_performed', 'duration'],
+      syncStatus,
+      relations: [
+        {
+          table: 'workout_exercises',
+          data: workout.exercises,
+          orderField: 'exercise_order',
+          relations: [
+            {
+              table: 'sets',
+              data: (exercise) => exercise.sets,
+              orderField: 'set_order'
+            }
+          ]
+        }
+      ]
     });
   }
 
-  async ensureInitialized() {
-    if (this.isInitialized) return;
-    
-    try {
-      // Check if we have any workouts in local db
-      const localCount = await this.db.query("SELECT COUNT(*) as count FROM workouts");
-      
-      if (localCount[0].count === 0) {
-        // If empty, try to fetch initial data from server
-        const netInfo = await NetInfo.fetch();
-        if (netInfo.isConnected) {
-          const token = await storage.getItem("auth_token");
-          if (token) {
-            const response = await axios.get(this.baseUrl, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-
-            // Store workouts and their exercises locally
-            for (const workout of response.data) {
-              await this.storeWorkoutLocally(workout);
-            }
-          }
-        }
-      }
-      
-      this.isInitialized = true;
-    } catch (error) {
-      console.error("Database initialization error:", error);
-      this.isInitialized = true;
-    }
-  }
-
-  async storeWorkoutLocally(workout, syncStatus = "synced") {
-    const now = new Date().toISOString();
-    
-    // Store workout
-    await this.db.execute(
-      `INSERT OR REPLACE INTO workouts (
-        workout_id, user_id, name, date_performed, duration,
-        created_at, updated_at, sync_status, version, last_synced_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        workout.workout_id,
-        workout.user_id,
-        workout.name,
-        workout.date_performed,
-        workout.duration,
-        workout.created_at || now,
-        workout.updated_at || now,
-        syncStatus,
-        workout.version || 1,
-        now
-      ]
-    );
-
-    // Store workout exercises
-    if (workout.exercises && Array.isArray(workout.exercises)) {
-      for (const exercise of workout.exercises) {
-        if (!exercise || !exercise.exercise_id) continue;
-        
-        const workoutExerciseId = exercise.workout_exercises_id || uuid();
-        await this.db.execute(
-          `INSERT OR REPLACE INTO workout_exercises (
-            workout_exercises_id, workout_id, exercise_id,
-            exercise_order, notes, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            workoutExerciseId,
-            workout.workout_id,
-            exercise.exercise_id,
-            exercise.exercise_order || 0,
-            exercise.notes || null,
-            exercise.created_at || now,
-            exercise.updated_at || now
-          ]
-        );
-
-        // Store sets if they exist
-        if (exercise.sets && Array.isArray(exercise.sets)) {
-          for (const set of exercise.sets) {
-            if (!set) continue;
-            
-            await this.db.execute(
-              `INSERT OR REPLACE INTO sets (
-                set_id, workout_id, workout_exercises_id,
-                weight, reps, rir, set_order, created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [
-                set.set_id || uuid(),
-                workout.workout_id,
-                workoutExerciseId,
-                set.weight || 0,
-                set.reps || 0,
-                set.rir || null,
-                set.set_order || 0,
-                set.created_at || now,
-                set.updated_at || now
-              ]
-            );
-          }
-        }
-      }
-    }
-  }
-
-  async getWorkouts() {
+  async getWorkoutsCursor(params = {}) {
     try {
       await this.ensureInitialized();
+      const {
+        cursor = null,
+        limit = 20,
+        dateFrom,
+        dateTo,
+        searchTerm,
+      } = params;
 
-      // Get local workouts first
-      const workouts = await this.db.query(
-        `SELECT 
-          w.*,
-          json_group_array(
-            CASE 
-              WHEN we.workout_exercises_id IS NULL THEN json_object()
-              ELSE json_object(
-                'workout_exercises_id', we.workout_exercises_id,
-                'exercise_id', we.exercise_id,
-                'name', COALESCE(e.name, 'Unknown Exercise'),
-                'muscle_group', e.muscle_group,
-                'exercise_order', we.exercise_order,
-                'notes', we.notes,
-                'sets', (
-                  SELECT json_group_array(
-                    json_object(
-                      'set_id', s.set_id,
-                      'weight', s.weight,
-                      'reps', s.reps,
-                      'rir', s.rir,
-                      'set_order', s.set_order
-                    )
-                  )
-                  FROM sets s
-                  WHERE s.workout_exercises_id = we.workout_exercises_id
-                  ORDER BY s.set_order
-                )
-              )
-            END
-          ) as exercises
+      console.log('[WorkoutAPI] Fetching workouts cursor:', { cursor, limit, dateFrom, dateTo, searchTerm });
+
+      const cacheKey = this.workoutCache.generateListCacheKey(params);
+      const cachedResult = this.workoutCache.getWorkoutList(cacheKey);
+      if (cachedResult) {
+        console.log('[WorkoutAPI] Returning cached workout list');
+        return cachedResult;
+      }
+
+      // Build query
+      let workoutQuery = `
+        SELECT w.workout_id
         FROM workouts w
-        LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id
-        LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
         WHERE w.sync_status != 'pending_delete'
-        GROUP BY w.workout_id
-        ORDER BY w.date_performed DESC`
+      `;
+      const queryParams = [];
+
+      if (cursor) {
+        workoutQuery += ` AND w.date_performed < ?`;
+        queryParams.push(cursor);
+      }
+
+      if (dateFrom) {
+        workoutQuery += ` AND w.date_performed >= ?`;
+        queryParams.push(dateFrom);
+      }
+
+      if (dateTo) {
+        workoutQuery += ` AND w.date_performed <= ?`;
+        queryParams.push(dateTo);
+      }
+
+      if (searchTerm) {
+        workoutQuery += ` AND (w.name LIKE ? OR EXISTS (
+          SELECT 1 FROM workout_exercises we
+          JOIN exercises e ON we.exercise_id = e.exercise_id
+          WHERE we.workout_id = w.workout_id AND e.name LIKE ?
+        ))`;
+        const searchPattern = `%${searchTerm}%`;
+        queryParams.push(searchPattern, searchPattern);
+      }
+
+      workoutQuery += ` ORDER BY w.date_performed DESC LIMIT ?`;
+      queryParams.push(limit + 1);
+
+      const workoutIds = await this.db.query(workoutQuery, queryParams);
+      const hasMore = workoutIds.length > limit;
+      const resultsIds = workoutIds.slice(0, limit).map(w => w.workout_id);
+
+      if (resultsIds.length === 0) {
+        return { workouts: [], hasMore: false, nextCursor: null, totalLoaded: 0 };
+      }
+
+      // Get full workout data
+      const workouts = await Promise.all(
+        resultsIds.map(workoutId => this._getWorkoutWithDetails(workoutId))
       );
 
-      // Parse exercises JSON for each workout and handle empty arrays
-      const processedWorkouts = workouts.map(workout => {
-        let exercises = [];
-        try {
-          const parsedExercises = JSON.parse(workout.exercises);
-          exercises = parsedExercises
-            .filter(ex => ex && Object.keys(ex).length > 0)
-            .map(ex => ({
-              ...ex,
-              sets: ex.sets ? JSON.parse(ex.sets) : []
-            }));
-        } catch (e) {
-          console.error('Error parsing exercises:', e);
-        }
-        return {
-          ...workout,
-          exercises
-        };
-      });
+      const results = workouts.filter(Boolean);
+      const nextCursor = hasMore && results.length > 0
+        ? results[results.length - 1].date_performed
+        : null;
 
-      // Try to sync in background if needed
-      syncManager.syncIfNeeded("workouts").catch(console.error);
+      console.log('[WorkoutAPI] Fetched', results.length, 'workouts from database');
 
-      return processedWorkouts;
+      const response = {
+        workouts: results,
+        hasMore,
+        nextCursor,
+        totalLoaded: results.length
+      };
+
+      this.workoutCache.setWorkoutList(cacheKey, response);
+      console.log('[WorkoutAPI] Cached new workout list results');
+      return response;
     } catch (error) {
-      console.error("Get workouts error:", error);
+      console.error("[WorkoutAPI] Get workouts cursor error:", error);
       throw error;
     }
   }
 
   async getWorkoutById(workoutId) {
     try {
-      const [workout] = await this.db.query(
-        `SELECT 
-          w.*,
-          json_group_array(
-            CASE 
-              WHEN we.workout_exercises_id IS NULL THEN json_object()
-              ELSE json_object(
-                'workout_exercises_id', we.workout_exercises_id,
-                'exercise_id', we.exercise_id,
-                'name', COALESCE(e.name, 'Unknown Exercise'),
-                'muscle_group', e.muscle_group,
-                'exercise_order', we.exercise_order,
-                'notes', we.notes,
-                'sets', (
-                  SELECT json_group_array(
-                    json_object(
-                      'set_id', s.set_id,
-                      'weight', s.weight,
-                      'reps', s.reps,
-                      'rir', s.rir,
-                      'set_order', s.set_order
-                    )
-                  )
-                  FROM sets s
-                  WHERE s.workout_exercises_id = we.workout_exercises_id
-                  ORDER BY s.set_order
-                )
-              )
-            END
-          ) as exercises
-        FROM workouts w
-        LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id
-        LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
-        WHERE w.workout_id = ? AND w.sync_status != 'pending_delete'
-        GROUP BY w.workout_id`,
-        [workoutId]
-      );
+      await this.ensureInitialized();
 
-      if (workout) {
-        let exercises = [];
-        try {
-          const parsedExercises = JSON.parse(workout.exercises);
-          exercises = parsedExercises
-            .filter(ex => ex && Object.keys(ex).length > 0)
-            .map(ex => ({
-              ...ex,
-              sets: ex.sets ? JSON.parse(ex.sets) : []
-            }));
-        } catch (e) {
-          console.error('Error parsing exercises:', e);
-        }
-        return {
-          ...workout,
-          exercises
-        };
-      }
-
-      // If not found locally, try server
-      const token = await storage.getItem("auth_token");
-      if (!token) throw new Error("No auth token found");
-
-      const response = await axios.get(`${this.baseUrl}/${workoutId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      return this.handleOfflineFirst(`workout:${workoutId}`, async () => {
+        return await this._getWorkoutWithDetails(workoutId);
       });
-
-      // Store in local db
-      await this.storeWorkoutLocally(response.data);
-
-      return response.data;
     } catch (error) {
       console.error("Get workout by id error:", error);
       throw error;
     }
   }
 
+  async _getWorkoutWithDetails(workoutId) {
+    const workoutData = await this.db.query(
+      `
+      SELECT 
+        w.*,
+        we.workout_exercises_id,
+        we.exercise_order,
+        we.notes as exercise_notes,
+        e.exercise_id,
+        e.name as exercise_name,
+        e.muscle_group,
+        s.set_id,
+        s.weight,
+        s.reps,
+        s.rir,
+        s.set_order
+      FROM workouts w
+      LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id
+      LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
+      LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+      WHERE w.workout_id = ? AND w.sync_status != 'pending_delete'
+      ORDER BY we.exercise_order, s.set_order
+    `,
+      [workoutId]
+    );
+
+    if (workoutData.length === 0) return null;
+
+    // Process workout data into structured format
+    const workout = {
+      workout_id: workoutData[0].workout_id,
+      user_id: workoutData[0].user_id,
+      name: workoutData[0].name,
+      date_performed: workoutData[0].date_performed,
+      duration: workoutData[0].duration,
+      created_at: workoutData[0].created_at,
+      updated_at: workoutData[0].updated_at,
+      exercises: []
+    };
+
+    const exercisesMap = new Map();
+
+    workoutData.forEach((row) => {
+      if (!row.workout_exercises_id) return;
+
+      let exercise = exercisesMap.get(row.workout_exercises_id);
+
+      if (!exercise) {
+        exercise = {
+          workout_exercises_id: row.workout_exercises_id,
+          exercise_id: row.exercise_id,
+          name: row.exercise_name,
+          muscle_group: row.muscle_group,
+          exercise_order: row.exercise_order,
+          notes: row.exercise_notes,
+          sets: []
+        };
+        exercisesMap.set(row.workout_exercises_id, exercise);
+        workout.exercises.push(exercise);
+      }
+
+      if (row.set_id) {
+        exercise.sets.push({
+          set_id: row.set_id,
+          weight: row.weight,
+          reps: row.reps,
+          rir: row.rir,
+          set_order: row.set_order
+        });
+      }
+    });
+
+    // Sort exercises by order
+    workout.exercises.sort((a, b) => a.exercise_order - b.exercise_order);
+
+    return workout;
+  }
+
   async finishWorkout(workoutData) {
     try {
-      const token = await storage.getItem("auth_token");
-      if (!token) throw new Error("No auth token found");
-
-      const userId = JSON.parse(atob(token.split(".")[1])).sub;
+      console.log('[WorkoutAPI] Starting workout finish process');
+      const userId = await this.getUserId();
       const workoutId = uuid();
       const now = new Date().toISOString();
 
-      // Ensure required fields are present
       if (!workoutData.date_performed) {
         throw new Error("date_performed is required for workout");
       }
@@ -301,145 +251,189 @@ class WorkoutAPI {
         updated_at: now
       };
 
-      // Save to local db first
-      await this.storeWorkoutLocally(workout, "pending_sync");
+      await this.db.execute("BEGIN TRANSACTION");
+      try {
+        console.log('[WorkoutAPI] Storing workout locally with ID:', workoutId);
+        await this.storeLocally(workout, "pending_sync");
+        await this.calculateAndStoreSummary(workout);
+        await this.db.execute("COMMIT");
+        
+        console.log('[WorkoutAPI] Local workout storage successful, clearing caches');
+        this.cache.clearPattern('^workouts:');
+        this.workoutCache.clearAll();
 
-      // Try to sync if online
-      const netInfo = await NetInfo.fetch();
-      if (netInfo.isConnected) {
-        try {
-          const response = await axios.post(
-            `${this.baseUrl}/finish`,
-            workout,
-            {
-              headers: { Authorization: `Bearer ${token}` }
-            }
-          );
+        console.log('[WorkoutAPI] Attempting to sync workout with server');
+        const response = await this.makeAuthenticatedRequest({
+          method: 'POST',
+          url: `${this.baseUrl}/finish`,
+          data: workout
+        }).catch(error => {
+          console.warn("[WorkoutAPI] Server sync failed, but local save succeeded:", error);
+          return { data: workout };
+        });
 
-          // Update sync status
-          await this.db.execute(
-            `UPDATE workouts 
-            SET sync_status = 'synced',
-                version = ?,
-                last_synced_at = ?
-            WHERE workout_id = ?`,
-            [response.data.version || 1, now, workoutId]
-          );
-
-          return response.data;
-        } catch (error) {
-          console.error("Server sync failed, but local save succeeded:", error);
-          return workout;
+        if (response.data !== workout) {
+          console.log('[WorkoutAPI] Server sync successful, updating local data');
+          await this.storeLocally(response.data, "synced");
+          this.cache.clearPattern('^workouts:');
+          this.workoutCache.clearAll();
         }
-      }
 
-      return workout;
+        return response.data;
+      } catch (error) {
+        console.error('[WorkoutAPI] Error during workout finish, rolling back:', error);
+        await this.db.execute("ROLLBACK");
+        throw error;
+      }
     } catch (error) {
-      console.error("Finish workout error:", error);
+      console.error("[WorkoutAPI] Finish workout error:", error);
+      throw error;
+    }
+  }
+
+  async calculateAndStoreSummary(workout) {
+    try {
+      const workoutExercises = await this.db.query(
+        `
+        SELECT we.*, e.name, e.muscle_group
+        FROM workout_exercises we
+        LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
+        WHERE we.workout_id = ?
+        ORDER BY we.exercise_order
+      `,
+        [workout.workout_id]
+      );
+
+      const sets = await this.db.query(
+        `
+        SELECT * FROM sets WHERE workout_id = ? ORDER BY workout_exercises_id, set_order
+      `,
+        [workout.workout_id]
+      );
+
+      const exercisesWithSets = workoutExercises.map((exercise) => ({
+        ...exercise,
+        sets: sets.filter(
+          (set) => set.workout_exercises_id === exercise.workout_exercises_id
+        ),
+      }));
+
+      let totalVolume = 0;
+      const exerciseDetails = exercisesWithSets.map((exercise) => {
+        const exerciseVolume = (exercise.sets || []).reduce(
+          (total, set) => total + (set.weight || 0) * (set.reps || 0),
+          0
+        );
+        totalVolume += exerciseVolume;
+
+        const bestSet = exercise.sets.reduce(
+          (best, current) => (current.weight > best.weight ? current : best),
+          exercise.sets[0]
+        );
+
+        return {
+          id: exercise.exercise_id,
+          name: exercise.name,
+          sets: exercise.sets.length,
+          bestSet: bestSet
+            ? { weight: bestSet.weight, reps: bestSet.reps }
+            : null,
+          volume: exerciseVolume,
+        };
+      });
+
+      const summaryData = {
+        exercises: exerciseDetails,
+        totalVolume,
+        exerciseCount: exercisesWithSets.length,
+      };
+
+      await this.db.execute(
+        `
+        INSERT OR REPLACE INTO workout_summaries 
+        (workout_id, summary_data, total_volume, exercise_count, last_calculated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+        [
+          workout.workout_id,
+          JSON.stringify(summaryData),
+          totalVolume,
+          exercisesWithSets.length,
+          new Date().toISOString(),
+        ]
+      );
+
+      return summaryData;
+    } catch (error) {
+      console.error("Calculate summary error:", error);
       throw error;
     }
   }
 
   async getWorkoutCountsByWeek() {
     try {
-      // Get local counts first
-      const localCounts = await this.db.query(`
-        SELECT 
-          strftime('%Y-%W', date_performed) as week,
-          COUNT(*) as count
-        FROM workouts
-        WHERE sync_status != 'pending_delete'
-        GROUP BY week
-        ORDER BY week DESC
-      `);
-
-      // Try to sync in background if needed
-      syncManager.syncIfNeeded("workouts").catch(console.error);
-
-      return localCounts;
+      return this.handleOfflineFirst('workouts:weekly_counts', async () => {
+        const counts = await this.db.query(`
+          SELECT 
+            strftime('%Y-%W', date_performed) as week,
+            COUNT(*) as count
+          FROM workouts
+          WHERE sync_status != 'pending_delete'
+          GROUP BY week
+          ORDER BY week DESC
+        `);
+        return counts.length > 0 ? counts : null;
+      });
     } catch (error) {
       console.error("Get workout counts error:", error);
       throw error;
     }
   }
 
-  async syncWorkouts() {
-    try {
-      const token = await storage.getItem("auth_token");
-      if (!token) return;
-
-      // Get pending workouts
-      const pendingWorkouts = await this.db.query(
-        `SELECT * FROM workouts WHERE sync_status != 'synced'`
-      );
-
-      // Process each pending workout
-      for (const workout of pendingWorkouts) {
-        if (workout.sync_status === "pending_delete") {
-          await this.syncDeleteWorkout(workout, token);
-        } else if (workout.sync_status === "pending_sync") {
-          await this.syncCreateWorkout(workout, token);
-        }
-      }
-
-      // Get all server workouts
-      const response = await axios.get(this.baseUrl, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      // Update local database with server data
-      for (const serverWorkout of response.data) {
-        const [localWorkout] = await this.db.query(
-          "SELECT * FROM workouts WHERE workout_id = ?",
-          [serverWorkout.workout_id]
-        );
-
-        if (!localWorkout || localWorkout.sync_status === "synced") {
-          await this.storeWorkoutLocally(serverWorkout);
-        }
-      }
-    } catch (error) {
-      console.error("Sync workouts error:", error);
-    }
+  async _fetchFromServer() {
+    console.log('[WorkoutAPI] Fetching workouts from server');
+    const response = await this.makeAuthenticatedRequest({
+      method: 'GET',
+      url: this.baseUrl
+    });
+    console.log('[WorkoutAPI] Server fetch complete');
+    return response.data;
   }
 
-  async syncCreateWorkout(workout, token) {
-    try {
-      const response = await axios.post(
-        `${this.baseUrl}/finish`,
-        workout,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      await this.db.execute(
-        `UPDATE workouts 
-        SET sync_status = 'synced',
-            version = ?,
-            last_synced_at = ?
-        WHERE workout_id = ?`,
-        [response.data.version || 1, new Date().toISOString(), workout.workout_id]
-      );
-    } catch (error) {
-      console.error("Sync create workout error:", error);
-    }
+  async getUserId() {
+    const token = await this.storage.getItem("auth_token");
+    if (!token) throw new Error("No auth token found");
+    return JSON.parse(atob(token.split(".")[1])).sub;
   }
 
-  async syncDeleteWorkout(workout, token) {
-    try {
-      await axios.delete(`${this.baseUrl}/${workout.workout_id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  // Background processing methods
+  updateScrollDirection(direction) {
+    this.backgroundProcessor.updateScrollDirection(direction);
+  }
 
-      await this.db.execute(
-        "DELETE FROM workouts WHERE workout_id = ?",
-        [workout.workout_id]
-      );
-    } catch (error) {
-      console.error("Sync delete workout error:", error);
+  triggerSmartPrefetch(visibleWorkouts, allWorkouts) {
+    this.backgroundProcessor.smartPrefetch(visibleWorkouts, allWorkouts, this);
+  }
+
+  getCacheStats() {
+    return {
+      memory: this.cache.getStats(),
+      workout: this.workoutCache.getStats()
+    };
+  }
+
+  async ensureWorkoutDetails(workoutId) {
+    // First check if we have it in the specialized workout cache
+    const cached = this.workoutCache.getWorkoutDetails(workoutId);
+    if (cached) return cached;
+
+    // If not in cache, fetch it and store in cache
+    const workout = await this._getWorkoutWithDetails(workoutId);
+    if (workout) {
+      this.workoutCache.setWorkoutDetails(workoutId, workout);
     }
+    return workout;
   }
 }
 
-export default new WorkoutAPI(); 
+export default new WorkoutAPI();

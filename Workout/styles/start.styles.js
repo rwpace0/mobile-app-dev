@@ -53,7 +53,7 @@ export default StyleSheet.create({
   startEmptyWorkoutButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.primaryBlue,
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,

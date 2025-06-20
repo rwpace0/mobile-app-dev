@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigation } from "@react-navigation/native";
+import React, { useState, useCallback } from "react";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../constants/colors";
@@ -21,15 +22,13 @@ const WorkoutStartPage = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
+      
       const data = await templateAPI.getTemplates();
       
       // Fetch exercise details for each template
@@ -82,33 +81,44 @@ const WorkoutStartPage = () => {
       setTemplates(templatesWithExercises);
     } catch (err) {
       console.error("Failed to fetch templates:", err);
-      setError("Failed to load templates. Please try again later.");
+      setError(err.message || "Failed to load templates");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
-  const handleStartEmptyWorkout = () => {
-    console.log("Starting empty workout");
+  // Load templates when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTemplates();
+      return () => {
+        // Clear template cache when leaving the screen
+        templateAPI.cache.clearPattern('^templates:');
+      };
+    }, [fetchTemplates])
+  );
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchTemplates(false);
+  }, [fetchTemplates]);
+
+  const handleStartEmptyWorkout = useCallback(() => {
     setWorkoutActive(true);
     navigation.navigate("WorkoutActive");
-  };
+  }, [navigation]);
 
-  const handleCloseWorkout = () => {
-    setWorkoutActive(false);
-  };
-
-  const handleNewRoutine = () => {
-    console.log("Create new routine");
+  const handleNewRoutine = useCallback(() => {
     navigation.navigate("RoutineCreate");
-  };
+  }, [navigation]);
 
   const handleExplore = () => {
-    console.log("Explore routines");
-    // navigation.navigate("ExploreRoutinesPage");
+    console.log("Explore");
   };
+  
 
-  const handleStartRoutine = (template) => {
+  const handleStartRoutine = useCallback((template) => {
     // Transform template exercises into the format expected by WorkoutActive
     const selectedExercises = template.exercises.map(exercise => ({
       exercise_id: exercise.exercise_id,
@@ -118,7 +128,7 @@ const WorkoutStartPage = () => {
         id: (idx + 1).toString(),
         weight: "",
         reps: "",
-        total: "",
+        rir: "",
         completed: false
       }))
     }));
@@ -128,10 +138,10 @@ const WorkoutStartPage = () => {
       selectedExercises,
       workoutName: template.name
     });
-  };
+  }, [navigation]);
 
-  const renderTemplateList = () => {
-    if (loading) {
+  const renderTemplateList = useCallback(() => {
+    if (loading && !refreshing) {
       return (
         <View style={styles.emptyRoutinesContainer}>
           <ActivityIndicator color={colors.primaryBlue} />
@@ -143,6 +153,12 @@ const WorkoutStartPage = () => {
       return (
         <View style={styles.emptyRoutinesContainer}>
           <Text style={styles.emptyRoutinesText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={() => fetchTemplates()}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -176,13 +192,21 @@ const WorkoutStartPage = () => {
         </TouchableOpacity>
       </View>
     ));
-  };
+  }, [loading, refreshing, error, templates, handleStartRoutine, fetchTemplates]);
 
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Workout" />
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
+        }
+      >
         {/* Quick Start Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Start</Text>

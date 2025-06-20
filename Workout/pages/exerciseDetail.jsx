@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -21,41 +22,82 @@ const ExerciseDetailPage = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async (showLoading = true) => {
+    const exerciseId = route.params.exerciseId;
+    if (showLoading) setLoading(true);
+    
     try {
       const [exerciseData, historyData] = await Promise.all([
-        exercisesAPI.getExerciseById(route.params.exerciseId),
-        exercisesAPI.getExerciseHistory(route.params.exerciseId)
+        exercisesAPI.getExerciseById(exerciseId),
+        exercisesAPI.getExerciseHistory(exerciseId)
       ]);
       
       setExercise(exerciseData);
-      setHistory(historyData);
+      setHistory(historyData || []);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching exercise data:", err);
+      setError(err.message || "Failed to load exercise data");
+    } finally {
       setLoading(false);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setError(error.message);
-      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [route.params.exerciseId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData(false);
+  }, [fetchData]);
 
   const renderSummaryTab = () => (
-    <View style={styles.content}>
+    <ScrollView 
+      style={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
+      }
+    >
+      <View style={styles.exerciseInfoContainer}>
+        <Text style={styles.infoLabel}>Muscle Group</Text>
+        <Text style={styles.infoText}>
+          {exercise?.muscle_group 
+            ? exercise.muscle_group.charAt(0).toUpperCase() + exercise.muscle_group.slice(1)
+            : "Not specified"}
+        </Text>
+        
+        <Text style={styles.infoLabel}>Equipment</Text>
+        <Text style={styles.infoText}>
+          {exercise?.equipment || "No equipment required"}
+        </Text>
+      </View>
+
       <View style={styles.instructionContainer}>
         <Text style={styles.instructionLabel}>Instructions</Text>
         <Text style={styles.instructionText}>
           {exercise?.instruction || "No instructions available"}
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 
   const renderHistoryTab = () => (
-    <ScrollView style={styles.content}>
+    <ScrollView 
+      style={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
+      }
+    >
       {history && history.length > 0 ? (
         history.map((workout) => (
           <View key={workout.workout_exercises_id} style={styles.workoutCard}>
@@ -72,15 +114,19 @@ const ExerciseDetailPage = () => {
               <View style={styles.setsHeader}>
                 <Text style={[styles.setsHeaderText, { width: 50 }]}>SET</Text>
                 <Text style={[styles.setsHeaderText, { flex: 1 }]}>WEIGHT × REPS</Text>
+                {/* Add RIR column if available */}
+                <Text style={[styles.setsHeaderText, { width: 60 }]}>RIR</Text>
               </View>
 
-              {/* Sets */}
               {workout.sets && workout.sets.length > 0 ? (
                 workout.sets.map((set, index) => (
                   <View key={set.set_id} style={styles.setRow}>
                     <Text style={styles.setNumber}>Set {set.set_order}</Text>
                     <Text style={styles.setInfo}>
                       {set.weight}kg × {set.reps} reps
+                    </Text>
+                    <Text style={styles.setRir}>
+                      {set.rir !== null && set.rir !== undefined ? `${set.rir} RIR` : '-'}
                     </Text>
                   </View>
                 ))
@@ -98,7 +144,7 @@ const ExerciseDetailPage = () => {
     </ScrollView>
   );
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -108,11 +154,17 @@ const ExerciseDetailPage = () => {
     );
   }
 
-  if (error) {
+  if (error && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Error: {error}</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={() => fetchData()}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );

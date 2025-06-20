@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
+  Image,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import styles from "../styles/display.styles";
 import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from 'expo-file-system';
+import { mediaCache } from "../API/local/MediaCache";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style }) => {
@@ -35,6 +38,46 @@ const HighlightText = ({ text, highlight, style }) => {
   );
 };
 
+const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
+  const [imageError, setImageError] = useState(false);
+  const imagePath = item.local_media_path ? 
+    `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}` : 
+    null;
+
+  return (
+    <TouchableOpacity
+      style={styles.exerciseItem}
+      onPress={() => onPress(item)}
+    >
+      <View style={styles.exerciseRow}>
+        <View style={styles.exerciseIconContainer}>
+          {imagePath && !imageError ? (
+            <Image
+              source={{ uri: `file://${imagePath}` }}
+              style={{ width: 28, height: 28, borderRadius: 4 }}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
+          )}
+        </View>
+        <View style={styles.exerciseDetails}>
+          <HighlightText
+            text={item.name}
+            highlight={searchText}
+            style={styles.exerciseName}
+          />
+          <Text style={styles.exerciseMuscleGroup}>
+            {item.muscle_group.charAt(0).toUpperCase() +
+              item.muscle_group.slice(1)}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={24} color="#777777" />
+      </View>
+    </TouchableOpacity>
+  );
+});
+
 const ViewExercisesPage = () => {
   const navigation = useNavigation();
   const [exercises, setExercises] = useState([]);
@@ -42,29 +85,52 @@ const ViewExercisesPage = () => {
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [filteredExercises, setFilteredExercises] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    exercisesAPI.getExercises()
-      .then((data) => {
-        if (isMounted) {
-          setExercises(data);
-          setFilteredExercises(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          console.error(err);
-          setError("Failed to load exercises");
-          setLoading(false);
-        }
-      });
-    return () => {
-      isMounted = false;
-    };
+  const loadExercises = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    try {
+      const data = await exercisesAPI.getExercises();
+      setExercises(data || []);
+      setFilteredExercises(data || []);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to load exercises:", err);
+      setError(err.message || "Failed to load exercises");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  // Load exercises when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadExercises();
+    }, [loadExercises])
+  );
+
+  // Handle pull-to-refresh
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadExercises(false);
+  }, [loadExercises]);
+
+  const handleExercisePress = useCallback((exercise) => {
+    navigation.navigate("ExerciseDetail", {
+      exerciseId: exercise.exercise_id,
+    });
+  }, [navigation]);
+
+  const renderExerciseItem = useCallback(({ item }) => {
+    return (
+      <ExerciseItem
+        item={item}
+        onPress={handleExercisePress}
+        searchText={searchText}
+      />
+    );
+  }, [handleExercisePress, searchText]);
 
   // search function that properly filters results
   useEffect(() => {
@@ -89,40 +155,7 @@ const ViewExercisesPage = () => {
     }
   }, [searchText, exercises]);
 
-  const handleExercisePress = (exercise) => {
-    navigation.navigate("ExerciseDetail", {
-      exerciseId: exercise.exercise_id,
-    });
-  };
-
-  const renderExerciseItem = ({ item }) => {
-    return (
-      <TouchableOpacity
-        style={styles.exerciseItem}
-        onPress={() => handleExercisePress(item)}
-      >
-        <View style={styles.exerciseRow}>
-          <View style={styles.exerciseIconContainer}>
-            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
-          </View>
-          <View style={styles.exerciseDetails}>
-            <HighlightText
-              text={item.name}
-              highlight={searchText}
-              style={styles.exerciseName}
-            />
-            <Text style={styles.exerciseMuscleGroup}>
-              {item.muscle_group.charAt(0).toUpperCase() +
-                item.muscle_group.slice(1)}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#777777" />
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.centerContent}>
         <ActivityIndicator size="large" color="#47A3FF" />
@@ -130,10 +163,16 @@ const ViewExercisesPage = () => {
     );
   }
 
-  if (error) {
+  if (error && !refreshing) {
     return (
       <View style={styles.centerContent}>
         <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => loadExercises()}
+        >
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -197,9 +236,13 @@ const ViewExercisesPage = () => {
           style={styles.exerciseList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContentContainer}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           ListEmptyComponent={
             <View style={styles.emptyListContainer}>
-              <Text style={styles.emptyListText}>No exercises found</Text>
+              <Text style={styles.emptyListText}>
+                {searchText ? "No matching exercises found" : "No exercises available"}
+              </Text>
             </View>
           }
         />

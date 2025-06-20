@@ -40,6 +40,14 @@ export default StyleSheet.create({
   headerButton: {
     padding: Spacing.xs,
   },
+  debugButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: colors.backgroundMedium,
+  },
 
   // Workout History Card styles
   workoutCard: {
@@ -228,5 +236,60 @@ export default StyleSheet.create({
     fontSize: FontSize.large,
     color: colors.accentRed,
     textAlign: "center",
+  },
+
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+
+  retryButton: {
+    marginTop: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+
+  retryText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  footerRetry: {
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+
+  footerRetryText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  emptyText: {
+    fontSize: 16,
+    color: colors.textLight,
+    textAlign: 'center',
+  },
+
+  retryingText: {
+    marginTop: 10,
+    color: colors.textLight,
+    fontSize: 14,
   },
 });

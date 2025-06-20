@@ -40,7 +40,7 @@ export default StyleSheet.create({
   },
 
   headerActionText: {
-    color: colors.textFaded,
+    color: colors.primaryBlue,
     fontSize: FontSize.large,
     fontWeight: FontWeight.medium,
   },

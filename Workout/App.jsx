@@ -5,7 +5,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthProvider, useAuth } from "./API/authContext";
 import WelcomePage from "./pages/welcome";
 import LoginPage from "./pages/login";
-import HomePage from "./pages/home";
 import SignUpPage from "./pages/signup";
 import EmailVerification from "./pages/EmailVerification";
 import AddExercisePage from "./components/addExercise";
@@ -40,15 +39,15 @@ const MainStack = () => (
   <Tab.Navigator
     screenOptions={{ headerShown: false }}
     tabBar={(props) => <Navbar {...props} />}
+    initialRouteName="Start"
   >
-    <Tab.Screen name="Home" component={HomePage} />
-    <Tab.Screen name="AddExercise" component={AddExercisePage} />
+    <Tab.Screen name="WorkoutHistory" component={WorkoutHistory} />
     <Tab.Screen name="Start" component={WorkoutStartPage} />
+    <Tab.Screen name="AddExercise" component={AddExercisePage} />
     <Tab.Screen name="Profile" component={Profile} />
     <Tab.Screen name="WorkoutActive" component={WorkoutActivePage} />
     <Tab.Screen name="RoutineCreate" component={RoutineCreate} />
     <Tab.Screen name="CreateExercise" component={CreateExercise} />
-    <Tab.Screen name="WorkoutHistory" component={WorkoutHistory} />
     <Tab.Screen name="WorkoutDetail" component={WorkoutDetail} />
     <Tab.Screen name="ExerciseDetail" component={ExerciseDetail} />
     <Tab.Screen name="ViewExercises" component={ViewExercises} />
@@ -71,7 +70,10 @@ const RootNavigator = () => {
         user.isAuthenticated ? (
           <Stack.Screen name="Main" component={MainStack} />
         ) : (
-          <Stack.Screen name="EmailVerification" component={EmailVerification} />
+          <Stack.Screen
+            name="EmailVerification"
+            component={EmailVerification}
+          />
         )
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />

@@ -27,6 +27,8 @@ const Navbar = ({ state, descriptors, navigation }) => {
           iconName = isFocused ? "stats-chart" : "stats-chart-outline";
         } else if (route.name === "Profile") {
           iconName = isFocused ? "person" : "person-outline";
+        } else if (route.name === "WorkoutHistory") {
+          iconName = isFocused ? "stats-chart" : "stats-chart-outline";
         } else {
           iconName = isFocused ? "apps" : "apps-outline";
         }
@@ -40,7 +42,6 @@ const Navbar = ({ state, descriptors, navigation }) => {
           route.name === "CreateExercise" ||
           route.name === "WorkoutDetail" ||
           route.name === "ExerciseDetail" ||
-          route.name === "WorkoutHistory" ||
           route.name === "ViewExercises" ||
           route.name === "Settings" ||
           route.name === "AddExercise" ||
@@ -60,7 +61,14 @@ const Navbar = ({ state, descriptors, navigation }) => {
             navigation.navigate(route.name);
           }
         };
-        // change hardcoded values
+
+        // Get display name for the tab
+        const getDisplayName = (routeName) => {
+          if (routeName === "Start") return "Workout";
+          if (routeName === "WorkoutHistory") return "History";
+          return label;
+        };
+
         return (
           <TouchableOpacity
             key={route.key}
@@ -77,7 +85,7 @@ const Navbar = ({ state, descriptors, navigation }) => {
               color={isFocused ? "#47A3FF" : "#BBBBBB"}
             />
             <Text style={isFocused ? styles.tabTextActive : styles.tabText}>
-              {route.name === "Start" ? "Workout" : label}
+              {getDisplayName(route.name)}
             </Text>
           </TouchableOpacity>
         );
