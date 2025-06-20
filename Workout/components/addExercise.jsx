@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
+  Image,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import styles from "../styles/display.styles";
 import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "./header";
+import * as FileSystem from 'expo-file-system';
+import { mediaCache } from "../API/local/MediaCache";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style }) => {
@@ -35,6 +38,56 @@ const HighlightText = ({ text, highlight, style }) => {
     </Text>
   );
 };
+
+const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected }) => {
+  const [imageError, setImageError] = useState(false);
+  const imagePath = item.local_media_path ? 
+    `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}` : 
+    null;
+
+  return (
+    <TouchableOpacity
+      style={[styles.exerciseItem, isSelected && styles.selectedExerciseItem]}
+      onPress={() => onPress(item)}
+    >
+      <View style={styles.exerciseRow}>
+        <View style={styles.exerciseIconContainer}>
+          {isSelected ? (
+            <Ionicons
+              name="checkmark-circle"
+              size={28}
+              color="#47A3FF"
+            />
+          ) : imagePath && !imageError ? (
+            <Image
+              source={{ uri: `file://${imagePath}` }}
+              style={{ width: 28, height: 28, borderRadius: 4 }}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
+          )}
+        </View>
+        <View style={styles.exerciseDetails}>
+          <HighlightText
+            text={item.name}
+            highlight={searchText}
+            style={styles.exerciseName}
+          />
+          <Text style={styles.exerciseMuscleGroup}>
+            {item.muscle_group.charAt(0).toUpperCase() +
+              item.muscle_group.slice(1)}
+          </Text>
+        </View>
+        <Ionicons
+          name="chevron-forward"
+          size={24}
+          color={isSelected ? "#47A3FF" : "#777777"}
+        />
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 const AddExercisePage = ({ route }) => {
   const navigation = useNavigation();
@@ -132,36 +185,12 @@ const AddExercisePage = ({ route }) => {
     );
 
     return (
-      <TouchableOpacity
-        style={[styles.exerciseItem, isSelected && styles.selectedExerciseItem]}
-        onPress={() => handleExerciseSelect(item)}
-      >
-        <View style={styles.exerciseRow}>
-          <View style={styles.exerciseIconContainer}>
-            <Ionicons
-              name={isSelected ? "checkmark-circle" : "fitness-outline"}
-              size={28}
-              color={isSelected ? "#47A3FF" : "#BBBBBB"}
-            />
-          </View>
-          <View style={styles.exerciseDetails}>
-            <HighlightText
-              text={item.name}
-              highlight={searchText}
-              style={styles.exerciseName}
-            />
-            <Text style={styles.exerciseMuscleGroup}>
-              {item.muscle_group.charAt(0).toUpperCase() +
-                item.muscle_group.slice(1)}
-            </Text>
-          </View>
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color={isSelected ? "#47A3FF" : "#777777"}
-          />
-        </View>
-      </TouchableOpacity>
+      <ExerciseItem
+        item={item}
+        onPress={handleExerciseSelect}
+        searchText={searchText}
+        isSelected={isSelected}
+      />
     );
   };
 

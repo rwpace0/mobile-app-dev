@@ -62,14 +62,13 @@ class ExercisesAPI extends APIBase {
   async getExerciseById(exerciseId) {
     try {
       await this.ensureInitialized();
-      console.log('[ExercisesAPI] Fetching exercise by ID:', exerciseId);
+      
 
       return this.handleOfflineFirst(`exercise:${exerciseId}`, async () => {
         const [exercise] = await this.db.query(
           'SELECT * FROM exercises WHERE exercise_id = ? AND sync_status != "pending_delete"',
           [exerciseId]
         );
-        console.log('[ExercisesAPI] Exercise found:', exercise ? 'yes' : 'no');
         return exercise || null;
       });
     } catch (error) {

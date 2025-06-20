@@ -7,11 +7,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
+  Image,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import styles from "../styles/display.styles";
 import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from 'expo-file-system';
+import { mediaCache } from "../API/local/MediaCache";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style }) => {
@@ -34,6 +37,46 @@ const HighlightText = ({ text, highlight, style }) => {
     </Text>
   );
 };
+
+const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
+  const [imageError, setImageError] = useState(false);
+  const imagePath = item.local_media_path ? 
+    `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}` : 
+    null;
+
+  return (
+    <TouchableOpacity
+      style={styles.exerciseItem}
+      onPress={() => onPress(item)}
+    >
+      <View style={styles.exerciseRow}>
+        <View style={styles.exerciseIconContainer}>
+          {imagePath && !imageError ? (
+            <Image
+              source={{ uri: `file://${imagePath}` }}
+              style={{ width: 28, height: 28, borderRadius: 4 }}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
+          )}
+        </View>
+        <View style={styles.exerciseDetails}>
+          <HighlightText
+            text={item.name}
+            highlight={searchText}
+            style={styles.exerciseName}
+          />
+          <Text style={styles.exerciseMuscleGroup}>
+            {item.muscle_group.charAt(0).toUpperCase() +
+              item.muscle_group.slice(1)}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={24} color="#777777" />
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 const ViewExercisesPage = () => {
   const navigation = useNavigation();
@@ -73,6 +116,22 @@ const ViewExercisesPage = () => {
     loadExercises(false);
   }, [loadExercises]);
 
+  const handleExercisePress = useCallback((exercise) => {
+    navigation.navigate("ExerciseDetail", {
+      exerciseId: exercise.exercise_id,
+    });
+  }, [navigation]);
+
+  const renderExerciseItem = useCallback(({ item }) => {
+    return (
+      <ExerciseItem
+        item={item}
+        onPress={handleExercisePress}
+        searchText={searchText}
+      />
+    );
+  }, [handleExercisePress, searchText]);
+
   // search function that properly filters results
   useEffect(() => {
     if (searchText.trim()) {
@@ -95,39 +154,6 @@ const ViewExercisesPage = () => {
       setFilteredExercises(exercises);
     }
   }, [searchText, exercises]);
-
-  const handleExercisePress = useCallback((exercise) => {
-    navigation.navigate("ExerciseDetail", {
-      exerciseId: exercise.exercise_id,
-    });
-  }, [navigation]);
-
-  const renderExerciseItem = ({ item }) => {
-    return (
-      <TouchableOpacity
-        style={styles.exerciseItem}
-        onPress={() => handleExercisePress(item)}
-      >
-        <View style={styles.exerciseRow}>
-          <View style={styles.exerciseIconContainer}>
-            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
-          </View>
-          <View style={styles.exerciseDetails}>
-            <HighlightText
-              text={item.name}
-              highlight={searchText}
-              style={styles.exerciseName}
-            />
-            <Text style={styles.exerciseMuscleGroup}>
-              {item.muscle_group.charAt(0).toUpperCase() +
-                item.muscle_group.slice(1)}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#777777" />
-        </View>
-      </TouchableOpacity>
-    );
-  };
 
   if (loading && !refreshing) {
     return (
