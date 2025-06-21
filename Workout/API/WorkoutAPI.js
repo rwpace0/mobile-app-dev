@@ -337,44 +337,7 @@ class WorkoutAPI extends APIBase {
         this.cache.clearPattern('^workouts:');
         this.workoutCache.clearAll();
 
-        console.log('[WorkoutAPI] Attempting to sync workout with server');
-        const response = await this.makeAuthenticatedRequest({
-          method: 'POST',
-          url: `${this.baseUrl}/finish`,
-          data: workout
-        }).catch(error => {
-          console.warn("[WorkoutAPI] Server sync failed, but local save succeeded:", error);
-          return { data: workout };
-        });
-
-        // Validate server response
-        if (!response || !response.data) {
-          console.warn("[WorkoutAPI] Invalid server response, using local workout data");
-          return workout;
-        }
-
-        const serverWorkout = response.data;
-        
-        // Ensure server response has all required fields
-        if (!serverWorkout.workout_id || !serverWorkout.user_id || !serverWorkout.date_performed) {
-          console.warn("[WorkoutAPI] Server response missing required fields, using local workout data");
-          return workout;
-        }
-
-        // If server response is different from local workout
-        if (JSON.stringify(serverWorkout) !== JSON.stringify(workout)) {
-          console.log('[WorkoutAPI] Server sync successful, updating local data');
-          // Ensure exercises array exists
-          if (!Array.isArray(serverWorkout.exercises)) {
-            console.warn("[WorkoutAPI] Server response missing exercises array, copying from local workout");
-            serverWorkout.exercises = workout.exercises;
-          }
-          await this.storeLocally(serverWorkout, "synced");
-          this.cache.clearPattern('^workouts:');
-          this.workoutCache.clearAll();
-          return serverWorkout;
-        }
-
+        // Return the locally stored workout - sync will happen in background
         return workout;
       } catch (error) {
         console.error('[WorkoutAPI] Error during workout finish:', error);
