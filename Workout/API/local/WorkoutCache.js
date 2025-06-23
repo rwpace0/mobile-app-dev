@@ -28,7 +28,7 @@ class LRUCache {
     return item.value;
   }
 
-  set(key, value, ttlMs = 60000) { // 15min TTL
+  set(key, value, ttlMs = 30 * 60 * 1000) { // Increased default TTL to 30 minutes
     this.cleanup();
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
@@ -72,32 +72,48 @@ class LRUCache {
 
 class WorkoutCache {
   constructor() {
-    // Cache for detailed workout data
-    this.workoutDetailsCache = new LRUCache(200);
+    // Cache for detailed workout data - increased size from 200 to 500
+    this.workoutDetailsCache = new LRUCache(500);
 
-    // Cache for workout lists (e.g. paginated results)
-    this.workoutListCache = new LRUCache(15);
+    // Cache for workout lists (e.g. paginated results) - increased size from 15 to 30
+    this.workoutListCache = new LRUCache(30);
 
-    // Background cleanup interval - only clean expired items, don't clear everything
-    setInterval(() => this.cleanupExpired(), 60000); // Run cleanup every minute
+    // Background cleanup interval - run cleanup every 5 minutes instead of 1
+    setInterval(() => this.cleanupExpired(), 5 * 60 * 1000);
   }
 
   getWorkoutDetails(workoutId) {
     const result = this.workoutDetailsCache.get(workoutId);
+    if (!result) {
+      console.log(`[WorkoutCache] Cache miss for workout ${workoutId}`);
+    }
     return result;
   }
 
-  setWorkoutDetails(workoutId, workout) {
-    this.workoutDetailsCache.set(workoutId, workout);
+  setWorkoutDetails(workoutId, workout, ttlMs = 30 * 60 * 1000) { // 30 minutes TTL
+    if (!workout) {
+      console.warn(`[WorkoutCache] Attempted to cache null/undefined workout for ID ${workoutId}`);
+      return;
+    }
+    console.log(`[WorkoutCache] Caching workout ${workoutId}`);
+    this.workoutDetailsCache.set(workoutId, workout, ttlMs);
   }
 
   getWorkoutList(cacheKey) {
     const result = this.workoutListCache.get(cacheKey);
+    if (!result) {
+      console.log(`[WorkoutCache] Cache miss for workout list ${cacheKey}`);
+    }
     return result;
   }
 
-  setWorkoutList(cacheKey, workouts) {
-    this.workoutListCache.set(cacheKey, workouts);
+  setWorkoutList(cacheKey, workouts, ttlMs = 15 * 60 * 1000) { // 15 minutes TTL for lists
+    if (!workouts) {
+      console.warn(`[WorkoutCache] Attempted to cache null/undefined workout list for key ${cacheKey}`);
+      return;
+    }
+    console.log(`[WorkoutCache] Caching workout list ${cacheKey}`);
+    this.workoutListCache.set(cacheKey, workouts, ttlMs);
   }
 
   invalidateWorkout(workoutId) {

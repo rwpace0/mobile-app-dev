@@ -240,6 +240,7 @@ const ActiveExerciseComponent = ({
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                selectTextOnFocus={true}
               />
               <Text style={styles.setCell}> × </Text>
               <TextInput
@@ -249,6 +250,7 @@ const ActiveExerciseComponent = ({
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                selectTextOnFocus={true}
               />
             </View>
             <Text style={[styles.setCell, styles.totalCell]}>{set.total}</Text>

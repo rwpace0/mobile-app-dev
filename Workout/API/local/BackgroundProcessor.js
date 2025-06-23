@@ -182,21 +182,28 @@ class BackgroundProcessor {
 
     // Determine which workouts to prefetch based on scroll direction
     let prefetchIds = [];
-    const prefetchCount = 3; // Number of workouts to prefetch
+    const prefetchCount = 10; // Increased from 3 to 10 for more aggressive prefetching
 
     if (this.currentScrollDirection === 'down') {
-      const endIndex = Math.min(lastVisibleIndex + prefetchCount, allIds.length);
+      const endIndex = Math.min(lastVisibleIndex + prefetchCount + 1, allIds.length);
       prefetchIds = allIds.slice(lastVisibleIndex + 1, endIndex);
     } else {
       const startIndex = Math.max(0, firstVisibleIndex - prefetchCount);
       prefetchIds = allIds.slice(startIndex, firstVisibleIndex);
     }
 
-    // Queue prefetch tasks with low priority
+    // Queue prefetch tasks with medium priority instead of low
     prefetchIds.forEach(id => {
-      this.addTask(async () => {
-        await workoutAPI.ensureWorkoutDetails(id);
-      }, 'low');
+      if (this.shouldPrefetch(id)) {
+        this.addTask(async () => {
+          try {
+            await workoutAPI.ensureWorkoutDetails(id);
+            this.markPrefetched(id);
+          } catch (error) {
+            console.error('Failed to prefetch workout:', error);
+          }
+        }, 'medium'); // Changed from 'low' to 'medium' priority
+      }
     });
   }
 
