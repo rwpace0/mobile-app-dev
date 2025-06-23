@@ -6,6 +6,7 @@ import { workoutCache } from "./local/WorkoutCache";
 import { backgroundProcessor } from "./local/BackgroundProcessor";
 import { v4 as uuid } from "uuid";
 import { storage } from "./tokenStorage";
+import { syncManager } from "./local/syncManager";
 
 class WorkoutAPI extends APIBase {
   constructor() {
@@ -19,6 +20,102 @@ class WorkoutAPI extends APIBase {
     });
     this.workoutCache = workoutCache; // Keep the specialized workout cache
     this.backgroundProcessor = backgroundProcessor;
+
+    // Register sync function with sync manager
+    syncManager.registerSyncFunction('workouts', async () => {
+      try {
+        const pendingWorkouts = await this.db.query(
+          `SELECT * FROM workouts WHERE sync_status IN ('pending_sync', 'pending_delete')`
+        );
+
+        for (const workout of pendingWorkouts) {
+          try {
+            if (workout.sync_status === 'pending_delete') {
+              await this.makeAuthenticatedRequest({
+                method: 'DELETE',
+                url: `${this.baseUrl}/${workout.workout_id}`
+              });
+              continue;
+            }
+
+            // Get workout exercises and sets
+            const exercises = await this.db.query(
+              `SELECT we.*, s.*
+               FROM workout_exercises we
+               LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+               WHERE we.workout_id = ?`,
+              [workout.workout_id]
+            );
+
+            // Group sets by exercise
+            const exercisesWithSets = exercises.reduce((acc, row) => {
+              const exerciseId = row.workout_exercises_id;
+              if (!acc[exerciseId]) {
+                acc[exerciseId] = {
+                  workout_exercises_id: row.workout_exercises_id,
+                  exercise_id: row.exercise_id,
+                  exercise_order: row.exercise_order,
+                  notes: row.notes,
+                  sets: []
+                };
+              }
+              if (row.set_id) {
+                acc[exerciseId].sets.push({
+                  set_id: row.set_id,
+                  weight: row.weight,
+                  reps: row.reps,
+                  rir: row.rir,
+                  set_order: row.set_order
+                });
+              }
+              return acc;
+            }, {});
+
+            const response = await this.makeAuthenticatedRequest({
+              method: 'POST',
+              url: `${this.baseUrl}/create`,
+              data: {
+                ...workout,
+                exercises: Object.values(exercisesWithSets)
+              }
+            });
+
+            // Update sync status to synced
+            const now = new Date().toISOString();
+            await this.db.execute(
+              `UPDATE workouts 
+               SET sync_status = 'synced',
+                   last_synced_at = ?
+               WHERE workout_id = ?`,
+              [now, workout.workout_id]
+            );
+
+            // Update exercises sync status
+            await this.db.execute(
+              `UPDATE workout_exercises 
+               SET sync_status = 'synced',
+                   last_synced_at = ?
+               WHERE workout_id = ?`,
+              [now, workout.workout_id]
+            );
+
+            // Update sets sync status
+            await this.db.execute(
+              `UPDATE sets 
+               SET sync_status = 'synced',
+                   last_synced_at = ?
+               WHERE workout_id = ?`,
+              [now, workout.workout_id]
+            );
+          } catch (error) {
+            console.error(`[WorkoutAPI] Failed to sync workout ${workout.workout_id}:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('[WorkoutAPI] Workout sync error:', error);
+        throw error;
+      }
+    });
   }
 
   getTableName() {
@@ -260,7 +357,6 @@ class WorkoutAPI extends APIBase {
   }
 
   async _getWorkoutWithDetails(workoutId) {
-    
     
     // First get the basic workout data without joins
     const [basicWorkout] = await this.db.query(

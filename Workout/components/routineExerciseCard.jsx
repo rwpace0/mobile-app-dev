@@ -4,14 +4,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import exercisesAPI from "../API/exercisesAPI";
-import styles from "../styles/workoutPages.styles";
+import styles from "../styles/activeExercise.styles";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
-import SwipeToDelete from "../animations/SwipeToDelete";
+import colors from "../constants/colors";
 
 const RoutineExerciseComponent = ({
   exercise,
@@ -59,28 +58,27 @@ const RoutineExerciseComponent = ({
   };
 
   return (
-    <View style={styles.exerciseCard}>
+    <View style={styles.container}>
       <View style={styles.exerciseHeader}>
         <View style={styles.exerciseInfo}>
           <Text style={styles.exerciseName}>
             {exerciseDetails?.name || "Exercise"}
           </Text>
-          <Text style={styles.exerciseDetail}>
-            {exerciseDetails?.muscle_group || ""}
+          <Text style={[styles.restTimerText, { marginLeft: 0 }]}>
+            {exerciseDetails?.muscle_group 
+              ? exerciseDetails.muscle_group.charAt(0).toUpperCase() + 
+                exerciseDetails.muscle_group.slice(1)
+              : ""}
           </Text>
         </View>
-
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => onRemoveExercise(exercise.exercise_id)}
-        >
-          <Ionicons name="close" size={24} color="#FF6B6B" />
+        <TouchableOpacity onPress={() => setShowDeleteConfirm(true)}>
+          <Ionicons name="trash-outline" size={24} color="#FF4444" />
         </TouchableOpacity>
       </View>
 
       <TextInput
         style={styles.notesInput}
-        placeholder="Add routine notes here"
+        placeholder="Add notes here..."
         placeholderTextColor="rgba(255, 255, 255, 0.5)"
         value={notes}
         onChangeText={setNotes}
@@ -93,7 +91,7 @@ const RoutineExerciseComponent = ({
         <Ionicons
           name="time-outline"
           size={20}
-          color={restTime === 0 ? "#999999" : "#2196F3"}
+          color={restTime === 0 ? colors.textFaded : "#2196F3"}
         />
         <Text
           style={[styles.restTimerText, restTime === 0 && styles.timerOffText]}
@@ -102,18 +100,18 @@ const RoutineExerciseComponent = ({
         </Text>
       </TouchableOpacity>
 
-      <View style={styles.setsContainer}>
-        <Text style={styles.setsLabel}>Sets:</Text>
-        <View style={styles.setsControls}>
+      <View style={[styles.setRow, { justifyContent: 'space-between' }]}>
+        <Text style={[styles.setCell, { marginLeft: 8 }]}>Sets:</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
-            style={styles.setButton}
+            style={[styles.checkmarkContainer, { marginRight: 16 }]}
             onPress={() => handleSetChange(numSets - 1)}
           >
             <Ionicons name="remove" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.setsCount}>{numSets}</Text>
+          <Text style={styles.setCell}>{numSets}</Text>
           <TouchableOpacity
-            style={styles.setButton}
+            style={[styles.checkmarkContainer, { marginLeft: 16 }]}
             onPress={() => handleSetChange(numSets + 1)}
           >
             <Ionicons name="add" size={20} color="#FFFFFF" />
@@ -131,7 +129,10 @@ const RoutineExerciseComponent = ({
       <DeleteConfirmModal
         visible={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={onRemoveExercise}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onRemoveExercise(exercise.exercise_id);
+        }}
         title={`Delete ${exerciseDetails?.name || "Exercise"}?`}
       />
     </View>

@@ -47,7 +47,16 @@ const WorkoutActivePage = () => {
     }, 1000);
     setTimer(interval);
 
-    return () => clearInterval(interval);
+    // Clear all workout state when component unmounts
+    return () => {
+      clearInterval(interval);
+      setExercises([]);
+      setWorkoutDuration(0);
+      setTotalVolume(0);
+      setTotalSets(0);
+      setExerciseStates({});
+      setWorkoutName("");
+    };
   }, []);
 
   const formatDuration = (seconds) => {
@@ -135,6 +144,15 @@ const WorkoutActivePage = () => {
 
       await workoutAPI.finishWorkout(payload);
       console.log("Workout saved successfully!");
+      
+      // Reset all workout state
+      setExercises([]);
+      setWorkoutDuration(0);
+      setTotalVolume(0);
+      setTotalSets(0);
+      setExerciseStates({});
+      setWorkoutName("");
+      
       navigation.goBack();
     } catch (err) {
       console.error("Failed to save workout:", err);

@@ -7,12 +7,14 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import exercisesAPI from "../API/exercisesAPI";
 import styles from "../styles/exerciseDetail.styles";
 import { format } from "date-fns";
+import * as FileSystem from 'expo-file-system';
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();
@@ -73,18 +75,47 @@ const ExerciseDetailPage = () => {
         />
       }
     >
-      <View style={styles.exerciseInfoContainer}>
-        <Text style={styles.infoLabel}>Muscle Group</Text>
-        <Text style={styles.infoText}>
-          {exercise?.muscle_group 
-            ? exercise.muscle_group.charAt(0).toUpperCase() + exercise.muscle_group.slice(1)
-            : "Not specified"}
-        </Text>
-        
-        <Text style={styles.infoLabel}>Equipment</Text>
-        <Text style={styles.infoText}>
-          {exercise?.equipment || "No equipment required"}
-        </Text>
+      {exercise?.local_media_path && (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ 
+              uri: `file://${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}` 
+            }}
+            style={styles.exerciseImage}
+          />
+        </View>
+      )}
+
+      <View style={styles.infoCard}>
+        <Ionicons 
+          name="fitness-outline" 
+          size={24} 
+          color="#BBBBBB"
+          style={styles.infoIcon}
+        />
+        <View style={styles.infoContent}>
+          <Text style={styles.infoLabel}>Muscle Group</Text>
+          <Text style={styles.infoText}>
+            {exercise?.muscle_group 
+              ? exercise.muscle_group.charAt(0).toUpperCase() + exercise.muscle_group.slice(1)
+              : "Not specified"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.infoCard}>
+        <Ionicons 
+          name="barbell-outline" 
+          size={24} 
+          color="#BBBBBB"
+          style={styles.infoIcon}
+        />
+        <View style={styles.infoContent}>
+          <Text style={styles.infoLabel}>Equipment</Text>
+          <Text style={styles.infoText}>
+            {exercise?.equipment || "No equipment required"}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.instructionContainer}>

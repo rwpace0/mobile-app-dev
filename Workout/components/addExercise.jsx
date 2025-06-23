@@ -15,7 +15,7 @@ import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "./header";
 import * as FileSystem from 'expo-file-system';
-import { mediaCache } from "../API/local/MediaCache";
+import colors from "../constants/colors";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style }) => {
@@ -61,7 +61,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected }) => {
           ) : imagePath && !imageError ? (
             <Image
               source={{ uri: `file://${imagePath}` }}
-              style={{ width: 28, height: 28, borderRadius: 4 }}
+              style={styles.exerciseImage}
               onError={() => setImageError(true)}
             />
           ) : (
@@ -106,14 +106,18 @@ const AddExercisePage = ({ route }) => {
         setLoading(true);
         const data = await exercisesAPI.getExercises();
         if (isMounted) {
-          setExercises(data);
-          setFilteredExercises(data);
-          setLoading(false);
+          setExercises(data || []);
+          setFilteredExercises(data || []);
+          setSelectedExercises([]);
         }
       } catch (error) {
         console.error("Failed to load exercises:", error);
         if (isMounted) {
           setError("Failed to load exercises");
+          setLoading(false);
+        }
+      } finally {
+        if (isMounted) {
           setLoading(false);
         }
       }
@@ -211,7 +215,7 @@ const AddExercisePage = ({ route }) => {
             <Text
               style={[
                 styles.headerActionText,
-                selectedExercises.length > 0 && styles.headerActionTextActive,
+                selectedExercises.length === 0 ? { color: colors.textFaded } : { color: colors.primaryBlue }
               ]}
             >
               Add ({selectedExercises.length})

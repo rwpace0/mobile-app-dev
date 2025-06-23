@@ -4,13 +4,54 @@ import APIBase from './utils/APIBase';
 import { dbManager } from "./local/dbManager";
 import { v4 as uuid } from 'uuid';
 import { storage } from './tokenStorage';
+import { syncManager } from './local/syncManager';
 
 class ExercisesAPI extends APIBase {
   constructor() {
     super(`${getBaseUrl()}/exercises`, dbManager, {
       cacheConfig: {
-        maxSize: 500,
+        maxSize: 1000,
         ttl: 30 * 60 * 1000 // 30 minutes for exercise cache
+      }
+    });
+
+    // Register sync function with sync manager
+    syncManager.registerSyncFunction('exercises', async () => {
+      try {
+        const pendingExercises = await this.db.query(
+          `SELECT * FROM exercises WHERE sync_status IN ('pending_sync', 'pending_delete')`
+        );
+
+        for (const exercise of pendingExercises) {
+          try {
+            if (exercise.sync_status === 'pending_delete') {
+              await this.makeAuthenticatedRequest({
+                method: 'DELETE',
+                url: `${this.baseUrl}/${exercise.exercise_id}`
+              });
+            } else {
+              const response = await this.makeAuthenticatedRequest({
+                method: 'POST',
+                url: `${this.baseUrl}/create`,
+                data: exercise
+              });
+
+              // Update sync status to synced
+              await this.db.execute(
+                `UPDATE exercises 
+                 SET sync_status = 'synced',
+                     last_synced_at = ?
+                 WHERE exercise_id = ?`,
+                [new Date().toISOString(), exercise.exercise_id]
+              );
+            }
+          } catch (error) {
+            console.error(`[ExercisesAPI] Failed to sync exercise ${exercise.exercise_id}:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('[ExercisesAPI] Exercise sync error:', error);
+        throw error;
       }
     });
   }
