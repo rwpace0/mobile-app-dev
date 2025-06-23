@@ -24,6 +24,14 @@ const ExerciseDetailPage = () => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Cleanup function to clear exercise-specific cache on unmount
+  useEffect(() => {
+    return () => {
+      const exerciseId = route.params.exerciseId;
+      exercisesAPI.clearExerciseCache(exerciseId);
+    };
+  }, [route.params.exerciseId]);
+
   const fetchData = useCallback(async (showLoading = true) => {
     const exerciseId = route.params.exerciseId;
     if (showLoading) setLoading(true);
