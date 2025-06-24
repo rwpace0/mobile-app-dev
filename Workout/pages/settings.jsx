@@ -14,28 +14,43 @@ import {
   Feather,
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import styles from "../styles/settings.styles";
+import { createStyles } from "../styles/settings.styles";
 import Header from "../components/header";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 import { useAuth } from "../API/authContext";
 
-const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => (
-  <TouchableOpacity style={styles.settingsItem} onPress={onPress}>
-    <View style={styles.settingsItemLeft}>
-      <IconComponent name={icon} size={24} color="#fff" style={styles.icon} />
-      <Text style={styles.settingsItemText}>{title}</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={24} color="#666" />
-  </TouchableOpacity>
-);
+const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
+  
+  return (
+    <TouchableOpacity style={styles.settingsItem} onPress={onPress}>
+      <View style={styles.settingsItemLeft}>
+        <IconComponent name={icon} size={24} color={colors.textWhite} style={styles.icon} />
+        <Text style={styles.settingsItemText}>{title}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
+    </TouchableOpacity>
+  );
+};
 
-const SectionHeader = ({ title }) => (
-  <Text style={styles.sectionHeader}>{title}</Text>
-);
+const SectionHeader = ({ title }) => {
+  const { isDark } = useTheme();
+  const styles = createStyles(isDark);
+  
+  return (
+    <Text style={styles.sectionHeader}>{title}</Text>
+  );
+};
 
 const Settings = () => {
   const { logout } = useAuth();
   const navigation = useNavigation();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
 
   const handleLogout = async () => {
     try {
@@ -76,7 +91,6 @@ const Settings = () => {
           onPress={() => navigateToSettings('account')}
         />
         <SettingsItem
-          color={colors.primaryBlue}
           icon="log-out-outline"
           title="Logout"
           onPress={handleLogout}

@@ -1,9 +1,15 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import styles from "../styles/navbar.styles";
+import { createStyles } from "../styles/navbar.styles";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 
 const Navbar = ({ state, descriptors, navigation }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
+  
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
@@ -82,7 +88,7 @@ const Navbar = ({ state, descriptors, navigation }) => {
             <Ionicons
               name={iconName}
               size={24}
-              color={isFocused ? "#47A3FF" : "#BBBBBB"}
+              color={isFocused ? colors.primaryLight : colors.textFaded}
             />
             <Text style={isFocused ? styles.tabTextActive : styles.tabText}>
               {getDisplayName(route.name)}

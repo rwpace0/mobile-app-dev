@@ -1,8 +1,11 @@
 import { StyleSheet } from "react-native";
 import { Spacing, FontSize, FontWeight } from "../constants/theme";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     height: 60,
     backgroundColor: colors.backgroundDark,
@@ -43,3 +46,7 @@ export default StyleSheet.create({
     padding: Spacing.xs,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

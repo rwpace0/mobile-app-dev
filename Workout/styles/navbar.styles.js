@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,7 +7,10 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     justifyContent: "space-evenly",
@@ -45,3 +48,7 @@ export default StyleSheet.create({
     marginTop: Spacing.xxs,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

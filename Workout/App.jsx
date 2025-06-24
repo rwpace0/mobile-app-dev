@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthProvider, useAuth } from "./API/authContext";
+import { ThemeProvider } from "./constants/ThemeContext";
 import WelcomePage from "./pages/welcome";
 import LoginPage from "./pages/login";
 import SignUpPage from "./pages/signup";
@@ -13,7 +14,7 @@ import WorkoutActivePage from "./pages/workoutActive";
 import RoutineCreate from "./pages/routineCreate";
 import Navbar from "./components/navbar";
 import CreateExercise from "./components/createExercise";
-import LoadingScreen from "./components/loadingScreen";
+import LoadingScreen from "./components/LoadingScreen";
 import WorkoutHistory from "./pages/workoutHistory";
 import WorkoutDetail from "./pages/workoutDetail";
 import ExerciseDetail from "./pages/exerciseDetail";
@@ -84,10 +85,12 @@ const RootNavigator = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

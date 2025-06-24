@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,7 +7,10 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
@@ -60,4 +63,68 @@ export default StyleSheet.create({
     color: colors.textWhite,
     fontWeight: FontWeight.regular,
   },
+  dropdownValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dropdownValueText: {
+    fontSize: FontSize.base,
+    color: colors.textFaded,
+    marginRight: Spacing.xs,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.overlayDark,
+  },
+  modalContent: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.l,
+    minWidth: 300,
+    maxWidth: '80%',
+  },
+  modalTitle: {
+    fontSize: FontSize.large,
+    fontWeight: FontWeight.semiBold,
+    color: colors.textWhite,
+    marginBottom: Spacing.l,
+    textAlign: 'center',
+  },
+  dropdownOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.s,
+    borderRadius: BorderRadius.md,
+  },
+  dropdownOptionSelected: {
+    backgroundColor: colors.divider,
+  },
+  dropdownOptionText: {
+    fontSize: FontSize.base,
+    color: colors.textWhite,
+  },
+  dropdownOptionTextSelected: {
+    color: colors.primaryBlue,
+    fontWeight: FontWeight.medium,
+  },
+  modalCloseButton: {
+    marginTop: Spacing.l,
+    paddingVertical: Spacing.m,
+    borderRadius: BorderRadius.md,
+    backgroundColor: colors.divider,
+  },
+  modalCloseText: {
+    fontSize: FontSize.base,
+    color: colors.textWhite,
+    textAlign: 'center',
+    fontWeight: FontWeight.medium,
+  },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

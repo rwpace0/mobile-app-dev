@@ -2,11 +2,15 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import styles from '../styles/header.styles';
-import colors from '../constants/colors';
+import { createStyles } from '../styles/header.styles';
+import { getColors } from '../constants/colors';
+import { useTheme } from '../constants/ThemeContext';
 
 const Header = ({ title, leftComponent, rightComponent }) => {
   const navigation = useNavigation();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
 
   const renderLeftComponent = () => {
     if (!leftComponent) {

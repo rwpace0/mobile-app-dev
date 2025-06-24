@@ -1,4 +1,5 @@
-export default { 
+// Dark theme colors (current)
+const darkTheme = { 
   // base theme colors
   backgroundDark: '#121212',
   backgroundMedium: '#1A1A1A',
@@ -33,3 +34,48 @@ export default {
   // iOS specific
   iosGray: '#AEAEB2',        // iOS gray for buttons
 };
+
+// Light theme colors (iOS-like)
+const lightTheme = {
+  // base theme colors
+  backgroundDark: '#FFFFFF',        // main background
+  backgroundMedium: '#F2F2F7',      // secondary background
+  inputBackground: '#FFFFFF',       // input background
+  cardBackground: '#FFFFFF',        // card background
+  divider: '#E5E5EA',              // divider lines
+  
+  // primary colors (same as dark)
+  primaryBlue: '#007AFF',     // iOS blue
+  primaryLight: '#409CFF',    // lighter iOS blue
+  primaryDark: '#0062CC',     // darker iOS blue
+  
+  // Text colors
+  textWhite: '#000000',       // primary text (black on light)
+  textLight: '#3C3C43',       // secondary text
+  textFaded: '#8E8E93',       // fade text
+  placeholder: '#C7C7CC',     // placeholder text
+  footerText: '#8E8E93',      // footer text
+  textDisabled: '#C7C7CC',    // disabled text
+  
+  // accent colors (same as dark)
+  accentGreen: '#4CD964',     // success states
+  accentRed: '#FF3B30',       // error states
+  accentOrange: '#FF9500',    // warning states
+  accentPurple: '#AF52DE',    // secondary accent
+  
+  // opacity variants for overlays
+  overlayDark: 'rgba(0, 0, 0, 0.4)',
+  overlayMedium: 'rgba(0, 0, 0, 0.3)',
+  overlayLight: 'rgba(0, 0, 0, 0.1)',
+
+  // iOS specific
+  iosGray: '#8E8E93',        // iOS gray for buttons
+};
+
+// Export function to get colors based on theme
+export const getColors = (isDark = true) => {
+  return isDark ? darkTheme : lightTheme;
+};
+
+// Export default as dark theme for backward compatibility
+export default darkTheme;

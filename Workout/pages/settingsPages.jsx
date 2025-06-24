@@ -10,29 +10,42 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import styles from '../styles/settings.styles';
+import { createStyles } from '../styles/settings.styles';
 import Header from '../components/header';
-import colors from '../constants/colors';
+import colors, { getColors } from '../constants/colors';
+import { useTheme } from '../constants/ThemeContext';
 import { Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 
-const SettingToggle = ({ title, value, onValueChange, icon, IconComponent = Ionicons }) => (
-  <View style={styles.settingsItem}>
-    <View style={styles.settingsItemLeft}>
-      <IconComponent name={icon} size={24} color={colors.textWhite} style={styles.icon} />
-      <Text style={styles.settingsItemText}>{title}</Text>
+const SettingToggle = ({ title, value, onValueChange, icon, IconComponent = Ionicons }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
+  
+  return (
+    <View style={styles.settingsItem}>
+      <View style={styles.settingsItemLeft}>
+        <IconComponent name={icon} size={24} color={colors.textWhite} style={styles.icon} />
+        <Text style={styles.settingsItemText}>{title}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: colors.divider, true: colors.primaryBlue }}
+        thumbColor={value ? '#fff' : '#fff'}
+        ios_backgroundColor={colors.divider}
+      />
     </View>
-    <Switch
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{ false: colors.divider, true: colors.primaryBlue }}
-      thumbColor={value ? '#fff' : '#fff'}
-      ios_backgroundColor={colors.divider}
-    />
-  </View>
-);
+  );
+};
 
 const SettingDropdown = ({ title, value, options, onSelect, icon, IconComponent = Ionicons }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
+  
+  // Capitalize first letter for display
+  const displayValue = value.charAt(0).toUpperCase() + value.slice(1);
 
   return (
     <>
@@ -45,7 +58,7 @@ const SettingDropdown = ({ title, value, options, onSelect, icon, IconComponent 
           <Text style={styles.settingsItemText}>{title}</Text>
         </View>
         <View style={styles.dropdownValue}>
-          <Text style={styles.dropdownValueText}>{value}</Text>
+          <Text style={styles.dropdownValueText}>{displayValue}</Text>
           <Ionicons name="chevron-forward" size={20} color={colors.textFaded} />
         </View>
       </TouchableOpacity>
@@ -59,29 +72,32 @@ const SettingDropdown = ({ title, value, options, onSelect, icon, IconComponent 
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{title}</Text>
-            {options.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.dropdownOption,
-                  value === option && styles.dropdownOptionSelected
-                ]}
-                onPress={() => {
-                  onSelect(option);
-                  setModalVisible(false);
-                }}
-              >
-                <Text style={[
-                  styles.dropdownOptionText,
-                  value === option && styles.dropdownOptionTextSelected
-                ]}>
-                  {option}
-                </Text>
-                {value === option && (
-                  <Ionicons name="checkmark" size={24} color={colors.primaryBlue} />
-                )}
-              </TouchableOpacity>
-            ))}
+            {options.map((option) => {
+              const displayOption = option.charAt(0).toUpperCase() + option.slice(1);
+              return (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.dropdownOption,
+                    value === option && styles.dropdownOptionSelected
+                  ]}
+                  onPress={() => {
+                    onSelect(option);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.dropdownOptionText,
+                    value === option && styles.dropdownOptionTextSelected
+                  ]}>
+                    {displayOption}
+                  </Text>
+                  {value === option && (
+                    <Ionicons name="checkmark" size={24} color={colors.primaryBlue} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setModalVisible(false)}
@@ -99,6 +115,9 @@ const SettingsPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { type } = route.params;
+  const { theme, changeTheme, isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
 
   // State for different settings
   const [settings, setSettings] = useState({
@@ -120,9 +139,6 @@ const SettingsPage = () => {
     // Units settings
     useMetric: true,
     use24Hour: true,
-    
-    // Theme settings
-    theme: 'System',
   });
 
   const toggleSetting = (key) => {
@@ -132,7 +148,7 @@ const SettingsPage = () => {
     }));
   };
 
-  const themeOptions = ['System', 'Light', 'Dark'];
+  const themeOptions = ['system', 'light', 'dark'];
 
   const getPageContent = () => {
     switch (type) {
@@ -229,9 +245,9 @@ const SettingsPage = () => {
           <>
             <SettingDropdown
               title="Theme"
-              value={settings.theme}
+              value={theme}
               options={themeOptions}
-              onSelect={(value) => setSettings(prev => ({ ...prev, theme: value }))}
+              onSelect={(value) => changeTheme(value)}
               icon="moon-outline"
             />
           </>
