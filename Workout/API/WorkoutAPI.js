@@ -5,6 +5,8 @@ import { dbManager } from "./local/dbManager";
 import { workoutCache } from "./local/WorkoutCache";
 import { backgroundProcessor } from "./local/BackgroundProcessor";
 import { v4 as uuid } from "uuid";
+import { storage } from "./tokenStorage";
+import { syncManager } from "./local/syncManager";
 
 class WorkoutAPI extends APIBase {
   constructor() {
@@ -18,6 +20,102 @@ class WorkoutAPI extends APIBase {
     });
     this.workoutCache = workoutCache; // Keep the specialized workout cache
     this.backgroundProcessor = backgroundProcessor;
+
+    // Register sync function with sync manager
+    syncManager.registerSyncFunction('workouts', async () => {
+      try {
+        const pendingWorkouts = await this.db.query(
+          `SELECT * FROM workouts WHERE sync_status IN ('pending_sync', 'pending_delete')`
+        );
+
+        for (const workout of pendingWorkouts) {
+          try {
+            if (workout.sync_status === 'pending_delete') {
+              await this.makeAuthenticatedRequest({
+                method: 'DELETE',
+                url: `${this.baseUrl}/${workout.workout_id}`
+              });
+              continue;
+            }
+
+            // Get workout exercises and sets
+            const exercises = await this.db.query(
+              `SELECT we.*, s.*
+               FROM workout_exercises we
+               LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+               WHERE we.workout_id = ?`,
+              [workout.workout_id]
+            );
+
+            // Group sets by exercise
+            const exercisesWithSets = exercises.reduce((acc, row) => {
+              const exerciseId = row.workout_exercises_id;
+              if (!acc[exerciseId]) {
+                acc[exerciseId] = {
+                  workout_exercises_id: row.workout_exercises_id,
+                  exercise_id: row.exercise_id,
+                  exercise_order: row.exercise_order,
+                  notes: row.notes,
+                  sets: []
+                };
+              }
+              if (row.set_id) {
+                acc[exerciseId].sets.push({
+                  set_id: row.set_id,
+                  weight: row.weight,
+                  reps: row.reps,
+                  rir: row.rir,
+                  set_order: row.set_order
+                });
+              }
+              return acc;
+            }, {});
+
+            const response = await this.makeAuthenticatedRequest({
+              method: 'POST',
+              url: `${this.baseUrl}/create`,
+              data: {
+                ...workout,
+                exercises: Object.values(exercisesWithSets)
+              }
+            });
+
+            // Update sync status to synced
+            const now = new Date().toISOString();
+            await this.db.execute(
+              `UPDATE workouts 
+               SET sync_status = 'synced',
+                   last_synced_at = ?
+               WHERE workout_id = ?`,
+              [now, workout.workout_id]
+            );
+
+            // Update exercises sync status
+            await this.db.execute(
+              `UPDATE workout_exercises 
+               SET sync_status = 'synced',
+                   last_synced_at = ?
+               WHERE workout_id = ?`,
+              [now, workout.workout_id]
+            );
+
+            // Update sets sync status
+            await this.db.execute(
+              `UPDATE sets 
+               SET sync_status = 'synced',
+                   last_synced_at = ?
+               WHERE workout_id = ?`,
+              [now, workout.workout_id]
+            );
+          } catch (error) {
+            console.error(`[WorkoutAPI] Failed to sync workout ${workout.workout_id}:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('[WorkoutAPI] Workout sync error:', error);
+        throw error;
+      }
+    });
   }
 
   getTableName() {
@@ -25,25 +123,101 @@ class WorkoutAPI extends APIBase {
   }
 
   async storeLocally(workout, syncStatus = "synced") {
-    return this.storage.storeEntity(workout, {
-      table: 'workouts',
-      fields: ['user_id', 'name', 'date_performed', 'duration'],
-      syncStatus,
-      relations: [
-        {
-          table: 'workout_exercises',
-          data: workout.exercises,
-          orderField: 'exercise_order',
-          relations: [
-            {
-              table: 'sets',
-              data: (exercise) => exercise.sets,
-              orderField: 'set_order'
-            }
-          ]
-        }
-      ]
+    if (!workout || typeof workout !== 'object') {
+      throw new Error("[WorkoutAPI] Invalid workout data: workout must be an object");
+    }
+
+    if (!Array.isArray(workout.exercises)) {
+      console.warn("[WorkoutAPI] Workout has no exercises array, initializing empty array");
+      workout.exercises = [];
+    }
+
+    // Validate and prepare exercises data
+    workout.exercises = workout.exercises.map((exercise, index) => {
+      if (!exercise.exercise_id) {
+        throw new Error("[WorkoutAPI] Invalid exercise data: exercise_id is required");
+      }
+
+      return {
+        ...exercise,
+        exercise_order: exercise.exercise_order || index + 1,
+        notes: exercise.notes || "",
+        sets: (exercise.sets || []).map((set, setIndex) => ({
+          weight: Number(set.weight) || 0,
+          reps: Number(set.reps) || 0,
+          rir: Number(set.rir) || 0,
+          set_order: set.set_order || setIndex + 1
+        }))
+      };
     });
+
+    try {
+      await this.db.execute("BEGIN TRANSACTION");
+      console.log("[WorkoutAPI] Storing workout with exercises:", JSON.stringify(workout.exercises));
+      
+      // First store the workout
+      await this.storage.storeEntity(workout, {
+        table: 'workouts',
+        fields: ['user_id', 'name', 'date_performed', 'duration'],
+        syncStatus
+      });
+
+      // Then store each exercise and its sets
+      for (const exercise of workout.exercises) {
+        // Store exercise
+        const workoutExerciseId = uuid();
+        await this.db.execute(
+          `INSERT OR REPLACE INTO workout_exercises 
+          (workout_exercises_id, workout_id, exercise_order, created_at, updated_at, sync_status, version, last_synced_at, exercise_id, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            workoutExerciseId,
+            workout.workout_id,
+            exercise.exercise_order,
+            workout.created_at,
+            workout.updated_at,
+            syncStatus,
+            1,
+            new Date().toISOString(),
+            exercise.exercise_id,
+            exercise.notes
+          ]
+        );
+
+        // Store sets for this exercise
+        for (const set of exercise.sets) {
+          await this.db.execute(
+            `INSERT OR REPLACE INTO sets 
+            (set_id, workout_id, workout_exercises_id, set_order, weight, reps, rir, created_at, updated_at, sync_status, version, last_synced_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              uuid(),
+              workout.workout_id,
+              workoutExerciseId,
+              set.set_order,
+              set.weight,
+              set.reps,
+              set.rir,
+              workout.created_at,
+              workout.updated_at,
+              syncStatus,
+              1,
+              new Date().toISOString()
+            ]
+          );
+        }
+      }
+
+      await this.db.execute("COMMIT");
+      return workout;
+    } catch (error) {
+      console.error("[WorkoutAPI] Store locally error:", error);
+      await this.db.execute("ROLLBACK").catch(() => {
+        // Ignore rollback errors as the transaction might not be active
+        console.log("[WorkoutAPI] Rollback failed - transaction might not be active");
+      });
+      throw error;
+    }
   }
 
   async getWorkoutsCursor(params = {}) {
@@ -107,12 +281,35 @@ class WorkoutAPI extends APIBase {
       const resultsIds = workoutIds.slice(0, limit).map(w => w.workout_id);
 
       if (resultsIds.length === 0) {
-        return { workouts: [], hasMore: false, nextCursor: null, totalLoaded: 0 };
+        const emptyResponse = { workouts: [], hasMore: false, nextCursor: null, totalLoaded: 0 };
+        this.workoutCache.setWorkoutList(cacheKey, emptyResponse);
+        return emptyResponse;
       }
 
-      // Get full workout data
+      // Get full workout data with improved error handling and logging
       const workouts = await Promise.all(
-        resultsIds.map(workoutId => this._getWorkoutWithDetails(workoutId))
+        resultsIds.map(async workoutId => {
+          try {
+            // First check the cache
+            let workout = this.workoutCache.getWorkoutDetails(workoutId);
+            
+            if (!workout) {
+              // If not in cache, load from database
+              workout = await this._getWorkoutWithDetails(workoutId);
+              if (workout) {
+                // Cache the workout details
+                this.workoutCache.setWorkoutDetails(workoutId, workout);
+              } else {
+                console.warn(`[WorkoutAPI] Failed to load details for workout ${workoutId}`);
+              }
+            }
+            
+            return workout;
+          } catch (error) {
+            console.error(`[WorkoutAPI] Error loading workout ${workoutId}:`, error);
+            return null;
+          }
+        })
       );
 
       const results = workouts.filter(Boolean);
@@ -120,7 +317,7 @@ class WorkoutAPI extends APIBase {
         ? results[results.length - 1].date_performed
         : null;
 
-      console.log('[WorkoutAPI] Fetched', results.length, 'workouts from database');
+      
 
       const response = {
         workouts: results,
@@ -129,8 +326,16 @@ class WorkoutAPI extends APIBase {
         totalLoaded: results.length
       };
 
+      // Cache the response with workout details
       this.workoutCache.setWorkoutList(cacheKey, response);
-      console.log('[WorkoutAPI] Cached new workout list results');
+      
+
+      // Trigger background prefetch for next page if there are more results
+      if (hasMore && this.backgroundProcessor) {
+        const nextPageWorkoutIds = workoutIds.slice(limit).map(w => w.workout_id);
+        this.backgroundProcessor.prefetchWorkoutDetails(nextPageWorkoutIds, this);
+      }
+
       return response;
     } catch (error) {
       console.error("[WorkoutAPI] Get workouts cursor error:", error);
@@ -152,86 +357,142 @@ class WorkoutAPI extends APIBase {
   }
 
   async _getWorkoutWithDetails(workoutId) {
-    const workoutData = await this.db.query(
-      `
-      SELECT 
-        w.*,
-        we.workout_exercises_id,
-        we.exercise_order,
-        we.notes as exercise_notes,
-        e.exercise_id,
-        e.name as exercise_name,
-        e.muscle_group,
-        s.set_id,
-        s.weight,
-        s.reps,
-        s.rir,
-        s.set_order
-      FROM workouts w
-      LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id
-      LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
-      LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
-      WHERE w.workout_id = ? AND w.sync_status != 'pending_delete'
-      ORDER BY we.exercise_order, s.set_order
-    `,
+    
+    // First get the basic workout data without joins
+    const [basicWorkout] = await this.db.query(
+      `SELECT * FROM workouts WHERE workout_id = ? AND sync_status != 'pending_delete'`,
       [workoutId]
     );
 
-    if (workoutData.length === 0) return null;
+    if (!basicWorkout) {
+      console.warn(`[WorkoutAPI] No workout found for ID ${workoutId}`);
+      return null;
+    }
 
-    // Process workout data into structured format
+    // Initialize the workout object with basic data
     const workout = {
-      workout_id: workoutData[0].workout_id,
-      user_id: workoutData[0].user_id,
-      name: workoutData[0].name,
-      date_performed: workoutData[0].date_performed,
-      duration: workoutData[0].duration,
-      created_at: workoutData[0].created_at,
-      updated_at: workoutData[0].updated_at,
-      exercises: []
+      workout_id: basicWorkout.workout_id,
+      user_id: basicWorkout.user_id,
+      name: basicWorkout.name,
+      date_performed: basicWorkout.date_performed,
+      duration: basicWorkout.duration,
+      created_at: basicWorkout.created_at,
+      updated_at: basicWorkout.updated_at,
+      exercises: [],
+      totalVolume: 0
     };
 
-    const exercisesMap = new Map();
+    // Get the workout summary if it exists
+    const [summaryData] = await this.db.query(
+      `SELECT * FROM workout_summaries WHERE workout_id = ?`,
+      [workoutId]
+    );
 
-    workoutData.forEach((row) => {
-      if (!row.workout_exercises_id) return;
+    if (summaryData) {
+      try {
+        const parsedSummary = JSON.parse(summaryData.summary_data);
+        workout.totalVolume = summaryData.total_volume || 0;
+        workout.exerciseCount = summaryData.exercise_count || 0;
+        workout.summary = parsedSummary;
+      } catch (error) {
+        console.error(`[WorkoutAPI] Error parsing summary data for workout ${workoutId}:`, error);
+      }
+    }
 
-      let exercise = exercisesMap.get(row.workout_exercises_id);
+    // Get workout exercises data
+    const workoutExercises = await this.db.query(
+      `
+      SELECT 
+        we.*,
+        e.exercise_id,
+        e.name as exercise_name,
+        e.muscle_group
+      FROM workout_exercises we
+      LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
+      WHERE we.workout_id = ?
+      ORDER BY we.exercise_order
+      `,
+      [workoutId]
+    );
 
-      if (!exercise) {
-        exercise = {
-          workout_exercises_id: row.workout_exercises_id,
-          exercise_id: row.exercise_id,
-          name: row.exercise_name,
-          muscle_group: row.muscle_group,
-          exercise_order: row.exercise_order,
-          notes: row.exercise_notes,
+    if (workoutExercises.length > 0) {
+      // Get all sets for this workout's exercises in a single query
+      const sets = await this.db.query(
+        `
+        SELECT * FROM sets 
+        WHERE workout_id = ?
+        ORDER BY workout_exercises_id, set_order
+        `,
+        [workoutId]
+      );
+
+      const exercisesMap = new Map();
+      let totalVolume = 0;
+
+      // Process exercises and their sets
+      workoutExercises.forEach((exercise) => {
+        const exerciseObj = {
+          workout_exercises_id: exercise.workout_exercises_id,
+          exercise_id: exercise.exercise_id,
+          name: exercise.exercise_name,
+          muscle_group: exercise.muscle_group,
+          exercise_order: exercise.exercise_order,
+          notes: exercise.notes,
           sets: []
         };
-        exercisesMap.set(row.workout_exercises_id, exercise);
-        workout.exercises.push(exercise);
-      }
 
-      if (row.set_id) {
-        exercise.sets.push({
-          set_id: row.set_id,
-          weight: row.weight,
-          reps: row.reps,
-          rir: row.rir,
-          set_order: row.set_order
+        // Add sets for this exercise
+        const exerciseSets = sets.filter(set => 
+          set.workout_exercises_id === exercise.workout_exercises_id
+        );
+
+        exerciseSets.forEach(set => {
+          const weight = Number(set.weight) || 0;
+          const reps = Number(set.reps) || 0;
+          exerciseObj.sets.push({
+            set_id: set.set_id,
+            weight,
+            reps,
+            rir: set.rir,
+            set_order: set.set_order
+          });
+          totalVolume += weight * reps;
         });
+
+        workout.exercises.push(exerciseObj);
+      });
+
+      // Sort exercises by order
+      workout.exercises.sort((a, b) => a.exercise_order - b.exercise_order);
+
+      // Update total volume if not set from summary
+      if (!workout.totalVolume) {
+        workout.totalVolume = totalVolume;
       }
-    });
+    }
 
-    // Sort exercises by order
-    workout.exercises.sort((a, b) => a.exercise_order - b.exercise_order);
+    // If we don't have a summary, calculate it
+    if (!summaryData && workout.exercises.length > 0) {
+      console.log(`[WorkoutAPI] No summary data found for workout ${workoutId}, calculating...`);
+      try {
+        const summary = await this.calculateAndStoreSummary(workout);
+        if (summary) {
+          workout.summary = summary;
+          workout.totalVolume = summary.totalVolume;
+          workout.exerciseCount = summary.exerciseCount;
+        }
+      } catch (error) {
+        console.error(`[WorkoutAPI] Error calculating summary for workout ${workoutId}:`, error);
+      }
+    }
 
+    
     return workout;
   }
 
   async finishWorkout(workoutData) {
     try {
-      console.log('[WorkoutAPI] Starting workout finish process');
+      
       const userId = await this.getUserId();
       const workoutId = uuid();
       const now = new Date().toISOString();
@@ -251,38 +512,19 @@ class WorkoutAPI extends APIBase {
         updated_at: now
       };
 
-      await this.db.execute("BEGIN TRANSACTION");
       try {
-        console.log('[WorkoutAPI] Storing workout locally with ID:', workoutId);
+        
         await this.storeLocally(workout, "pending_sync");
         await this.calculateAndStoreSummary(workout);
-        await this.db.execute("COMMIT");
         
         console.log('[WorkoutAPI] Local workout storage successful, clearing caches');
         this.cache.clearPattern('^workouts:');
         this.workoutCache.clearAll();
 
-        console.log('[WorkoutAPI] Attempting to sync workout with server');
-        const response = await this.makeAuthenticatedRequest({
-          method: 'POST',
-          url: `${this.baseUrl}/finish`,
-          data: workout
-        }).catch(error => {
-          console.warn("[WorkoutAPI] Server sync failed, but local save succeeded:", error);
-          return { data: workout };
-        });
-
-        if (response.data !== workout) {
-          console.log('[WorkoutAPI] Server sync successful, updating local data');
-          await this.storeLocally(response.data, "synced");
-          this.cache.clearPattern('^workouts:');
-          this.workoutCache.clearAll();
-        }
-
-        return response.data;
+        // Return the locally stored workout - sync will happen in background
+        return workout;
       } catch (error) {
-        console.error('[WorkoutAPI] Error during workout finish, rolling back:', error);
-        await this.db.execute("ROLLBACK");
+        console.error('[WorkoutAPI] Error during workout finish:', error);
         throw error;
       }
     } catch (error) {
@@ -292,7 +534,11 @@ class WorkoutAPI extends APIBase {
   }
 
   async calculateAndStoreSummary(workout) {
+    let transaction = false;
     try {
+      console.log(`[WorkoutAPI] Calculating summary for workout ${workout.workout_id}`);
+      
+      // Get exercises with their details
       const workoutExercises = await this.db.query(
         `
         SELECT we.*, e.name, e.muscle_group
@@ -304,39 +550,80 @@ class WorkoutAPI extends APIBase {
         [workout.workout_id]
       );
 
+      if (!workoutExercises || workoutExercises.length === 0) {
+        console.log(`[WorkoutAPI] No exercises found for workout ${workout.workout_id}, storing empty summary`);
+        // Store an empty summary instead of returning null
+        const emptySummary = {
+          exercises: [],
+          totalVolume: 0,
+          exerciseCount: 0
+        };
+
+        await this.db.execute("BEGIN TRANSACTION");
+        transaction = true;
+        
+        await this.db.execute(
+          `
+          INSERT OR REPLACE INTO workout_summaries 
+          (workout_id, summary_data, total_volume, exercise_count, last_calculated_at)
+          VALUES (?, ?, ?, ?, ?)
+        `,
+          [
+            workout.workout_id,
+            JSON.stringify(emptySummary),
+            0,
+            0,
+            new Date().toISOString(),
+          ]
+        );
+
+        await this.db.execute("COMMIT");
+        transaction = false;
+        return emptySummary;
+      }
+
+      // Get all sets for this workout's exercises
       const sets = await this.db.query(
         `
-        SELECT * FROM sets WHERE workout_id = ? ORDER BY workout_exercises_id, set_order
-      `,
+        SELECT s.* 
+        FROM sets s
+        WHERE s.workout_id = ? 
+        ORDER BY s.workout_exercises_id, s.set_order
+        `,
         [workout.workout_id]
       );
 
-      const exercisesWithSets = workoutExercises.map((exercise) => ({
-        ...exercise,
-        sets: sets.filter(
-          (set) => set.workout_exercises_id === exercise.workout_exercises_id
-        ),
-      }));
+      
 
       let totalVolume = 0;
-      const exerciseDetails = exercisesWithSets.map((exercise) => {
-        const exerciseVolume = (exercise.sets || []).reduce(
-          (total, set) => total + (set.weight || 0) * (set.reps || 0),
+      const exerciseDetails = workoutExercises.map((exercise) => {
+        const exerciseSets = sets.filter(
+          set => set.workout_exercises_id === exercise.workout_exercises_id
+        );
+
+        const exerciseVolume = exerciseSets.reduce(
+          (total, set) => total + (Number(set.weight) || 0) * (Number(set.reps) || 0),
           0
         );
         totalVolume += exerciseVolume;
 
-        const bestSet = exercise.sets.reduce(
-          (best, current) => (current.weight > best.weight ? current : best),
-          exercise.sets[0]
-        );
+        const bestSet = exerciseSets.length > 0
+          ? exerciseSets.reduce(
+              (best, current) => {
+                const currentWeight = Number(current.weight) || 0;
+                const bestWeight = Number(best.weight) || 0;
+                return currentWeight > bestWeight ? current : best;
+              },
+              exerciseSets[0]
+            )
+          : null;
 
         return {
           id: exercise.exercise_id,
           name: exercise.name,
-          sets: exercise.sets.length,
+          sets: exerciseSets.length,
           bestSet: bestSet
-            ? { weight: bestSet.weight, reps: bestSet.reps }
+            ? { weight: Number(bestSet.weight) || 0, reps: Number(bestSet.reps) || 0 }
             : null,
           volume: exerciseVolume,
         };
@@ -345,8 +632,15 @@ class WorkoutAPI extends APIBase {
       const summaryData = {
         exercises: exerciseDetails,
         totalVolume,
-        exerciseCount: exercisesWithSets.length,
+        exerciseCount: workoutExercises.length,
       };
+
+      console.log(`[WorkoutAPI] Calculated summary for workout ${workout.workout_id}:`, 
+        `${workoutExercises.length} exercises, ${sets.length} sets, ${totalVolume}kg total volume`);
+
+      // Store the summary
+      await this.db.execute("BEGIN TRANSACTION");
+      transaction = true;
 
       await this.db.execute(
         `
@@ -358,15 +652,25 @@ class WorkoutAPI extends APIBase {
           workout.workout_id,
           JSON.stringify(summaryData),
           totalVolume,
-          exercisesWithSets.length,
+          workoutExercises.length,
           new Date().toISOString(),
         ]
       );
 
+      await this.db.execute("COMMIT");
+      transaction = false;
+
       return summaryData;
     } catch (error) {
-      console.error("Calculate summary error:", error);
-      throw error;
+      console.error(`[WorkoutAPI] Calculate summary error for workout ${workout.workout_id}:`, error);
+      if (transaction) {
+        try {
+          await this.db.execute("ROLLBACK");
+        } catch (rollbackError) {
+          console.log("[WorkoutAPI] Rollback failed:", rollbackError.message);
+        }
+      }
+      return null;
     }
   }
 
@@ -396,12 +700,12 @@ class WorkoutAPI extends APIBase {
       method: 'GET',
       url: this.baseUrl
     });
-    console.log('[WorkoutAPI] Server fetch complete');
+    
     return response.data;
   }
 
   async getUserId() {
-    const token = await this.storage.getItem("auth_token");
+    const token = await storage.getItem('auth_token')
     if (!token) throw new Error("No auth token found");
     return JSON.parse(atob(token.split(".")[1])).sub;
   }

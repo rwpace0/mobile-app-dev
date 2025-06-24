@@ -4,19 +4,64 @@ import APIBase from './utils/APIBase';
 import { dbManager } from "./local/dbManager";
 import { v4 as uuid } from 'uuid';
 import { storage } from './tokenStorage';
+import { syncManager } from './local/syncManager';
 
 class ExercisesAPI extends APIBase {
   constructor() {
     super(`${getBaseUrl()}/exercises`, dbManager, {
       cacheConfig: {
-        maxSize: 500,
+        maxSize: 1000,
         ttl: 30 * 60 * 1000 // 30 minutes for exercise cache
+      }
+    });
+
+    // Register sync function with sync manager
+    syncManager.registerSyncFunction('exercises', async () => {
+      try {
+        const pendingExercises = await this.db.query(
+          `SELECT * FROM exercises WHERE sync_status IN ('pending_sync', 'pending_delete')`
+        );
+
+        for (const exercise of pendingExercises) {
+          try {
+            if (exercise.sync_status === 'pending_delete') {
+              await this.makeAuthenticatedRequest({
+                method: 'DELETE',
+                url: `${this.baseUrl}/${exercise.exercise_id}`
+              });
+            } else {
+              const response = await this.makeAuthenticatedRequest({
+                method: 'POST',
+                url: `${this.baseUrl}/create`,
+                data: exercise
+              });
+
+              // Update sync status to synced
+              await this.db.execute(
+                `UPDATE exercises 
+                 SET sync_status = 'synced',
+                     last_synced_at = ?
+                 WHERE exercise_id = ?`,
+                [new Date().toISOString(), exercise.exercise_id]
+              );
+            }
+          } catch (error) {
+            console.error(`[ExercisesAPI] Failed to sync exercise ${exercise.exercise_id}:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('[ExercisesAPI] Exercise sync error:', error);
+        throw error;
       }
     });
   }
 
   getTableName() {
     return 'exercises';
+  }
+
+  clearExerciseCache(exerciseId) {
+    this.cache.clearPattern(`^exercise:${exerciseId}`);
   }
 
   async storeLocally(exercise, syncStatus = "synced") {
@@ -63,7 +108,6 @@ class ExercisesAPI extends APIBase {
     try {
       await this.ensureInitialized();
       
-
       return this.handleOfflineFirst(`exercise:${exerciseId}`, async () => {
         const [exercise] = await this.db.query(
           'SELECT * FROM exercises WHERE exercise_id = ? AND sync_status != "pending_delete"',
@@ -84,6 +128,71 @@ class ExercisesAPI extends APIBase {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+    }
+  }
+
+  async getExerciseHistory(exerciseId) {
+    try {
+      await this.ensureInitialized();
+      
+      return this.handleOfflineFirst(`exercise:${exerciseId}:history`, async () => {
+        // Get all workouts containing this exercise with their sets
+        const history = await this.db.query(`
+          SELECT 
+            w.workout_id,
+            w.name,
+            w.date_performed,
+            w.created_at,
+            we.workout_exercises_id,
+            s.set_id,
+            s.weight,
+            s.reps,
+            s.rir,
+            s.set_order
+          FROM workouts w
+          JOIN workout_exercises we ON w.workout_id = we.workout_id
+          LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+          WHERE we.exercise_id = ?
+            AND w.sync_status != 'pending_delete'
+            AND we.sync_status != 'pending_delete'
+          ORDER BY 
+            COALESCE(w.date_performed, w.created_at) DESC,
+            we.exercise_order ASC,
+            s.set_order ASC
+        `, [exerciseId]);
+
+        // Group sets by workout
+        const workoutMap = new Map();
+        
+        history.forEach(row => {
+          if (!workoutMap.has(row.workout_exercises_id)) {
+            workoutMap.set(row.workout_exercises_id, {
+              workout_exercises_id: row.workout_exercises_id,
+              workout_id: row.workout_id,
+              name: row.name,
+              date_performed: row.date_performed,
+              created_at: row.created_at,
+              sets: []
+            });
+          }
+          
+          if (row.set_id) {
+            const workout = workoutMap.get(row.workout_exercises_id);
+            workout.sets.push({
+              set_id: row.set_id,
+              weight: row.weight,
+              reps: row.reps,
+              rir: row.rir,
+              set_order: row.set_order
+            });
+          }
+        });
+
+        return Array.from(workoutMap.values());
+      });
+    } catch (error) {
+      console.error("[ExercisesAPI] Get exercise history error:", error);
+      return [];
     }
   }
 
@@ -141,21 +250,6 @@ class ExercisesAPI extends APIBase {
       };
     } catch (error) {
       console.error("[ExercisesAPI] Create exercise error:", error);
-      throw error;
-    }
-  }
-
-  async getExerciseHistory(exerciseId) {
-    try {
-      return this.handleOfflineFirst(`exercise:${exerciseId}:history`, async () => {
-        const response = await this.makeAuthenticatedRequest({
-          method: 'GET',
-          url: `${this.baseUrl}/${exerciseId}/history`
-        });
-        return response.data;
-      });
-    } catch (error) {
-      console.error("Get exercise history error:", error);
       throw error;
     }
   }

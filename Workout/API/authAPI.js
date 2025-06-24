@@ -50,7 +50,7 @@ export const authAPI = {
   signup: async (email, password, username) => {
     try {
       const response = await api.post('/signup', { email, password, username });
-      console.log('Signup response:', response.data);
+      
       return response.data;
     } catch (error) {
       console.error('Signup error:', error);
@@ -66,7 +66,7 @@ export const authAPI = {
       if (response.data.session?.access_token) {
         await storage.setItem('auth_token', response.data.session.access_token);
       }
-      console.log("Login response:", response.data);
+      
       return response.data;
     } catch (error) {
       console.error('Login error:', error);

@@ -54,7 +54,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
           {imagePath && !imageError ? (
             <Image
               source={{ uri: `file://${imagePath}` }}
-              style={{ width: 28, height: 28, borderRadius: 4 }}
+              style={styles.exerciseImage}
               onError={() => setImageError(true)}
             />
           ) : (

@@ -68,9 +68,11 @@ class LocalStorageManager {
 
         // Insert new relations
         for (const [index, item] of relationData.entries()) {
-          const relationId = item[`${relationTable.slice(0, -1)}_id`] || uuid();
+          // Special case for workout_exercises table
+          const relationIdField = relationTable === 'workout_exercises' ? 'workout_exercises_id' : `${relationTable.slice(0, -1)}_id`;
+          const relationId = item[relationIdField] || uuid();
           const relationFields = {
-            [`${relationTable.slice(0, -1)}_id`]: relationId,
+            [relationIdField]: relationId,
             [parentIdField]: entityId,
             ...(orderField && { [orderField]: index }),
             created_at: item.created_at || now,

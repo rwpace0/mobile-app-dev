@@ -71,6 +71,52 @@ export default StyleSheet.create({
     padding: Spacing.m,
   },
 
+  // Exercise image styles
+  imageContainer: {
+    width: '100%',
+    height: 250,
+    backgroundColor: colors.cardBackground,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.m,
+    overflow: 'hidden',
+  },
+
+  exerciseImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+
+  // Info cards styles
+  infoCard: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.m,
+    marginBottom: Spacing.m,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  infoIcon: {
+    marginRight: Spacing.m,
+  },
+
+  infoContent: {
+    flex: 1,
+  },
+
+  infoLabel: {
+    fontSize: FontSize.small,
+    color: colors.textLight,
+    marginBottom: Spacing.xxs,
+  },
+
+  infoText: {
+    fontSize: FontSize.medium,
+    color: colors.textWhite,
+    fontWeight: FontWeight.medium,
+  },
+
   // Summary tab styles
   instructionContainer: {
     backgroundColor: colors.cardBackground,

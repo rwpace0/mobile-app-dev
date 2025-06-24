@@ -3,6 +3,8 @@ import getBaseUrl from './getBaseUrl';
 import APIBase from './utils/APIBase';
 import { dbManager } from './local/dbManager';
 import { v4 as uuid } from 'uuid';
+import { storage } from "./tokenStorage";
+import { syncManager } from './local/syncManager';
 
 class TemplateAPI extends APIBase {
   constructor() {
@@ -10,6 +12,61 @@ class TemplateAPI extends APIBase {
       cacheConfig: {
         maxSize: 500,
         ttl: 15 * 60 * 1000 // 15 minutes for template cache
+      }
+    });
+
+    // Register sync function with sync manager
+    syncManager.registerSyncFunction('templates', async () => {
+      try {
+        const pendingTemplates = await this.db.query(
+          `SELECT * FROM workout_templates WHERE sync_status IN ('pending_sync', 'pending_delete')`
+        );
+
+        for (const template of pendingTemplates) {
+          try {
+            if (template.sync_status === 'pending_delete') {
+              await this.makeAuthenticatedRequest({
+                method: 'DELETE',
+                url: `${this.baseUrl}/${template.template_id}`
+              });
+            } else {
+              // Get template exercises for this template
+              const exercises = await this.db.query(
+                `SELECT * FROM template_exercises WHERE template_id = ?`,
+                [template.template_id]
+              );
+
+              const response = await this.makeAuthenticatedRequest({
+                method: 'POST',
+                url: `${this.baseUrl}/create`,
+                data: { ...template, exercises }
+              });
+
+              // Update sync status to synced
+              await this.db.execute(
+                `UPDATE workout_templates 
+                 SET sync_status = 'synced',
+                     last_synced_at = ?
+                 WHERE template_id = ?`,
+                [new Date().toISOString(), template.template_id]
+              );
+
+              // Update exercises sync status
+              await this.db.execute(
+                `UPDATE template_exercises 
+                 SET sync_status = 'synced',
+                     last_synced_at = ?
+                 WHERE template_id = ?`,
+                [new Date().toISOString(), template.template_id]
+              );
+            }
+          } catch (error) {
+            console.error(`[TemplateAPI] Failed to sync template ${template.template_id}:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('[TemplateAPI] Template sync error:', error);
+        throw error;
       }
     });
   }
@@ -21,6 +78,7 @@ class TemplateAPI extends APIBase {
   async storeLocally(template, syncStatus = "synced") {
     return this.storage.storeEntity(template, {
       table: 'workout_templates',
+      idField: 'template_id',
       fields: ['name', 'created_by', 'is_public'],
       syncStatus,
       relations: [
@@ -126,28 +184,13 @@ class TemplateAPI extends APIBase {
         updated_at: now
       };
 
-      console.log('[TemplateAPI] Storing template locally with ID:', template_id);
+      console.log('[TemplateAPI] Storing template locally first');
       await this.storeLocally(template, "pending_sync");
-
-      console.log('[TemplateAPI] Attempting to sync template with server');
-      const response = await this.makeAuthenticatedRequest({
-        method: 'POST',
-        url: `${this.baseUrl}/create`,
-        data: template
-      }).catch(error => {
-        console.warn("[TemplateAPI] Server sync failed, but local save succeeded:", error);
-        return { data: template };
-      });
-
-      if (response.data !== template) {
-        console.log('[TemplateAPI] Server sync successful, updating local data');
-        await this.storeLocally(response.data, "synced");
-      }
 
       console.log('[TemplateAPI] Template creation complete, clearing cache');
       this.cache.clearPattern('^templates:');
 
-      return response.data;
+      return template;
     } catch (error) {
       console.error("[TemplateAPI] Create template error:", error);
       throw error;
@@ -165,7 +208,7 @@ class TemplateAPI extends APIBase {
   }
 
   async getUserId() {
-    const token = await this.storage.getItem("auth_token");
+    const token = await storage.getItem("auth_token");
     if (!token) throw new Error("No auth token found");
     return JSON.parse(atob(token.split(".")[1])).sub;
   }

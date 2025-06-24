@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
           }
 
           const userData = await response.json();
-          console.log('User data from /auth/me:', userData);
+          
           
           // Only set user as authenticated if email is verified
           if (userData.email_confirmed_at) {
@@ -92,9 +92,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setError(null);
-      console.log('Attempting login for:', email);
+      
       const data = await authAPI.login(email, password);
-      console.log('Login successful:', data);
+      console.log('Login successful');
       
       if (data.session?.access_token) {
         await storage.setItem('auth_token', data.session.access_token);
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const userData = await response.json();
-      console.log('User verification status:', userData);
+      
       
       if (!userData.email_confirmed_at) {
         setUser({ ...userData, isAuthenticated: false });
@@ -132,9 +132,9 @@ export const AuthProvider = ({ children }) => {
   const signup = async (email, password, username) => {
     try {
       setError(null);
-      console.log('Attempting signup for:', email, 'with username:', username);
+      
       const data = await authAPI.signup(email, password, username);
-      console.log('Signup successful:', data);
+      console.log('Signup successful:');
       
       // Set user as unverified after signup
       setUser({ ...data.user, isAuthenticated: false });
