@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,17 +7,20 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
 
   centerContent: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
 
   header: {
@@ -28,7 +31,7 @@ export default StyleSheet.create({
     paddingTop: Spacing.s,
     paddingBottom: Spacing.s,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   closeButton: {
@@ -59,7 +62,7 @@ export default StyleSheet.create({
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.backgroundInput,
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.m,
     height: 40,
@@ -72,7 +75,7 @@ export default StyleSheet.create({
   searchInput: {
     flex: 1,
     height: "100%",
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.base,
   },
 
@@ -85,7 +88,7 @@ export default StyleSheet.create({
   },
 
   filterButton: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     paddingVertical: Spacing.xxs,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.lg,
@@ -94,7 +97,7 @@ export default StyleSheet.create({
   },
 
   filterText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.caption,
     textAlign: "center",
   },
@@ -115,7 +118,7 @@ export default StyleSheet.create({
   exerciseItem: {
     paddingVertical: Spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   selectedExerciseItem: {
@@ -151,14 +154,14 @@ export default StyleSheet.create({
   },
 
   exerciseName: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.medium,
     marginBottom: Spacing.xxs,
   },
 
   exerciseMuscleGroup: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.medium,
   },
 
@@ -182,7 +185,11 @@ export default StyleSheet.create({
   },
 
   emptyListText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.large,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

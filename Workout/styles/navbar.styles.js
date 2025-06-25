@@ -16,10 +16,10 @@ export const createStyles = (isDark = true) => {
     justifyContent: "space-evenly",
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: colors.divider,
+    borderTopColor: colors.borderColor,
     paddingVertical: Spacing.s,
     
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
 
   tabItem: {

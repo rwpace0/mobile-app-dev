@@ -10,14 +10,18 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import colors from "../constants/colors";
-import styles from "../styles/start.styles";
 import templateAPI from "../API/templateAPI";
 import exercisesAPI from "../API/exercisesAPI";
 import Header from "../components/header";
+import { getColors } from "../constants/colors";
+import { createStyles } from "../styles/start.styles";
+import { useTheme } from "../constants/ThemeContext";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [workoutActive, setWorkoutActive] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +182,7 @@ const WorkoutStartPage = () => {
         <View style={styles.templateHeader}>
           <Text style={styles.templateName}>{template.name}</Text>
           <TouchableOpacity>
-            <Ionicons name="ellipsis-horizontal" size={24} color={colors.textLight} />
+            <Ionicons name="ellipsis-horizontal" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
         <Text style={styles.templateExercises}>
@@ -214,7 +218,7 @@ const WorkoutStartPage = () => {
             style={styles.startEmptyWorkoutButton}
             onPress={handleStartEmptyWorkout}
           >
-            <Ionicons name="add" size={20} color={colors.textWhite} />
+            <Ionicons name="add" size={20} color={colors.textPrimary} />
             <Text style={styles.startEmptyWorkoutText}>
               Start Empty Workout
             </Text>
@@ -229,7 +233,7 @@ const WorkoutStartPage = () => {
               <Ionicons
                 name="grid-outline"
                 size={22}
-                color={colors.textLight}
+                color={colors.textSecondary}
               />
             </TouchableOpacity>
           </View>
@@ -243,7 +247,7 @@ const WorkoutStartPage = () => {
               <Ionicons
                 name="document-text-outline"
                 size={22}
-                color={colors.textLight}
+                color={colors.textSecondary}
               />
               <Text style={styles.routineActionText}>New Routine</Text>
             </TouchableOpacity>
@@ -255,7 +259,7 @@ const WorkoutStartPage = () => {
               <Ionicons
                 name="search-outline"
                 size={22}
-                color={colors.textLight}
+                color={colors.textSecondary}
               />
               <Text style={styles.routineActionText}>Explore</Text>
             </TouchableOpacity>

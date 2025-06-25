@@ -1,11 +1,11 @@
 // Dark theme colors (current)
 const darkTheme = { 
   // base theme colors
-  backgroundDark: '#121212',
-  backgroundMedium: '#1A1A1A',
-  inputBackground: '#1E1E1E',
-  cardBackground: '#242424',
-  divider: '#2A2A2A',
+  backgroundPrimary: '#121212',    // main background
+  backgroundSecondary: '#1A1A1A',  // secondary background
+  backgroundInput: '#1E1E1E',      // input background
+  backgroundCard: '#242424',       // card background
+  borderColor: '#2A2A2A',          // divider lines
   
   // primary colors
   primaryBlue: '#007AFF',     // iOS blue
@@ -13,11 +13,11 @@ const darkTheme = {
   primaryDark: '#0062CC',     // darker iOS blue
   
   // Text colors
-  textWhite: '#FFFFFF',       // primary text
-  textLight: '#BBBBBB',       // secondary text
-  textFaded: '#999999',       // fade text
-  placeholder: '#777777',     // placeholder text
-  footerText: '#777777',      // foter text
+  textPrimary: '#FFFFFF',     // primary text
+  textSecondary: '#BBBBBB',   // secondary text
+  textFaded: '#999999',    // faded text
+  texttextPlaceholder: '#777777', // textPlaceholder text
+  textFooter: '#777777',      // footer text
   textDisabled: '#555555',    // disabled text
   
   // accent colors
@@ -38,11 +38,11 @@ const darkTheme = {
 // Light theme colors (iOS-like)
 const lightTheme = {
   // base theme colors
-  backgroundDark: '#FFFFFF',        // main background
-  backgroundMedium: '#F2F2F7',      // secondary background
-  inputBackground: '#FFFFFF',       // input background
-  cardBackground: '#FFFFFF',        // card background
-  divider: '#E5E5EA',              // divider lines
+  backgroundPrimary: '#FFFFFF',     // main background
+  backgroundSecondary: '#F2F2F7',   // secondary background
+  backgroundInput: '#FFFFFF',       // input background
+  backgroundCard: '#FFFFFF',        // card background
+  borderColor: '#E5E5EA',           // divider lines
   
   // primary colors (same as dark)
   primaryBlue: '#007AFF',     // iOS blue
@@ -50,11 +50,11 @@ const lightTheme = {
   primaryDark: '#0062CC',     // darker iOS blue
   
   // Text colors
-  textWhite: '#000000',       // primary text (black on light)
-  textLight: '#3C3C43',       // secondary text
-  textFaded: '#8E8E93',       // fade text
-  placeholder: '#C7C7CC',     // placeholder text
-  footerText: '#8E8E93',      // footer text
+  textPrimary: '#000000',     // primary text
+  textSecondary: '#3C3C43',   // secondary text
+  textFaded: '#8E8E93',    // faded text
+  texttextPlaceholder: '#C7C7CC', // textPlaceholder text
+  textFooter: '#8E8E93',      // footer text
   textDisabled: '#C7C7CC',    // disabled text
   
   // accent colors (same as dark)

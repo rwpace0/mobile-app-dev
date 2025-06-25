@@ -1,11 +1,14 @@
 import { StyleSheet } from 'react-native';
-import colors from '../constants/colors';
+import { getColors } from '../constants/colors';
 import { Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
   header: {
     flexDirection: 'row',
@@ -15,8 +18,8 @@ export default StyleSheet.create({
     paddingTop: Spacing.s,
     paddingBottom: Spacing.s,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-    backgroundColor: colors.backgroundDark,
+    borderBottomColor: colors.borderColor,
+    backgroundColor: colors.backgroundPrimary,
   },
   closeButton: {
     padding: Spacing.xs,
@@ -35,7 +38,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     marginVertical: 20,
   },
-  imagePlaceholder: {
+  imagetextPlaceholder: {
     width: 150,
     height: 150,
     backgroundColor: '#2A2A2A',
@@ -53,14 +56,14 @@ export default StyleSheet.create({
     paddingHorizontal: Spacing.l,
   },
   label: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.semiBold,
     marginBottom: Spacing.xxs,
   },
   input: {
-    backgroundColor: colors.inputBackground,
-    color: colors.textWhite,
+    backgroundColor: colors.backgroundInput,
+    color: colors.textPrimary,
     fontSize: FontSize.base,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.m,
@@ -76,7 +79,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.backgroundInput,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
@@ -85,7 +88,7 @@ export default StyleSheet.create({
     borderColor: 'transparent',
   },
   dropdownMenu: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.xs,
     shadowColor: '#000',
@@ -103,7 +106,7 @@ export default StyleSheet.create({
     borderRadius: BorderRadius.sm,
   },
   dropdownItemText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.base,
   },
   errorText: {
@@ -127,4 +130,8 @@ export default StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
   },
-}); 
+});
+};
+
+// Default export for backward compatibility
+export default createStyles(true); 

@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -8,10 +8,13 @@ import {
   Shadow,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
   
   header: {
@@ -21,11 +24,11 @@ export default StyleSheet.create({
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.l,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   headerTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     flex: 1,
@@ -39,7 +42,7 @@ export default StyleSheet.create({
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.l,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   avatarContainer: {
@@ -51,14 +54,14 @@ export default StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.m,
   },
 
   username: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.xlarge,
     fontWeight: FontWeight.bold,
     marginBottom: Spacing.s,
@@ -75,14 +78,14 @@ export default StyleSheet.create({
   },
 
   statValue: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.bold,
     marginBottom: Spacing.xxs,
   },
 
   statLabel: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.base,
   },
 
@@ -90,7 +93,7 @@ export default StyleSheet.create({
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.l,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   graphHeader: {
@@ -101,19 +104,19 @@ export default StyleSheet.create({
   },
 
   timeText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
   },
 
   periodText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.base,
   },
 
-  graphPlaceholder: {
+  graphtextPlaceholder: {
     height: 150,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.md,
     justifyContent: "center",
     alignItems: "center",
@@ -130,7 +133,7 @@ export default StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.full,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
   },
 
   toggleButtonActive: {
@@ -138,12 +141,12 @@ export default StyleSheet.create({
   },
 
   toggleText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.base,
   },
 
   toggleTextActive: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
   },
 
   dashboardSection: {
@@ -151,7 +154,7 @@ export default StyleSheet.create({
   },
 
   dashboardTitle: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.large,
     marginBottom: Spacing.m,
   },
@@ -165,7 +168,7 @@ export default StyleSheet.create({
   dashboardItem: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.m,
     flexDirection: "row",
@@ -174,8 +177,12 @@ export default StyleSheet.create({
   },
 
   dashboardItemText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.medium,
   },
-}); 
+});
+};
+
+// Default export for backward compatibility
+export default createStyles(true); 

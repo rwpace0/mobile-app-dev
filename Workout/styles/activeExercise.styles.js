@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,9 +7,12 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,
@@ -153,7 +156,7 @@ export default StyleSheet.create({
     paddingVertical: Spacing.m,
   },
   addExerciseText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontWeight: FontWeight.medium,
     fontSize: FontSize.medium,
   },
@@ -165,13 +168,13 @@ export default StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
     borderTopLeftRadius: BorderRadius.lg,
     borderTopRightRadius: BorderRadius.lg,
     paddingVertical: Spacing.l,
   },
   modalTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     textAlign: 'center',
@@ -184,14 +187,14 @@ export default StyleSheet.create({
     paddingHorizontal: Spacing.m,
   },
   presetTimeButton: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     paddingVertical: Spacing.s,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
     margin: Spacing.xs,
   },
   presetTimeText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
   },
   modalCloseButton: {
@@ -200,7 +203,11 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
   modalCloseText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.medium,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

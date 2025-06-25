@@ -1,12 +1,17 @@
 import { StyleSheet, Dimensions } from 'react-native';
-import colors from '../constants/colors';
+import { getColors } from '../constants/colors';
 import { Spacing, BorderRadius, FontSize } from '../constants/theme';
-import components from '../constants/components';
-import layout from '../constants/layout';
+import { createComponentStyles } from '../constants/components';
+import { createLayoutStyles } from '../constants/layout';
 
 const { width } = Dimensions.get('window');
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  const components = createComponentStyles(isDark);
+  const layout = createLayoutStyles(isDark);
+  
+  return StyleSheet.create({
   container: {
     ...layout.screenCenter,
     paddingHorizontal: Spacing.m,
@@ -14,12 +19,12 @@ export default StyleSheet.create({
   title: {
     fontSize: FontSize.large,
     fontWeight: '700',
-    color: colors.textWhite,
+    color: colors.textPrimary,
     marginBottom: Spacing.xl,
   },
   subtitle: {
     fontSize: FontSize.medium,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginBottom: Spacing.xxl,
     textAlign: 'center',
   },
@@ -33,24 +38,24 @@ export default StyleSheet.create({
     width: '100%',
   },
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primaryBlue,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: colors.primaryBlue,
   },
   buttonText: {
     ...components.buttonText,
   },
   secondaryButtonText: {
-    color: '#007AFF',
+    color: colors.primaryBlue,
   },
   inputContainer: {
     width: '100%',
   },
   inputLabel: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.small,
     marginBottom: Spacing.xs,
   },
@@ -58,7 +63,7 @@ export default StyleSheet.create({
     ...components.input,
   },
   textInputError: {
-    borderColor: '#FF3B30',
+    borderColor: colors.accentRed,
     borderWidth: 1,
   },
   googleButton: {
@@ -73,13 +78,13 @@ export default StyleSheet.create({
   googleText: {
     ...components.buttonText,
   },
-  footerText: {
-    color: colors.footerText,
+  textFooter: {
+    color: colors.textFooter,
     fontSize: FontSize.small,
     marginTop: Spacing.l,
   },
-  blueFooterText: {
-    color: '#007AFF',
+  bluetextFooter: {
+    color: colors.primaryBlue,
     fontSize: FontSize.small,
     marginTop: Spacing.l,
   },
@@ -97,19 +102,19 @@ export default StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   requirementText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.medium,
     marginLeft: Spacing.xs,
   },
   requirementMet: {
-    color: '#4CAF50', // Success green
+    color: colors.accentGreen,
   },
   requirementUnmet: {
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
   strengthBarContainer: {
     height: 4,
-    backgroundColor: colors.textLight,
+    backgroundColor: colors.textSecondary,
     borderRadius: BorderRadius.small,
     
     marginBottom: Spacing.l,
@@ -117,10 +122,10 @@ export default StyleSheet.create({
   strengthBar: {
     height: '100%',
     borderRadius: BorderRadius.small,
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.accentGreen,
   },
   errorText: {
-    color: '#FF3B30',
+    color: colors.accentRed,
     fontSize: FontSize.small,
     marginBottom: Spacing.s,
   },
@@ -135,3 +140,7 @@ export default StyleSheet.create({
     right: Spacing.m,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

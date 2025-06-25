@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,10 +7,13 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
 
   header: {
@@ -20,7 +23,7 @@ export default StyleSheet.create({
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   headerLeft: {
@@ -29,7 +32,7 @@ export default StyleSheet.create({
 
   headerTitle: {
     flex: 1,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     textAlign: "center",
@@ -42,7 +45,7 @@ export default StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   tab: {
@@ -53,7 +56,7 @@ export default StyleSheet.create({
 
   tabText: {
     fontSize: FontSize.medium,
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
 
   activeTab: {
@@ -75,7 +78,7 @@ export default StyleSheet.create({
   imageContainer: {
     width: '100%',
     height: 250,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.m,
     overflow: 'hidden',
@@ -89,7 +92,7 @@ export default StyleSheet.create({
 
   // Info cards styles
   infoCard: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.m,
     marginBottom: Spacing.m,
@@ -107,19 +110,19 @@ export default StyleSheet.create({
 
   infoLabel: {
     fontSize: FontSize.small,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginBottom: Spacing.xxs,
   },
 
   infoText: {
     fontSize: FontSize.medium,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontWeight: FontWeight.medium,
   },
 
   // Summary tab styles
   instructionContainer: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.m,
     marginBottom: Spacing.m,
@@ -127,19 +130,19 @@ export default StyleSheet.create({
 
   instructionLabel: {
     fontSize: FontSize.medium,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginBottom: Spacing.s,
   },
 
   instructionText: {
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     lineHeight: 24,
   },
 
   // History tab styles
   workoutCard: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.m,
     marginBottom: Spacing.m,
@@ -155,14 +158,14 @@ export default StyleSheet.create({
 
   workoutTitle: {
     fontSize: FontSize.large,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontWeight: FontWeight.semiBold,
     marginBottom: Spacing.xxs,
   },
 
   workoutDate: {
     fontSize: FontSize.small,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginBottom: Spacing.m,
   },
 
@@ -170,7 +173,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: Spacing.xs,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.xs,
     paddingHorizontal: Spacing.s,
@@ -179,14 +182,14 @@ export default StyleSheet.create({
   setNumber: {
     width: 50,
     fontSize: FontSize.base,
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
 
   setInfo: {
     flex: 1,
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontWeight: FontWeight.medium,
   },
 
@@ -200,18 +203,18 @@ export default StyleSheet.create({
     paddingBottom: Spacing.xs,
     marginBottom: Spacing.s,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
 
   setsHeaderText: {
     fontSize: FontSize.small,
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
 
   notes: {
     fontSize: FontSize.base,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginTop: Spacing.s,
     fontStyle: "italic",
   },
@@ -225,7 +228,11 @@ export default StyleSheet.create({
 
   emptyHistoryText: {
     fontSize: FontSize.large,
-    color: colors.textLight,
+    color: colors.textSecondary,
     textAlign: "center",
   },
-}); 
+});
+};
+
+// Default export for backward compatibility
+export default createStyles(true); 

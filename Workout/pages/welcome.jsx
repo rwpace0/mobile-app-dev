@@ -1,8 +1,13 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import styles from "../styles/login.styles";
+import { createStyles } from "../styles/login.styles";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 
 const WelcomePage = ({ navigation }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Workout</Text>

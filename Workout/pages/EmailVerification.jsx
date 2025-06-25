@@ -7,12 +7,16 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import colors from '../constants/colors';
-import theme from '../constants/theme';
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 import { useAuth } from '../API/authContext';
 import getBaseUrl from '../API/getBaseUrl';
+import { createStyles } from "../styles/login.styles";
 
 const EmailVerification = () => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [countdown, setCountdown] = useState(60);
   const [isResending, setIsResending] = useState(false);
   const { user, error } = useAuth();
@@ -97,65 +101,6 @@ const EmailVerification = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-    backgroundColor: colors.backgroundDark,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: colors.textWhite,
-  },
-  messageContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  message: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 10,
-    color: colors.textWhite,
-  },
-  email: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 20,
-  },
-  instructions: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: colors.textWhite,
-  },
-  errorContainer: {
-    backgroundColor: '#FFE5E5',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  errorText: {
-    color: colors.accentRed,
-    textAlign: 'center',
-  },
-  resendButton: {
-    backgroundColor: colors.primaryBlue,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  disabledButton: { 
-    backgroundColor: colors.textDisabled,
-  },
-  resendButtonText: {
-    color: colors.textWhite,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+
 
 export default EmailVerification; 

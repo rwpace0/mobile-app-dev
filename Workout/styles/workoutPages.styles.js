@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,10 +7,13 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
   
   header: {
@@ -22,7 +25,7 @@ export default StyleSheet.create({
   },
   
   headerTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     textAlign: 'center',
@@ -40,7 +43,7 @@ export default StyleSheet.create({
   },
 
   saveButton: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     backgroundColor: colors.primaryBlue,
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.s,
@@ -54,7 +57,7 @@ export default StyleSheet.create({
   },
   
   routineNameInput: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.regular,
     paddingHorizontal: Spacing.m,
@@ -75,14 +78,14 @@ export default StyleSheet.create({
   },
   
   getStartedText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     marginBottom: Spacing.xs,
   },
   
   instructionText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.medium,
     textAlign: "center",
     marginBottom: Spacing.l,
@@ -104,7 +107,7 @@ export default StyleSheet.create({
   },
   
   addExerciseText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.medium,
     marginLeft: Spacing.xs,
@@ -115,7 +118,7 @@ export default StyleSheet.create({
     justifyContent: "space-between",
     padding: Spacing.m,
     borderTopWidth: 1,
-    borderTopColor: colors.divider,
+    borderTopColor: colors.borderColor,
   },
   
   settingsButton: {
@@ -124,7 +127,7 @@ export default StyleSheet.create({
   },
   
   settingsText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
   },
   
@@ -141,12 +144,12 @@ export default StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     marginHorizontal: Spacing.m,
     marginVertical: Spacing.m,
     padding: Spacing.m,
     borderRadius: BorderRadius.lg,
-    shadowColor: colors.shadow,
+    shadowColor: '#000000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -163,7 +166,7 @@ export default StyleSheet.create({
   },
 
   statLabel: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.small,
     fontWeight: FontWeight.medium,
     marginBottom: Spacing.xs,
@@ -172,14 +175,18 @@ export default StyleSheet.create({
   },
 
   statValue: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.xlarge,
     fontWeight: FontWeight.bold,
   },
 
   statDivider: {
     width: 1,
-    backgroundColor: colors.divider,
+    backgroundColor: colors.borderColor,
     marginHorizontal: Spacing.s,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

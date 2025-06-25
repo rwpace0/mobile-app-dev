@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import colors from "../constants/colors";
-import styles from "../styles/activeExercise.styles";
+import { getColors } from "../constants/colors";
+import { createStyles } from "../styles/activeExercise.styles";
+import { useTheme } from "../constants/ThemeContext";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
@@ -22,6 +23,9 @@ const ActiveExerciseComponent = ({
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [exerciseDetails, setExerciseDetails] = useState(null);
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
 
   useEffect(() => {
     const fetchExerciseDetails = async () => {
@@ -176,8 +180,8 @@ const ActiveExerciseComponent = ({
 
       <TextInput
         style={styles.notesInput}
-        placeholder="Add notes here..."
-        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+        textPlaceholder="Add notes here..."
+        textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
         value={notes}
         onChangeText={setNotes}
       />
@@ -238,8 +242,8 @@ const ActiveExerciseComponent = ({
                 value={set.weight}
                 onChangeText={(value) => handleWeightChange(set.id, value)}
                 keyboardType="numeric"
-                placeholder="0"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                textPlaceholder="0"
+                textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
                 selectTextOnFocus={true}
               />
               <Text style={styles.setCell}> × </Text>
@@ -248,8 +252,8 @@ const ActiveExerciseComponent = ({
                 value={set.reps}
                 onChangeText={(value) => handleRepsChange(set.id, value)}
                 keyboardType="numeric"
-                placeholder="0"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                textPlaceholder="0"
+                textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
                 selectTextOnFocus={true}
               />
             </View>

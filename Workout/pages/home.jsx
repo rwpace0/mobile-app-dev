@@ -1,8 +1,10 @@
 import { View, Text, Button } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useTheme } from "../constants/ThemeContext"; 
 
 
 const HomePage = () => {
+  
   const navigation = useNavigation();
   
   return (

@@ -229,7 +229,7 @@ class DatabaseManager {
         throw new Error("Database not initialized");
       }
 
-      // Replace placeholders with actual values to avoid parameter binding issues
+      // Replace textPlaceholders with actual values to avoid parameter binding issues
       let finalSql = sql;
       params.forEach((param, index) => {
         let value = param;

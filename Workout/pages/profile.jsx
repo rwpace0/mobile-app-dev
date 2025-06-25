@@ -9,14 +9,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../API/authContext';
-import styles from '../styles/profile.styles';
-import colors from '../constants/colors';
-import WorkoutCountGraph from '../graphs/WorkoutCountGraph';
+import { createStyles } from '../styles/profile.styles';
+import { getColors } from '../constants/colors';
+import { useTheme } from '../constants/ThemeContext';
 import Header from '../components/header';
 
 const Profile = ({ navigation }) => {
   const [activeMetric, setActiveMetric] = useState('Duration');
   const { user, logout, updateUsername } = useAuth();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
 
   const handleLogout = async () => {
     try {
@@ -37,7 +40,7 @@ const Profile = ({ navigation }) => {
     <View style={styles.profileSection}>
       <View style={styles.avatarContainer}>
         <View style={styles.avatar}>
-          <Ionicons name="person-outline" size={50} color={colors.textLight} />
+          <Ionicons name="person-outline" size={50} color={colors.textPrimary} />
         </View>
         <Text style={styles.username}>{user?.username}</Text>
       </View>
@@ -74,28 +77,28 @@ const Profile = ({ navigation }) => {
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Statistics')}
         >
-          <Ionicons name="stats-chart" size={24} color={colors.textWhite} />
+          <Ionicons name="stats-chart" size={24} color={colors.textPrimary} />
           <Text style={styles.dashboardItemText}>Statistics</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Exercises')}
         >
-          <Ionicons name="barbell-outline" size={24} color={colors.textWhite} />
+          <Ionicons name="barbell-outline" size={24} color={colors.textPrimary} />
           <Text style={styles.dashboardItemText}>Exercises</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Measures')}
         >
-          <Ionicons name="body-outline" size={24} color={colors.textWhite} />
+          <Ionicons name="body-outline" size={24} color={colors.textPrimary} />
           <Text style={styles.dashboardItemText}>Measures</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Calendar')}
         >
-          <Ionicons name="calendar-outline" size={24} color={colors.textWhite} />
+          <Ionicons name="calendar-outline" size={24} color={colors.textPrimary} />
           <Text style={styles.dashboardItemText}>Calendar</Text>
         </TouchableOpacity>
       </View>

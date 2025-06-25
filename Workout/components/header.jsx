@@ -41,7 +41,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
           <Ionicons
             name={leftComponent.icon}
             size={24}
-            color={colors.textWhite}
+            color={colors.textPrimary}
           />
         </TouchableOpacity>
       );
@@ -62,7 +62,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
           <Ionicons
             name={rightComponent.icon}
             size={24}
-            color={colors.textWhite}
+            color={colors.textPrimary}
           />
         </TouchableOpacity>
       );

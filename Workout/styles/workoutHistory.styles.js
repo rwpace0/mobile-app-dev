@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   FontSize,
@@ -8,11 +8,14 @@ import {
   Shadow,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   // Container styles
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
 
   // Header styles
@@ -23,10 +26,10 @@ export default StyleSheet.create({
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
   headerTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     textAlign: 'center',
@@ -46,12 +49,12 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
-    backgroundColor: colors.backgroundMedium,
+    backgroundColor: colors.backgroundSecondary,
   },
 
   // Workout History Card styles
   workoutCard: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     marginHorizontal: Spacing.m,
     marginBottom: Spacing.m,
@@ -61,12 +64,12 @@ export default StyleSheet.create({
   workoutTitle: {
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     marginBottom: Spacing.xxs,
   },
   workoutDate: {
     fontSize: FontSize.small,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginBottom: Spacing.m,
   },
   statsRow: {
@@ -74,7 +77,7 @@ export default StyleSheet.create({
     alignItems: "center",
     paddingBottom: Spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
   statItemWithIcon: {
     flexDirection: "row",
@@ -86,7 +89,7 @@ export default StyleSheet.create({
   },
   statText: {
     fontSize: FontSize.medium,
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
   exerciseList: {
@@ -103,11 +106,11 @@ export default StyleSheet.create({
   },
   exerciseTitle: {
     fontSize: FontSize.medium,
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
   bestSet: {
     fontSize: FontSize.medium,
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
   recordBadge: {
@@ -135,16 +138,16 @@ export default StyleSheet.create({
     height: 24,
     borderRadius: BorderRadius.sm,
     marginRight: Spacing.xs,
-    backgroundColor: colors.backgroundMedium,
+    backgroundColor: colors.backgroundSecondary,
   },
   exerciseName: {
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     flex: 1,
   },
   exerciseStats: {
     fontSize: FontSize.caption,
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
   seeMoreText: {
     fontSize: FontSize.caption,
@@ -155,7 +158,7 @@ export default StyleSheet.create({
   // Workout Detail styles
   detailContainer: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
     paddingTop: Spacing.m,
   },
   detailHeader: {
@@ -165,18 +168,18 @@ export default StyleSheet.create({
   detailTitle: {
     fontSize: FontSize.xlarge,
     fontWeight: FontWeight.bold,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     marginBottom: Spacing.xs,
   },
   detailDate: {
     fontSize: FontSize.medium,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginBottom: Spacing.s,
   },
 
   // Exercise Card styles
   exerciseCard: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     marginHorizontal: Spacing.m,
     marginBottom: Spacing.m,
@@ -191,7 +194,7 @@ export default StyleSheet.create({
   },
   exerciseNotes: {
     fontSize: FontSize.small,
-    color: colors.textLight,
+    color: colors.textSecondary,
     marginBottom: Spacing.s,
     fontStyle: 'italic',
   },
@@ -201,12 +204,12 @@ export default StyleSheet.create({
     flexDirection: "row",
     paddingBottom: Spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
     marginBottom: Spacing.xs,
   },
   setHeaderText: {
     fontSize: FontSize.caption,
-    color: colors.textLight,
+    color: colors.textSecondary,
     width: 80,
   },
   setRow: {
@@ -217,11 +220,11 @@ export default StyleSheet.create({
   setNumber: {
     width: 40,
     fontSize: FontSize.base,
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
   setValue: {
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     marginLeft: Spacing.s,
   },
 
@@ -230,7 +233,7 @@ export default StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
   errorText: {
     fontSize: FontSize.large,
@@ -255,12 +258,12 @@ export default StyleSheet.create({
     marginTop: 15,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryBlue,
     borderRadius: 8,
   },
 
   retryText: {
-    color: colors.white,
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -271,7 +274,7 @@ export default StyleSheet.create({
   },
 
   footerRetryText: {
-    color: colors.primary,
+    color: colors.primaryBlue,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -283,13 +286,17 @@ export default StyleSheet.create({
 
   emptyText: {
     fontSize: 16,
-    color: colors.textLight,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 
   retryingText: {
     marginTop: 10,
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: 14,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

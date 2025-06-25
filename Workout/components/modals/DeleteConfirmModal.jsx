@@ -1,9 +1,15 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import styles from "../../styles/modals.styles";
+import { createStyles } from "../../styles/modals.styles";
+import { getColors } from "../../constants/colors";
+import { useTheme } from "../../constants/ThemeContext";
 
 const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
+  
   return (
     <Modal
       visible={visible}

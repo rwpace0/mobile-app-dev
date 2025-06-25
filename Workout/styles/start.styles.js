@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,10 +7,13 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
   
   header: {
@@ -18,11 +21,11 @@ export default StyleSheet.create({
     paddingTop: Spacing.m,
     paddingBottom: Spacing.s,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
   
   headerTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
   },
@@ -44,7 +47,7 @@ export default StyleSheet.create({
   },
   
   sectionTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     marginBottom: Spacing.s,
@@ -61,7 +64,7 @@ export default StyleSheet.create({
   },
   
   startEmptyWorkoutText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     marginLeft: Spacing.s,
   },
@@ -74,7 +77,7 @@ export default StyleSheet.create({
   routineActionButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     paddingVertical: Spacing.s,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
@@ -82,27 +85,27 @@ export default StyleSheet.create({
   },
   
   routineActionText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     marginLeft: Spacing.xs,
   },
   
   emptyRoutinesContainer: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.md,
     padding: Spacing.m,
     marginTop: Spacing.s,
   },
   
   emptyRoutinesText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.medium,
     textAlign: "center",
   },
 
   // Template list styles
   templateContainer: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.md,
     padding: Spacing.m,
     marginBottom: Spacing.m,
@@ -116,13 +119,13 @@ export default StyleSheet.create({
   },
 
   templateName: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
   },
 
   templateExercises: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.base,
     marginBottom: Spacing.m,
     lineHeight: 22,
@@ -137,8 +140,12 @@ export default StyleSheet.create({
   },
 
   startRoutineText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.semiBold,
   },
 });
+};
+
+// Default export for backward compatibility
+export default createStyles(true);

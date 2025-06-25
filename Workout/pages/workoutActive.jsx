@@ -9,14 +9,19 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import styles from "../styles/workoutPages.styles";
 import ActiveExerciseComponent from "../components/activeExerciseCard";
 import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
+import { createStyles } from "../styles/workoutPages.styles";
 
 const WorkoutActivePage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [exercises, setExercises] = useState([]);
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);

@@ -12,13 +12,18 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import exercisesAPI from "../API/exercisesAPI";
-import styles from "../styles/exerciseDetail.styles";
+import { createStyles } from "../styles/exerciseDetail.styles";
 import { format } from "date-fns";
 import * as FileSystem from 'expo-file-system';
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [activeTab, setActiveTab] = useState("Summary");
   const [exercise, setExercise] = useState(null);
   const [history, setHistory] = useState([]);

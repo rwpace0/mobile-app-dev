@@ -8,7 +8,7 @@ export const createStyles = (isDark = true) => {
   return StyleSheet.create({
   container: {
     height: 60,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -31,7 +31,7 @@ export const createStyles = (isDark = true) => {
   },
 
   title: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
   },

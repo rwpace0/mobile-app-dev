@@ -9,9 +9,10 @@ import {
 } from "react-native";
 import { useAuth } from "../API/authContext";
 import { authAPI } from "../API/authAPI";
-import styles from "../styles/login.styles";
+import { createStyles } from "../styles/login.styles";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import colors from "../constants/colors";
 import debounce from "lodash/debounce";
 
 const SignUpPage = ({ navigation }) => {
@@ -19,6 +20,9 @@ const SignUpPage = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [emailError, setEmailError] = useState(false);
   const [emailAvailabilityError, setEmailAvailabilityError] = useState("");
   const [usernameError, setUsernameError] = useState(false);
@@ -201,8 +205,8 @@ const SignUpPage = ({ navigation }) => {
               ? styles.textInputError
               : null,
           ]}
-          placeholder="Choose a username (3-20 characters)"
-          placeholderTextColor="#999999"
+          textPlaceholder="Choose a username (3-20 characters)"
+          textPlaceholderTextColor={colors.textPlaceholder}
           autoCapitalize="none"
           value={username}
           onChangeText={handleUsernameChange}
@@ -227,8 +231,8 @@ const SignUpPage = ({ navigation }) => {
               ? styles.textInputError
               : null,
           ]}
-          placeholder="Enter your email"
-          placeholderTextColor="#999999"
+          textPlaceholder="Enter your email"
+          textPlaceholderTextColor={colors.textPlaceholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -246,8 +250,8 @@ const SignUpPage = ({ navigation }) => {
         <Text style={styles.inputLabel}>Password</Text>
         <TextInput
           style={styles.textInput}
-          placeholder="Enter your password"
-          placeholderTextColor="#999999"
+          textPlaceholder="Enter your password"
+          textPlaceholderTextColor={colors.textPlaceholder}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -266,7 +270,7 @@ const SignUpPage = ({ navigation }) => {
               <Ionicons
                 name={requirement.met ? "checkmark-circle" : "close-circle"}
                 size={20}
-                color={requirement.met ? "#4CAF50" : colors.textLight}
+                color={requirement.met ? colors.accentGreen : colors.textSecondary}
               />
               <Text
                 style={[
@@ -309,9 +313,9 @@ const SignUpPage = ({ navigation }) => {
         onPress={() => navigation.navigate("Login")}
         disabled={loading}
       >
-        <Text style={styles.footerText}>
+        <Text style={styles.textFooter}>
           Already have an account? {""}
-          <Text style={styles.blueFooterText}>Log in</Text>
+          <Text style={styles.bluetextFooter}>Log in</Text>
         </Text>
       </TouchableOpacity>
     </View>

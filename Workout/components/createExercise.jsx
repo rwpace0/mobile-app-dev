@@ -13,11 +13,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from 'expo-image-picker';
-import createStyles from "../styles/createExercise.styles";
+import { createStyles } from "../styles/createExercise.styles";
 import exercisesAPI from "../API/exercisesAPI";
 import { mediaAPI } from "../API/mediaAPI";
 import { requestMediaLibraryPermission, validateImageFile } from "../utils/permissions";
 import Header from "./header";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 
 const equipmentOptions = [
   "Dumbbell",
@@ -45,6 +47,9 @@ const muscleOptions = [
 ];
 
 const CreateExercise = () => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const navigation = useNavigation();
   const [formData, setFormData] = useState({
     name: "",
@@ -186,11 +191,11 @@ const CreateExercise = () => {
           {selectedImage ? (
             <Image
               source={{ uri: selectedImage }}
-              style={createStyles.imagePlaceholder}
+              style={createStyles.imagetextPlaceholder}
               resizeMode="cover"
             />
           ) : (
-            <View style={createStyles.imagePlaceholder}>
+            <View style={createStyles.imagetextPlaceholder}>
               <Ionicons name="image-outline" size={48} color="#888" />
             </View>
           )}
@@ -211,8 +216,8 @@ const CreateExercise = () => {
               createStyles.input,
               formErrors.name && createStyles.inputError
             ]}
-            placeholder="Enter exercise name"
-            placeholderTextColor="#999"
+            textPlaceholder="Enter exercise name"
+            textPlaceholderTextColor="#999"
             value={formData.name}
             onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
           />
@@ -324,8 +329,8 @@ const CreateExercise = () => {
               createStyles.input,
               formErrors.instruction && createStyles.inputError
             ]}
-            placeholder="Enter exercise instruction"
-            placeholderTextColor="#999"
+            textPlaceholder="Enter exercise instruction"
+            textPlaceholderTextColor="#999"
             value={formData.instruction}
             onChangeText={(text) => setFormData(prev => ({ ...prev, instruction: text }))}
           />

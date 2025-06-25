@@ -10,7 +10,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import styles from "../styles/workoutPages.styles";
+import { createStyles } from "../styles/workoutPages.styles";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 import RoutineExerciseComponent from "../components/routineExerciseCard";
 import templateAPI from "../API/templateAPI";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
@@ -18,6 +20,9 @@ import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 const RoutineCreate = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
   const [totalSets, setTotalSets] = useState(0);
@@ -147,8 +152,8 @@ const RoutineCreate = () => {
       <ScrollView style={styles.content}>
         <TextInput
           style={styles.routineNameInput}
-          placeholder="Routine Name"
-          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          textPlaceholder="Routine Name"
+          textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
           value={routineName}
           onChangeText={setRoutineName}
         />

@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from "react-native";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
 import {
   Spacing,
   BorderRadius,
@@ -7,7 +7,10 @@ import {
   FontWeight,
 } from "../constants/theme";
 
-export default StyleSheet.create({
+export const createStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -21,13 +24,13 @@ export default StyleSheet.create({
     padding: Spacing.l,
   },
   modalContent: {
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
     borderTopLeftRadius: BorderRadius.lg,
     borderTopRightRadius: BorderRadius.lg,
     paddingVertical: Spacing.l,
   },
   deleteModalContent: {
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
     borderRadius: BorderRadius.lg,
     padding: Spacing.l,
     width: '100%',
@@ -44,14 +47,14 @@ export default StyleSheet.create({
     marginBottom: Spacing.m,
   },
   deleteModalTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     textAlign: 'center',
     marginBottom: Spacing.s,
   },
   deleteModalText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.medium,
     textAlign: 'center',
     marginBottom: Spacing.l,
@@ -66,7 +69,7 @@ export default StyleSheet.create({
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
   },
   deleteModalConfirmButton: {
     flex: 1,
@@ -76,19 +79,19 @@ export default StyleSheet.create({
     backgroundColor: '#FF4444',
   },
   deleteModalCancelText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.medium,
     textAlign: 'center',
   },
   deleteModalConfirmText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.semiBold,
     textAlign: 'center',
   },
   modalTitle: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
     textAlign: 'center',
@@ -103,7 +106,7 @@ export default StyleSheet.create({
   presetTimeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     paddingVertical: Spacing.s,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
@@ -118,7 +121,7 @@ export default StyleSheet.create({
     backgroundColor: colors.textFaded,
   },
   presetTimeText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.medium,
     textAlign: 'center',
   },
@@ -134,7 +137,11 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
   modalCloseText: {
-    color: colors.textLight,
+    color: colors.textSecondary,
     fontSize: FontSize.medium,
   },
-}); 
+});
+};
+
+// Default export for backward compatibility
+export default createStyles(true); 

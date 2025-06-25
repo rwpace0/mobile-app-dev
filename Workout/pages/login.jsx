@@ -8,13 +8,18 @@ import {
   Alert,
 } from "react-native";
 import { useAuth } from "../API/authContext";
-import styles from "../styles/login.styles";
+import { createStyles } from "../styles/login.styles";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, error } = useAuth();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -41,8 +46,8 @@ const LoginPage = ({ navigation }) => {
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
           style={styles.textInput}
-          placeholder="Enter your email"
-          placeholderTextColor="#999999"
+          textPlaceholder="Enter your email"
+          textPlaceholderTextColor={colors.texttextPlaceholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -55,8 +60,8 @@ const LoginPage = ({ navigation }) => {
         <Text style={styles.inputLabel}>Password</Text>
         <TextInput
           style={styles.textInput}
-          placeholder="Enter your password"
-          placeholderTextColor="#999999"
+          textPlaceholder="Enter your password"
+          textPlaceholderTextColor={colors.textPlaceholder}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -87,7 +92,7 @@ const LoginPage = ({ navigation }) => {
         onPress={() => navigation.navigate("ResetPassword")}
         disabled={loading}
       >
-        <Text style={styles.footerText}>Forgot your password?</Text>
+        <Text style={styles.textFooter}>Forgot your password?</Text>
       </TouchableOpacity>
     </View>
   );

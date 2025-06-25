@@ -13,7 +13,7 @@ export const createStyles = (isDark = true) => {
   return StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundDark,
+    backgroundColor: colors.backgroundPrimary,
   },
   header: {
     flexDirection: 'row',
@@ -28,7 +28,7 @@ export const createStyles = (isDark = true) => {
   headerTitle: {
     fontSize: FontSize.xxlarge,
     fontWeight: FontWeight.semiBold,
-    color: colors.textWhite,
+    color: colors.textPrimary,
   },
   sectionHeader: {
     fontSize: FontSize.base,
@@ -45,7 +45,7 @@ export const createStyles = (isDark = true) => {
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.divider,
+    borderBottomColor: colors.borderColor,
   },
   settingsItemLeft: {
     flexDirection: 'row',
@@ -60,7 +60,7 @@ export const createStyles = (isDark = true) => {
   },
   settingsItemText: {
     fontSize: FontSize.medium,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontWeight: FontWeight.regular,
   },
   dropdownValue: {
@@ -79,7 +79,7 @@ export const createStyles = (isDark = true) => {
     backgroundColor: colors.overlayDark,
   },
   modalContent: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.l,
     minWidth: 300,
@@ -88,7 +88,7 @@ export const createStyles = (isDark = true) => {
   modalTitle: {
     fontSize: FontSize.large,
     fontWeight: FontWeight.semiBold,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     marginBottom: Spacing.l,
     textAlign: 'center',
   },
@@ -101,11 +101,11 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.md,
   },
   dropdownOptionSelected: {
-    backgroundColor: colors.divider,
+    backgroundColor: colors.borderColor,
   },
   dropdownOptionText: {
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
   },
   dropdownOptionTextSelected: {
     color: colors.primaryBlue,
@@ -115,11 +115,11 @@ export const createStyles = (isDark = true) => {
     marginTop: Spacing.l,
     paddingVertical: Spacing.m,
     borderRadius: BorderRadius.md,
-    backgroundColor: colors.divider,
+    backgroundColor: colors.borderColor,
   },
   modalCloseText: {
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
     textAlign: 'center',
     fontWeight: FontWeight.medium,
   },

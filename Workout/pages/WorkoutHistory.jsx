@@ -11,11 +11,15 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
-import styles from "../styles/workoutHistory.styles";
-import colors from "../constants/colors";
+import { createStyles } from "../styles/workoutHistory.styles";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -129,11 +133,11 @@ const WorkoutHistoryPage = () => {
 
         <View style={styles.statsRow}>
           <View style={styles.statItemWithIcon}>
-            <Ionicons name="time-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+            <Ionicons name="time-outline" size={20} color={colors.textSecondary} style={styles.statIcon} />
             <Text style={styles.statText}>{duration}m</Text>
           </View>
           <View style={styles.statItemWithIcon}>
-            <Ionicons name="barbell-outline" size={20} color={colors.textLight} style={styles.statIcon} />
+            <Ionicons name="barbell-outline" size={20} color={colors.textSecondary} style={styles.statIcon} />
             <Text style={styles.statText}>{volume} kg</Text>
           </View>
         </View>

@@ -10,12 +10,13 @@ import {
   Image,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import styles from "../styles/display.styles";
 import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "./header";
 import * as FileSystem from 'expo-file-system';
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
+import { createStyles } from "../styles/display.styles";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style }) => {
@@ -91,6 +92,9 @@ const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected }) => {
 
 const AddExercisePage = ({ route }) => {
   const navigation = useNavigation();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -241,8 +245,8 @@ const AddExercisePage = ({ route }) => {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search exercises"
-            placeholderTextColor="#999999"
+            textPlaceholder="Search exercises"
+            textPlaceholderTextColor="#999999"
             value={searchText}
             onChangeText={setSearchText}
           />

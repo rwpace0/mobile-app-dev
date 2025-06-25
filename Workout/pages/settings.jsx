@@ -28,7 +28,7 @@ const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {
   return (
     <TouchableOpacity style={styles.settingsItem} onPress={onPress}>
       <View style={styles.settingsItemLeft}>
-        <IconComponent name={icon} size={24} color={colors.textWhite} style={styles.icon} />
+        <IconComponent name={icon} size={24} color={colors.textPrimary} style={styles.icon} />
         <Text style={styles.settingsItemText}>{title}</Text>
       </View>
       <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />

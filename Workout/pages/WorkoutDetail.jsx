@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import styles from "../styles/workoutHistory.styles";
-import colors from "../constants/colors";
+import { createStyles } from "../styles/workoutHistory.styles";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
 
@@ -37,6 +38,9 @@ const calculateVolume = (sets) => {
 const WorkoutDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const { workout_id } = route.params || {};
   const [workout, setWorkout] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,7 @@ const WorkoutDetail = () => {
       <SafeAreaView style={styles.container}>
         <Header title="Workout Detail" leftComponent={{ type: 'back' }} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <ActivityIndicator size="large" color={colors.primaryBlue} />
         </View>
       </SafeAreaView>
     );
@@ -138,7 +142,7 @@ const WorkoutDetail = () => {
               <Ionicons
                 name="time-outline"
                 size={20}
-                color={colors.textLight}
+                color={colors.textSecondary}
                 style={styles.statIcon}
               />
               <Text style={styles.statText}>
@@ -149,7 +153,7 @@ const WorkoutDetail = () => {
               <Ionicons
                 name="barbell-outline"
                 size={20}
-                color={colors.textLight}
+                color={colors.textSecondary}
                 style={styles.statIcon}
               />
               <Text style={styles.statText}>{Math.round(totalVolume)} kg</Text>
@@ -158,7 +162,7 @@ const WorkoutDetail = () => {
               <Ionicons
                 name="list-outline"
                 size={20}
-                color={colors.textLight}
+                color={colors.textSecondary}
                 style={styles.statIcon}
               />
               <Text style={styles.statText}>{totalSets} sets</Text>

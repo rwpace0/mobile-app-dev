@@ -7,16 +7,20 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import exercisesAPI from "../API/exercisesAPI";
-import styles from "../styles/activeExercise.styles";
+import { createStyles } from "../styles/activeExercise.styles";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
-import colors from "../constants/colors";
+import { getColors } from "../constants/colors";
+import { useTheme } from "../constants/ThemeContext";
 
 const RoutineExerciseComponent = ({
   exercise,
   onUpdateSets,
   onRemoveExercise,
 }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [numSets, setNumSets] = useState(exercise.sets || 1);
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const [notes, setNotes] = useState("");
@@ -78,8 +82,8 @@ const RoutineExerciseComponent = ({
 
       <TextInput
         style={styles.notesInput}
-        placeholder="Add notes here..."
-        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+        textPlaceholder="Add notes here..."
+        textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
         value={notes}
         onChangeText={setNotes}
       />
