@@ -85,6 +85,7 @@ export const createStyles = (isDark = true) => {
     paddingBottom: Spacing.m,
     width: "100%",
     justifyContent: "space-between",
+    
   },
 
   filterButton: {
@@ -94,10 +95,11 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.lg,
     marginRight: Spacing.xs,
     flex: 1,
+    
   },
 
   filterText: {
-    color: colors.textSecondary,
+    color: colors.textPrimary,
     fontSize: FontSize.caption,
     textAlign: "center",
   },
@@ -134,7 +136,7 @@ export const createStyles = (isDark = true) => {
     width: 50,
     height: 50,
     borderRadius: 12,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,

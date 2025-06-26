@@ -17,6 +17,7 @@ import CreateExercise from "./components/createExercise";
 import LoadingScreen from "./components/LoadingScreen";
 import WorkoutHistory from "./pages/workoutHistory";
 import WorkoutDetail from "./pages/workoutDetail";
+import WorkoutEdit from "./pages/workoutEdit";
 import ExerciseDetail from "./pages/exerciseDetail";
 import ViewExercises from "./pages/viewExercises";
 import Profile from "./pages/profile";
@@ -50,6 +51,7 @@ const MainStack = () => (
     <Tab.Screen name="RoutineCreate" component={RoutineCreate} />
     <Tab.Screen name="CreateExercise" component={CreateExercise} />
     <Tab.Screen name="WorkoutDetail" component={WorkoutDetail} />
+    <Tab.Screen name="WorkoutEdit" component={WorkoutEdit} />
     <Tab.Screen name="ExerciseDetail" component={ExerciseDetail} />
     <Tab.Screen name="ViewExercises" component={ViewExercises} />
     <Tab.Screen name="Settings" component={Settings} />

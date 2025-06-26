@@ -19,7 +19,7 @@ import { getColors } from "../constants/colors";
 import { useTheme } from "../constants/ThemeContext";
 
 // highlight matching text in search results
-const HighlightText = ({ text, highlight, style }) => {
+const HighlightText = ({ text, highlight, style, highlightStyle }) => {
   if (!highlight.trim()) {
     return <Text style={style}>{text}</Text>;
   }
@@ -29,7 +29,7 @@ const HighlightText = ({ text, highlight, style }) => {
     <Text style={style}>
       {parts.map((part, index) =>
         part.toLowerCase() === highlight.toLowerCase() ? (
-          <Text key={index} style={[style, styles.highlightedText]}>
+          <Text key={index} style={[style, highlightStyle]}>
             {part}
           </Text>
         ) : (
@@ -63,7 +63,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
               onError={() => setImageError(true)}
             />
           ) : (
-            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
+            <Ionicons name="barbell" size={28} color='#FFFFFF' />
           )}
         </View>
         <View style={styles.exerciseDetails}>
@@ -71,6 +71,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
             text={item.name}
             highlight={searchText}
             style={styles.exerciseName}
+            highlightStyle={styles.highlightedText}
           />
           <Text style={styles.exerciseMuscleGroup}>
             {item.muscle_group.charAt(0).toUpperCase() +
@@ -85,6 +86,9 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
 
 const ViewExercisesPage = () => {
   const navigation = useNavigation();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

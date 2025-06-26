@@ -47,24 +47,27 @@ const WorkoutDetail = () => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchWorkoutDetails = useCallback(async (showLoading = true) => {
-    try {
-      if (!workout_id) {
-        throw new Error("No workout ID provided");
-      }
-      if (showLoading) setLoading(true);
-      setError(null);
+  const fetchWorkoutDetails = useCallback(
+    async (showLoading = true) => {
+      try {
+        if (!workout_id) {
+          throw new Error("No workout ID provided");
+        }
+        if (showLoading) setLoading(true);
+        setError(null);
 
-      const response = await workoutAPI.getWorkoutById(workout_id);
-      setWorkout(response);
-    } catch (err) {
-      console.error("Error fetching workout:", err);
-      setError(err.message || "Failed to load workout details");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [workout_id]);
+        const response = await workoutAPI.getWorkoutById(workout_id);
+        setWorkout(response);
+      } catch (err) {
+        console.error("Error fetching workout:", err);
+        setError(err.message || "Failed to load workout details");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [workout_id]
+  );
 
   useEffect(() => {
     fetchWorkoutDetails();
@@ -75,10 +78,19 @@ const WorkoutDetail = () => {
     fetchWorkoutDetails(false);
   }, [fetchWorkoutDetails]);
 
+  const handleExercisePress = useCallback(
+    (exercise) => {
+      navigation.navigate("ExerciseDetail", {
+        exerciseId: exercise.exercise_id,
+      });
+    },
+    [navigation]
+  );
+
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header title="Workout Detail" leftComponent={{ type: 'back' }} />
+        <Header title="Workout Detail" leftComponent={{ type: "back" }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primaryBlue} />
         </View>
@@ -89,11 +101,11 @@ const WorkoutDetail = () => {
   if (error || !workout) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header title="Workout Detail" leftComponent={{ type: 'back' }} />
+        <Header title="Workout Detail" leftComponent={{ type: "back" }} />
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>{error || "Workout not found"}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
+          <TouchableOpacity
+            style={styles.retryButton}
             onPress={() => fetchWorkoutDetails()}
           >
             <Text style={styles.retryText}>Retry</Text>
@@ -115,25 +127,23 @@ const WorkoutDetail = () => {
     <SafeAreaView style={styles.detailContainer}>
       <Header
         title="Workout Detail"
-        leftComponent={{ type: 'back' }}
+        leftComponent={{ type: "back" }}
         rightComponent={{
-          type: 'button',
-          text: 'Edit',
-          onPress: () => console.log('Edit workout')
+          type: "button",
+          text: "Edit",
+          onPress: () => navigation.navigate("WorkoutEdit", { workout_id }),
         }}
       />
 
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1 }}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
         <View style={styles.detailHeader}>
           <Text style={styles.detailTitle}>{workout.name}</Text>
+
           <Text style={styles.detailDate}>
             {formatDate(workout.date_performed)}
           </Text>
@@ -176,10 +186,14 @@ const WorkoutDetail = () => {
               key={exerciseData.workout_exercises_id}
               style={styles.exerciseCard}
             >
-              <Text style={styles.exerciseCardTitle}>{exerciseData.name || "Unknown Exercise"}</Text>
-              {exerciseData.muscle_group && (
-                <Text style={styles.exerciseSubtitle}>{exerciseData.muscle_group}</Text>
-              )}
+              <TouchableOpacity
+                onPress={() => handleExercisePress(exerciseData)}
+              >
+                <Text style={styles.exerciseCardTitle}>
+                  {exerciseData.name || "Unknown Exercise"}
+                </Text>
+              </TouchableOpacity>
+
               {exerciseData.notes && (
                 <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
               )}
@@ -196,8 +210,10 @@ const WorkoutDetail = () => {
                   <Text style={styles.setValue}>
                     {set.weight}kg × {set.reps} reps
                   </Text>
-                  <Text style={styles.setRir}>
-                    {set.rir !== null && set.rir !== undefined ? `${set.rir}` : '-'}
+                  <Text style={styles.setValue}>
+                    {set.rir !== null && set.rir !== undefined
+                      ? `${set.rir}`
+                      : "-"}
                   </Text>
                 </View>
               ))}

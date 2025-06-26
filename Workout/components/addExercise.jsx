@@ -19,7 +19,7 @@ import { useTheme } from "../constants/ThemeContext";
 import { createStyles } from "../styles/display.styles";
 
 // highlight matching text in search results
-const HighlightText = ({ text, highlight, style }) => {
+const HighlightText = ({ text, highlight, style, highlightStyle }) => {
   if (!highlight.trim()) {
     return <Text style={style}>{text}</Text>;
   }
@@ -29,7 +29,7 @@ const HighlightText = ({ text, highlight, style }) => {
     <Text style={style}>
       {parts.map((part, index) =>
         part.toLowerCase() === highlight.toLowerCase() ? (
-          <Text key={index} style={[style, styles.highlightedText]}>
+          <Text key={index} style={[style, highlightStyle]}>
             {part}
           </Text>
         ) : (
@@ -40,7 +40,7 @@ const HighlightText = ({ text, highlight, style }) => {
   );
 };
 
-const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected }) => {
+const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected, styles }) => {
   const [imageError, setImageError] = useState(false);
   const imagePath = item.local_media_path ? 
     `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}` : 
@@ -66,7 +66,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected }) => {
               onError={() => setImageError(true)}
             />
           ) : (
-            <Ionicons name="fitness-outline" size={28} color="#BBBBBB" />
+            <Ionicons name="barbell" size={28} color='#FFFFFF' />
           )}
         </View>
         <View style={styles.exerciseDetails}>
@@ -74,6 +74,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected }) => {
             text={item.name}
             highlight={searchText}
             style={styles.exerciseName}
+            highlightStyle={styles.highlightedText}
           />
           <Text style={styles.exerciseMuscleGroup}>
             {item.muscle_group.charAt(0).toUpperCase() +
@@ -198,6 +199,7 @@ const AddExercisePage = ({ route }) => {
         onPress={handleExerciseSelect}
         searchText={searchText}
         isSelected={isSelected}
+        styles={styles}
       />
     );
   };

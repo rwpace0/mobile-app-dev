@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -15,58 +16,102 @@ import Header from "../components/header";
 import { getColors } from "../constants/colors";
 import { useTheme } from "../constants/ThemeContext";
 import { createStyles } from "../styles/workoutPages.styles";
-import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 
-const WorkoutActivePage = () => {
+const WorkoutEditPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const { workout_id } = route.params || {};
+  
   const [exercises, setExercises] = useState([]);
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
   const [totalSets, setTotalSets] = useState(0);
-  const [timer, setTimer] = useState(null);
   const [exerciseStates, setExerciseStates] = useState({});
   const [workoutName, setWorkoutName] = useState("");
-  const [exerciseTotals, setExerciseTotals] = useState({});
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [originalWorkout, setOriginalWorkout] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle receiving new exercises from DisplayPage
-    if (route.params?.selectedExercises) {
-      setExercises((prev) => [...prev, ...route.params.selectedExercises]);
+    if (workout_id) {
+      loadWorkoutData();
+    }
+  }, [workout_id]);
 
-      // Set workout name if provided from template
-      if (route.params?.workoutName) {
-        setWorkoutName(route.params.workoutName);
+  const loadWorkoutData = async () => {
+    try {
+      setLoading(true);
+      const workout = await workoutAPI.getWorkoutById(workout_id);
+      
+      if (!workout) {
+        Alert.alert("Error", "Workout not found");
+        navigation.goBack();
+        return;
       }
 
+      setOriginalWorkout(workout);
+      setWorkoutName(workout.name);
+      setWorkoutDuration(workout.duration || 0);
+
+      // Transform workout exercises to match the format expected by ActiveExerciseComponent
+      const transformedExercises = workout.exercises.map(ex => ({
+        exercise_id: ex.exercise_id,
+        name: ex.name,
+        muscle_group: ex.muscle_group
+      }));
+
+      setExercises(transformedExercises);
+
+      // Set up exercise states with existing sets and notes
+      const initialStates = {};
+      workout.exercises.forEach(ex => {
+        initialStates[ex.exercise_id] = {
+          sets: ex.sets.map((set, index) => ({
+            id: (index + 1).toString(),
+            weight: set.weight.toString(),
+            reps: set.reps.toString(),
+            total: (set.weight * set.reps).toString(),
+            completed: true, // Existing sets are considered completed
+            rir: set.rir
+          })),
+          notes: ex.notes || ""
+        };
+      });
+
+      setExerciseStates(initialStates);
+
+      // Calculate initial totals
+      let volume = 0;
+      let setsCount = 0;
+      workout.exercises.forEach(ex => {
+        ex.sets.forEach(set => {
+          volume += set.weight * set.reps;
+          setsCount++;
+        });
+      });
+      
+      setTotalVolume(volume);
+      setTotalSets(setsCount);
+
+    } catch (error) {
+      console.error("Error loading workout:", error);
+      Alert.alert("Error", "Failed to load workout data");
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle receiving new exercises from DisplayPage
+  useEffect(() => {
+    if (route.params?.selectedExercises) {
+      setExercises((prev) => [...prev, ...route.params.selectedExercises]);
       // Clear the params to prevent re-adding on re-render
-      navigation.setParams({ selectedExercises: undefined, workoutName: undefined });
+      navigation.setParams({ selectedExercises: undefined });
     }
   }, [route.params?.selectedExercises]);
-
-  // Start timer when page loads
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWorkoutDuration((prev) => prev + 1);
-    }, 1000);
-    setTimer(interval);
-
-    // Clear all workout state when component unmounts
-    return () => {
-      clearInterval(interval);
-      setExercises([]);
-      setWorkoutDuration(0);
-      setTotalVolume(0);
-      setTotalSets(0);
-      setExerciseStates({});
-      setExerciseTotals({});
-      setWorkoutName("");
-    };
-  }, []);
 
   const formatDuration = (seconds) => {
     if (seconds < 60) return `${seconds}s`;
@@ -76,38 +121,31 @@ const WorkoutActivePage = () => {
 
   const handleAddExercise = () => {
     navigation.navigate("AddExercise", {
-      returnTo: "WorkoutActive",
+      returnTo: "WorkoutEdit",
     });
   };
 
   const handleRemoveExercise = (exerciseId) => {
     setExercises(exercises.filter((ex) => ex.exercise_id !== exerciseId));
-    setExerciseTotals((prev) => {
-      const newTotals = { ...prev };
-      delete newTotals[exerciseId];
-      return newTotals;
-    });
-    setExerciseStates((prev) => {
-      const newStates = { ...prev };
-      delete newStates[exerciseId];
-      return newStates;
-    });
+    // Remove from exercise states too
+    const newStates = { ...exerciseStates };
+    delete newStates[exerciseId];
+    setExerciseStates(newStates);
   };
 
   const handleDiscard = () => {
-    setShowDeleteConfirm(true);
-    
-    if (showDeleteConfirm) {
-      // Reset workout state
-      setExercises([]);
-      setTotalVolume(0);
-      setTotalSets(0);
-      setWorkoutDuration(0);
-      setExerciseStates({});
-      setExerciseTotals({});
-      setWorkoutName("");
-      navigation.goBack();
-    }
+    Alert.alert(
+      "Discard Changes",
+      "Are you sure you want to discard all changes? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Discard", 
+          style: "destructive",
+          onPress: () => navigation.goBack()
+        }
+      ]
+    );
   };
 
   const handleExerciseStateChange = (exercise_id, { sets, notes }) => {
@@ -117,13 +155,13 @@ const WorkoutActivePage = () => {
     }));
   };
 
-  const handleFinish = async () => {
+  const handleSave = async () => {
     try {
-      // Build workout name and date
-      const now = new Date();
-      const finalWorkoutName = workoutName || `Workout on ${now.toLocaleDateString()}`;
-      const datePerformed = now.toISOString();
-      
+      if (!workoutName.trim()) {
+        Alert.alert("Error", "Please enter a workout name");
+        return;
+      }
+
       // Build exercises array
       const exercisesPayload = exercises.map((exercise, index) => {
         const state = exerciseStates[exercise.exercise_id] || {
@@ -155,76 +193,78 @@ const WorkoutActivePage = () => {
       if (validExercises.length === 0) {
         Alert.alert(
           "No Sets Recorded",
-          "Please add at least one set with weight and reps before finishing the workout."
+          "Please add at least one set with weight and reps before saving the workout."
         );
         return;
       }
 
       const payload = {
-        name: finalWorkoutName,
-        date_performed: datePerformed,
+        name: workoutName,
+        date_performed: originalWorkout?.date_performed || new Date().toISOString(),
         duration: workoutDuration,
         exercises: validExercises,
       };
 
-      await workoutAPI.finishWorkout(payload);
-      console.log("Workout saved successfully!");
+      await workoutAPI.updateWorkout(workout_id, payload);
       
-      // Reset all workout state
-      setExercises([]);
-      setWorkoutDuration(0);
-      setTotalVolume(0);
-      setTotalSets(0);
-      setExerciseStates({});
-      setExerciseTotals({});
-      setWorkoutName("");
-      
-      navigation.goBack();
+      Alert.alert(
+        "Success",
+        "Workout updated successfully!",
+        [{ text: "OK", onPress: () => navigation.goBack() }]
+      );
     } catch (err) {
-      console.error("Failed to save workout:", err);
+      console.error("Failed to update workout:", err);
       Alert.alert(
         "Error",
-        "Failed to save workout. Please try again."
+        "Failed to update workout. Please try again."
       );
     }
   };
 
+  // Update total volume and sets when exercises change
   const updateTotals = (exerciseId, volume, sets) => {
-    setExerciseTotals((prev) => ({
-      ...prev,
-      [exerciseId]: { volume, sets }
-    }));
+    setTotalVolume((prev) => prev + volume);
+    setTotalSets((prev) => prev + sets);
   };
 
-  useEffect(() => {
-    const totals = Object.values(exerciseTotals);
-    const newTotalVolume = totals.reduce((sum, exercise) => sum + exercise.volume, 0);
-    const newTotalSets = totals.reduce((sum, exercise) => sum + exercise.sets, 0);
-    
-    setTotalVolume(newTotalVolume);
-    setTotalSets(newTotalSets);
-  }, [exerciseTotals]);
-
-  const handleSettings = () => {
-    console.log("Settings");
-  };
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header title="Edit Workout" leftComponent={{ type: "back" }} />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading workout...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title="Log Workout"
+        title="Edit Workout"
         leftComponent={{
           type: 'back',
-          icon: 'chevron-down-outline',
         }}
         rightComponent={{
           type: 'button',
-          text: 'Finish',
-          onPress: handleFinish
+          text: 'Save',
+          onPress: handleSave
         }}
       />
 
       <ScrollView style={styles.content}>
+        {/* Workout Name Input */}
+        <View style={styles.nameInputContainer}>
+          <Text style={styles.nameInputLabel}>Workout Name</Text>
+          <TextInput
+            style={styles.nameInput}
+            value={workoutName}
+            onChangeText={setWorkoutName}
+            placeholder="Enter workout name"
+            placeholderTextColor={colors.textSecondary}
+          />
+        </View>
+
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Duration</Text>
@@ -234,7 +274,7 @@ const WorkoutActivePage = () => {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>{totalVolume} kg</Text>
+            <Text style={styles.statValue}>{Math.round(totalVolume)} kg</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Sets</Text>
@@ -247,9 +287,9 @@ const WorkoutActivePage = () => {
             <View style={styles.iconContainer}>
               <Ionicons name="barbell-outline" size={42} color="#BBBBBB" />
             </View>
-            <Text style={styles.getStartedText}>Get started</Text>
+            <Text style={styles.getStartedText}>No exercises</Text>
             <Text style={styles.instructionText}>
-              Add an exercise to start your workout
+              Add an exercise to continue editing
             </Text>
 
             <TouchableOpacity
@@ -273,6 +313,7 @@ const WorkoutActivePage = () => {
                 onStateChange={(state) =>
                   handleExerciseStateChange(exercise.exercise_id, state)
                 }
+                initialState={exerciseStates[exercise.exercise_id]}
               />
             ))}
 
@@ -288,23 +329,12 @@ const WorkoutActivePage = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-          <Text style={styles.settingsText}>Settings</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-          <Text style={styles.discardText}>Discard Workout</Text>
+          <Text style={styles.discardText}>Discard Changes</Text>
         </TouchableOpacity>
       </View>
-
-      <DeleteConfirmModal
-        visible={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDiscard}
-        title="Discard Workout?"
-      />
     </SafeAreaView>
   );
 };
 
-export default WorkoutActivePage;
+export default WorkoutEditPage; 

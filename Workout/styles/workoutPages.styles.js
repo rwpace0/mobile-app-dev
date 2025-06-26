@@ -64,6 +64,44 @@ export const createStyles = (isDark = true) => {
     paddingVertical: Spacing.l,
     marginBottom: Spacing.m,
   },
+
+  nameInputContainer: {
+    paddingHorizontal: Spacing.m,
+    paddingTop: Spacing.m,
+    paddingBottom: Spacing.s,
+  },
+
+  nameInputLabel: {
+    color: colors.textSecondary,
+    fontSize: FontSize.small,
+    fontWeight: FontWeight.medium,
+    marginBottom: Spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
+  nameInput: {
+    color: colors.textPrimary,
+    fontSize: FontSize.large,
+    fontWeight: FontWeight.medium,
+    backgroundColor: colors.backgroundCard,
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.s,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  loadingText: {
+    color: colors.textSecondary,
+    fontSize: FontSize.medium,
+  },
   
   emptyWorkoutContainer: {
     flex: 1,

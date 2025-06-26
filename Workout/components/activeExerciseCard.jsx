@@ -14,9 +14,10 @@ const ActiveExerciseComponent = ({
   onUpdateTotals,
   onRemoveExercise,
   onStateChange,
+  initialState,
 }) => {
-  const [sets, setSets] = useState(exercise.sets || []);
-  const [notes, setNotes] = useState("");
+  const [sets, setSets] = useState(initialState?.sets || exercise.sets || []);
+  const [notes, setNotes] = useState(initialState?.notes || "");
   const [restTime, setRestTime] = useState(150); // 2:30 default
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -51,7 +52,7 @@ const ActiveExerciseComponent = ({
       }
       return acc;
     }, 0);
-    onUpdateTotals(exercise.id, totalVolume, completedSets);
+    onUpdateTotals(exercise.exercise_id, totalVolume, completedSets);
   }, [sets]);
 
   useEffect(() => {

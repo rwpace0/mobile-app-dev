@@ -71,9 +71,28 @@ class WorkoutAPI extends APIBase {
               return acc;
             }, {});
 
+            // Check if workout already exists on server (for updates)
+            let method = 'POST';
+            let url = `${this.baseUrl}/create`;
+            
+            try {
+              const existingWorkout = await this.makeAuthenticatedRequest({
+                method: 'GET',
+                url: `${this.baseUrl}/${workout.workout_id}`
+              });
+              
+              if (existingWorkout) {
+                method = 'PUT';
+                url = `${this.baseUrl}/${workout.workout_id}`;
+              }
+            } catch (error) {
+              // Workout doesn't exist on server, use POST
+              console.log(`[WorkoutAPI] Workout ${workout.workout_id} not found on server, creating new`);
+            }
+
             const response = await this.makeAuthenticatedRequest({
-              method: 'POST',
-              url: `${this.baseUrl}/create`,
+              method,
+              url,
               data: {
                 ...workout,
                 exercises: Object.values(exercisesWithSets)
@@ -529,6 +548,132 @@ class WorkoutAPI extends APIBase {
       }
     } catch (error) {
       console.error("[WorkoutAPI] Finish workout error:", error);
+      throw error;
+    }
+  }
+
+  async updateWorkout(workoutId, workoutData) {
+    try {
+      console.log(`[WorkoutAPI] Updating workout ${workoutId}`);
+      
+      const userId = await this.getUserId();
+      const now = new Date().toISOString();
+
+      if (!workoutData.date_performed) {
+        throw new Error("date_performed is required for workout");
+      }
+
+      // Get the existing workout to preserve created_at
+      const existingWorkout = await this.getWorkoutById(workoutId);
+      if (!existingWorkout) {
+        throw new Error("Workout not found");
+      }
+
+      const updatedWorkout = {
+        workout_id: workoutId,
+        user_id: userId,
+        name: workoutData.name,
+        date_performed: workoutData.date_performed,
+        duration: workoutData.duration || 0,
+        exercises: workoutData.exercises || [],
+        created_at: existingWorkout.created_at,
+        updated_at: now
+      };
+
+      try {
+        // Use a single transaction for the entire update operation
+        await this.db.execute("BEGIN TRANSACTION");
+        
+        // Delete existing exercises and sets for this workout
+        await this.db.execute(
+          `DELETE FROM sets WHERE workout_id = ?`,
+          [workoutId]
+        );
+        
+        await this.db.execute(
+          `DELETE FROM workout_exercises WHERE workout_id = ?`,
+          [workoutId]
+        );
+
+        // Update the workout record directly instead of using storeLocally
+        await this.db.execute(
+          `UPDATE workouts 
+           SET name = ?, date_performed = ?, duration = ?, updated_at = ?, sync_status = ?
+           WHERE workout_id = ?`,
+          [
+            updatedWorkout.name,
+            updatedWorkout.date_performed,
+            updatedWorkout.duration,
+            updatedWorkout.updated_at,
+            "pending_sync",
+            workoutId
+          ]
+        );
+
+        // Store each exercise and its sets
+        for (const exercise of updatedWorkout.exercises) {
+          // Store exercise
+          const workoutExerciseId = uuid();
+          await this.db.execute(
+            `INSERT INTO workout_exercises 
+            (workout_exercises_id, workout_id, exercise_order, created_at, updated_at, sync_status, version, last_synced_at, exercise_id, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              workoutExerciseId,
+              workoutId,
+              exercise.exercise_order,
+              updatedWorkout.created_at,
+              updatedWorkout.updated_at,
+              "pending_sync",
+              1,
+              new Date().toISOString(),
+              exercise.exercise_id,
+              exercise.notes
+            ]
+          );
+
+          // Store sets for this exercise
+          for (const set of exercise.sets) {
+            await this.db.execute(
+              `INSERT INTO sets 
+              (set_id, workout_id, workout_exercises_id, set_order, weight, reps, rir, created_at, updated_at, sync_status, version, last_synced_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                uuid(),
+                workoutId,
+                workoutExerciseId,
+                set.set_order,
+                set.weight,
+                set.reps,
+                set.rir,
+                updatedWorkout.created_at,
+                updatedWorkout.updated_at,
+                "pending_sync",
+                1,
+                new Date().toISOString()
+              ]
+            );
+          }
+        }
+
+        await this.db.execute("COMMIT");
+
+        // Calculate and store summary after transaction
+        await this.calculateAndStoreSummary(updatedWorkout);
+        
+        console.log('[WorkoutAPI] Local workout update successful, clearing caches');
+        this.cache.clearPattern('^workouts:');
+        this.workoutCache.clearAll();
+
+        // Return the updated workout
+        return updatedWorkout;
+      } catch (error) {
+        await this.db.execute("ROLLBACK");
+        console.error('[WorkoutAPI] Error during workout update:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("[WorkoutAPI] Update workout error:", error);
       throw error;
     }
   }
