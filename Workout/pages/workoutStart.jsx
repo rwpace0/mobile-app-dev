@@ -218,7 +218,7 @@ const WorkoutStartPage = () => {
             style={styles.startEmptyWorkoutButton}
             onPress={handleStartEmptyWorkout}
           >
-            <Ionicons name="add" size={20} color={colors.textPrimary} />
+            <Ionicons name="add" size={20} color={colors.textWhite} />
             <Text style={styles.startEmptyWorkoutText}>
               Start Empty Workout
             </Text>

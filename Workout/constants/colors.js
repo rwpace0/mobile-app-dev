@@ -15,10 +15,11 @@ const darkTheme = {
   // Text colors
   textPrimary: '#FFFFFF',     // primary text
   textSecondary: '#BBBBBB',   // secondary text
-  textFaded: '#999999',    // faded text
-  texttextPlaceholder: '#777777', // textPlaceholder text
+  textFaded: '#999999',     // faded text
+  textPlaceholder: '#777777', // placeholder text
   textFooter: '#777777',      // footer text
   textDisabled: '#555555',    // disabled text
+  textWhite: '#FFFFFF',       // white text
   
   // accent colors
   accentGreen: '#4CD964',     // success states
@@ -53,9 +54,10 @@ const lightTheme = {
   textPrimary: '#000000',     // primary text
   textSecondary: '#3C3C43',   // secondary text
   textFaded: '#8E8E93',    // faded text
-  texttextPlaceholder: '#C7C7CC', // textPlaceholder text
+  textPlaceholder: '#C7C7CC', // placeholder text
   textFooter: '#8E8E93',      // footer text
   textDisabled: '#C7C7CC',    // disabled text
+  textWhite: '#FFFFFF',       // white text
   
   // accent colors (same as dark)
   accentGreen: '#4CD964',     // success states

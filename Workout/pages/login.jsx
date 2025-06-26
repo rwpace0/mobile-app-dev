@@ -47,7 +47,7 @@ const LoginPage = ({ navigation }) => {
         <TextInput
           style={styles.textInput}
           textPlaceholder="Enter your email"
-          textPlaceholderTextColor={colors.texttextPlaceholder}
+          textPlaceholderTextColor={colors.textPlaceholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}

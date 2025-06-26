@@ -35,7 +35,7 @@ export const createComponentStyles = (isDark = true) => {
     buttonText: {
       fontSize: FontSize.base,
       fontWeight: '600',
-      color: colors.textPrimary,
+      color: colors.textWhite,
     },
   });
 };

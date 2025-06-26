@@ -64,7 +64,7 @@ export const createStyles = (isDark = true) => {
   },
   
   startEmptyWorkoutText: {
-    color: colors.textPrimary,
+    color: colors.textWhite,
     fontSize: FontSize.medium,
     marginLeft: Spacing.s,
   },
@@ -140,7 +140,7 @@ export const createStyles = (isDark = true) => {
   },
 
   startRoutineText: {
-    color: colors.textPrimary,
+    color: colors.textWhite,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.semiBold,
   },
