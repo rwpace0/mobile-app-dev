@@ -147,3 +147,87 @@ export async function getTemplates(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
+export async function deleteTemplate(req, res) {
+  try {
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "No authorization header" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    // Get user data from Supabase
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    // Create authenticated client
+    const supabaseWithAuth = getClientToken(token);
+
+    const { templateId } = req.params;
+
+    if (!templateId) {
+      return res.status(400).json({ error: "Template ID is required" });
+    }
+
+    // Check if template exists and belongs to the user
+    const { data: template, error: templateCheckError } = await supabaseWithAuth
+      .from("workout_templates")
+      .select("template_id, created_by")
+      .eq("template_id", templateId)
+      .single();
+
+    if (templateCheckError || !template) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+
+    // Verify ownership
+    if (template.created_by !== user.id) {
+      return res.status(403).json({ error: "You don't have permission to delete this template" });
+    }
+
+    // Delete template exercises first (due to foreign key constraint)
+    const { error: templateExercisesError } = await supabaseWithAuth
+      .from("template_exercises")
+      .delete()
+      .eq("template_id", templateId);
+
+    if (templateExercisesError) {
+      console.error("Template exercises delete error:", templateExercisesError);
+      return res.status(500).json({
+        error: "Failed to delete template exercises",
+        details: templateExercisesError.message,
+      });
+    }
+
+    // Delete the template
+    const { error: templateError } = await supabaseWithAuth
+      .from("workout_templates")
+      .delete()
+      .eq("template_id", templateId);
+
+    if (templateError) {
+      console.error("Template delete error:", templateError);
+      return res.status(500).json({
+        error: "Failed to delete template",
+        details: templateError.message,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Template deleted successfully",
+    });
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}

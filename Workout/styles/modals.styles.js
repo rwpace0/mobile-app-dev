@@ -143,5 +143,99 @@ export const createStyles = (isDark = true) => {
 });
 };
 
+// Bottom Sheet Modal Styles
+export const createBottomSheetStyles = (isDark = true) => {
+  const colors = getColors(isDark);
+  
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    },
+    backdropTouchable: {
+      flex: 1,
+    },
+    bottomSheet: {
+      backgroundColor: colors.backgroundPrimary,
+      borderTopLeftRadius: BorderRadius.xl,
+      borderTopRightRadius: BorderRadius.xl,
+      paddingTop: Spacing.s,
+      maxHeight: '80%',
+    },
+    handleContainer: {
+      alignItems: 'center',
+      paddingVertical: Spacing.s,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      backgroundColor: colors.borderColor,
+      borderRadius: 2,
+    },
+    titleContainer: {
+      paddingHorizontal: Spacing.l,
+      paddingVertical: Spacing.m,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
+    title: {
+      color: colors.textPrimary,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+      textAlign: 'center',
+    },
+    actionsContainer: {
+      paddingHorizontal: Spacing.l,
+      paddingTop: Spacing.m,
+    },
+    actionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundCard,
+      marginBottom: Spacing.xs,
+      borderRadius: BorderRadius.md,
+    },
+    firstAction: {
+      borderTopLeftRadius: BorderRadius.md,
+      borderTopRightRadius: BorderRadius.md,
+    },
+    lastAction: {
+      borderBottomLeftRadius: BorderRadius.md,
+      borderBottomRightRadius: BorderRadius.md,
+      marginBottom: 0,
+    },
+    actionContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    actionText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.medium,
+      marginLeft: Spacing.m,
+    },
+    destructiveAction: {
+      backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    },
+    destructiveText: {
+      color: colors.accentRed,
+    },
+    disabledAction: {
+      backgroundColor: colors.backgroundSecondary,
+    },
+    disabledText: {
+      color: colors.textDisabled,
+    },
+    safeAreaBottom: {
+      height: 20, // Safe area bottom padding
+    },
+  });
+};
+
 // Default export for backward compatibility
 export default createStyles(true); 

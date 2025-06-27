@@ -29,6 +29,19 @@ class TemplateAPI extends APIBase {
                 method: 'DELETE',
                 url: `${this.baseUrl}/${template.template_id}`
               });
+              
+              // Clean up local database after successful server deletion
+              await this.db.execute(
+                `DELETE FROM template_exercises WHERE template_id = ?`,
+                [template.template_id]
+              );
+              
+              await this.db.execute(
+                `DELETE FROM workout_templates WHERE template_id = ?`,
+                [template.template_id]
+              );
+              
+              console.log(`[TemplateAPI] Successfully deleted template ${template.template_id} from server and local DB`);
             } else {
               // Get template exercises for this template
               const exercises = await this.db.query(
@@ -193,6 +206,182 @@ class TemplateAPI extends APIBase {
       return template;
     } catch (error) {
       console.error("[TemplateAPI] Create template error:", error);
+      throw error;
+    }
+  }
+
+  async updateTemplate(templateId, templateData) {
+    try {
+      console.log(`[TemplateAPI] Updating template ${templateId}`);
+      
+      const userId = await this.getUserId();
+      const now = new Date().toISOString();
+
+      // Get the existing template to preserve created_at and created_by
+      const existingTemplate = await this.getTemplateById(templateId);
+      if (!existingTemplate) {
+        throw new Error("Template not found");
+      }
+
+      const updatedTemplate = {
+        template_id: templateId,
+        name: templateData.name,
+        created_by: existingTemplate.created_by,
+        is_public: templateData.is_public || false,
+        exercises: templateData.exercises || [],
+        created_at: existingTemplate.created_at,
+        updated_at: now
+      };
+
+      try {
+        // Use a single transaction for the entire update operation
+        await this.db.execute("BEGIN TRANSACTION");
+        
+        // Delete existing exercises for this template
+        await this.db.execute(
+          `DELETE FROM template_exercises WHERE template_id = ?`,
+          [templateId]
+        );
+
+        // Update the template record
+        await this.db.execute(
+          `UPDATE workout_templates 
+           SET name = ?, is_public = ?, updated_at = ?, sync_status = ?
+           WHERE template_id = ?`,
+          [
+            updatedTemplate.name,
+            updatedTemplate.is_public,
+            updatedTemplate.updated_at,
+            "pending_sync",
+            templateId
+          ]
+        );
+
+        // Store each exercise
+        for (let i = 0; i < updatedTemplate.exercises.length; i++) {
+          const exercise = updatedTemplate.exercises[i];
+          const templateExerciseId = uuid();
+          
+          await this.db.execute(
+            `INSERT INTO template_exercises 
+            (template_exercise_id, template_id, exercise_id, exercise_order, sets, created_at, updated_at, sync_status, version, last_synced_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              templateExerciseId,
+              templateId,
+              exercise.exercise_id,
+              i + 1, // exercise_order
+              exercise.sets || 1,
+              updatedTemplate.created_at,
+              updatedTemplate.updated_at,
+              "pending_sync",
+              1,
+              new Date().toISOString()
+            ]
+          );
+        }
+
+        await this.db.execute("COMMIT");
+        
+        console.log('[TemplateAPI] Local template update successful, clearing caches');
+        this.cache.clearPattern('^templates:');
+        this.cache.clearPattern(`^template:${templateId}`);
+
+        // Return the updated template
+        return updatedTemplate;
+      } catch (error) {
+        await this.db.execute("ROLLBACK");
+        console.error('[TemplateAPI] Error during template update:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("[TemplateAPI] Update template error:", error);
+      throw error;
+    }
+  }
+
+  async duplicateTemplate(templateId, newName) {
+    try {
+      console.log(`[TemplateAPI] Duplicating template ${templateId}`);
+      
+      // Get the existing template
+      const existingTemplate = await this.getTemplateById(templateId);
+      if (!existingTemplate) {
+        throw new Error("Template not found");
+      }
+
+      const userId = await this.getUserId();
+      const newTemplateId = uuid();
+      const now = new Date().toISOString();
+
+      const duplicatedTemplate = {
+        template_id: newTemplateId,
+        name: newName || `${existingTemplate.name} (Copy)`,
+        created_by: userId,
+        is_public: false, // Duplicated templates are private by default
+        exercises: existingTemplate.exercises || [],
+        created_at: now,
+        updated_at: now
+      };
+
+      console.log('[TemplateAPI] Storing duplicated template locally');
+      await this.storeLocally(duplicatedTemplate, "pending_sync");
+
+      console.log('[TemplateAPI] Template duplication complete, clearing cache');
+      this.cache.clearPattern('^templates:');
+
+      return duplicatedTemplate;
+    } catch (error) {
+      console.error("[TemplateAPI] Duplicate template error:", error);
+      throw error;
+    }
+  }
+
+  async deleteTemplate(templateId) {
+    try {
+      console.log(`[TemplateAPI] Deleting template ${templateId}`);
+      
+      // Check if template exists
+      const existingTemplate = await this.getTemplateById(templateId);
+      if (!existingTemplate) {
+        throw new Error("Template not found");
+      }
+
+      const now = new Date().toISOString();
+
+      try {
+        await this.db.execute("BEGIN TRANSACTION");
+        
+        // Mark template as pending deletion instead of actually deleting
+        await this.db.execute(
+          `UPDATE workout_templates 
+           SET sync_status = 'pending_delete', updated_at = ?
+           WHERE template_id = ?`,
+          [now, templateId]
+        );
+
+        // Also mark template exercises as pending deletion
+        await this.db.execute(
+          `UPDATE template_exercises 
+           SET sync_status = 'pending_delete', updated_at = ?
+           WHERE template_id = ?`,
+          [now, templateId]
+        );
+
+        await this.db.execute("COMMIT");
+        
+        console.log('[TemplateAPI] Template marked for deletion, clearing caches');
+        this.cache.clearPattern('^templates:');
+        this.cache.clearPattern(`^template:${templateId}`);
+
+        return { success: true, message: "Template deleted successfully" };
+      } catch (error) {
+        await this.db.execute("ROLLBACK");
+        console.error('[TemplateAPI] Error during template deletion:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("[TemplateAPI] Delete template error:", error);
       throw error;
     }
   }
