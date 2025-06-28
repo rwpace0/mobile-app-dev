@@ -17,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { createStyles } from "../styles/settings.styles";
 import Header from "../components/header";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme } from "../state/SettingsContext";
 import { useAuth } from "../API/authContext";
 
 const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {

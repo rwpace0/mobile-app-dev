@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthProvider, useAuth } from "./API/authContext";
-import { ThemeProvider } from "./state/ThemeContext";
+import { SettingsProvider } from "./state/SettingsContext";
 import WelcomePage from "./pages/welcome";
 import LoginPage from "./pages/login";
 import SignUpPage from "./pages/signup";
@@ -87,12 +87,12 @@ const RootNavigator = () => {
 
 export default function App() {
   return (
-    <ThemeProvider>
+    <SettingsProvider>
       <AuthProvider>
         <NavigationContainer>
           <RootNavigator />
         </NavigationContainer>
       </AuthProvider>
-    </ThemeProvider>
+    </SettingsProvider>
   );
 }

@@ -14,7 +14,7 @@ import ActiveExerciseComponent from "../components/activeExerciseCard";
 import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme } from "../state/SettingsContext";
 import { createStyles } from "../styles/workoutPages.styles";
 
 const WorkoutEditPage = () => {

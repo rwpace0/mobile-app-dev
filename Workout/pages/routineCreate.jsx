@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { createStyles } from "../styles/workoutPages.styles";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme } from "../state/SettingsContext";
 import RoutineExerciseComponent from "../components/routineExerciseCard";
 import templateAPI from "../API/templateAPI";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";

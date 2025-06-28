@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
-import { useTheme } from "../../state/ThemeContext";
+import { useTheme } from "../../state/SettingsContext";
 
 const RestTimerModal = ({ visible, onClose, onSelectTime, currentTime }) => {
   const { isDark } = useTheme();

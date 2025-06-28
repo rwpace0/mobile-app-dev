@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme } from "../state/SettingsContext";
 
 const WelcomePage = ({ navigation }) => {
   const { isDark } = useTheme();

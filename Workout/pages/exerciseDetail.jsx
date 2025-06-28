@@ -16,7 +16,7 @@ import { createStyles } from "../styles/exerciseDetail.styles";
 import { format } from "date-fns";
 import * as FileSystem from 'expo-file-system';
 import { getColors } from "../constants/colors";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme } from "../state/SettingsContext";
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();

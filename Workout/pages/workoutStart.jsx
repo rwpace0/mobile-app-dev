@@ -15,7 +15,7 @@ import exercisesAPI from "../API/exercisesAPI";
 import Header from "../components/header";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/start.styles";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme } from "../state/SettingsContext";
 import BottomSheetModal from "../components/modals/bottomModal";
 
 const WorkoutStartPage = () => {

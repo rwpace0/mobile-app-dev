@@ -11,7 +11,7 @@ import { useAuth } from "../API/authContext";
 import { authAPI } from "../API/authAPI";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme } from "../state/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import debounce from "lodash/debounce";
 

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/activeExercise.styles";
-import { useTheme } from "../state/ThemeContext";
+import { useTheme, useSettings } from "../state/SettingsContext";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
@@ -24,7 +24,10 @@ const ActiveExerciseComponent = ({
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [exerciseDetails, setExerciseDetails] = useState(null);
+  const [previousPerformance, setPreviousPerformance] = useState(null);
+  const [loadingPrevious, setLoadingPrevious] = useState(false);
   const { isDark } = useTheme();
+  const { showPreviousPerformance } = useSettings();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
 
@@ -40,6 +43,43 @@ const ActiveExerciseComponent = ({
 
     fetchExerciseDetails();
   }, [exercise.exercise_id]);
+
+  // Fetch previous performance when setting is enabled
+  useEffect(() => {
+    const fetchPreviousPerformance = async () => {
+      if (!showPreviousPerformance || !exercise.exercise_id) return;
+      
+      try {
+        setLoadingPrevious(true);
+        const history = await exercisesAPI.getExerciseHistory(exercise.exercise_id);
+        
+        if (history && history.length > 0) {
+          const lastWorkout = history[0]; // Most recent workout
+          if (lastWorkout.sets && lastWorkout.sets.length > 0) {
+            // Find the best set (highest total weight moved)
+            const bestSet = lastWorkout.sets.reduce((best, set) => {
+              const currentTotal = (set.weight || 0) * (set.reps || 0);
+              const bestTotal = (best.weight || 0) * (best.reps || 0);
+              return currentTotal > bestTotal ? set : best;
+            });
+            
+            setPreviousPerformance({
+              weight: bestSet.weight,
+              reps: bestSet.reps,
+              total: (bestSet.weight || 0) * (bestSet.reps || 0),
+              date: lastWorkout.date_performed || lastWorkout.created_at,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch previous performance:", error);
+      } finally {
+        setLoadingPrevious(false);
+      }
+    };
+
+    fetchPreviousPerformance();
+  }, [showPreviousPerformance, exercise.exercise_id]);
 
   // update total completed sets whenever sets change
   useEffect(() => {
@@ -221,7 +261,9 @@ const ActiveExerciseComponent = ({
         <View style={styles.setHeaderRow}>
           <Text style={[styles.setHeaderCell, styles.setNumberCell]}>#</Text>
           <Text style={[styles.setHeaderCell, styles.weightCell]}>KG</Text>
-          <Text style={[styles.setHeaderCell, styles.totalCell]}>TOTAL</Text>
+          <Text style={[styles.setHeaderCell, styles.totalCell]}>
+            {showPreviousPerformance ? "PREVIOUS" : "TOTAL"}
+          </Text>
           <Text style={[styles.setHeaderCell, styles.completedCell]}></Text>
         </View>
 
@@ -258,7 +300,19 @@ const ActiveExerciseComponent = ({
                 selectTextOnFocus={true}
               />
             </View>
-            <Text style={[styles.setCell, styles.totalCell]}>{set.total}</Text>
+            <Text style={[styles.setCell, styles.totalCell]}>
+              {showPreviousPerformance ? (
+                previousPerformance ? (
+                  `${previousPerformance.weight}kg × ${previousPerformance.reps}`
+                ) : loadingPrevious ? (
+                  "Loading..."
+                ) : (
+                  "No data"
+                )
+              ) : (
+                set.total
+              )}
+            </Text>
             <TouchableOpacity
               style={styles.completedCell}
               onPress={() => toggleSetCompletion(index)}

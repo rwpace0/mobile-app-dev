@@ -18,7 +18,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { createStyles } from "../styles/settings.styles";
 import Header from "../components/header";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../state/ThemeContext";
+import { useSettings, useTheme } from "../state/SettingsContext";
 
 const SettingToggle = ({
   title,
@@ -154,36 +154,12 @@ const SettingsPage = () => {
   const route = useRoute();
   const { type } = route.params;
   const { theme, changeTheme, isDark } = useTheme();
+  const { settings, updateSetting } = useSettings();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
 
-  // State for different settings
-  const [settings, setSettings] = useState({
-    // Account settings
-    emailNotifications: false,
-    workoutReminders: false,
-    achievementAlerts: false,
-
-    // Workout settings
-    autoRestTimer: false,
-    showWeightHistory: true,
-    countdownTimer: true,
-
-    // Privacy settings
-    shareWorkouts: false,
-    showProfile: true,
-    allowComments: false,
-
-    // Units settings
-    useMetric: true,
-    use24Hour: true,
-  });
-
   const toggleSetting = (key) => {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    updateSetting(key, !settings[key]);
   };
 
   const themeOptions = ["system", "light", "dark"];
@@ -216,6 +192,12 @@ const SettingsPage = () => {
       case "workouts":
         return (
           <>
+            <SettingToggle
+              title="Show Previous Performance"
+              value={settings.showPreviousPerformance}
+              onValueChange={() => toggleSetting("showPreviousPerformance")}
+              icon="analytics-outline"
+            />
             <SettingToggle
               title="Auto Rest Timer"
               value={settings.autoRestTimer}
