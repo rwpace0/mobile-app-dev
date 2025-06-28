@@ -1,7 +1,7 @@
 import React from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { getColors } from '../constants/colors';
-import { useTheme } from '../constants/ThemeContext';
+import { useTheme } from '../state/ThemeContext';
 
 const LoadingScreen = () => {
   const { isDark } = useTheme();

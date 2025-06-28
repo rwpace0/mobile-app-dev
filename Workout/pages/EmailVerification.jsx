@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 import { useAuth } from '../API/authContext';
 import getBaseUrl from '../API/getBaseUrl';
 import { createStyles } from "../styles/login.styles";

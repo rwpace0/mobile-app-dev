@@ -10,7 +10,7 @@ import {
 import { useAuth } from "../API/authContext";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState("");

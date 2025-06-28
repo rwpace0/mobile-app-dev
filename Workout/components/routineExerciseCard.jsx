@@ -11,7 +11,7 @@ import { createStyles } from "../styles/activeExercise.styles";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 
 const RoutineExerciseComponent = ({
   exercise,

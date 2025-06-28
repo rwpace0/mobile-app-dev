@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from 'expo-file-system';
 import { mediaCache } from "../API/local/MediaCache";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style, highlightStyle }) => {

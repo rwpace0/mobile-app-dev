@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/activeExercise.styles";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";

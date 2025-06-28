@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthProvider, useAuth } from "./API/authContext";
-import { ThemeProvider } from "./constants/ThemeContext";
+import { ThemeProvider } from "./state/ThemeContext";
 import WelcomePage from "./pages/welcome";
 import LoginPage from "./pages/login";
 import SignUpPage from "./pages/signup";

@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Header from "./header";
 import * as FileSystem from 'expo-file-system';
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 import { createStyles } from "../styles/display.styles";
 
 // highlight matching text in search results

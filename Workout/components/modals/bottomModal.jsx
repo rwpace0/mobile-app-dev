@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomSheetStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
-import { useTheme } from "../../constants/ThemeContext";
+import { useTheme } from "../../state/ThemeContext";
 
 const { height: screenHeight } = Dimensions.get('window');
 

@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { createStyles } from "../styles/workoutPages.styles";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 import RoutineExerciseComponent from "../components/routineExerciseCard";
 import templateAPI from "../API/templateAPI";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
@@ -100,10 +100,6 @@ const RoutineCreate = () => {
       console.log("Sending template data:", templateData);
       const response = await templateAPI.createTemplate(templateData);
       console.log("Template save response:", response);
-
-      Alert.alert("Success", "Template saved successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
     } catch (error) {
       console.error("Failed to save template:", error);
       Alert.alert(
@@ -137,8 +133,6 @@ const RoutineCreate = () => {
         <Text style={styles.headerTitle}>Create Routine</Text>
         <TouchableOpacity
           onPress={() => {
-            console.log("Save button pressed - immediate log");
-            Alert.alert("Debug", "Save button pressed");
             handleSave();
           }}
           disabled={isSaving}

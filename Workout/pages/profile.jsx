@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../API/authContext';
 import { createStyles } from '../styles/profile.styles';
 import { getColors } from '../constants/colors';
-import { useTheme } from '../constants/ThemeContext';
+import { useTheme } from '../state/ThemeContext';
 import Header from '../components/header';
 
 const Profile = ({ navigation }) => {

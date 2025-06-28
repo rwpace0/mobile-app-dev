@@ -13,7 +13,7 @@ import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
 import { createStyles } from "../styles/workoutHistory.styles";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();

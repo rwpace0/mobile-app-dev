@@ -19,7 +19,7 @@ import { mediaAPI } from "../API/mediaAPI";
 import { requestMediaLibraryPermission, validateImageFile } from "../utils/permissions";
 import Header from "./header";
 import { getColors } from "../constants/colors";
-import { useTheme } from "../constants/ThemeContext";
+import { useTheme } from "../state/ThemeContext";
 
 const equipmentOptions = [
   "Dumbbell",
