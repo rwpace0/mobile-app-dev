@@ -38,7 +38,7 @@ export const createStyles = (isDark = true) => {
     alignItems: 'center',
     marginVertical: 20,
   },
-  imagetextPlaceholder: {
+  imageplaceholder: {
     width: 150,
     height: 150,
     backgroundColor: '#2A2A2A',

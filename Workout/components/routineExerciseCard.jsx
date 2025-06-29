@@ -82,8 +82,8 @@ const RoutineExerciseComponent = ({
 
       <TextInput
         style={styles.notesInput}
-        textPlaceholder="Add notes here..."
-        textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
+                  placeholder="Add notes here..."
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
         value={notes}
         onChangeText={setNotes}
       />

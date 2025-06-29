@@ -36,14 +36,14 @@ class LocalStorageManager {
 
     console.log('[LocalStorageManager] Prepared fields:', baseFields);
 
-    // Create textPlaceholders and values for SQL query
+    // Create placeholders and values for SQL query
     const fieldNames = Object.keys(baseFields);
-    const textPlaceholders = fieldNames.map(() => '?').join(', ');
+    const placeholders = fieldNames.map(() => '?').join(', ');
     const values = fieldNames.map(field => baseFields[field]);
 
     // Insert or replace main entity
     const query = `INSERT OR REPLACE INTO ${table} (${fieldNames.join(', ')})
-                  VALUES (${textPlaceholders})`;
+                  VALUES (${placeholders})`;
     
     console.log('[LocalStorageManager] Executing query:', query);
     console.log('[LocalStorageManager] With values:', values);
@@ -84,12 +84,12 @@ class LocalStorageManager {
           };
 
           const rFieldNames = Object.keys(relationFields);
-          const rtextPlaceholders = rFieldNames.map(() => '?').join(', ');
+          const rplaceholders = rFieldNames.map(() => '?').join(', ');
           const rValues = rFieldNames.map(field => relationFields[field]);
 
           await this.db.execute(
             `INSERT OR REPLACE INTO ${relationTable} (${rFieldNames.join(', ')})
-             VALUES (${rtextPlaceholders})`,
+             VALUES (${rplaceholders})`,
             rValues
           );
         }

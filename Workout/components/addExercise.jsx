@@ -247,8 +247,8 @@ const AddExercisePage = ({ route }) => {
           />
           <TextInput
             style={styles.searchInput}
-            textPlaceholder="Search exercises"
-            textPlaceholderTextColor="#999999"
+                    placeholder="Search exercises"
+        placeholderTextColor="#999999"
             value={searchText}
             onChangeText={setSearchText}
           />

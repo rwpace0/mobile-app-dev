@@ -52,7 +52,8 @@ const Navbar = ({ state, descriptors, navigation }) => {
           route.name === "Settings" ||
           route.name === "AddExercise" ||
           route.name === "SettingsPage" ||
-          route.name === "WorkoutEdit"
+          route.name === "WorkoutEdit" ||
+          route.name === "RoutineDetail"
         ) {
           return null;
         }

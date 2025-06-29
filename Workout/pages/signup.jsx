@@ -205,8 +205,8 @@ const SignUpPage = ({ navigation }) => {
               ? styles.textInputError
               : null,
           ]}
-          textPlaceholder="Choose a username (3-20 characters)"
-          textPlaceholderTextColor={colors.textPlaceholder}
+          placeholder="Choose a username (3-20 characters)"
+          placeholderTextColor={colors.placeholder}
           autoCapitalize="none"
           value={username}
           onChangeText={handleUsernameChange}
@@ -231,8 +231,8 @@ const SignUpPage = ({ navigation }) => {
               ? styles.textInputError
               : null,
           ]}
-          textPlaceholder="Enter your email"
-          textPlaceholderTextColor={colors.textPlaceholder}
+          placeholder="Enter your email"
+          placeholderTextColor={colors.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -250,8 +250,8 @@ const SignUpPage = ({ navigation }) => {
         <Text style={styles.inputLabel}>Password</Text>
         <TextInput
           style={styles.textInput}
-          textPlaceholder="Enter your password"
-          textPlaceholderTextColor={colors.textPlaceholder}
+          placeholder="Enter your password"
+          placeholderTextColor={colors.placeholder}
           secureTextEntry
           value={password}
           onChangeText={setPassword}

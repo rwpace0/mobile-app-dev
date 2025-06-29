@@ -154,18 +154,18 @@ const CreateExercise = () => {
   };
 
   return (
-    <SafeAreaView style={createStyles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={createStyles.header}>
+      <View style={styles.header}>
         <TouchableOpacity
-          style={createStyles.closeButton}
+          style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
         <Text
           style={[
-            createStyles.headerActionText,
+            styles.headerActionText,
             { flex: 1, textAlign: "center" },
           ]}
         >
@@ -173,7 +173,7 @@ const CreateExercise = () => {
         </Text>
         <TouchableOpacity onPress={handleSubmit} disabled={loading || uploadingMedia}>
           <Text style={[
-            createStyles.headerActionTextActive,
+            styles.headerActionTextActive,
             (loading || uploadingMedia) && { opacity: 0.5 }
           ]}>
             {loading ? 'Creating...' : uploadingMedia ? 'Uploading...' : 'Create'}
@@ -184,54 +184,54 @@ const CreateExercise = () => {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Image Section */}
         <TouchableOpacity 
-          style={createStyles.imageSection}
+          style={styles.imageSection}
           onPress={handleImagePick}
           disabled={loading || uploadingMedia}
         >
           {selectedImage ? (
             <Image
               source={{ uri: selectedImage }}
-              style={createStyles.imagetextPlaceholder}
+              style={styles.imageplaceholder}
               resizeMode="cover"
             />
           ) : (
-            <View style={createStyles.imagetextPlaceholder}>
+            <View style={styles.imageplaceholder}>
               <Ionicons name="image-outline" size={48} color="#888" />
             </View>
           )}
-          <Text style={createStyles.addImageText}>
+          <Text style={styles.addImageText}>
             {selectedImage ? 'Change Image' : 'Add Image'}
           </Text>
           {imageError && (
-            <Text style={createStyles.errorText}>{imageError}</Text>
+            <Text style={styles.errorText}>{imageError}</Text>
           )}
         </TouchableOpacity>
 
         {/* Form Fields */}
-        <View style={createStyles.formContainer}>
+        <View style={styles.formContainer}>
           {/* Exercise Name */}
-          <Text style={createStyles.label}>Exercise Name</Text>
+          <Text style={styles.label}>Exercise Name</Text>
           <TextInput
             style={[
-              createStyles.input,
-              formErrors.name && createStyles.inputError
+              styles.input,
+              formErrors.name && styles.inputError
             ]}
-            textPlaceholder="Enter exercise name"
-            textPlaceholderTextColor="#999"
+            placeholder="Enter exercise name"
+            placeholderTextColor="#999"
             value={formData.name}
             onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
           />
           {formErrors.name && (
-            <Text style={createStyles.errorText}>{formErrors.name}</Text>
+            <Text style={styles.errorText}>{formErrors.name}</Text>
           )}
 
           {/* Equipment Dropdown */}
-          <Text style={[createStyles.label, { marginTop: 16 }]}>Equipment</Text>
+          <Text style={[styles.label, { marginTop: 16 }]}>Equipment</Text>
           <TouchableOpacity
             style={[
-              createStyles.input,
-              createStyles.dropdown,
-              formErrors.equipment && createStyles.inputError
+              styles.input,
+              styles.dropdown,
+              formErrors.equipment && styles.inputError
             ]}
             onPress={() =>
               setOpenDropdown(openDropdown === "equipment" ? null : "equipment")
@@ -249,39 +249,39 @@ const CreateExercise = () => {
             />
           </TouchableOpacity>
           {openDropdown === "equipment" && (
-            <View style={createStyles.dropdownMenu}>
+            <View style={styles.dropdownMenu}>
               <ScrollView style={{ maxHeight: 200 }}>
                 {equipmentOptions.map((option) => (
                   <TouchableOpacity
                     key={option}
                     style={[
-                      createStyles.dropdownItem,
-                      formData.equipment === option && createStyles.dropdownItemSelected,
+                      styles.dropdownItem,
+                      formData.equipment === option && styles.dropdownItemSelected,
                     ]}
                     onPress={() => {
                       setFormData(prev => ({ ...prev, equipment: option }));
                       setOpenDropdown(null);
                     }}
                   >
-                    <Text style={createStyles.dropdownItemText}>{option}</Text>
+                    <Text style={styles.dropdownItemText}>{option}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
           )}
           {formErrors.equipment && (
-            <Text style={createStyles.errorText}>{formErrors.equipment}</Text>
+            <Text style={styles.errorText}>{formErrors.equipment}</Text>
           )}
 
           {/* Primary Muscle Group Dropdown */}
-          <Text style={[createStyles.label, { marginTop: 16 }]}>
+          <Text style={[styles.label, { marginTop: 16 }]}>
             Primary Muscle Group
           </Text>
           <TouchableOpacity
             style={[
-              createStyles.input,
-              createStyles.dropdown,
-              formErrors.muscle_group && createStyles.inputError
+              styles.input,
+              styles.dropdown,
+              formErrors.muscle_group && styles.inputError
             ]}
             onPress={() =>
               setOpenDropdown(openDropdown === "muscle" ? null : "muscle")
@@ -297,52 +297,52 @@ const CreateExercise = () => {
             />
           </TouchableOpacity>
           {openDropdown === "muscle" && (
-            <View style={createStyles.dropdownMenu}>
+            <View style={styles.dropdownMenu}>
               <ScrollView style={{ maxHeight: 200 }}>
                 {muscleOptions.map((option) => (
                   <TouchableOpacity
                     key={option}
                     style={[
-                      createStyles.dropdownItem,
+                      styles.dropdownItem,
                       formData.muscle_group === option &&
-                        createStyles.dropdownItemSelected,
+                        styles.dropdownItemSelected,
                     ]}
                     onPress={() => {
                       setFormData(prev => ({ ...prev, muscle_group: option }));
                       setOpenDropdown(null);
                     }}
                   >
-                    <Text style={createStyles.dropdownItemText}>{option}</Text>
+                    <Text style={styles.dropdownItemText}>{option}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
           )}
           {formErrors.muscle_group && (
-            <Text style={createStyles.errorText}>{formErrors.muscle_group}</Text>
+            <Text style={styles.errorText}>{formErrors.muscle_group}</Text>
           )}
 
           {/* Instruction */}
-          <Text style={createStyles.label}>Instruction</Text>
+          <Text style={styles.label}>Instruction</Text>
           <TextInput
             style={[
-              createStyles.input,
-              formErrors.instruction && createStyles.inputError
+              styles.input,
+              formErrors.instruction && styles.inputError
             ]}
-            textPlaceholder="Enter exercise instruction"
-            textPlaceholderTextColor="#999"
+            placeholder="Enter exercise instruction"
+            placeholderTextColor="#999"
             value={formData.instruction}
             onChangeText={(text) => setFormData(prev => ({ ...prev, instruction: text }))}
           />
           {formErrors.instruction && (
-            <Text style={createStyles.errorText}>{formErrors.instruction}</Text>
+            <Text style={styles.errorText}>{formErrors.instruction}</Text>
           )}
         </View>
 
         {(loading || uploadingMedia) && (
-          <View style={createStyles.loadingOverlay}>
+          <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#FFFFFF" />
-            <Text style={createStyles.loadingText}>
+            <Text style={styles.loadingText}>
               {uploadingMedia ? 'Uploading image...' : 'Creating exercise...'}
             </Text>
           </View>

@@ -26,6 +26,7 @@ const ActiveExerciseComponent = ({
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const [previousPerformance, setPreviousPerformance] = useState(null);
   const [loadingPrevious, setLoadingPrevious] = useState(false);
+  const [hasPrefilledData, setHasPrefilledData] = useState(false);
   const { isDark } = useTheme();
   const { showPreviousPerformance } = useSettings();
   const colors = getColors(isDark);
@@ -44,10 +45,10 @@ const ActiveExerciseComponent = ({
     fetchExerciseDetails();
   }, [exercise.exercise_id]);
 
-  // Fetch previous performance when setting is enabled
+  // Fetch previous performance and initialize sets with previous workout count
   useEffect(() => {
     const fetchPreviousPerformance = async () => {
-      if (!showPreviousPerformance || !exercise.exercise_id) return;
+      if (!exercise.exercise_id) return;
       
       try {
         setLoadingPrevious(true);
@@ -56,30 +57,82 @@ const ActiveExerciseComponent = ({
         if (history && history.length > 0) {
           const lastWorkout = history[0]; // Most recent workout
           if (lastWorkout.sets && lastWorkout.sets.length > 0) {
-            // Find the best set (highest total weight moved)
+            // Find the best set (highest total weight moved) for display
             const bestSet = lastWorkout.sets.reduce((best, set) => {
               const currentTotal = (set.weight || 0) * (set.reps || 0);
               const bestTotal = (best.weight || 0) * (best.reps || 0);
               return currentTotal > bestTotal ? set : best;
             });
             
-            setPreviousPerformance({
+            const performanceData = {
               weight: bestSet.weight,
               reps: bestSet.reps,
               total: (bestSet.weight || 0) * (bestSet.reps || 0),
               date: lastWorkout.date_performed || lastWorkout.created_at,
-            });
+            };
+            setPreviousPerformance(performanceData);
+            
+            // Initialize sets based on previous workout if current sets are empty
+            if (!hasPrefilledData && sets.length === 0) {
+              const initialSets = lastWorkout.sets.map((prevSet, index) => ({
+                id: (index + 1).toString(),
+                weight: showPreviousPerformance ? prevSet.weight.toString() : "",
+                reps: showPreviousPerformance ? prevSet.reps.toString() : "",
+                total: showPreviousPerformance ? Math.round(prevSet.weight * prevSet.reps).toString() : "",
+                completed: false,
+              }));
+              
+              setSets(initialSets);
+              setHasPrefilledData(true);
+            } else if (!hasPrefilledData && showPreviousPerformance) {
+              // Pre-fill existing empty sets with previous performance data
+              setSets(prevSets => 
+                prevSets.map(set => {
+                  if (!set.weight && !set.reps) {
+                    return {
+                      ...set,
+                      weight: performanceData.weight.toString(),
+                      reps: performanceData.reps.toString(),
+                      total: Math.round(performanceData.weight * performanceData.reps).toString(),
+                    };
+                  }
+                  return set;
+                })
+              );
+              setHasPrefilledData(true);
+            }
           }
+        } else if (!hasPrefilledData && sets.length === 0) {
+          // No previous workout found, add one empty set to get started
+          setSets([{
+            id: "1",
+            weight: "",
+            reps: "",
+            total: "",
+            completed: false,
+          }]);
+          setHasPrefilledData(true);
         }
       } catch (error) {
         console.error("Failed to fetch previous performance:", error);
+        // If there's an error and no sets exist, add one empty set
+        if (!hasPrefilledData && sets.length === 0) {
+          setSets([{
+            id: "1",
+            weight: "",
+            reps: "",
+            total: "",
+            completed: false,
+          }]);
+          setHasPrefilledData(true);
+        }
       } finally {
         setLoadingPrevious(false);
       }
     };
 
     fetchPreviousPerformance();
-  }, [showPreviousPerformance, exercise.exercise_id]);
+  }, [exercise.exercise_id, hasPrefilledData, showPreviousPerformance]);
 
   // update total completed sets whenever sets change
   useEffect(() => {
@@ -169,11 +222,20 @@ const ActiveExerciseComponent = ({
         ? (parseInt(lastSet.id) + 1).toString()
         : "1";
 
+    // Use previous performance data as defaults if available and setting is enabled
+    let defaultWeight = lastSet ? lastSet.weight : "";
+    let defaultReps = lastSet ? lastSet.reps : "";
+    
+    if (showPreviousPerformance && previousPerformance && (!lastSet || (!lastSet.weight && !lastSet.reps))) {
+      defaultWeight = previousPerformance.weight.toString();
+      defaultReps = previousPerformance.reps.toString();
+    }
+
     const newSet = {
       id: newSetId,
-      weight: lastSet ? lastSet.weight : "",
-      reps: lastSet ? lastSet.reps : "",
-      total: lastSet ? lastSet.total : "",
+      weight: defaultWeight,
+      reps: defaultReps,
+      total: defaultWeight && defaultReps ? Math.round(parseFloat(defaultWeight) * parseFloat(defaultReps)).toString() : "",
       completed: false,
     };
     setSets([...sets, newSet]);
@@ -221,8 +283,8 @@ const ActiveExerciseComponent = ({
 
       <TextInput
         style={styles.notesInput}
-        textPlaceholder="Add notes here..."
-        textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
+        placeholder="Add notes here..."
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
         value={notes}
         onChangeText={setNotes}
       />
@@ -259,11 +321,17 @@ const ActiveExerciseComponent = ({
       <View style={styles.setsContainer}>
         {/* Header Row */}
         <View style={styles.setHeaderRow}>
-          <Text style={[styles.setHeaderCell, styles.setNumberCell]}>#</Text>
-          <Text style={[styles.setHeaderCell, styles.weightCell]}>KG</Text>
-          <Text style={[styles.setHeaderCell, styles.totalCell]}>
-            {showPreviousPerformance ? "PREVIOUS" : "TOTAL"}
+          <Text style={[styles.setHeaderCell, styles.setNumberCell]}>SET</Text>
+          {showPreviousPerformance && (
+            <Text style={[styles.setHeaderCell, styles.previousCell]}>PREVIOUS</Text>
+          )}
+          <Text style={[styles.setHeaderCell, styles.weightHeaderCell]}>
+            {showPreviousPerformance ? "LBS" : "KG"}
           </Text>
+          <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>REPS</Text>
+          {!showPreviousPerformance && (
+            <Text style={[styles.setHeaderCell, styles.totalCell]}>TOTAL</Text>
+          )}
           <Text style={[styles.setHeaderCell, styles.completedCell]}></Text>
         </View>
 
@@ -278,54 +346,61 @@ const ActiveExerciseComponent = ({
                 (set.id === "W" ? styles.warmupSetRow : styles.completedSetRow),
             ]}
           >
-            <Text style={[styles.setCell, styles.setNumberCell]}>{set.id}</Text>
-            <View style={styles.weightCell}>
+            <View style={styles.setNumberCell}>
+              <Text style={styles.setCell}>{set.id}</Text>
+            </View>
+            {showPreviousPerformance && (
+              <View style={styles.previousCell}>
+                <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: 13 }]}>
+                  {previousPerformance ? (
+                    `${previousPerformance.weight}lbs x ${previousPerformance.reps}`
+                  ) : loadingPrevious ? (
+                    "Loading..."
+                  ) : (
+                    "No data"
+                  )}
+                </Text>
+              </View>
+            )}
+            <View style={styles.weightHeaderCell}>
               <TextInput
-                style={[styles.setCell, styles.weightInput]}
+                style={styles.weightInput}
                 value={set.weight}
                 onChangeText={(value) => handleWeightChange(set.id, value)}
                 keyboardType="numeric"
-                textPlaceholder="0"
-                textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
-                selectTextOnFocus={true}
-              />
-              <Text style={styles.setCell}> × </Text>
-              <TextInput
-                style={[styles.setCell, styles.repsInput]}
-                value={set.reps}
-                onChangeText={(value) => handleRepsChange(set.id, value)}
-                keyboardType="numeric"
-                textPlaceholder="0"
-                textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
+                placeholder={showPreviousPerformance && previousPerformance ? previousPerformance.weight.toString() : "0"}
+                placeholderTextColor={colors.textSecondary}
                 selectTextOnFocus={true}
               />
             </View>
-            <Text style={[styles.setCell, styles.totalCell]}>
-              {showPreviousPerformance ? (
-                previousPerformance ? (
-                  `${previousPerformance.weight}kg × ${previousPerformance.reps}`
-                ) : loadingPrevious ? (
-                  "Loading..."
-                ) : (
-                  "No data"
-                )
-              ) : (
-                set.total
-              )}
-            </Text>
-            <TouchableOpacity
-              style={styles.completedCell}
-              onPress={() => toggleSetCompletion(index)}
-            >
-              <View
-                style={[
-                  styles.checkmarkContainer,
-                  set.completed && styles.completedCheckmark,
-                ]}
-              >
-                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+            <View style={styles.repsHeaderCell}>
+              <TextInput
+                style={styles.repsInput}
+                value={set.reps}
+                onChangeText={(value) => handleRepsChange(set.id, value)}
+                keyboardType="numeric"
+                placeholder={showPreviousPerformance && previousPerformance ? previousPerformance.reps.toString() : "0"}
+                placeholderTextColor={colors.textSecondary}
+                selectTextOnFocus={true}
+              />
+            </View>
+            {!showPreviousPerformance && (
+              <View style={styles.totalCell}>
+                <Text style={styles.setCell}>{set.total}</Text>
               </View>
-            </TouchableOpacity>
+            )}
+            <View style={styles.completedCell}>
+              <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
+                <View
+                  style={[
+                    styles.checkmarkContainer,
+                    set.completed && styles.completedCheckmark,
+                  ]}
+                >
+                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
+            </View>
           </SwipeToDelete>
         ))}
       </View>

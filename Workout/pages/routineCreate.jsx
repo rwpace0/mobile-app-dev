@@ -146,8 +146,8 @@ const RoutineCreate = () => {
       <ScrollView style={styles.content}>
         <TextInput
           style={styles.routineNameInput}
-          textPlaceholder="Routine Name"
-          textPlaceholderTextColor="rgba(255, 255, 255, 0.5)"
+          placeholder="Routine Name"
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
           value={routineName}
           onChangeText={setRoutineName}
         />

@@ -46,8 +46,8 @@ const LoginPage = ({ navigation }) => {
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
           style={styles.textInput}
-          textPlaceholder="Enter your email"
-          textPlaceholderTextColor={colors.textPlaceholder}
+          placeholder="Enter your email"
+          placeholderTextColor={colors.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -60,8 +60,8 @@ const LoginPage = ({ navigation }) => {
         <Text style={styles.inputLabel}>Password</Text>
         <TextInput
           style={styles.textInput}
-          textPlaceholder="Enter your password"
-          textPlaceholderTextColor={colors.textPlaceholder}
+          placeholder="Enter your password"
+          placeholderTextColor={colors.placeholder}
           secureTextEntry
           value={password}
           onChangeText={setPassword}

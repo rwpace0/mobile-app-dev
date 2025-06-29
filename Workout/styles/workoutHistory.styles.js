@@ -295,6 +295,23 @@ export const createStyles = (isDark = true) => {
     color: colors.textSecondary,
     fontSize: 14,
   },
+
+  // Start Routine Button
+  startRoutineButton: {
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    marginHorizontal: Spacing.m,
+    marginBottom: Spacing.l,
+  },
+  startRoutineText: {
+    color: colors.textWhite,
+    fontSize: FontSize.medium,
+    fontWeight: FontWeight.semiBold,
+  },
+  
 });
 };
 

@@ -242,6 +242,15 @@ const WorkoutStartPage = () => {
     [navigation]
   );
 
+  const handleTemplatePress = useCallback(
+    (template) => {
+      navigation.navigate("RoutineDetail", {
+        template_id: template.template_id,
+      });
+    },
+    [navigation]
+  );
+
   const renderTemplateList = useCallback(() => {
     if (loading && !refreshing) {
       return (
@@ -276,7 +285,12 @@ const WorkoutStartPage = () => {
     }
 
     return templates.map((template) => (
-      <View key={template.template_id} style={styles.templateContainer}>
+      <TouchableOpacity 
+        key={template.template_id} 
+        style={styles.templateContainer}
+        onPress={() => handleTemplatePress(template)}
+        activeOpacity={0.7}
+      >
         <View style={styles.templateHeader}>
           <Text style={styles.templateName}>{template.name}</Text>
           <TouchableOpacity onPress={() => handleTemplateOptions(template)}>
@@ -292,11 +306,14 @@ const WorkoutStartPage = () => {
         </Text>
         <TouchableOpacity
           style={styles.startRoutineButton}
-          onPress={() => handleStartRoutine(template)}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleStartRoutine(template);
+          }}
         >
           <Text style={styles.startRoutineText}>Start Routine</Text>
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     ));
   }, [
     loading,
@@ -305,6 +322,7 @@ const WorkoutStartPage = () => {
     templates,
     handleStartRoutine,
     handleTemplateOptions,
+    handleTemplatePress,
     fetchTemplates,
     colors.textSecondary,
     styles,

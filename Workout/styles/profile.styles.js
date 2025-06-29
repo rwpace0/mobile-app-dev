@@ -114,7 +114,7 @@ export const createStyles = (isDark = true) => {
     fontSize: FontSize.base,
   },
 
-  graphtextPlaceholder: {
+  graphplaceholder: {
     height: 150,
     backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.md,
