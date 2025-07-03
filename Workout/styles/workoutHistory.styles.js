@@ -48,7 +48,7 @@ export const createStyles = (isDark = true) => {
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: BorderRadius.xxl,
     backgroundColor: colors.backgroundSecondary,
   },
 
@@ -242,7 +242,7 @@ export const createStyles = (isDark = true) => {
   },
 
   loadingMore: {
-    paddingVertical: 20,
+    paddingVertical: Spacing.l,
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -251,32 +251,32 @@ export const createStyles = (isDark = true) => {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: Spacing.l,
   },
 
   retryButton: {
-    marginTop: 15,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    marginTop: Spacing.m,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.l,
     backgroundColor: colors.primaryBlue,
-    borderRadius: 8,
+    borderRadius: BorderRadius.md,
   },
 
   retryText: {
     color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.semiBold,
   },
 
   footerRetry: {
-    paddingVertical: 15,
+    paddingVertical: Spacing.m,
     alignItems: 'center',
   },
 
   footerRetryText: {
     color: colors.primaryBlue,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.semiBold,
   },
 
   emptyContainer: {
@@ -285,15 +285,15 @@ export const createStyles = (isDark = true) => {
   },
 
   emptyText: {
-    fontSize: 16,
+    fontSize: FontSize.base,
     color: colors.textSecondary,
     textAlign: 'center',
   },
 
   retryingText: {
-    marginTop: 10,
+    marginTop: Spacing.xs,
     color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: FontSize.caption,
   },
 
   // Start Routine Button

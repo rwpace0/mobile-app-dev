@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { Spacing, FontSize, FontWeight } from "../constants/theme";
+import { Spacing, FontSize, FontWeight, Shadow } from "../constants/theme";
 import { getColors } from "../constants/colors";
 
 export const createStyles = (isDark = true) => {

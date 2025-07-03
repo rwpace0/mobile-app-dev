@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { Spacing, BorderRadius, FontSize } from './theme';
+import { Spacing, BorderRadius, FontSize, Shadow } from './theme';
 import { getColors } from './colors';
 
 export const createComponentStyles = (isDark = true) => {
@@ -14,6 +14,7 @@ export const createComponentStyles = (isDark = true) => {
       backgroundColor: colors.backgroundInput,
       color: colors.textPrimary,
       marginBottom: Spacing.m,
+      ...Shadow.small,
     },
 
     // primary button
@@ -23,6 +24,7 @@ export const createComponentStyles = (isDark = true) => {
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: Spacing.s,
+      ...Shadow.medium,
     },
     buttonPrimary: {
       backgroundColor: colors.primaryBlue,

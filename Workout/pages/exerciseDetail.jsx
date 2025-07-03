@@ -95,7 +95,7 @@ const ExerciseDetailPage = () => {
         <Ionicons 
           name="fitness-outline" 
           size={24} 
-          color="#BBBBBB"
+          color={colors.textSecondary}
           style={styles.infoIcon}
         />
         <View style={styles.infoContent}>
@@ -112,7 +112,7 @@ const ExerciseDetailPage = () => {
         <Ionicons 
           name="barbell-outline" 
           size={24} 
-          color="#BBBBBB"
+          color={colors.textSecondary}
           style={styles.infoIcon}
         />
         <View style={styles.infoContent}>
@@ -192,7 +192,7 @@ const ExerciseDetailPage = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#47A3FF" />
+          <ActivityIndicator size="large" color={colors.primaryBlue} />
         </View>
       </SafeAreaView>
     );
@@ -222,11 +222,11 @@ const ExerciseDetailPage = () => {
           style={styles.headerLeft}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{exercise?.name || "Exercise"}</Text>
         <TouchableOpacity style={styles.headerRight}>
-          <Ionicons name="ellipsis-horizontal" size={24} color="#FFFFFF" />
+          <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 

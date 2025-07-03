@@ -5,6 +5,7 @@ import {
   BorderRadius,
   FontSize,
   FontWeight,
+  Shadow,
 } from "../constants/theme";
 
 export const createStyles = (isDark = true) => {
@@ -66,6 +67,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.lg,
     paddingHorizontal: Spacing.m,
     height: 40,
+    ...Shadow.small,
   },
 
   searchIcon: {
@@ -124,7 +126,7 @@ export const createStyles = (isDark = true) => {
   },
 
   selectedExerciseItem: {
-    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+    backgroundColor: colors.infoOverlay,
   },
 
   exerciseRow: {
@@ -135,13 +137,14 @@ export const createStyles = (isDark = true) => {
   exerciseIconContainer: {
     width: 50,
     height: 50,
-    borderRadius: 12,
+    borderRadius: BorderRadius.lg,
     backgroundColor: colors.backgroundCard,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: Spacing.m,
     overflow: 'hidden',
     position: 'relative',
+    ...Shadow.small,
   },
 
   exerciseImage: {

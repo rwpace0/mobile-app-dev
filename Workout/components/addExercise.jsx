@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Header from "./header";
 import * as FileSystem from 'expo-file-system';
 import { getColors } from "../constants/colors";
+import { Spacing } from "../constants/theme";
 import { useTheme } from "../state/SettingsContext";
 import { createStyles } from "../styles/display.styles";
 
@@ -40,7 +41,7 @@ const HighlightText = ({ text, highlight, style, highlightStyle }) => {
   );
 };
 
-const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected, styles }) => {
+const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected, styles, colors }) => {
   const [imageError, setImageError] = useState(false);
   const imagePath = item.local_media_path ? 
     `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}` : 
@@ -57,7 +58,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected, styles
             <Ionicons
               name="checkmark-circle"
               size={28}
-              color="#47A3FF"
+              color={colors.primaryBlue}
             />
           ) : imagePath && !imageError ? (
             <Image
@@ -66,7 +67,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected, styles
               onError={() => setImageError(true)}
             />
           ) : (
-            <Ionicons name="barbell" size={28} color='#FFFFFF' />
+            <Ionicons name="barbell" size={28} color={colors.textPrimary} />
           )}
         </View>
         <View style={styles.exerciseDetails}>
@@ -84,7 +85,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText, isSelected, styles
         <Ionicons
           name="chevron-forward"
           size={24}
-          color={isSelected ? "#47A3FF" : "#777777"}
+          color={isSelected ? colors.primaryBlue : colors.textSecondary}
         />
       </View>
     </TouchableOpacity>
@@ -200,6 +201,7 @@ const AddExercisePage = ({ route }) => {
         searchText={searchText}
         isSelected={isSelected}
         styles={styles}
+        colors={colors}
       />
     );
   };
@@ -211,7 +213,7 @@ const AddExercisePage = ({ route }) => {
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="close-outline" size={28} color="#FFFFFF" />
+          <Ionicons name="close-outline" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -228,7 +230,7 @@ const AddExercisePage = ({ route }) => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={{ marginLeft: 16 }}
+            style={{ marginLeft: Spacing.m }}
             onPress={() => navigation.navigate("CreateExercise")}
           >
             <Text style={styles.headerActionText}>Create</Text>
@@ -242,19 +244,19 @@ const AddExercisePage = ({ route }) => {
           <Ionicons
             name="search-outline"
             size={22}
-            color="#999999"
+            color={colors.textFaded}
             style={styles.searchIcon}
           />
           <TextInput
             style={styles.searchInput}
-                    placeholder="Search exercises"
-        placeholderTextColor="#999999"
+            placeholder="Search exercises"
+            placeholderTextColor={colors.textFaded}
             value={searchText}
             onChangeText={setSearchText}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText("")}>
-              <Ionicons name="close-circle" size={22} color="#999999" />
+              <Ionicons name="close-circle" size={22} color={colors.textFaded} />
             </TouchableOpacity>
           )}
         </View>

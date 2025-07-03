@@ -1,6 +1,6 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { getColors } from '../constants/colors';
-import { Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, FontWeight, Shadow } from '../constants/theme';
 import { createComponentStyles } from '../constants/components';
 import { createLayoutStyles } from '../constants/layout';
 
@@ -18,7 +18,7 @@ export const createStyles = (isDark = true) => {
   },
   title: {
     fontSize: FontSize.large,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
     color: colors.textPrimary,
     marginBottom: Spacing.xl,
   },

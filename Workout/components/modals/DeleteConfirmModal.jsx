@@ -20,7 +20,7 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
       <View style={styles.centerModalContainer}>
         <View style={styles.deleteModalContent}>
           <View style={styles.deleteIconContainer}>
-            <Ionicons name="trash-outline" size={32} color="#FF4444" />
+            <Ionicons name="trash-outline" size={32} color={colors.accentRed} />
           </View>
           <Text style={styles.deleteModalTitle}>{title}</Text>
           <Text style={styles.deleteModalText}>

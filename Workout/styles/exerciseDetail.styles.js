@@ -5,6 +5,7 @@ import {
   BorderRadius,
   FontSize,
   FontWeight,
+  Shadow,
 } from "../constants/theme";
 
 export const createStyles = (isDark = true) => {
@@ -82,6 +83,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.m,
     overflow: 'hidden',
+    ...Shadow.medium,
   },
 
   exerciseImage: {
@@ -98,6 +100,7 @@ export const createStyles = (isDark = true) => {
     marginBottom: Spacing.m,
     flexDirection: 'row',
     alignItems: 'center',
+    ...Shadow.small,
   },
 
   infoIcon: {
@@ -126,6 +129,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.lg,
     padding: Spacing.m,
     marginBottom: Spacing.m,
+    ...Shadow.medium,
   },
 
   instructionLabel: {
@@ -146,14 +150,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.lg,
     padding: Spacing.m,
     marginBottom: Spacing.m,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...Shadow.medium,
   },
 
   workoutTitle: {

@@ -44,7 +44,7 @@ const RestTimerModal = ({ visible, onClose, onSelectTime, currentTime }) => {
                 }}
               >
                 {time.seconds === 0 ? (
-                  <Ionicons name="timer-outline" size={20} color="#FFFFFF" style={styles.offIcon} />
+                  <Ionicons name="timer-outline" size={20} color={colors.textPrimary} style={styles.offIcon} />
                 ) : null}
                 <Text style={[
                   styles.presetTimeText,

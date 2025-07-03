@@ -31,6 +31,16 @@ const darkTheme = {
   overlayDark: 'rgba(0, 0, 0, 0.7)',
   overlayMedium: 'rgba(0, 0, 0, 0.5)',
   overlayLight: 'rgba(0, 0, 0, 0.3)',
+  
+  // white overlay variants
+  overlayWhite: 'rgba(255, 255, 255, 0.1)',
+  overlayWhiteMedium: 'rgba(255, 255, 255, 0.2)',
+  
+  // state overlay variants
+  successOverlay: 'rgba(76, 217, 100, 0.2)',
+  warningOverlay: 'rgba(255, 235, 59, 0.2)', 
+  errorOverlay: 'rgba(255, 59, 48, 0.1)',
+  infoOverlay: 'rgba(33, 150, 243, 0.1)',
 
   // iOS specific
   iosGray: '#AEAEB2',        // iOS gray for buttons
@@ -69,6 +79,16 @@ const lightTheme = {
   overlayDark: 'rgba(0, 0, 0, 0.4)',
   overlayMedium: 'rgba(0, 0, 0, 0.3)',
   overlayLight: 'rgba(0, 0, 0, 0.1)',
+  
+  // white overlay variants
+  overlayWhite: 'rgba(255, 255, 255, 0.1)',
+  overlayWhiteMedium: 'rgba(255, 255, 255, 0.2)',
+  
+  // state overlay variants  
+  successOverlay: 'rgba(76, 217, 100, 0.2)',
+  warningOverlay: 'rgba(255, 235, 59, 0.2)',
+  errorOverlay: 'rgba(255, 59, 48, 0.1)',
+  infoOverlay: 'rgba(33, 150, 243, 0.1)',
 
   // iOS specific
   iosGray: '#8E8E93',        // iOS gray for buttons

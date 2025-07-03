@@ -245,7 +245,7 @@ const WorkoutActivePage = () => {
         {exercises.length === 0 ? (
           <View style={styles.emptyWorkoutContainer}>
             <View style={styles.iconContainer}>
-              <Ionicons name="barbell-outline" size={42} color="#BBBBBB" />
+              <Ionicons name="barbell-outline" size={42} color={colors.textSecondary} />
             </View>
             <Text style={styles.getStartedText}>Get started</Text>
             <Text style={styles.instructionText}>
@@ -256,7 +256,7 @@ const WorkoutActivePage = () => {
               style={styles.addExerciseButton}
               onPress={handleAddExercise}
             >
-              <Ionicons name="add" size={20} color="#FFFFFF" />
+              <Ionicons name="add" size={20} color={colors.textWhite} />
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
           </View>
@@ -280,7 +280,7 @@ const WorkoutActivePage = () => {
               style={styles.addExerciseButton}
               onPress={handleAddExercise}
             >
-              <Ionicons name="add" size={20} color="#FFFFFF" />
+              <Ionicons name="add" size={20} color={colors.textWhite} />
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
           </View>

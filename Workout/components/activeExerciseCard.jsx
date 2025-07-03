@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getColors } from "../constants/colors";
+import { FontSize } from "../constants/theme";
 import { createStyles } from "../styles/activeExercise.styles";
 import { useTheme, useSettings } from "../state/SettingsContext";
 import RestTimerModal from "./modals/RestTimerModal";
@@ -270,23 +271,25 @@ const ActiveExerciseComponent = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.exerciseHeader}>
-        <View style={styles.exerciseInfo}>
-          <Text style={styles.exerciseName}>
-            {exerciseDetails?.name || "Exercise"}
-          </Text>
-        </View>
-        <TouchableOpacity onPress={() => setShowDeleteConfirm(true)}>
-          <Ionicons name="trash-outline" size={24} color="#FF4444" />
+      <View style={styles.header}>
+        <Text style={styles.exerciseName}>
+          {exerciseDetails?.name || exercise.name}
+        </Text>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => setShowDeleteConfirm(true)}
+        >
+          <Ionicons name="trash-outline" size={24} color={colors.accentRed} />
         </TouchableOpacity>
       </View>
 
       <TextInput
-        style={styles.notesInput}
+        style={styles.exerciseNotes}
         placeholder="Add notes here..."
-        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+        placeholderTextColor={colors.textFaded}
         value={notes}
         onChangeText={setNotes}
+        multiline
       />
 
       <TouchableOpacity
@@ -300,8 +303,8 @@ const ActiveExerciseComponent = ({
             restTime === 0
               ? colors.textFaded
               : isTimerActive
-              ? "#4CAF50"
-              : "#2196F3"
+              ? colors.accentGreen
+              : colors.primaryBlue
           }
         />
         <Text
@@ -351,7 +354,7 @@ const ActiveExerciseComponent = ({
             </View>
             {showPreviousPerformance && (
               <View style={styles.previousCell}>
-                <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: 13 }]}>
+                <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
                   {previousPerformance ? (
                     `${previousPerformance.weight}lbs x ${previousPerformance.reps}`
                   ) : loadingPrevious ? (
@@ -397,7 +400,7 @@ const ActiveExerciseComponent = ({
                     set.completed && styles.completedCheckmark,
                   ]}
                 >
-                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -407,7 +410,7 @@ const ActiveExerciseComponent = ({
 
       {/* Add Set Button */}
       <TouchableOpacity style={styles.addSetButton} onPress={handleAddSet}>
-        <Ionicons name="add" size={20} color="#FFFFFF" />
+        <Ionicons name="add" size={20} color={colors.textPrimary} />
         <Text style={styles.addSetText}>Add Set</Text>
       </TouchableOpacity>
 

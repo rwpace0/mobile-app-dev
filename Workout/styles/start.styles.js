@@ -5,6 +5,7 @@ import {
   BorderRadius,
   FontSize,
   FontWeight,
+  Shadow,
 } from "../constants/theme";
 
 export const createStyles = (isDark = true) => {
@@ -82,6 +83,7 @@ export const createStyles = (isDark = true) => {
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
     marginRight: Spacing.m,
+    ...Shadow.medium,
   },
   
   routineActionText: {
@@ -109,6 +111,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.md,
     padding: Spacing.m,
     marginBottom: Spacing.m,
+    ...Shadow.medium,
   },
 
   templateHeader: {

@@ -63,7 +63,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
               onError={() => setImageError(true)}
             />
           ) : (
-            <Ionicons name="barbell" size={28} color='#FFFFFF' />
+            <Ionicons name="barbell" size={28} color={colors.textPrimary} />
           )}
         </View>
         <View style={styles.exerciseDetails}>
@@ -78,7 +78,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
               item.muscle_group.slice(1)}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={24} color="#777777" />
+        <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
       </View>
     </TouchableOpacity>
   );
@@ -167,7 +167,7 @@ const ViewExercisesPage = () => {
   if (loading && !refreshing) {
     return (
       <View style={styles.centerContent}>
-        <ActivityIndicator size="large" color="#47A3FF" />
+        <ActivityIndicator size="large" color={colors.primaryBlue} />
       </View>
     );
   }
@@ -193,7 +193,7 @@ const ViewExercisesPage = () => {
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="close-outline" size={28} color="#FFFFFF" />
+          <Ionicons name="close-outline" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -210,19 +210,19 @@ const ViewExercisesPage = () => {
           <Ionicons
             name="search-outline"
             size={22}
-            color="#999999"
+            color={colors.textFaded}
             style={styles.searchIcon}
           />
           <TextInput
             style={styles.searchInput}
-                    placeholder="Search exercises"
-        placeholderTextColor="#999999"
+            placeholder="Search exercises"
+            placeholderTextColor={colors.textFaded}
             value={searchText}
             onChangeText={setSearchText}
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText("")}>
-              <Ionicons name="close-circle" size={22} color="#999999" />
+              <Ionicons name="close-circle" size={22} color={colors.textFaded} />
             </TouchableOpacity>
           )}
         </View>

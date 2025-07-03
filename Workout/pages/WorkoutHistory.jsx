@@ -13,6 +13,7 @@ import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
 import { createStyles } from "../styles/workoutHistory.styles";
 import { getColors } from "../constants/colors";
+import { Spacing } from "../constants/theme";
 import { useTheme } from "../state/SettingsContext";
 
 const WorkoutHistoryPage = () => {
@@ -198,7 +199,7 @@ const WorkoutHistoryPage = () => {
         data={workouts}
         renderItem={renderWorkoutCard}
         keyExtractor={item => item.workout_id}
-        contentContainerStyle={{ paddingVertical: 16 }}
+        contentContainerStyle={{ paddingVertical: Spacing.m }}
         onRefresh={onRefresh}
         refreshing={refreshing}
         onEndReached={loadMore}

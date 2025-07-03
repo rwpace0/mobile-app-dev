@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { createStyles } from "../styles/workoutHistory.styles";
 import { getColors } from "../constants/colors";
+import { Spacing, FontSize } from "../constants/theme";
 import { useTheme } from "../state/SettingsContext";
 import workoutAPI from "../API/workoutAPI";
 import templateAPI from "../API/templateAPI";
@@ -140,7 +141,7 @@ const RoutineDetail = () => {
             <TouchableOpacity
               style={[
                 styles.retryButton,
-                { marginTop: 10, backgroundColor: colors.primaryBlue },
+                { marginTop: Spacing.s, backgroundColor: colors.primaryBlue },
               ]}
               onPress={handleStartWorkout}
             >
@@ -185,7 +186,7 @@ const RoutineDetail = () => {
           <Text
             style={[
               styles.detailDate,
-              { opacity: 0.8, fontSize: 14, marginTop: 4 },
+              { opacity: 0.8, fontSize: FontSize.caption, marginTop: Spacing.xxs },
             ]}
           >
             Last performed: {formatDate(workout.date_performed)}

@@ -28,7 +28,7 @@ import RoutineDetail from "./components/routineDetail";
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// auth Stack (Welcome, Login, Signup)
+// Auth Stack (Welcome, Login, Signup)
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Welcome" component={WelcomePage} />
@@ -37,7 +37,10 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// main App Stack (Tabs)
+// Tab Navigator for main app sections
+
+
+// Main Stack Navigator for detail/modal screens
 const MainStack = () => (
   <Tab.Navigator
     screenOptions={{ headerShown: false }}
@@ -61,7 +64,7 @@ const MainStack = () => (
   </Tab.Navigator>
 );
 
-// root Navigator
+// Root Navigator
 const RootNavigator = () => {
   const { user, loading } = useAuth();
 

@@ -19,6 +19,7 @@ import { mediaAPI } from "../API/mediaAPI";
 import { requestMediaLibraryPermission, validateImageFile } from "../utils/permissions";
 import Header from "./header";
 import { getColors } from "../constants/colors";
+import { Spacing } from "../constants/theme";
 import { useTheme } from "../state/SettingsContext";
 
 const equipmentOptions = [
@@ -161,7 +162,7 @@ const CreateExercise = () => {
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text
           style={[
@@ -181,7 +182,7 @@ const CreateExercise = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+              <ScrollView contentContainerStyle={{ paddingBottom: Spacing.xxxl }}>
         {/* Image Section */}
         <TouchableOpacity 
           style={styles.imageSection}
@@ -226,7 +227,7 @@ const CreateExercise = () => {
           )}
 
           {/* Equipment Dropdown */}
-          <Text style={[styles.label, { marginTop: 16 }]}>Equipment</Text>
+          <Text style={[styles.label, { marginTop: Spacing.m }]}>Equipment</Text>
           <TouchableOpacity
             style={[
               styles.input,
@@ -237,7 +238,7 @@ const CreateExercise = () => {
               setOpenDropdown(openDropdown === "equipment" ? null : "equipment")
             }
           >
-            <Text style={{ color: formData.equipment ? "#fff" : "#999", flex: 1 }}>
+            <Text style={{ color: formData.equipment ? colors.textWhite : colors.textFaded, flex: 1 }}>
               {formData.equipment || "Select equipment"}
             </Text>
             <Ionicons
@@ -274,7 +275,7 @@ const CreateExercise = () => {
           )}
 
           {/* Primary Muscle Group Dropdown */}
-          <Text style={[styles.label, { marginTop: 16 }]}>
+          <Text style={[styles.label, { marginTop: Spacing.m }]}>
             Primary Muscle Group
           </Text>
           <TouchableOpacity
@@ -287,7 +288,7 @@ const CreateExercise = () => {
               setOpenDropdown(openDropdown === "muscle" ? null : "muscle")
             }
           >
-            <Text style={{ color: formData.muscle_group ? "#fff" : "#999", flex: 1 }}>
+            <Text style={{ color: formData.muscle_group ? colors.textWhite : colors.textFaded, flex: 1 }}>
               {formData.muscle_group || "Select muscle group"}
             </Text>
             <Ionicons
@@ -323,7 +324,7 @@ const CreateExercise = () => {
           )}
 
           {/* Instruction */}
-          <Text style={styles.label}>Instruction</Text>
+          <Text style={[styles.label, { marginTop: Spacing.m }]}>Instruction</Text>
           <TextInput
             style={[
               styles.input,
@@ -341,7 +342,7 @@ const CreateExercise = () => {
 
         {(loading || uploadingMedia) && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
+            <ActivityIndicator size="large" color={colors.textPrimary} />
             <Text style={styles.loadingText}>
               {uploadingMedia ? 'Uploading image...' : 'Creating exercise...'}
             </Text>

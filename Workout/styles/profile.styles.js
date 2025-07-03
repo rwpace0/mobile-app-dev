@@ -53,11 +53,12 @@ export const createStyles = (isDark = true) => {
   avatar: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: BorderRadius.round,
     backgroundColor: colors.backgroundCard,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.m,
+    ...Shadow.medium,
   },
 
   username: {
@@ -120,6 +121,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.md,
     justifyContent: "center",
     alignItems: "center",
+    ...Shadow.medium,
   },
 
   toggleContainer: {
@@ -174,6 +176,7 @@ export const createStyles = (isDark = true) => {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.s,
+    ...Shadow.medium,
   },
 
   dashboardItemText: {

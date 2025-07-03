@@ -5,6 +5,7 @@ import {
   BorderRadius,
   FontSize,
   FontWeight,
+  Shadow,
 } from "../constants/theme";
 
 export const createStyles = (isDark = true) => {
@@ -14,13 +15,13 @@ export const createStyles = (isDark = true) => {
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.overlayMedium,
   },
   centerModalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: colors.overlayMedium,
     padding: Spacing.l,
   },
   modalContent: {
@@ -28,6 +29,7 @@ export const createStyles = (isDark = true) => {
     borderTopLeftRadius: BorderRadius.lg,
     borderTopRightRadius: BorderRadius.lg,
     paddingVertical: Spacing.l,
+    ...Shadow.large,
   },
   deleteModalContent: {
     backgroundColor: colors.backgroundPrimary,
@@ -35,12 +37,13 @@ export const createStyles = (isDark = true) => {
     padding: Spacing.l,
     width: '100%',
     maxWidth: 320,
+    ...Shadow.large,
   },
   deleteIconContainer: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+    borderRadius: BorderRadius.xxxl,
+    backgroundColor: colors.errorOverlay,
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
@@ -76,7 +79,7 @@ export const createStyles = (isDark = true) => {
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#FF4444',
+    backgroundColor: colors.accentRed,
   },
   deleteModalCancelText: {
     color: colors.textPrimary,
@@ -150,7 +153,7 @@ export const createBottomSheetStyles = (isDark = true) => {
   return StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: colors.overlayMedium,
       justifyContent: 'flex-end',
     },
     backdropTouchable: {
@@ -162,6 +165,7 @@ export const createBottomSheetStyles = (isDark = true) => {
       borderTopRightRadius: BorderRadius.xl,
       paddingTop: Spacing.s,
       maxHeight: '80%',
+      ...Shadow.large,
     },
     handleContainer: {
       alignItems: 'center',
@@ -171,7 +175,7 @@ export const createBottomSheetStyles = (isDark = true) => {
       width: 36,
       height: 4,
       backgroundColor: colors.borderColor,
-      borderRadius: 2,
+      borderRadius: BorderRadius.xs,
     },
     titleContainer: {
       paddingHorizontal: Spacing.l,
@@ -206,7 +210,7 @@ export const createBottomSheetStyles = (isDark = true) => {
     lastAction: {
       borderBottomLeftRadius: BorderRadius.md,
       borderBottomRightRadius: BorderRadius.md,
-      marginBottom: 0,
+      marginBottom: Spacing.none,
     },
     actionContent: {
       flexDirection: 'row',
@@ -220,7 +224,7 @@ export const createBottomSheetStyles = (isDark = true) => {
       marginLeft: Spacing.m,
     },
     destructiveAction: {
-      backgroundColor: 'rgba(255, 59, 48, 0.1)',
+      backgroundColor: colors.errorOverlay,
     },
     destructiveText: {
       color: colors.accentRed,
@@ -232,7 +236,7 @@ export const createBottomSheetStyles = (isDark = true) => {
       color: colors.textDisabled,
     },
     safeAreaBottom: {
-      height: 20, // Safe area bottom padding
+      height: Spacing.l, // Safe area bottom padding
     },
   });
 };

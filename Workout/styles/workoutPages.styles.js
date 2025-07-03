@@ -5,6 +5,7 @@ import {
   BorderRadius,
   FontSize,
   FontWeight,
+  Shadow,
 } from "../constants/theme";
 
 export const createStyles = (isDark = true) => {
@@ -90,6 +91,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: colors.borderColor,
+    ...Shadow.small,
   },
 
   loadingContainer: {
@@ -142,10 +144,11 @@ export const createStyles = (isDark = true) => {
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.m,
+    ...Shadow.medium,
   },
   
   addExerciseText: {
-    color: colors.textPrimary,
+    color: colors.textWhite,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.medium,
     marginLeft: Spacing.xs,
@@ -187,14 +190,7 @@ export const createStyles = (isDark = true) => {
     marginVertical: Spacing.m,
     padding: Spacing.m,
     borderRadius: BorderRadius.lg,
-    shadowColor: '#000000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...Shadow.medium,
   },
 
   statItem: {

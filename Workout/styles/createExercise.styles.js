@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { getColors } from '../constants/colors';
-import { Spacing, BorderRadius, FontSize, FontWeight } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, FontWeight, Shadow } from '../constants/theme';
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
@@ -36,21 +36,22 @@ export const createStyles = (isDark = true) => {
   },
   imageSection: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: Spacing.l,
   },
   imageplaceholder: {
     width: 150,
     height: 150,
-    backgroundColor: '#2A2A2A',
-    borderRadius: 12,
+    backgroundColor: colors.borderColor,
+    borderRadius: BorderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    ...Shadow.medium,
   },
   addImageText: {
-    color: '#FFFFFF',
-    marginTop: 8,
-    fontSize: 16,
+    color: colors.textWhite,
+    marginTop: Spacing.xs,
+    fontSize: FontSize.base,
   },
   formContainer: {
     paddingHorizontal: Spacing.l,
@@ -91,11 +92,7 @@ export const createStyles = (isDark = true) => {
     backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    ...Shadow.medium,
   },
   dropdownItem: {
     paddingVertical: Spacing.s,
@@ -110,9 +107,9 @@ export const createStyles = (isDark = true) => {
     fontSize: FontSize.base,
   },
   errorText: {
-    color: '#FF4444',
-    fontSize: 14,
-    marginTop: 4,
+    color: colors.accentRed,
+    fontSize: FontSize.caption,
+    marginTop: Spacing.xxs,
     textAlign: 'center',
   },
   loadingOverlay: {
@@ -121,14 +118,14 @@ export const createStyles = (isDark = true) => {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#FFFFFF',
-    marginTop: 10,
-    fontSize: 16,
+    color: colors.textWhite,
+    marginTop: Spacing.xs,
+    fontSize: FontSize.base,
   },
 });
 };
