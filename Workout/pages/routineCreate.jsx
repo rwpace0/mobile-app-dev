@@ -29,18 +29,13 @@ const RoutineCreate = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  useEffect(() => {
-    // Handle receiving new exercises from DisplayPage
-    if (route.params?.selectedExercises) {
-      setExercises((prev) => [...prev, ...route.params.selectedExercises]);
-      // Clear the params to prevent re-adding on re-render
-      navigation.setParams({ selectedExercises: undefined });
-    }
-  }, [route.params?.selectedExercises]);
+
 
   const handleAddExercise = () => {
     navigation.navigate("AddExercise", {
-      returnTo: "RoutineCreate",
+      onExercisesSelected: (selectedExercises) => {
+        setExercises((prev) => [...prev, ...selectedExercises]);
+      },
     });
   };
 

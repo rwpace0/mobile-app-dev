@@ -34,19 +34,19 @@ const WorkoutActivePage = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    // Handle receiving new exercises from DisplayPage
+    // Handle initial exercises and workout name from template/routine start
     if (route.params?.selectedExercises) {
       setExercises((prev) => [...prev, ...route.params.selectedExercises]);
-
-      // Set workout name if provided from template
-      if (route.params?.workoutName) {
-        setWorkoutName(route.params.workoutName);
-      }
-
       // Clear the params to prevent re-adding on re-render
-      navigation.setParams({ selectedExercises: undefined, workoutName: undefined });
+      navigation.setParams({ selectedExercises: undefined });
     }
-  }, [route.params?.selectedExercises]);
+
+    if (route.params?.workoutName) {
+      setWorkoutName(route.params.workoutName);
+      // Clear the params to prevent re-setting on re-render
+      navigation.setParams({ workoutName: undefined });
+    }
+  }, [route.params?.selectedExercises, route.params?.workoutName]);
 
   // Start timer when page loads
   useEffect(() => {
@@ -76,7 +76,9 @@ const WorkoutActivePage = () => {
 
   const handleAddExercise = () => {
     navigation.navigate("AddExercise", {
-      returnTo: "WorkoutActive",
+      onExercisesSelected: (selectedExercises) => {
+        setExercises((prev) => [...prev, ...selectedExercises]);
+      },
     });
   };
 

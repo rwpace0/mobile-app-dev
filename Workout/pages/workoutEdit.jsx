@@ -104,14 +104,7 @@ const WorkoutEditPage = () => {
     }
   };
 
-  // Handle receiving new exercises from DisplayPage
-  useEffect(() => {
-    if (route.params?.selectedExercises) {
-      setExercises((prev) => [...prev, ...route.params.selectedExercises]);
-      // Clear the params to prevent re-adding on re-render
-      navigation.setParams({ selectedExercises: undefined });
-    }
-  }, [route.params?.selectedExercises]);
+
 
   const formatDuration = (seconds) => {
     if (seconds < 60) return `${seconds}s`;
@@ -121,7 +114,9 @@ const WorkoutEditPage = () => {
 
   const handleAddExercise = () => {
     navigation.navigate("AddExercise", {
-      returnTo: "WorkoutEdit",
+      onExercisesSelected: (selectedExercises) => {
+        setExercises((prev) => [...prev, ...selectedExercises]);
+      },
     });
   };
 

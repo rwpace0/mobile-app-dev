@@ -173,19 +173,15 @@ const AddExercisePage = ({ route }) => {
 
   const handleAddSelected = () => {
     if (selectedExercises.length > 0) {
-      if (route?.params?.returnTo) {
-        navigation.navigate(route.params.returnTo, {
-          selectedExercises: selectedExercises,
-        });
-      } else {
-        navigation.navigate(
-          navigation.getState().routes[navigation.getState().routes.length - 2]
-            ?.name || "Home",
-          {
-            selectedExercises: selectedExercises,
-          }
-        );
+      const onExercisesSelected = route?.params?.onExercisesSelected;
+      
+      if (onExercisesSelected && typeof onExercisesSelected === 'function') {
+        // Use callback - this is the proper way
+        onExercisesSelected(selectedExercises);
       }
+      
+      // Always go back
+      navigation.goBack();
     }
   };
 

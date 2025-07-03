@@ -37,11 +37,8 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// Tab Navigator for main app sections
-
-
-// Main Stack Navigator for detail/modal screens
-const MainStack = () => (
+// Tab Navigator for main app sections - only contains main tab screens
+const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={{ headerShown: false }}
     tabBar={(props) => <Navbar {...props} />}
@@ -49,19 +46,42 @@ const MainStack = () => (
   >
     <Tab.Screen name="WorkoutHistory" component={WorkoutHistory} />
     <Tab.Screen name="Start" component={WorkoutStartPage} />
-    <Tab.Screen name="AddExercise" component={AddExercisePage} />
     <Tab.Screen name="Profile" component={Profile} />
-    <Tab.Screen name="WorkoutActive" component={WorkoutActivePage} />
-    <Tab.Screen name="RoutineCreate" component={RoutineCreate} />
-    <Tab.Screen name="CreateExercise" component={CreateExercise} />
-    <Tab.Screen name="WorkoutDetail" component={WorkoutDetail} />
-    <Tab.Screen name="WorkoutEdit" component={WorkoutEdit} />
-    <Tab.Screen name="ExerciseDetail" component={ExerciseDetail} />
-    <Tab.Screen name="ViewExercises" component={ViewExercises} />
-    <Tab.Screen name="Settings" component={Settings} />
-    <Tab.Screen name="SettingsPage" component={SettingsPage} />
-    <Tab.Screen name="RoutineDetail" component={RoutineDetail} />
   </Tab.Navigator>
+);
+
+// Main Stack Navigator for detail/modal screens
+const MainStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Tabs" component={TabNavigator} />
+    <Stack.Screen
+      name="AddExercise"
+      component={AddExercisePage}
+      options={{
+        presentation: "modal",
+        animationTypeForReplace: "push",
+        gestureEnabled: true,
+      }}
+    />
+    <Stack.Screen
+      name="WorkoutActive"
+      component={WorkoutActivePage}
+      options={{
+        presentation: "modal",
+        animationTypeForReplace: "push",
+        gestureEnabled: true,
+      }}
+    />
+    <Stack.Screen name="RoutineCreate" component={RoutineCreate} />
+    <Stack.Screen name="CreateExercise" component={CreateExercise} />
+    <Stack.Screen name="WorkoutDetail" component={WorkoutDetail} />
+    <Stack.Screen name="WorkoutEdit" component={WorkoutEdit} />
+    <Stack.Screen name="ExerciseDetail" component={ExerciseDetail} />
+    <Stack.Screen name="ViewExercises" component={ViewExercises} />
+    <Stack.Screen name="Settings" component={Settings} />
+    <Stack.Screen name="SettingsPage" component={SettingsPage} />
+    <Stack.Screen name="RoutineDetail" component={RoutineDetail} />
+  </Stack.Navigator>
 );
 
 // Root Navigator
