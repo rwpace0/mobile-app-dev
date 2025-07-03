@@ -23,7 +23,7 @@ const WorkoutStartPage = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
-  const [workoutActive, setWorkoutActive] = useState(false);
+  const [activeWorkout, setactiveWorkout] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -126,8 +126,8 @@ const WorkoutStartPage = () => {
   }, [fetchTemplates]);
 
   const handleStartEmptyWorkout = useCallback(() => {
-    setWorkoutActive(true);
-    navigation.navigate("WorkoutActive");
+    setactiveWorkout(true);
+    navigation.navigate("activeWorkout");
   }, [navigation]);
 
   const handleNewRoutine = useCallback(() => {
@@ -217,7 +217,7 @@ const WorkoutStartPage = () => {
 
   const handleStartRoutine = useCallback(
     (template) => {
-      // Transform template exercises into the format expected by WorkoutActive
+      // Transform template exercises into the format expected by activeWorkout
       const selectedExercises = template.exercises.map((exercise) => ({
         exercise_id: exercise.exercise_id,
         name: exercise.name,
@@ -233,8 +233,8 @@ const WorkoutStartPage = () => {
           })),
       }));
 
-      // Navigate to WorkoutActive with the exercises
-      navigation.navigate("WorkoutActive", {
+      // Navigate to activeWorkout with the exercises
+      navigation.navigate("activeWorkout", {
         selectedExercises,
         workoutName: template.name,
       });

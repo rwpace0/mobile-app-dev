@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import * as FileSystem from 'expo-file-system';
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
+import Header from "../components/header";
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();
@@ -216,19 +217,18 @@ const ExerciseDetailPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerLeft}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{exercise?.name || "Exercise"}</Text>
-        <TouchableOpacity style={styles.headerRight}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
+      <Header
+        title={exercise?.name || "Exercise"}
+        leftComponent={{ type: "back" }}
+        rightComponent={{
+          type: 'icon',
+          icon: 'ellipsis-horizontal',
+          onPress: () => {
+            // TODO: Add menu functionality
+            console.log('Exercise menu pressed');
+          }
+        }}
+      />
 
       {/* Tabs */}
       <View style={styles.tabContainer}>

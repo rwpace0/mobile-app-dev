@@ -16,6 +16,7 @@ import { useTheme } from "../state/SettingsContext";
 import RoutineExerciseComponent from "../components/routineExerciseCard";
 import templateAPI from "../API/templateAPI";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
+import Header from "../components/header";
 
 const RoutineCreate = () => {
   const navigation = useNavigation();
@@ -121,22 +122,19 @@ const RoutineCreate = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel}>
-          <Text style={[styles.headerButton, styles.cancelButton]}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Routine</Text>
-        <TouchableOpacity
-          onPress={() => {
-            handleSave();
-          }}
-          disabled={isSaving}
-        >
-          <Text style={[styles.headerButton, styles.saveButton]}>
-            {isSaving ? "Saving..." : "Save"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <Header
+        title="Create Routine"
+        leftComponent={{
+          type: 'custom',
+          icon: 'close-outline',
+          onPress: handleCancel
+        }}
+        rightComponent={{
+          type: 'button',
+          text: isSaving ? "Saving..." : "Save",
+          onPress: handleSave
+        }}
+      />
 
       <ScrollView style={styles.content}>
         <TextInput

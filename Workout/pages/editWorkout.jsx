@@ -17,7 +17,7 @@ import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import { createStyles } from "../styles/workoutPages.styles";
 
-const WorkoutEditPage = () => {
+const EditWorkoutPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
@@ -332,4 +332,4 @@ const WorkoutEditPage = () => {
   );
 };
 
-export default WorkoutEditPage; 
+export default EditWorkoutPage; 

@@ -43,7 +43,7 @@ const Navbar = ({ state, descriptors, navigation }) => {
         if (
           route.name === "Login" ||
           route.name === "SignUp" ||
-          route.name === "WorkoutActive" ||
+          route.name === "activeWorkout" ||
           route.name === "RoutineCreate" ||
           route.name === "CreateExercise" ||
           route.name === "WorkoutDetail" ||
@@ -52,7 +52,7 @@ const Navbar = ({ state, descriptors, navigation }) => {
           route.name === "Settings" ||
           route.name === "AddExercise" ||
           route.name === "SettingsPage" ||
-          route.name === "WorkoutEdit" ||
+          route.name === "editWorkout" ||
           route.name === "RoutineDetail"
         ) {
           return null;

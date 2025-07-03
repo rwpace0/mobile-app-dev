@@ -131,7 +131,7 @@ const WorkoutDetail = () => {
         rightComponent={{
           type: "button",
           text: "Edit",
-          onPress: () => navigation.navigate("WorkoutEdit", { workout_id }),
+          onPress: () => navigation.navigate("editWorkout", { workout_id }),
         }}
       />
 

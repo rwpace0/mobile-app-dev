@@ -9,15 +9,15 @@ import LoginPage from "./pages/login";
 import SignUpPage from "./pages/signup";
 import EmailVerification from "./pages/EmailVerification";
 import AddExercisePage from "./components/addExercise";
-import WorkoutStartPage from "./pages/workoutStart";
-import WorkoutActivePage from "./pages/workoutActive";
+import startPage from "./pages/start";
+import ActiveWorkoutPage from "./pages/activeWorkout";
 import RoutineCreate from "./pages/routineCreate";
 import Navbar from "./components/navbar";
 import CreateExercise from "./components/createExercise";
 import LoadingScreen from "./components/LoadingScreen";
 import WorkoutHistory from "./pages/workoutHistory";
 import WorkoutDetail from "./pages/workoutDetail";
-import WorkoutEdit from "./pages/workoutEdit";
+import editWorkout from "./pages/editWorkout";
 import ExerciseDetail from "./pages/exerciseDetail";
 import ViewExercises from "./pages/viewExercises";
 import Profile from "./pages/profile";
@@ -45,7 +45,7 @@ const TabNavigator = () => (
     initialRouteName="Start"
   >
     <Tab.Screen name="WorkoutHistory" component={WorkoutHistory} />
-    <Tab.Screen name="Start" component={WorkoutStartPage} />
+    <Tab.Screen name="Start" component={startPage} />
     <Tab.Screen name="Profile" component={Profile} />
   </Tab.Navigator>
 );
@@ -58,24 +58,29 @@ const MainStack = () => (
       name="AddExercise"
       component={AddExercisePage}
       options={{
-        presentation: "modal",
+        presentation: "fullScreenModal",
         animationTypeForReplace: "push",
-        gestureEnabled: true,
       }}
     />
     <Stack.Screen
-      name="WorkoutActive"
-      component={WorkoutActivePage}
+      name="activeWorkout"
+      component={ActiveWorkoutPage}
       options={{
-        presentation: "modal",
+        presentation: "fullScreenModal",
         animationTypeForReplace: "push",
-        gestureEnabled: true,
       }}
     />
-    <Stack.Screen name="RoutineCreate" component={RoutineCreate} />
+    <Stack.Screen
+      name="RoutineCreate"
+      component={RoutineCreate}
+      options={{
+        presentation: "fullScreenModal",
+        animationTypeForReplace: "push",
+      }}
+    />
     <Stack.Screen name="CreateExercise" component={CreateExercise} />
     <Stack.Screen name="WorkoutDetail" component={WorkoutDetail} />
-    <Stack.Screen name="WorkoutEdit" component={WorkoutEdit} />
+    <Stack.Screen name="editWorkout" component={editWorkout} />
     <Stack.Screen name="ExerciseDetail" component={ExerciseDetail} />
     <Stack.Screen name="ViewExercises" component={ViewExercises} />
     <Stack.Screen name="Settings" component={Settings} />

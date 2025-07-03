@@ -24,7 +24,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
           onPress={() => navigation.goBack()}
         >
           <Ionicons
-            name="chevron-back"
+            name={leftComponent.icon || "chevron-back"}
             size={24}
             color={colors.primaryBlue}
           />
@@ -42,6 +42,21 @@ const Header = ({ title, leftComponent, rightComponent }) => {
             name={leftComponent.icon}
             size={24}
             color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+      );
+    }
+
+    if (leftComponent.type === 'down') {
+      return (
+        <TouchableOpacity
+          style={[styles.leftContainer, styles.iconButton]}
+          onPress={leftComponent.onPress}
+        >
+          <Ionicons
+            name="chevron-down-outline"
+            size={24}
+            color={colors.primaryBlue}
           />
         </TouchableOpacity>
       );

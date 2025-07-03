@@ -17,7 +17,7 @@ import { useTheme } from "../state/SettingsContext";
 import { createStyles } from "../styles/workoutPages.styles";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 
-const WorkoutActivePage = () => {
+const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
@@ -216,8 +216,8 @@ const WorkoutActivePage = () => {
       <Header
         title="Log Workout"
         leftComponent={{
-          type: 'back',
-          icon: 'chevron-down-outline',
+          type: 'down',
+          onPress: () => navigation.goBack(),
         }}
         rightComponent={{
           type: 'button',
@@ -309,4 +309,4 @@ const WorkoutActivePage = () => {
   );
 };
 
-export default WorkoutActivePage;
+export default ActiveWorkoutPage;

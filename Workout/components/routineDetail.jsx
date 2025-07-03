@@ -101,10 +101,33 @@ const RoutineDetail = () => {
   );
 
   const handleStartWorkout = useCallback(() => {
-    navigation.navigate("WorkoutStart", {
-      template_id: template_id,
+    if (!template || !template.exercises) {
+      console.error("Template data not available");
+      return;
+    }
+
+    // Transform template exercises into the format expected by activeWorkout
+    const selectedExercises = template.exercises.map((exercise) => ({
+      exercise_id: exercise.exercise_id,
+      name: exercise.name,
+      muscle_group: exercise.muscle_group,
+      sets: Array(exercise.sets || 1)
+        .fill()
+        .map((_, idx) => ({
+          id: (idx + 1).toString(),
+          weight: "",
+          reps: "",
+          rir: "",
+          completed: false,
+        })),
+    }));
+
+    // Navigate to activeWorkout with the exercises
+    navigation.navigate("activeWorkout", {
+      selectedExercises,
+      workoutName: template.name,
     });
-  }, [navigation, template_id]);
+  }, [navigation, template]);
 
   const handleEditTemplate = useCallback(() => {
     navigation.navigate("EditTemplate", {

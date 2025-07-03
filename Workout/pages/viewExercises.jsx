@@ -17,6 +17,7 @@ import * as FileSystem from 'expo-file-system';
 import { mediaCache } from "../API/local/MediaCache";
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
+import Header from "../components/header";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style, highlightStyle }) => {
@@ -188,21 +189,19 @@ const ViewExercisesPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="close-outline" size={28} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("CreateExercise")}
-          >
-            <Text style={styles.headerActionText}>Create</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Header
+        title=""
+        leftComponent={{
+          type: 'custom',
+          icon: 'close-outline',
+          onPress: () => navigation.goBack()
+        }}
+        rightComponent={{
+          type: 'button',
+          text: 'Create',
+          onPress: () => navigation.navigate("CreateExercise")
+        }}
+      />
 
       {/* Search Box */}
       <View style={styles.searchContainer}>
