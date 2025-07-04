@@ -27,11 +27,22 @@ const ActiveExerciseComponent = ({
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const [previousPerformance, setPreviousPerformance] = useState(null);
   const [loadingPrevious, setLoadingPrevious] = useState(false);
-  const [hasPrefilledData, setHasPrefilledData] = useState(false);
+  const [hasPrefilledData, setHasPrefilledData] = useState(!!initialState?.sets);
   const { isDark } = useTheme();
   const { showPreviousPerformance } = useSettings();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+
+  // Update state when initialState prop changes (for restored workouts)
+  useEffect(() => {
+    if (initialState?.sets) {
+      setSets(initialState.sets);
+      setHasPrefilledData(true);
+    }
+    if (initialState?.notes) {
+      setNotes(initialState.notes);
+    }
+  }, [initialState]);
 
   useEffect(() => {
     const fetchExerciseDetails = async () => {

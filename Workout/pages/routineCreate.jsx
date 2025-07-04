@@ -125,8 +125,8 @@ const RoutineCreate = () => {
       <Header
         title="Create Routine"
         leftComponent={{
-          type: 'custom',
-          icon: 'close-outline',
+          type: 'button',
+          text: 'Cancel',
           onPress: handleCancel
         }}
         rightComponent={{

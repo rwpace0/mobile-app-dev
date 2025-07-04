@@ -16,6 +16,7 @@ import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import { createStyles } from "../styles/workoutPages.styles";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
+import { useActiveWorkout } from "../state/ActiveWorkoutContext";
 
 const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
@@ -23,50 +24,71 @@ const ActiveWorkoutPage = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const { activeWorkout, startWorkout, updateWorkout, endWorkout } = useActiveWorkout();
+  
   const [exercises, setExercises] = useState([]);
-  const [workoutDuration, setWorkoutDuration] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
   const [totalSets, setTotalSets] = useState(0);
-  const [timer, setTimer] = useState(null);
   const [exerciseStates, setExerciseStates] = useState({});
   const [workoutName, setWorkoutName] = useState("");
   const [exerciseTotals, setExerciseTotals] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Initialize state on mount - optimized for faster loading
   useEffect(() => {
-    // Handle initial exercises and workout name from template/routine start
-    if (route.params?.selectedExercises) {
-      setExercises((prev) => [...prev, ...route.params.selectedExercises]);
-      // Clear the params to prevent re-adding on re-render
-      navigation.setParams({ selectedExercises: undefined });
-    }
+    if (activeWorkout) {
+      // Restore from existing workout context
+      setExercises(activeWorkout.exercises || []);
+      setExerciseStates(activeWorkout.exerciseStates || {});
+      setWorkoutName(activeWorkout.name || `Workout on ${new Date().toLocaleDateString()}`);
+      setTotalVolume(activeWorkout.totalVolume || 0);
+      setTotalSets(activeWorkout.totalSets || 0);
+      setExerciseTotals(activeWorkout.exerciseTotals || {});
+          } else {
+        // Handle initial exercises and workout name from template/routine start for new workout
+        const initialExercises = route.params?.selectedExercises || [];
+        const defaultWorkoutName = `Workout on ${new Date().toLocaleDateString()}`;
+        const initialWorkoutName = route.params?.workoutName || defaultWorkoutName;
+        
+        setExercises(initialExercises);
+        setWorkoutName(initialWorkoutName);
+        
+        // Create new workout in context immediately
+        startWorkout({
+          name: initialWorkoutName,
+          exercises: initialExercises,
+          exerciseStates: {},
+          duration: 0,
+          totalVolume: 0,
+          totalSets: 0,
+          exerciseTotals: {},
+        });
 
-    if (route.params?.workoutName) {
-      setWorkoutName(route.params.workoutName);
-      // Clear the params to prevent re-setting on re-render
-      navigation.setParams({ workoutName: undefined });
-    }
-  }, [route.params?.selectedExercises, route.params?.workoutName]);
+        // Clear the params to prevent re-processing
+        if (route.params?.selectedExercises || route.params?.workoutName) {
+          navigation.setParams({ selectedExercises: undefined, workoutName: undefined });
+        }
+      }
+  }, []); // Only run on mount
 
-  // Start timer when page loads
+  // Update workout in context when state changes - debounced for performance
   useEffect(() => {
-    const interval = setInterval(() => {
-      setWorkoutDuration((prev) => prev + 1);
-    }, 1000);
-    setTimer(interval);
-
-    // Clear all workout state when component unmounts
-    return () => {
-      clearInterval(interval);
-      setExercises([]);
-      setWorkoutDuration(0);
-      setTotalVolume(0);
-      setTotalSets(0);
-      setExerciseStates({});
-      setExerciseTotals({});
-      setWorkoutName("");
-    };
-  }, []);
+    if (activeWorkout) {
+      // Only update if there's actual data to save
+      if (exercises.length > 0 || Object.keys(exerciseStates).length > 0) {
+        const workoutUpdate = {
+          name: workoutName || `Workout on ${new Date().toLocaleDateString()}`,
+          exercises: exercises,
+          exerciseStates: exerciseStates,
+          totalVolume: totalVolume,
+          totalSets: totalSets,
+          exerciseTotals: exerciseTotals,
+          // Don't override duration - let the timer handle it
+        };
+        updateWorkout(workoutUpdate);
+      }
+    }
+  }, [workoutName, exercises, exerciseStates, totalVolume, totalSets, exerciseTotals]);
 
   const formatDuration = (seconds) => {
     if (seconds < 60) return `${seconds}s`;
@@ -77,7 +99,10 @@ const ActiveWorkoutPage = () => {
   const handleAddExercise = () => {
     navigation.navigate("AddExercise", {
       onExercisesSelected: (selectedExercises) => {
-        setExercises((prev) => [...prev, ...selectedExercises]);
+        setExercises((prev) => {
+          const newExercises = [...prev, ...selectedExercises];
+          return newExercises;
+        });
       },
     });
   };
@@ -97,18 +122,12 @@ const ActiveWorkoutPage = () => {
   };
 
   const handleDiscard = () => {
-    setShowDeleteConfirm(true);
-    
     if (showDeleteConfirm) {
-      // Reset workout state
-      setExercises([]);
-      setTotalVolume(0);
-      setTotalSets(0);
-      setWorkoutDuration(0);
-      setExerciseStates({});
-      setExerciseTotals({});
-      setWorkoutName("");
+      // End workout in context
+      endWorkout();
       navigation.goBack();
+    } else {
+      setShowDeleteConfirm(true);
     }
   };
 
@@ -165,22 +184,15 @@ const ActiveWorkoutPage = () => {
       const payload = {
         name: finalWorkoutName,
         date_performed: datePerformed,
-        duration: workoutDuration,
+        duration: activeWorkout?.duration || 0,
         exercises: validExercises,
       };
 
       await workoutAPI.finishWorkout(payload);
       console.log("Workout saved successfully!");
       
-      // Reset all workout state
-      setExercises([]);
-      setWorkoutDuration(0);
-      setTotalVolume(0);
-      setTotalSets(0);
-      setExerciseStates({});
-      setExerciseTotals({});
-      setWorkoutName("");
-      
+      // End workout in context
+      endWorkout();
       navigation.goBack();
     } catch (err) {
       console.error("Failed to save workout:", err);
@@ -211,13 +223,18 @@ const ActiveWorkoutPage = () => {
     console.log("Settings");
   };
 
+  const handleMinimizeWorkout = () => {
+    // Close the screen, but keep the workout active in context
+    navigation.goBack();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Header
         title="Log Workout"
         leftComponent={{
           type: 'down',
-          onPress: () => navigation.goBack(),
+          onPress: handleMinimizeWorkout,
         }}
         rightComponent={{
           type: 'button',
@@ -231,7 +248,7 @@ const ActiveWorkoutPage = () => {
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Duration</Text>
             <Text style={styles.statValue}>
-              {formatDuration(workoutDuration)}
+              {formatDuration(activeWorkout?.duration || 0)}
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -268,6 +285,7 @@ const ActiveWorkoutPage = () => {
               <ActiveExerciseComponent
                 key={exercise.exercise_id}
                 exercise={exercise}
+                initialState={exerciseStates[exercise.exercise_id]}
                 onUpdateTotals={updateTotals}
                 onRemoveExercise={() =>
                   handleRemoveExercise(exercise.exercise_id)

@@ -61,6 +61,17 @@ const Header = ({ title, leftComponent, rightComponent }) => {
         </TouchableOpacity>
       );
     }
+
+    if (leftComponent.type === 'button') {
+      return (
+        <TouchableOpacity
+          style={styles.leftContainer}
+          onPress={leftComponent.onPress}
+        >
+          <Text style={styles.buttonText}>{leftComponent.text}</Text>
+        </TouchableOpacity>
+      );
+    }
   };
 
   const renderRightComponent = () => {
