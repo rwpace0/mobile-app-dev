@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,41 @@ import { createStyles } from '../styles/profile.styles';
 import { getColors } from '../constants/colors';
 import { useTheme } from '../state/SettingsContext';
 import Header from '../components/header';
+import workoutAPI from '../API/workoutAPI';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Profile = ({ navigation }) => {
   const [activeMetric, setActiveMetric] = useState('Duration');
+  const [workoutCount, setWorkoutCount] = useState(0);
   const { user, logout, updateUsername } = useAuth();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+
+  const fetchWorkoutCount = async () => {
+    try {
+      const count = await workoutAPI.getTotalWorkoutCount();
+      setWorkoutCount(count);
+    } catch (error) {
+      console.error('Error fetching workout count:', error);
+      setWorkoutCount(0);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.isAuthenticated) {
+      fetchWorkoutCount();
+    }
+  }, [user]);
+
+  // Refresh workout count when the screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?.isAuthenticated) {
+        fetchWorkoutCount();
+      }
+    }, [user])
+  );
 
   const handleLogout = async () => {
     try {
@@ -46,7 +74,7 @@ const Profile = ({ navigation }) => {
       </View>
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{user?.workout_count || 0}</Text>
+          <Text style={styles.statValue}>{workoutCount}</Text>
           <Text style={styles.statLabel}>Workouts</Text>
         </View>
       </View>

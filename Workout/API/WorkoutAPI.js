@@ -883,6 +883,22 @@ class WorkoutAPI extends APIBase {
     }
   }
 
+  async getTotalWorkoutCount() {
+    try {
+      return this.handleOfflineFirst('workouts:total_count', async () => {
+        const result = await this.db.query(`
+          SELECT COUNT(*) as count
+          FROM workouts
+          WHERE sync_status != 'pending_delete'
+        `);
+        return result.length > 0 ? result[0].count : 0;
+      });
+    } catch (error) {
+      console.error("Get total workout count error:", error);
+      return 0;
+    }
+  }
+
   async _fetchFromServer() {
     console.log('[WorkoutAPI] Fetching workouts from server');
     const response = await this.makeAuthenticatedRequest({

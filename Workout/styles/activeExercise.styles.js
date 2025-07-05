@@ -62,7 +62,7 @@ export const createStyles = (isDark = true) => {
     marginBottom: Spacing.s,
   },
   restTimerText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     marginLeft: Spacing.xs,
     fontSize: FontSize.caption,
   },
@@ -104,7 +104,7 @@ export const createStyles = (isDark = true) => {
     backgroundColor: colors.warningOverlay,
   },
   setCell: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     fontSize: FontSize.base,
   },
   setNumberCell: {
@@ -140,7 +140,7 @@ export const createStyles = (isDark = true) => {
     paddingHorizontal: Spacing.xs,
     textAlign: 'center',
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
   },
   repsInput: {
     flex: 1,
@@ -150,7 +150,7 @@ export const createStyles = (isDark = true) => {
     paddingHorizontal: Spacing.xs,
     textAlign: 'center',
     fontSize: FontSize.base,
-    color: colors.textWhite,
+    color: colors.textPrimary,
   },
   totalCell: {
     flex: 1.5,
@@ -186,7 +186,7 @@ export const createStyles = (isDark = true) => {
     marginTop: Spacing.s,
   },
   addSetText: {
-    color: colors.textWhite,
+    color: colors.textPrimary,
     marginLeft: Spacing.xs,
     fontSize: FontSize.caption,
   },

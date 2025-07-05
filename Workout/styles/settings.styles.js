@@ -63,6 +63,7 @@ export const createStyles = (isDark = true) => {
     color: colors.textPrimary,
     fontWeight: FontWeight.regular,
   },
+  
   dropdownValue: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -122,6 +123,39 @@ export const createStyles = (isDark = true) => {
     color: colors.textPrimary,
     textAlign: 'center',
     fontWeight: FontWeight.medium,
+  },
+  formField: {
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.m,
+  },
+  formFieldLabel: {
+    fontSize: FontSize.medium,
+    color: colors.textPrimary,
+    fontWeight: FontWeight.medium,
+    marginBottom: Spacing.xs,
+  },
+  formFieldInput: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.m,
+    fontSize: FontSize.base,
+    color: colors.textPrimary,
+    borderWidth: 1,
+    borderColor: colors.borderColor,
+  },
+  saveButton: {
+    backgroundColor: colors.primaryBlue,
+    marginHorizontal: Spacing.m,
+    marginTop: Spacing.l,
+    paddingVertical: Spacing.m,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: colors.textPrimary,
+    fontSize: FontSize.medium,
+    fontWeight: FontWeight.semiBold,
   },
 });
 };

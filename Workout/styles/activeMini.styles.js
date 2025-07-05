@@ -11,86 +11,75 @@ import {
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
   
+  // Calculate navbar height dynamically
+  // Navbar has: paddingVertical (12*2) + icon (24) + text (12) + text marginTop (4) + tabItem padding (8*2)
+  const navbarHeight = (Spacing.s * 2) + 24 + FontSize.small + Spacing.xxs + (Spacing.xs * 2) + 4; // ~84px
+  
   return StyleSheet.create({
     container: {
       position: 'absolute',
-      bottom: 100, // Position above navbar (navbar height + margin)
-      left: 0,
-      right: 0,
+      bottom: navbarHeight, // Position directly above navbar
+      left: 0, // Full width - no side margins
+      right: 0, // Full width - no side margins
       backgroundColor: colors.backgroundPrimary,
       borderTopWidth: 1,
       borderTopColor: colors.borderColor,
-      borderBottomColor: colors.borderColor,
-      paddingTop: Spacing.s,
-      paddingBottom: Spacing.s,
-      paddingHorizontal: Spacing.m,
+      paddingVertical: Spacing.s, // Increased from Spacing.xs
+      paddingHorizontal: Spacing.m, // Increased from Spacing.s
       ...Shadow.medium,
       elevation: 1000, // Ensure it's above other components
       zIndex: 1000,
     },
     
     content: {
-      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      justifyContent: 'center',
     },
     
-    infoSection: {
-      flex: 1,
-      marginRight: Spacing.m,
-    },
-    
-    titleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: Spacing.xxs,
-    },
-    
-    title: {
+    workoutName: {
       color: colors.textPrimary,
-      fontSize: FontSize.medium,
+      fontSize: FontSize.medium, // Increased from FontSize.caption
       fontWeight: FontWeight.semiBold,
-      marginLeft: Spacing.xs,
-    },
-    
-    duration: {
-      color: colors.textSecondary,
-      fontSize: FontSize.small,
-      fontWeight: FontWeight.medium,
+      marginBottom: Spacing.xs,
+      textAlign: 'center',
+      paddingHorizontal: Spacing.s,
     },
     
     buttonSection: {
       flexDirection: 'row',
-      gap: Spacing.s,
+      gap: Spacing.l, // Increased from Spacing.m
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
     },
     
     discardButton: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.md,
-      paddingVertical: Spacing.s,
-      paddingHorizontal: Spacing.m,
-      borderWidth: 1,
-      borderColor: colors.borderColor,
+      paddingVertical: Spacing.xs, // Increased from Spacing.xxs
+      paddingHorizontal: Spacing.m, // Increased from Spacing.s
+      minWidth: 90, // Increased from 70
+      flex: 1,
+      maxWidth: 120, // Increased from 100
     },
     
     discardButtonText: {
-      color: colors.textSecondary,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.medium,
+      color: colors.accentRed,
+      fontSize: FontSize.medium, // Increased from FontSize.small
+      
       textAlign: 'center',
     },
     
     resumeButton: {
-      backgroundColor: colors.primaryLight,
-      borderRadius: BorderRadius.md,
-      paddingVertical: Spacing.s,
-      paddingHorizontal: Spacing.l,
+      paddingVertical: Spacing.xs, // Increased from Spacing.xxs
+      paddingHorizontal: Spacing.m, // Increased from Spacing.s
+      minWidth: 90, // Increased from 70
+      flex: 1,
+      maxWidth: 120, // Increased from 100
     },
     
     resumeButtonText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
+      color: colors.primaryBlue,
+      fontSize: FontSize.medium, // Increased from FontSize.small
+      
       textAlign: 'center',
     },
   });
