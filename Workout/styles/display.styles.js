@@ -17,6 +17,10 @@ export const createStyles = (isDark = true) => {
     backgroundColor: colors.backgroundPrimary,
   },
 
+  safeAreaContainer: {
+    flex: 1,
+  },
+
   keyboardAvoidingView: {
     flex: 1,
     backgroundColor: 'transparent',

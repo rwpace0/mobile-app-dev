@@ -104,7 +104,10 @@ const MainStack = () => {
             animationTypeForReplace: "push",
           }}
         />
-        <Stack.Screen name="CreateExercise" component={CreateExercise} />
+        <Stack.Screen name="CreateExercise" component={CreateExercise} options={{
+    presentation: "fullScreenModal",
+    animationTypeForReplace: "push",
+  }}/>
         <Stack.Screen name="WorkoutDetail" component={WorkoutDetail} />
         <Stack.Screen name="editWorkout" component={editWorkout} />
         <Stack.Screen name="ExerciseDetail" component={ExerciseDetail} />

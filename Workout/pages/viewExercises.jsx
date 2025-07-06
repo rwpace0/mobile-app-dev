@@ -190,7 +190,7 @@ const ViewExercisesPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title=""
+        title="Exercises"
         leftComponent={{
           type: 'custom',
           icon: 'close-outline',
