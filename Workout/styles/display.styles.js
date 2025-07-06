@@ -17,6 +17,11 @@ export const createStyles = (isDark = true) => {
     backgroundColor: colors.backgroundPrimary,
   },
 
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+
   centerContent: {
     flex: 1,
     justifyContent: "center",
@@ -113,6 +118,7 @@ export const createStyles = (isDark = true) => {
 
   listContentContainer: {
     paddingBottom: Spacing.xl,
+    flexGrow: 1,
   },
 
   exerciseList: {
@@ -192,6 +198,26 @@ export const createStyles = (isDark = true) => {
   emptyListText: {
     color: colors.textSecondary,
     fontSize: FontSize.large,
+  },
+
+  // Bottom button container and styling
+  bottomButtonContainer: {
+    paddingHorizontal: Spacing.m,
+    paddingBottom: Spacing.s,
+  },
+
+  addButton: {
+    backgroundColor: colors.primaryBlue,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+  },
+
+  addButtonText: {
+    color: colors.textWhite,
+    fontSize: FontSize.medium,
+    fontWeight: FontWeight.semiBold,
   },
 });
 };

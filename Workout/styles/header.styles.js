@@ -13,21 +13,27 @@ export const createStyles = (isDark = true) => {
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.m,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderColor,
   },
 
   leftContainer: {
-    minWidth: 40,
+    width: 80,
     alignItems: "flex-start",
+    justifyContent: "center",
   },
 
   rightContainer: {
-    minWidth: 40,
+    width: 80,
     alignItems: "flex-end",
+    justifyContent: "center",
   },
 
   titleContainer: {
     flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xs,
   },
 
   title: {
@@ -42,8 +48,19 @@ export const createStyles = (isDark = true) => {
     fontWeight: FontWeight.medium,
   },
 
+  buttonTextDisabled: {
+    color: colors.textFaded,
+  },
+
   iconButton: {
     padding: Spacing.xs,
+    borderRadius: 8,
+  },
+
+  textButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.s,
+    borderRadius: 8,
   },
 });
 };

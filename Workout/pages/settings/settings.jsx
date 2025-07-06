@@ -14,11 +14,11 @@ import {
   Feather,
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { createStyles } from "../styles/settings.styles";
-import Header from "../components/header";
-import { getColors } from "../constants/colors";
-import { useTheme } from "../state/SettingsContext";
-import { useAuth } from "../API/authContext";
+import { createStyles } from "../../styles/settings.styles";
+import Header from "../../components/header";
+import { getColors } from "../../constants/colors";
+import { useTheme } from "../../state/SettingsContext";
+import { useAuth } from "../../API/authContext";
 
 const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {
   const { isDark } = useTheme();
@@ -73,12 +73,12 @@ const Settings = () => {
         <SettingsItem 
           icon="person-outline" 
           title="Profile" 
-          onPress={() => navigation.navigate('Profile')}
+          onPress={() => navigation.navigate('EditProfile')}
         />
         <SettingsItem 
           icon="lock-closed-outline" 
           title="Account" 
-          onPress={() => navigateToSettings('account')}
+          onPress={() => navigation.navigate('AccountSettings')}
         />
         <SettingsItem 
           icon="star-outline" 

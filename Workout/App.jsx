@@ -23,11 +23,14 @@ import editWorkout from "./pages/editWorkout";
 import ExerciseDetail from "./pages/exerciseDetail";
 import ViewExercises from "./pages/viewExercises";
 import Profile from "./pages/profile";
-import Settings from "./pages/settings";
-import SettingsPage from "./pages/settingsPages";
+import Settings from "./pages/settings/settings";
+import SettingsPage from "./pages/settings/settingsPages";
+import AccountSettings from "./pages/settings/accountSettings";
+import EditProfile from "./pages/settings/editProfile";
 import RoutineDetail from "./components/routineDetail";
 import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
+import { mediaAPI } from "./API/mediaAPI";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -108,6 +111,8 @@ const MainStack = () => {
         <Stack.Screen name="ViewExercises" component={ViewExercises} />
         <Stack.Screen name="Settings" component={Settings} />
         <Stack.Screen name="SettingsPage" component={SettingsPage} />
+        <Stack.Screen name="AccountSettings" component={AccountSettings} />
+        <Stack.Screen name="EditProfile" component={EditProfile} />
         <Stack.Screen name="RoutineDetail" component={RoutineDetail} />
       </Stack.Navigator>
       
@@ -127,6 +132,23 @@ const MainStack = () => {
 // Root Navigator
 const RootNavigator = () => {
   const { user, loading } = useAuth();
+
+  // Cleanup old files when user is authenticated
+  React.useEffect(() => {
+    if (user?.isAuthenticated) {
+      // Run cleanup after a short delay to avoid blocking initial app load
+      const cleanup = async () => {
+        try {
+          await mediaAPI.cleanupOldFiles();
+        } catch (error) {
+          console.error('Failed to cleanup old files:', error);
+        }
+      };
+
+      const timeoutId = setTimeout(cleanup, 2000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [user?.isAuthenticated]);
 
   if (loading) {
     return <LoadingScreen />;

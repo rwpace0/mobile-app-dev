@@ -9,12 +9,39 @@ export const uploadAvatar = async (req, res) => {
     }
 
     const userId = req.user.id;
-    const fileName = MediaService.generateFileName(req.file.originalname, userId, 'avatar');
     
     // Get the token from the Authorization header
     const authHeader = req.headers.authorization;
     const token = authHeader.split(' ')[1];
     const supabaseWithToken = getClientToken(token);
+    
+    // Check for existing avatar and delete it
+    const { data: existingProfile } = await supabaseWithToken
+      .from('profiles')
+      .select('avatar_url')
+      .eq('user_id', userId)
+      .single();
+
+    if (existingProfile?.avatar_url) {
+      try {
+        // Extract filename from URL for deletion
+        const urlParts = existingProfile.avatar_url.split('/');
+        const bucketPath = urlParts[urlParts.length - 1];
+        const fileName = `${userId}/${bucketPath.split('?')[0]}`;
+        
+        // Delete old avatar
+        await supabaseWithToken.storage
+          .from('avatars')
+          .remove([fileName]);
+        
+        console.log('Deleted old avatar:', fileName);
+      } catch (deleteError) {
+        console.error('Error deleting old avatar:', deleteError);
+        // Continue with upload even if deletion fails
+      }
+    }
+
+    const fileName = MediaService.generateFileName(req.file.originalname, userId, 'avatar');
     
     // Compress the image
     const compressedBuffer = await MediaService.compressImage(req.file, { isAvatar: true });
@@ -54,10 +81,10 @@ export const uploadExerciseMedia = async (req, res) => {
     const token = authHeader.split(' ')[1];
     const supabaseWithToken = getClientToken(token);
 
-    // Verify exercise ownership
+    // Verify exercise ownership and get existing media
     const { data: exercise, error: exerciseError } = await supabaseWithToken
       .from('exercises')
-      .select('created_by')
+      .select('created_by, media_url')
       .eq('exercise_id', exerciseId)
       .single();
 
@@ -68,6 +95,26 @@ export const uploadExerciseMedia = async (req, res) => {
     // Only allow image uploads for user exercises
     if (exercise.created_by === userId && !req.file.mimetype.startsWith('image')) {
       return res.status(400).json({ error: 'Only images are allowed for user exercises' });
+    }
+
+    // Delete existing media if it exists
+    if (exercise.media_url) {
+      try {
+        // Extract filename from URL for deletion
+        const urlParts = exercise.media_url.split('/');
+        const bucketPath = urlParts[urlParts.length - 1];
+        const fileName = `${userId}/${bucketPath.split('?')[0]}`;
+        
+        // Delete old media
+        await supabaseWithToken.storage
+          .from('exercise-media')
+          .remove([fileName]);
+        
+        console.log('Deleted old exercise media:', fileName);
+      } catch (deleteError) {
+        console.error('Error deleting old exercise media:', deleteError);
+        // Continue with upload even if deletion fails
+      }
     }
 
     const fileName = MediaService.generateFileName(req.file.originalname, userId, 'exercise');

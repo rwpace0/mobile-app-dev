@@ -8,6 +8,9 @@ import {
   SafeAreaView,
   TextInput,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import exercisesAPI from "../API/exercisesAPI";
@@ -103,6 +106,7 @@ const AddExercisePage = ({ route }) => {
   const [searchText, setSearchText] = useState("");
   const [filteredExercises, setFilteredExercises] = useState([]);
   const [selectedExercises, setSelectedExercises] = useState([]);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -132,6 +136,26 @@ const AddExercisePage = ({ route }) => {
     loadExercises();
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => {
+        setKeyboardHeight(event.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
     };
   }, []);
 
@@ -204,35 +228,19 @@ const AddExercisePage = ({ route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="close-outline" size={28} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={handleAddSelected}
-            disabled={selectedExercises.length === 0}
-          >
-            <Text
-              style={[
-                styles.headerActionText,
-                selectedExercises.length === 0 ? { color: colors.textFaded } : { color: colors.primaryBlue }
-              ]}
-            >
-              Add ({selectedExercises.length})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ marginLeft: Spacing.m }}
-            onPress={() => navigation.navigate("CreateExercise")}
-          >
-            <Text style={styles.headerActionText}>Create</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Header 
+        title="Add Exercise"
+        leftComponent={{
+          type: 'custom',
+          icon: 'close-outline',
+          onPress: () => navigation.goBack(),
+        }}
+        rightComponent={{
+          type: 'button',
+          text: 'Create',
+          onPress: () => navigation.navigate("CreateExercise"),
+        }}
+      />
 
       {/* Search Box */}
       <View style={styles.searchContainer}>
@@ -274,7 +282,10 @@ const AddExercisePage = ({ route }) => {
           renderItem={renderExerciseItem}
           style={styles.exerciseList}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContentContainer}
+          contentContainerStyle={[
+            styles.listContentContainer,
+            selectedExercises.length > 0 && { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 80 : 80 }
+          ]}
           ListEmptyComponent={
             <View style={styles.emptyListContainer}>
               <Text style={styles.emptyListText}>No exercises found</Text>
@@ -282,6 +293,28 @@ const AddExercisePage = ({ route }) => {
           }
         />
       </View>
+
+      {/* Bottom Add Button */}
+      {selectedExercises.length > 0 && (
+        <View style={[
+          styles.bottomButtonContainer,
+          {
+            position: 'absolute',
+            bottom: keyboardHeight > 0 ? keyboardHeight + 10 : 20,
+            left: 0,
+            right: 0,
+          }
+        ]}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddSelected}
+          >
+            <Text style={styles.addButtonText}>
+              Add {selectedExercises.length} exercise{selectedExercises.length !== 1 ? 's' : ''}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 };

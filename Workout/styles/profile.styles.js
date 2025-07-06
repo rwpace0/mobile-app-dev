@@ -61,6 +61,12 @@ export const createStyles = (isDark = true) => {
     ...Shadow.medium,
   },
 
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: BorderRadius.round,
+  },
+
   username: {
     color: colors.textPrimary,
     fontSize: FontSize.xlarge,

@@ -128,5 +128,14 @@ export const mediaAPI = {
       console.error('Delete avatar error:', error.response?.data || error.message);
       throw error.response?.data || error;
     }
+  },
+
+  cleanupOldFiles: async () => {
+    try {
+      await mediaCache.cleanupOldFiles();
+    } catch (error) {
+      console.error('Cleanup old files error:', error);
+      // Don't throw error for cleanup failures
+    }
   }
 }; 

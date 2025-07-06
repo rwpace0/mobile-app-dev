@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../API/authContext';
@@ -14,11 +15,15 @@ import { getColors } from '../constants/colors';
 import { useTheme } from '../state/SettingsContext';
 import Header from '../components/header';
 import workoutAPI from '../API/workoutAPI';
+import { mediaCache } from '../API/local/MediaCache';
+import { profileAPI } from '../API/profileAPI';
 import { useFocusEffect } from '@react-navigation/native';
 
 const Profile = ({ navigation }) => {
   const [activeMetric, setActiveMetric] = useState('Duration');
   const [workoutCount, setWorkoutCount] = useState(0);
+  const [profileAvatar, setProfileAvatar] = useState(null);
+  const [displayName, setDisplayName] = useState('');
   const { user, logout, updateUsername } = useAuth();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -34,9 +39,60 @@ const Profile = ({ navigation }) => {
     }
   };
 
+  const fetchProfileAvatar = async () => {
+    if (user?.id) {
+      try {
+        const avatarPath = await mediaCache.getProfileAvatar(user.id);
+        setProfileAvatar(avatarPath);
+      } catch (error) {
+        console.error('Error fetching profile avatar:', error);
+        setProfileAvatar(null);
+      }
+    }
+  };
+
+  const fetchDisplayName = async () => {
+    if (user?.id) {
+      try {
+        // First, try to get from local cache
+        let profileData = await mediaCache.getLocalProfile(user.id);
+        
+        // If local data doesn't have username, fetch from backend and sync
+        if (!profileData.username) {
+          try {
+            const backendProfile = await profileAPI.getProfile();
+            
+            // Sync username to local database if it exists in backend
+            if (backendProfile.username) {
+              await mediaCache.updateLocalProfile(user.id, {
+                display_name: backendProfile.display_name || '',
+                username: backendProfile.username
+              });
+              
+              // Get updated local profile data
+              profileData = await mediaCache.getLocalProfile(user.id);
+            }
+          } catch (backendError) {
+            console.error('Error fetching profile from backend:', backendError);
+            // Continue with local data even if backend fails
+          }
+        }
+        
+        // Try display name first, then username from local profile
+        const finalDisplayName = profileData.display_name || profileData.username || 'User';
+        setDisplayName(finalDisplayName);
+      } catch (error) {
+        console.error('Error fetching display name:', error);
+        setDisplayName('User');
+      }
+    }
+  };
+
   useEffect(() => {
     if (user?.isAuthenticated) {
       fetchWorkoutCount();
+      fetchProfileAvatar();
+      fetchDisplayName();
     }
   }, [user]);
 
@@ -45,32 +101,32 @@ const Profile = ({ navigation }) => {
     React.useCallback(() => {
       if (user?.isAuthenticated) {
         fetchWorkoutCount();
+        fetchProfileAvatar();
+        fetchDisplayName();
       }
     }, [user])
   );
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    }
-  };
 
-  const handleEditProfile = () => {
-    Alert.alert(
-      'Edit Profile',
-      'This feature will be available soon!'
-    );
-  };
 
   const renderProfile = () => (
     <View style={styles.profileSection}>
       <View style={styles.avatarContainer}>
-        <View style={styles.avatar}>
-          <Ionicons name="person-outline" size={50} color={colors.textPrimary} />
-        </View>
-        <Text style={styles.username}>{user?.username}</Text>
+        <TouchableOpacity 
+          style={styles.avatar}
+          onPress={() => navigation.navigate('EditProfile')}
+        >
+          {profileAvatar ? (
+            <Image
+              source={{ uri: profileAvatar }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name="person-outline" size={50} color={colors.textPrimary} />
+          )}
+          </TouchableOpacity>
+        <Text style={styles.username}>{displayName}</Text>
       </View>
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
@@ -137,6 +193,11 @@ const Profile = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <Header
         title="Profile"
+        leftComponent={{
+          type: 'button',
+          text: 'Edit',
+          onPress: () => navigation.navigate('EditProfile')
+        }}
         rightComponent={{
           type: 'icon',
           icon: 'settings-outline',

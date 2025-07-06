@@ -19,57 +19,71 @@ const Header = ({ title, leftComponent, rightComponent }) => {
 
     if (leftComponent.type === 'back') {
       return (
-        <TouchableOpacity
-          style={[styles.leftContainer, styles.iconButton]}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons
-            name={leftComponent.icon || "chevron-back"}
-            size={24}
-            color={colors.primaryBlue}
-          />
-        </TouchableOpacity>
+        <View style={styles.leftContainer}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons
+              name={leftComponent.icon || "chevron-back"}
+              size={24}
+              color={colors.primaryBlue}
+            />
+          </TouchableOpacity>
+        </View>
       );
     }
 
     if (leftComponent.type === 'custom') {
       return (
-        <TouchableOpacity
-          style={[styles.leftContainer, styles.iconButton]}
-          onPress={leftComponent.onPress}
-        >
-          <Ionicons
-            name={leftComponent.icon}
-            size={24}
-            color={colors.textPrimary}
-          />
-        </TouchableOpacity>
+        <View style={styles.leftContainer}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={leftComponent.onPress}
+          >
+            <Ionicons
+              name={leftComponent.icon}
+              size={24}
+              color={colors.textPrimary}
+            />
+          </TouchableOpacity>
+        </View>
       );
     }
 
     if (leftComponent.type === 'down') {
       return (
-        <TouchableOpacity
-          style={[styles.leftContainer, styles.iconButton]}
-          onPress={leftComponent.onPress}
-        >
-          <Ionicons
-            name="chevron-down-outline"
-            size={24}
-            color={colors.primaryBlue}
-          />
-        </TouchableOpacity>
+        <View style={styles.leftContainer}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={leftComponent.onPress}
+          >
+            <Ionicons
+              name="chevron-down-outline"
+              size={24}
+              color={colors.primaryBlue}
+            />
+          </TouchableOpacity>
+        </View>
       );
     }
 
     if (leftComponent.type === 'button') {
       return (
-        <TouchableOpacity
-          style={styles.leftContainer}
-          onPress={leftComponent.onPress}
-        >
-          <Text style={styles.buttonText}>{leftComponent.text}</Text>
-        </TouchableOpacity>
+        <View style={styles.leftContainer}>
+          <TouchableOpacity
+            style={styles.textButton}
+            onPress={leftComponent.onPress}
+            disabled={leftComponent.disabled}
+          >
+            <Text style={[
+              styles.buttonText,
+              leftComponent.disabled && styles.buttonTextDisabled
+            ]}>
+              {leftComponent.text}
+            </Text>
+          </TouchableOpacity>
+        </View>
       );
     }
   };
@@ -81,27 +95,56 @@ const Header = ({ title, leftComponent, rightComponent }) => {
 
     if (rightComponent.type === 'icon') {
       return (
-        <TouchableOpacity
-          style={[styles.rightContainer, styles.iconButton]}
-          onPress={rightComponent.onPress}
-        >
-          <Ionicons
-            name={rightComponent.icon}
-            size={24}
-            color={colors.textPrimary}
-          />
-        </TouchableOpacity>
+        <View style={styles.rightContainer}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={rightComponent.onPress}
+          >
+            <Ionicons
+              name={rightComponent.icon}
+              size={24}
+              color={colors.textPrimary}
+            />
+          </TouchableOpacity>
+        </View>
       );
     }
 
     if (rightComponent.type === 'button') {
       return (
-        <TouchableOpacity
-          style={styles.rightContainer}
-          onPress={rightComponent.onPress}
-        >
-          <Text style={styles.buttonText}>{rightComponent.text}</Text>
-        </TouchableOpacity>
+        <View style={styles.rightContainer}>
+          <TouchableOpacity
+            style={styles.textButton}
+            onPress={rightComponent.onPress}
+            disabled={rightComponent.disabled}
+          >
+            <Text style={[
+              styles.buttonText,
+              rightComponent.disabled && styles.buttonTextDisabled
+            ]}>
+              {rightComponent.text}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (rightComponent.type === 'text') {
+      return (
+        <View style={styles.rightContainer}>
+          <TouchableOpacity
+            style={styles.textButton}
+            onPress={rightComponent.onPress}
+            disabled={rightComponent.disabled}
+          >
+            <Text style={[
+              styles.buttonText,
+              rightComponent.disabled && styles.buttonTextDisabled
+            ]}>
+              {rightComponent.text}
+            </Text>
+          </TouchableOpacity>
+        </View>
       );
     }
   };
