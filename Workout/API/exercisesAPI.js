@@ -93,7 +93,7 @@ class ExercisesAPI extends APIBase {
       
       return this.handleOfflineFirst('exercises:all', async () => {
         const exercises = await this.db.query(
-          `SELECT * FROM exercises WHERE sync_status != 'pending_delete'`
+          `SELECT * FROM exercises WHERE sync_status != 'pending_delete' ORDER BY name ASC`
         );
         console.log('[ExercisesAPI] Found', exercises.length, 'exercises in database');
         return exercises.length > 0 ? exercises : null;

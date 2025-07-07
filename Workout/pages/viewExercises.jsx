@@ -101,8 +101,9 @@ const ViewExercisesPage = () => {
     if (showLoading) setLoading(true);
     try {
       const data = await exercisesAPI.getExercises();
-      setExercises(data || []);
-      setFilteredExercises(data || []);
+      const sortedData = (data || []).sort((a, b) => a.name.localeCompare(b.name));
+      setExercises(sortedData);
+      setFilteredExercises(sortedData);
       setError(null);
     } catch (err) {
       console.error("Failed to load exercises:", err);
@@ -159,9 +160,9 @@ const ViewExercisesPage = () => {
 
         return nameMatch || muscleGroupMatch || instructionMatch;
       });
-      setFilteredExercises(filtered);
+      setFilteredExercises(filtered.sort((a, b) => a.name.localeCompare(b.name)));
     } else {
-      setFilteredExercises(exercises);
+      setFilteredExercises([...exercises].sort((a, b) => a.name.localeCompare(b.name)));
     }
   }, [searchText, exercises]);
 

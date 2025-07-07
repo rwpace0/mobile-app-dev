@@ -118,8 +118,9 @@ const AddExercisePage = ({ route }) => {
         setLoading(true);
         const data = await exercisesAPI.getExercises();
         if (isMounted) {
-          setExercises(data || []);
-          setFilteredExercises(data || []);
+          const sortedData = (data || []).sort((a, b) => a.name.localeCompare(b.name));
+          setExercises(sortedData);
+          setFilteredExercises(sortedData);
           setSelectedExercises([]);
         }
       } catch (error) {
@@ -178,9 +179,9 @@ const AddExercisePage = ({ route }) => {
 
         return nameMatch || muscleGroupMatch || instructionMatch;
       });
-      setFilteredExercises(filtered);
+      setFilteredExercises(filtered.sort((a, b) => a.name.localeCompare(b.name)));
     } else {
-      setFilteredExercises(exercises);
+      setFilteredExercises([...exercises].sort((a, b) => a.name.localeCompare(b.name)));
     }
   }, [searchText, exercises]);
 
