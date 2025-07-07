@@ -1,4 +1,5 @@
 import { supabase } from "../database/supabaseClient.js";
+import { getClientToken } from "../database/supabaseClient.js";
 
 export async function getExercises(req, res) {
   try {
@@ -55,8 +56,9 @@ export async function createExercise(req, res) {
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
+     const supabaseWithAuth = getClientToken(token);
     // Get user data from Supabase
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabaseWithAuth.auth.getUser();
     if (userError || !user) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
@@ -73,7 +75,7 @@ export async function createExercise(req, res) {
     });
 
     // Insert into exercises table and return the inserted row
-    const { data, error: insertError } = await supabase
+    const { data, error: insertError } = await supabaseWithAuth
       .from('exercises')
       .insert([
         {

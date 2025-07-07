@@ -90,16 +90,22 @@ const CreateExercise = () => {
       setLoading(true);
       console.log('[CreateExercise] Submitting form data:', formData);
       
-      // Create exercise first
-      const exercise = await exercisesAPI.createExercise(formData);
-      console.log("[CreateExercise] Exercise created:", exercise);
+      // Create exercise locally first (always offline-first)
+      const exercise = await exercisesAPI.createExercise(formData, false);
+      console.log("[CreateExercise] Exercise created locally:", exercise);
 
-      // If there's a selected image, upload it
+      // If there's a selected image, sync to backend first, then upload media
       if (selectedImage) {
         try {
           setUploadingMedia(true);
+          
+          // Force sync the exercise to backend before uploading media
+          console.log("[CreateExercise] Syncing exercise to backend before media upload");
+          const syncedExercise = await exercisesAPI.syncExerciseWithMedia(exercise.exercise_id);
+          console.log("[CreateExercise] Exercise synced successfully with ID:", syncedExercise.exercise_id);
+          
           const { mediaUrl, localPath } = await mediaAPI.uploadExerciseMedia(
-            exercise.exercise_id,
+            syncedExercise.exercise_id,
             selectedImage
           );
           console.log("[CreateExercise] Media uploaded:", { mediaUrl, localPath });

@@ -22,6 +22,7 @@ class DatabaseManager {
       // Check current version
       const [versionRow] = await this.db.getAllAsync('SELECT version FROM db_version ORDER BY version DESC LIMIT 1');
       const currentVersion = versionRow ? versionRow.version : 0;
+      console.log(`[DatabaseManager] Current database version: ${currentVersion}`);
 
       if (currentVersion < 1) {
         // Initial schema
@@ -197,6 +198,34 @@ class DatabaseManager {
         const [version2Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 2');
         if (!version2Exists) {
           await this.db.execAsync('INSERT INTO db_version (version) VALUES (2)');
+        }
+      }
+
+      // Force check for sync_priority column and add if missing (regardless of version)
+      // This handles cases where cache was reset but migration state is inconsistent
+      try {
+        const tableInfo = await this.db.getAllAsync('PRAGMA table_info(exercises)');
+        const hasSyncPriority = tableInfo.some(col => col.name === 'sync_priority');
+        console.log(`[DatabaseManager] sync_priority column exists: ${hasSyncPriority}`);
+        
+        if (!hasSyncPriority) {
+          console.log('Adding missing sync_priority column to exercises table');
+          await this.db.execAsync('ALTER TABLE exercises ADD COLUMN sync_priority TEXT;');
+          console.log('Successfully added sync_priority column');
+        }
+      } catch (error) {
+        console.error('Error checking/adding sync_priority column:', error);
+        throw error;
+      }
+
+      if (currentVersion < 3) {
+        console.log('Updating to database version 3');
+        
+        // Update version
+        const [version3Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 3');
+        if (!version3Exists) {
+          await this.db.execAsync('INSERT INTO db_version (version) VALUES (3)');
+          console.log('Database version updated to 3');
         }
       }
 
