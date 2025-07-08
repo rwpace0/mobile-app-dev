@@ -145,10 +145,8 @@ const WorkoutStartPage = () => {
 
   const handleEditTemplate = useCallback(() => {
     if (selectedTemplate) {
-      navigation.navigate("RoutineCreate", { 
-        editMode: true, 
-        templateId: selectedTemplate.template_id,
-        templateData: selectedTemplate 
+      navigation.navigate("EditTemplate", { 
+        template_id: selectedTemplate.template_id
       });
     }
     setShowTemplateOptions(false);

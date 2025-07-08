@@ -14,6 +14,7 @@ import AddExercisePage from "./components/addExercise";
 import startPage from "./pages/start";
 import ActiveWorkoutPage from "./pages/activeWorkout";
 import RoutineCreate from "./pages/routineCreate";
+import EditRoutine from "./pages/editRoutine";
 import Navbar from "./components/navbar";
 import CreateExercise from "./components/createExercise";
 import LoadingScreen from "./components/LoadingScreen";
@@ -93,6 +94,14 @@ const MainStack = () => {
         <Stack.Screen
           name="RoutineCreate"
           component={RoutineCreate}
+          options={{
+            presentation: "fullScreenModal",
+            animationTypeForReplace: "push",
+          }}
+        />
+        <Stack.Screen
+          name="EditTemplate"
+          component={EditRoutine}
           options={{
             presentation: "fullScreenModal",
             animationTypeForReplace: "push",

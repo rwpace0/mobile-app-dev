@@ -16,6 +16,7 @@ import { Spacing, FontSize } from "../constants/theme";
 import { useTheme } from "../state/SettingsContext";
 import workoutAPI from "../API/workoutAPI";
 import templateAPI from "../API/templateAPI";
+import exercisesAPI from "../API/exercisesAPI";
 import Header from "./header";
 
 const formatDate = (isoString) => {
@@ -46,6 +47,7 @@ const RoutineDetail = () => {
   const { template_id } = route.params || {};
   const [workout, setWorkout] = useState(null);
   const [template, setTemplate] = useState(null);
+  const [templateExercisesWithNames, setTemplateExercisesWithNames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,8 +70,24 @@ const RoutineDetail = () => {
         setTemplate(templateResponse);
         setWorkout(lastWorkoutResponse);
 
-        if (!lastWorkoutResponse) {
-          setError("No previous workouts found for this routine");
+        // If no workout history, fetch exercise names for template exercises
+        if (!lastWorkoutResponse && templateResponse?.exercises) {
+          const exercisesWithNames = await Promise.all(
+            templateResponse.exercises.map(async (exercise) => {
+              const exerciseDetails = await exercisesAPI.getExerciseById(exercise.exercise_id);
+              return {
+                ...exercise,
+                name: exerciseDetails?.name || "Unknown Exercise",
+                muscle_group: exerciseDetails?.muscle_group || ""
+              };
+            })
+          );
+          setTemplateExercisesWithNames(exercisesWithNames);
+        }
+
+        // Don't set error if no workout but template exists
+        if (!lastWorkoutResponse && !templateResponse) {
+          setError("Failed to load routine data");
         }
       } catch (err) {
         console.error("Error fetching routine details:", err);
@@ -146,13 +164,13 @@ const RoutineDetail = () => {
     );
   }
 
-  if (error || !workout) {
+  if (error || (!workout && !template)) {
     return (
       <SafeAreaView style={styles.container}>
         <Header title="Routine Details" leftComponent={{ type: "back" }} />
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>
-            {error || "No previous workouts found"}
+            {error || "Failed to load routine data"}
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
@@ -160,31 +178,26 @@ const RoutineDetail = () => {
           >
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
-          {template && (
-            <TouchableOpacity
-              style={[
-                styles.retryButton,
-                { marginTop: Spacing.s, backgroundColor: colors.primaryBlue },
-              ]}
-              onPress={handleStartWorkout}
-            >
-              <Text style={[styles.retryText, { color: colors.white }]}>
-                Start First Workout
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
       </SafeAreaView>
     );
   }
 
-  const totalVolume = workout.exercises?.reduce((total, ex) => {
-    return total + calculateVolume(ex.sets || []);
-  }, 0);
+  // Use workout data if available, otherwise use template data
+  const displayData = workout || template;
+  const hasWorkoutHistory = !!workout;
+  
+  const totalVolume = hasWorkoutHistory ? 
+    workout.exercises?.reduce((total, ex) => {
+      return total + calculateVolume(ex.sets || []);
+    }, 0) : 0;
 
-  const totalSets = workout.exercises?.reduce((total, ex) => {
-    return total + (ex.sets?.length || 0);
-  }, 0);
+  const totalSets = hasWorkoutHistory ?
+    workout.exercises?.reduce((total, ex) => {
+      return total + (ex.sets?.length || 0);
+    }, 0) : template.exercises?.reduce((total, ex) => {
+      return total + (ex.sets || 1);
+    }, 0);
 
   return (
     <SafeAreaView style={styles.detailContainer}>
@@ -205,37 +218,52 @@ const RoutineDetail = () => {
         }
       >
         <View style={styles.detailHeader}>
-          <Text style={styles.detailTitle}>{workout.name}</Text>
-          <Text
-            style={[
-              styles.detailDate,
-              { opacity: 0.8, fontSize: FontSize.caption, marginTop: Spacing.xxs },
-            ]}
-          >
-            Last performed: {formatDate(workout.date_performed)}
-          </Text>
+          <Text style={styles.detailTitle}>{displayData.name}</Text>
+          {hasWorkoutHistory ? (
+            <Text
+              style={[
+                styles.detailDate,
+                { opacity: 0.8, fontSize: FontSize.caption, marginTop: Spacing.xxs },
+              ]}
+            >
+              Last performed: {formatDate(workout.date_performed)}
+            </Text>
+          ) : (
+            <Text
+              style={[
+                styles.detailDate,
+                { opacity: 0.8, fontSize: FontSize.caption, marginTop: Spacing.xxs },
+              ]}
+            >
+              Last performed: Never
+            </Text>
+          )}
 
           <View style={styles.statsRow}>
-            <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="time-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
-              <Text style={styles.statText}>
-                {Math.round(workout.duration / 60)}m
-              </Text>
-            </View>
-            <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="barbell-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
-              <Text style={styles.statText}>{Math.round(totalVolume)} kg</Text>
-            </View>
+            {hasWorkoutHistory && (
+              <View style={styles.statItemWithIcon}>
+                <Ionicons
+                  name="time-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={styles.statIcon}
+                />
+                <Text style={styles.statText}>
+                  {Math.round(workout.duration / 60)}m
+                </Text>
+              </View>
+            )}
+            {hasWorkoutHistory && (
+              <View style={styles.statItemWithIcon}>
+                <Ionicons
+                  name="barbell-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={styles.statIcon}
+                />
+                <Text style={styles.statText}>{Math.round(totalVolume)} kg</Text>
+              </View>
+            )}
             <View style={styles.statItemWithIcon}>
               <Ionicons
                 name="list-outline"
@@ -255,47 +283,83 @@ const RoutineDetail = () => {
           <Text style={styles.startRoutineText}>Start Routine</Text>
         </TouchableOpacity>
 
-        {workout.exercises?.map((exerciseData, idx) => {
-          if (!exerciseData || !exerciseData.workout_exercises_id) return null;
-          return (
-            <View
-              key={exerciseData.workout_exercises_id}
-              style={styles.exerciseCard}
-            >
-              <TouchableOpacity
-                onPress={() => handleExercisePress(exerciseData)}
+        {/* Display exercises from workout history or template */}
+        {hasWorkoutHistory ? (
+          // Display workout exercises with actual data
+          workout.exercises?.map((exerciseData, idx) => {
+            if (!exerciseData || !exerciseData.workout_exercises_id) return null;
+            return (
+              <View
+                key={exerciseData.workout_exercises_id}
+                style={styles.exerciseCard}
               >
-                <Text style={styles.exerciseCardTitle}>
-                  {exerciseData.name || "Unknown Exercise"}
-                </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleExercisePress(exerciseData)}
+                >
+                  <Text style={styles.exerciseCardTitle}>
+                    {exerciseData.name || "Unknown Exercise"}
+                  </Text>
+                </TouchableOpacity>
 
-              {exerciseData.notes && (
-                <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
-              )}
-              <View style={styles.setHeader}>
-                <Text style={styles.setHeaderText}>SET</Text>
-                <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
-                <Text style={styles.setHeaderText}>RIR</Text>
-              </View>
-              {(exerciseData.sets || []).map((set, setIdx) => (
-                <View key={set.set_id || setIdx} style={styles.setRow}>
-                  <Text style={styles.setNumber}>
-                    {set.set_order || setIdx + 1}
-                  </Text>
-                  <Text style={styles.setValue}>
-                    {set.weight}kg × {set.reps} reps
-                  </Text>
-                  <Text style={styles.setValue}>
-                    {set.rir !== null && set.rir !== undefined
-                      ? `${set.rir}`
-                      : "-"}
-                  </Text>
+                {exerciseData.notes && (
+                  <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
+                )}
+                <View style={styles.setHeader}>
+                  <Text style={styles.setHeaderText}>SET</Text>
+                  <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
+                  <Text style={styles.setHeaderText}>RIR</Text>
                 </View>
-              ))}
-            </View>
-          );
-        })}
+                {(exerciseData.sets || []).map((set, setIdx) => (
+                  <View key={set.set_id || setIdx} style={styles.setRow}>
+                    <Text style={styles.setNumber}>
+                      {set.set_order || setIdx + 1}
+                    </Text>
+                    <Text style={styles.setValue}>
+                      {set.weight}kg × {set.reps} reps
+                    </Text>
+                    <Text style={styles.setValue}>
+                      {set.rir !== null && set.rir !== undefined
+                        ? `${set.rir}`
+                        : "-"}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })
+        ) : (
+          // Display template exercises without workout data
+          templateExercisesWithNames?.map((exerciseData, idx) => {
+            return (
+              <View
+                key={exerciseData.exercise_id || idx}
+                style={styles.exerciseCard}
+              >
+                <TouchableOpacity
+                  onPress={() => handleExercisePress(exerciseData)}
+                >
+                  <Text style={styles.exerciseCardTitle}>
+                    {exerciseData.name || "Unknown Exercise"}
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={styles.setHeader}>
+                  <Text style={styles.setHeaderText}>SET</Text>
+                  <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
+                  <Text style={styles.setHeaderText}>RIR</Text>
+                </View>
+                {Array(exerciseData.sets || 1).fill().map((_, setIdx) => (
+                  <View key={setIdx} style={styles.setRow}>
+                    <Text style={styles.setNumber}>
+                      {setIdx + 1}
+                    </Text>
+                    
+                  </View>
+                ))}
+              </View>
+            );
+          })
+        )}
       </ScrollView>
     </SafeAreaView>
   );

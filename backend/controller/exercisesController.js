@@ -149,12 +149,17 @@ export async function updateExercise(req, res) {
     // Check if exercise exists and belongs to the user
     const { data: exercise, error: exerciseCheckError } = await supabaseWithAuth
       .from("exercises")
-      .select("exercise_id, created_by")
+      .select("exercise_id, created_by, is_public")
       .eq("exercise_id", exerciseId)
       .single();
 
     if (exerciseCheckError || !exercise) {
       return res.status(404).json({ error: "Exercise not found" });
+    }
+
+    // Check if exercise is public (public exercises cannot be edited)
+    if (exercise.is_public) {
+      return res.status(403).json({ error: "Public exercises cannot be edited" });
     }
 
     // Verify ownership
@@ -228,12 +233,17 @@ export async function deleteExercise(req, res) {
     // Check if exercise exists and belongs to the user
     const { data: exercise, error: exerciseCheckError } = await supabaseWithAuth
       .from("exercises")
-      .select("exercise_id, created_by")
+      .select("exercise_id, created_by, is_public")
       .eq("exercise_id", exerciseId)
       .single();
 
     if (exerciseCheckError || !exercise) {
       return res.status(404).json({ error: "Exercise not found" });
+    }
+
+    // Check if exercise is public (public exercises cannot be deleted)
+    if (exercise.is_public) {
+      return res.status(403).json({ error: "Public exercises cannot be deleted" });
     }
 
     // Verify ownership
@@ -242,6 +252,38 @@ export async function deleteExercise(req, res) {
     }
 
     // Delete related records first (due to foreign key constraints)
+    // First, get all workout_exercises IDs that reference this exercise
+    const { data: workoutExercises, error: workoutExercisesQueryError } = await supabaseWithAuth
+      .from("workout_exercises")
+      .select("workout_exercises_id")
+      .eq("exercise_id", exerciseId);
+
+    if (workoutExercisesQueryError) {
+      console.error("Workout exercises query error:", workoutExercisesQueryError);
+      return res.status(500).json({
+        error: "Failed to query related workout exercises",
+        details: workoutExercisesQueryError.message,
+      });
+    }
+
+    // Delete all sets that reference these workout_exercises
+    if (workoutExercises && workoutExercises.length > 0) {
+      const workoutExercisesIds = workoutExercises.map(we => we.workout_exercises_id);
+      
+      const { error: setsError } = await supabaseWithAuth
+        .from("sets")
+        .delete()
+        .in("workout_exercises_id", workoutExercisesIds);
+
+      if (setsError) {
+        console.error("Sets delete error:", setsError);
+        return res.status(500).json({
+          error: "Failed to delete related sets",
+          details: setsError.message,
+        });
+      }
+    }
+
     // Delete template_exercises that reference this exercise
     const { error: templateExercisesError } = await supabaseWithAuth
       .from("template_exercises")
@@ -256,7 +298,7 @@ export async function deleteExercise(req, res) {
       });
     }
 
-    // Delete workout_exercises that reference this exercise (sets will be CASCADE deleted)
+    // Now delete workout_exercises that reference this exercise
     const { error: workoutExercisesError } = await supabaseWithAuth
       .from("workout_exercises")
       .delete()

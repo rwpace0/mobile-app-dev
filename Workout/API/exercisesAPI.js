@@ -397,58 +397,83 @@ class ExercisesAPI extends APIBase {
     try {
       await this.ensureInitialized();
       
-      console.log('[ExercisesAPI] Marking exercise for deletion:', exerciseId);
+      console.log('[ExercisesAPI] Deleting exercise:', exerciseId);
 
       // Check if exercise exists and is not already marked for deletion
-      const existingExercise = await this.db.query(
+      const [existingExercise] = await this.db.query(
         `SELECT * FROM exercises WHERE exercise_id = ? AND sync_status != 'pending_delete'`,
         [exerciseId]
       );
       
-      if (!existingExercise || existingExercise.length === 0) {
+      if (!existingExercise) {
         throw new Error("Exercise not found");
       }
 
       try {
         await this.db.execute("BEGIN TRANSACTION");
         
-        // Mark exercise as pending deletion instead of deleting immediately
-        await this.db.execute(
-          `UPDATE exercises 
-           SET sync_status = 'pending_delete',
-               updated_at = ?
-           WHERE exercise_id = ?`,
-          [new Date().toISOString(), exerciseId]
-        );
+        // If exercise was never synced to server (pending_sync or no last_synced_at), delete immediately
+        if (existingExercise.sync_status === 'pending_sync' || !existingExercise.last_synced_at) {
+          console.log(`[ExercisesAPI] Exercise ${exerciseId} was never synced, deleting immediately`);
+          
+          // Delete related workout_exercises
+          await this.db.execute(
+            `DELETE FROM workout_exercises WHERE exercise_id = ?`,
+            [exerciseId]
+          );
 
-        // Also mark related workout_exercises as pending deletion
-        await this.db.execute(
-          `UPDATE workout_exercises 
-           SET sync_status = 'pending_delete',
-               updated_at = ?
-           WHERE exercise_id = ?`,
-          [new Date().toISOString(), exerciseId]
-        );
+          // Delete related template_exercises
+          await this.db.execute(
+            `DELETE FROM template_exercises WHERE exercise_id = ?`,
+            [exerciseId]
+          );
 
-        // Also mark related template_exercises as pending deletion
-        await this.db.execute(
-          `UPDATE template_exercises 
-           SET sync_status = 'pending_delete',
-               updated_at = ?
-           WHERE exercise_id = ?`,
-          [new Date().toISOString(), exerciseId]
-        );
+          // Delete exercise
+          await this.db.execute(
+            `DELETE FROM exercises WHERE exercise_id = ?`,
+            [exerciseId]
+          );
+        } else {
+          // Exercise was synced to server, mark for deletion to be handled by sync
+          console.log(`[ExercisesAPI] Exercise ${exerciseId} was synced, marking for deletion`);
+          
+          await this.db.execute(
+            `UPDATE exercises 
+             SET sync_status = 'pending_delete',
+                 updated_at = ?
+             WHERE exercise_id = ?`,
+            [new Date().toISOString(), exerciseId]
+          );
+
+          // Also mark related workout_exercises as pending deletion
+          await this.db.execute(
+            `UPDATE workout_exercises 
+             SET sync_status = 'pending_delete',
+                 updated_at = ?
+             WHERE exercise_id = ?`,
+            [new Date().toISOString(), exerciseId]
+          );
+
+          // Also mark related template_exercises as pending deletion
+          await this.db.execute(
+            `UPDATE template_exercises 
+             SET sync_status = 'pending_delete',
+                 updated_at = ?
+             WHERE exercise_id = ?`,
+            [new Date().toISOString(), exerciseId]
+          );
+        }
 
         await this.db.execute("COMMIT");
         
-        console.log('[ExercisesAPI] Exercise marked for deletion, clearing caches');
+        console.log('[ExercisesAPI] Exercise deletion complete, clearing caches');
         this.clearExerciseCache(exerciseId);
         this.cache.clear('exercises:all');
 
         return { success: true, message: "Exercise deleted successfully" };
       } catch (error) {
         await this.db.execute("ROLLBACK");
-        console.error('[ExercisesAPI] Error marking exercise for deletion:', error);
+        console.error('[ExercisesAPI] Error deleting exercise:', error);
         throw error;
       }
     } catch (error) {

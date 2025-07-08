@@ -104,7 +104,10 @@ const ExerciseDetailPage = () => {
     }
   };
 
-  const actions = [
+  // Check if exercise is public (handle different data types)
+  const isPublicExercise = exercise?.is_public === true || exercise?.is_public === 1 || exercise?.is_public === "true" || exercise?.is_public === "1";
+
+  const actions = isPublicExercise ? [] : [
     {
       title: 'Edit Exercise',
       icon: 'create-outline',
@@ -262,16 +265,20 @@ const ExerciseDetailPage = () => {
     );
   }
 
+  
+
   return (
     <SafeAreaView style={styles.container}>
       <Header
         title={exercise?.name || "Exercise"}
         leftComponent={{ type: "back" }}
-        rightComponent={{
-          type: 'icon',
-          icon: 'ellipsis-horizontal',
-          onPress: handleMenuPress,
-        }}
+        rightComponent={
+          isPublicExercise ? null : {
+            type: 'icon',
+            icon: 'ellipsis-horizontal',
+            onPress: handleMenuPress,
+          }
+        }
       />
 
       {/* Tabs */}

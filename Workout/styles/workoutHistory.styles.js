@@ -263,7 +263,7 @@ export const createStyles = (isDark = true) => {
   },
 
   retryText: {
-    color: colors.textPrimary,
+    color: colors.textWhite,
     fontSize: FontSize.base,
     fontWeight: FontWeight.semiBold,
   },

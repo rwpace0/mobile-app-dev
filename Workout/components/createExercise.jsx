@@ -75,6 +75,16 @@ const CreateExercise = () => {
   // Load exercise data for editing
   useEffect(() => {
     if (isEditing && exerciseToEdit) {
+      // Check if trying to edit a public exercise
+      if (exerciseToEdit.is_public) {
+        Alert.alert(
+          "Cannot Edit Public Exercise",
+          "Public exercises cannot be modified. You can create a new exercise based on this one instead.",
+          [{ text: "OK", onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
+      
       setFormData({
         name: exerciseToEdit.name || "",
         equipment: exerciseToEdit.equipment || "",
@@ -87,7 +97,7 @@ const CreateExercise = () => {
         setSelectedImage(`file://${exerciseToEdit.local_media_path}`);
       }
     }
-  }, [isEditing, exerciseToEdit]);
+  }, [isEditing, exerciseToEdit, navigation]);
 
   const handleSubmit = async () => {
     // Reset error states
@@ -126,17 +136,18 @@ const CreateExercise = () => {
       }
 
       // Handle image upload if there's a new image selected
-      if (selectedImage && !selectedImage.startsWith('file://')) {
+      if (selectedImage && !selectedImage.startsWith('http')) {
         try {
           setUploadingMedia(true);
           
           // Force sync the exercise to backend before uploading media
           console.log("[CreateExercise] Syncing exercise to backend before media upload");
-          const syncedExercise = await exercisesAPI.syncExerciseWithMedia(exercise.exercise_id);
+          const targetExerciseId = isEditing ? exerciseId : exercise; // exercise is just the ID string for new exercises
+          const syncedExercise = await exercisesAPI.syncExerciseWithMedia(targetExerciseId);
           console.log("[CreateExercise] Exercise synced successfully with ID:", syncedExercise.exercise_id);
           
           const { mediaUrl, localPath } = await mediaAPI.uploadExerciseMedia(
-            syncedExercise.exercise_id,
+            syncedExercise.exercise_id || targetExerciseId,
             selectedImage
           );
           console.log("[CreateExercise] Media uploaded:", { mediaUrl, localPath });
