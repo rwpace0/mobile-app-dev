@@ -31,29 +31,147 @@ class TemplateAPI extends APIBase {
               [template.template_id]
             );
 
+            // Before syncing template, ensure all referenced exercises are synced
+            // and get their server IDs
+            const syncedExercises = [];
+            
+            console.log(`[TemplateAPI] Processing ${exercises.length} exercises for template sync`);
+            
+            for (const exercise of exercises) {
+              console.log(`[TemplateAPI] Checking exercise ${exercise.exercise_id}`);
+              
+              // Check if exercise exists locally
+              const [exerciseRecord] = await this.db.query(
+                `SELECT * FROM exercises WHERE exercise_id = ?`,
+                [exercise.exercise_id]
+              );
+              
+              if (!exerciseRecord) {
+                console.warn(`[TemplateAPI] Exercise ${exercise.exercise_id} not found locally, skipping`);
+                continue;
+              }
+              
+              console.log(`[TemplateAPI] Exercise ${exercise.exercise_id} sync status: ${exerciseRecord.sync_status}, last_synced_at: ${exerciseRecord.last_synced_at}`);
+              
+              // If exercise hasn't been synced to server yet, sync it first
+              if (!exerciseRecord.last_synced_at || exerciseRecord.sync_status === 'pending_sync') {
+                console.log(`[TemplateAPI] Exercise ${exercise.exercise_id} needs syncing before template creation`);
+                try {
+                  // Import exercisesAPI dynamically to avoid circular imports
+                  const { default: exercisesAPI } = await import('./exercisesAPI.js');
+                  await exercisesAPI.syncSpecificExercise(exercise.exercise_id);
+                  console.log(`[TemplateAPI] Exercise sync completed for ${exercise.exercise_id}`);
+                  
+                  // Get updated exercise record with potentially new server ID
+                  // We need to check all exercises because the ID might have changed
+                  const updatedExercises = await this.db.query(
+                    `SELECT * FROM exercises WHERE sync_status = 'synced' AND (exercise_id = ? OR last_synced_at > ?)`,
+                    [exercise.exercise_id, new Date(Date.now() - 5000).toISOString()] // Last 5 seconds
+                  );
+                  
+                  // Find the exercise - either by original ID or by matching other properties
+                  let updatedExercise = updatedExercises.find(e => e.exercise_id === exercise.exercise_id);
+                  
+                  if (!updatedExercise && updatedExercises.length > 0) {
+                    // If ID changed, find by created_by and created_at (most recent match)
+                    updatedExercise = updatedExercises
+                      .filter(e => e.created_by === exerciseRecord.created_by)
+                      .sort((a, b) => new Date(b.last_synced_at) - new Date(a.last_synced_at))[0];
+                  }
+                  
+                  if (updatedExercise) {
+                    console.log(`[TemplateAPI] Using synced exercise ID: ${updatedExercise.exercise_id} (was ${exercise.exercise_id})`);
+                    
+                    // If the exercise ID changed, update the template_exercises table
+                    if (updatedExercise.exercise_id !== exercise.exercise_id) {
+                      console.log(`[TemplateAPI] Updating template_exercises with new exercise ID`);
+                      await this.db.execute(
+                        `UPDATE template_exercises 
+                         SET exercise_id = ?
+                         WHERE template_exercise_id = ?`,
+                        [updatedExercise.exercise_id, exercise.template_exercise_id]
+                      );
+                    }
+                    
+                    syncedExercises.push({
+                      ...exercise,
+                      exercise_id: updatedExercise.exercise_id // Use updated server ID
+                    });
+                  } else {
+                    console.error(`[TemplateAPI] Could not find synced exercise after sync attempt`);
+                    // Skip this exercise if we can't find it after sync
+                    continue;
+                  }
+                } catch (syncError) {
+                  console.error(`[TemplateAPI] Failed to sync exercise ${exercise.exercise_id}:`, syncError);
+                  // Skip this exercise if sync fails
+                  continue;
+                }
+              } else {
+                // Exercise is already synced, use it as-is
+                console.log(`[TemplateAPI] Exercise ${exercise.exercise_id} already synced, using as-is`);
+                syncedExercises.push(exercise);
+              }
+            }
+            
+            console.log(`[TemplateAPI] Final synced exercises:`, syncedExercises.map(e => ({id: e.exercise_id, order: e.exercise_order})));
+
+            // Skip template sync if no valid exercises
+            if (syncedExercises.length === 0) {
+              console.warn(`[TemplateAPI] No valid exercises found for template ${template.template_id}, skipping sync`);
+              continue;
+            }
+
             const response = await this.makeAuthenticatedRequest({
               method: 'POST',
               url: `${this.baseUrl}/create`,
-              data: { ...template, exercises }
+              data: { ...template, exercises: syncedExercises }
             });
 
-            // Update sync status to synced
-            await this.db.execute(
-              `UPDATE workout_templates 
-               SET sync_status = 'synced',
-                   last_synced_at = ?
-               WHERE template_id = ?`,
-              [new Date().toISOString(), template.template_id]
-            );
+            // Get server's template_id from response
+            const serverTemplateId = response.data.template_id || response.data.template?.template_id;
+            const now = new Date().toISOString();
 
-            // Update exercises sync status
-            await this.db.execute(
-              `UPDATE template_exercises 
-               SET sync_status = 'synced',
-                   last_synced_at = ?
-               WHERE template_id = ?`,
-              [new Date().toISOString(), template.template_id]
-            );
+            if (serverTemplateId && serverTemplateId !== template.template_id) {
+              console.log(`[TemplateAPI] Server assigned new ID: ${serverTemplateId}, updating from ${template.template_id}`);
+              
+              // Update local database with server's ID
+              await this.db.execute(
+                `UPDATE workout_templates 
+                 SET template_id = ?, sync_status = 'synced', last_synced_at = ?
+                 WHERE template_id = ?`,
+                [serverTemplateId, now, template.template_id]
+              );
+
+              // Update template exercises with new template_id
+              await this.db.execute(
+                `UPDATE template_exercises 
+                 SET template_id = ?, sync_status = 'synced', last_synced_at = ?
+                 WHERE template_id = ?`,
+                [serverTemplateId, now, template.template_id]
+              );
+            } else {
+              // Update sync status using existing ID
+              await this.db.execute(
+                `UPDATE workout_templates 
+                 SET sync_status = 'synced', last_synced_at = ?
+                 WHERE template_id = ?`,
+                [now, template.template_id]
+              );
+
+              // Update exercises sync status
+              await this.db.execute(
+                `UPDATE template_exercises 
+                 SET sync_status = 'synced', last_synced_at = ?
+                 WHERE template_id = ?`,
+                [now, template.template_id]
+              );
+            }
+
+            console.log(`[TemplateAPI] Successfully synced template ${template.template_id} -> ${serverTemplateId || template.template_id}`);
+            
+            // Clear cache to ensure fresh data with correct IDs
+            this.cache.clearPattern('^templates:');
           } catch (error) {
             console.error(`[TemplateAPI] Failed to sync template ${template.template_id}:`, error);
           }
@@ -70,9 +188,14 @@ class TemplateAPI extends APIBase {
             if (template.last_synced_at) {
               console.log(`[TemplateAPI] Syncing deletion of template ${template.template_id} (was previously synced)`);
               
+              const deleteUrl = `${this.baseUrl}/${template.template_id}`;
+              console.log(`[TemplateAPI] DELETE URL: ${deleteUrl}`);
+              console.log(`[TemplateAPI] Base URL: ${this.baseUrl}`);
+              console.log(`[TemplateAPI] Template ID: ${template.template_id}`);
+              
               await this.makeAuthenticatedRequest({
                 method: 'DELETE',
-                url: `${this.baseUrl}/${template.template_id}`
+                url: deleteUrl
               });
 
               console.log(`[TemplateAPI] Successfully deleted template ${template.template_id} from server`);

@@ -107,6 +107,7 @@ const RoutineCreate = () => {
     } finally {
       setIsSaving(false);
     }
+    navigation.goBack();
   };
 
   const handleDiscard = () => {

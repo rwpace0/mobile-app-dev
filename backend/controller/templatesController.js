@@ -78,6 +78,7 @@ export async function createTemplate(req, res) {
     return res.status(201).json({
       success: true,
       message: "Template created successfully",
+      template_id: template.template_id, // Add explicit template_id for frontend sync
       template,
       template_exercises: templateExercisesData,
     });

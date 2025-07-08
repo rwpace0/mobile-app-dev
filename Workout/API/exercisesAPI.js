@@ -18,44 +18,130 @@ class ExercisesAPI extends APIBase {
     // Register sync function with sync manager  
     syncManager.registerSyncFunction('exercises', async () => {
       try {
+        // Handle exercises pending creation/update
         const pendingExercises = await this.db.query(
-          `SELECT * FROM exercises WHERE sync_status IN ('pending_sync', 'pending_delete')`
+          `SELECT * FROM exercises WHERE sync_status = 'pending_sync'`
         );
 
         for (const exercise of pendingExercises) {
           try {
-            if (exercise.sync_status === 'pending_delete') {
-              await this.makeAuthenticatedRequest({
-                method: 'DELETE',
-                url: `${this.baseUrl}/${exercise.exercise_id}`
-              });
+            // Skip immediate priority exercises that should have been synced already
+            // Only sync background priority exercises during bulk sync
+            const syncPriority = exercise.sync_priority || 'background';
+            if (syncPriority === 'immediate') {
+              console.log(`[ExercisesAPI] Skipping immediate priority exercise ${exercise.exercise_id} - should already be synced`);
+              continue;
+            }
+
+            // Always use POST for pending_sync exercises (like template pattern)
+            const response = await this.makeAuthenticatedRequest({
+              method: 'POST',
+              url: `${this.baseUrl}/create`,
+              data: exercise
+            });
+
+            // Get server's exercise_id from response
+            const serverExerciseId = response.data.exercise_id;
+            const now = new Date().toISOString();
+
+            if (serverExerciseId && serverExerciseId !== exercise.exercise_id) {
+              console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exercise.exercise_id}`);
+              // Update local database with server's ID
+              await this.db.execute(
+                `UPDATE exercises 
+                 SET exercise_id = ?, sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
+                 WHERE exercise_id = ?`,
+                [serverExerciseId, now, exercise.exercise_id]
+              );
+              
+              // Also update any related records that might reference this exercise
+              await this.db.execute(
+                `UPDATE workout_exercises 
+                 SET exercise_id = ?
+                 WHERE exercise_id = ?`,
+                [serverExerciseId, exercise.exercise_id]
+              );
+              
+              await this.db.execute(
+                `UPDATE template_exercises 
+                 SET exercise_id = ?
+                 WHERE exercise_id = ?`,
+                [serverExerciseId, exercise.exercise_id]
+              );
             } else {
-              // Skip immediate priority exercises that should have been synced already
-              // Only sync background priority exercises during bulk sync
-              const syncPriority = exercise.sync_priority || 'background';
-              if (syncPriority === 'immediate') {
-                console.log(`[ExercisesAPI] Skipping immediate priority exercise ${exercise.exercise_id} - should already be synced`);
-                continue;
-              }
-
-              const response = await this.makeAuthenticatedRequest({
-                method: 'POST',
-                url: `${this.baseUrl}/create`,
-                data: exercise
-              });
-
-              // Update sync status to synced
+              // Update sync status using existing ID
               await this.db.execute(
                 `UPDATE exercises 
                  SET sync_status = 'synced',
                      sync_priority = NULL,
                      last_synced_at = ?
                  WHERE exercise_id = ?`,
-                [new Date().toISOString(), exercise.exercise_id]
+                [now, exercise.exercise_id]
               );
             }
+
+            console.log(`[ExercisesAPI] Successfully synced exercise ${exercise.exercise_id} -> ${serverExerciseId || exercise.exercise_id}`);
+            
+            // Clear cache to ensure fresh data with correct IDs
+            this.cache.clearPattern('^exercises:');
           } catch (error) {
             console.error(`[ExercisesAPI] Failed to sync exercise ${exercise.exercise_id}:`, error);
+          }
+        }
+
+        // Handle exercises pending deletion (following templateAPI pattern)
+        const exercisesForDeletion = await this.db.query(
+          `SELECT * FROM exercises WHERE sync_status = 'pending_delete'`
+        );
+
+        for (const exercise of exercisesForDeletion) {
+          try {
+            // Check if exercise was ever synced to server (has last_synced_at timestamp)
+            if (exercise.last_synced_at) {
+              console.log(`[ExercisesAPI] Syncing deletion of exercise ${exercise.exercise_id} (was previously synced)`);
+              
+              const deleteUrl = `${this.baseUrl}/${exercise.exercise_id}`;
+              
+              await this.makeAuthenticatedRequest({
+                method: 'DELETE',
+                url: deleteUrl
+              });
+
+              console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from server`);
+            } else {
+              console.log(`[ExercisesAPI] Exercise ${exercise.exercise_id} was never synced to server, skipping server deletion`);
+            }
+
+            // Delete from local database regardless of server deletion
+            await this.db.execute("BEGIN TRANSACTION");
+            
+            await this.db.execute(
+              'DELETE FROM exercises WHERE exercise_id = ?',
+              [exercise.exercise_id]
+            );
+
+            await this.db.execute("COMMIT");
+            
+            console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from local database`);
+          } catch (error) {
+            if (error.response && error.response.status === 404) {
+              // Exercise doesn't exist on server, just delete locally
+              console.log(`[ExercisesAPI] Exercise ${exercise.exercise_id} not found on server (404) - deleting locally`);
+              
+              await this.db.execute("BEGIN TRANSACTION");
+              
+              await this.db.execute(
+                'DELETE FROM exercises WHERE exercise_id = ?',
+                [exercise.exercise_id]
+              );
+
+              await this.db.execute("COMMIT");
+              
+              console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from local database`);
+            } else {
+              console.error(`[ExercisesAPI] Failed to delete exercise ${exercise.exercise_id} from server:`, error);
+              // Leave it marked as pending_delete to retry next sync
+            }
           }
         }
       } catch (error) {
@@ -208,82 +294,290 @@ class ExercisesAPI extends APIBase {
 
   async createExercise({ name, equipment, muscle_group, instruction = null }, syncImmediately = false) {
     try {
-      console.log('[ExercisesAPI] Starting exercise creation with data:', { name, equipment, muscle_group, instruction, syncImmediately });
+      await this.ensureInitialized();
+      
+      const exerciseId = uuid();
       const userId = await this.getUserId();
-      const exercise_id = uuid();
       const now = new Date().toISOString();
 
-      const exercise = {
-        exercise_id,
+      const exerciseData = {
+        exercise_id: exerciseId,
         name: name.trim(),
         equipment,
         muscle_group,
-        instruction,
+        instruction: instruction?.trim() || null,
+        is_public: 0,
         created_by: userId,
         created_at: now,
-        updated_at: now
+        updated_at: now,
+        sync_priority: syncImmediately ? 'immediate' : 'background'
       };
 
-      console.log('[ExercisesAPI] Created exercise object:', exercise);
-      
-      // Use 'pending_sync' but add a flag to distinguish immediate vs background sync
-      const syncStatus = "pending_sync";
-      console.log('[ExercisesAPI] Storing exercise locally with sync status:', syncStatus);
-      
-      // Add a custom field to track sync priority
-      exercise.sync_priority = syncImmediately ? 'immediate' : 'background';
-      await this.storeLocally(exercise, syncStatus);
+      console.log('[ExercisesAPI] Creating exercise:', exerciseData);
 
-      // Only sync immediately if explicitly requested (e.g., when uploading media)
+      // Store locally first
+      const stored = await this.storeLocally(exerciseData, 'pending_sync');
+      console.log('[ExercisesAPI] Stored locally, result:', stored);
+
+      // Clear cache to ensure fresh data on next fetch
+      this.clearExerciseCache(exerciseId);
+      this.cache.clear('exercises:all');
+
+      // If syncImmediately is true, try to sync to backend immediately
       if (syncImmediately) {
-        console.log('[ExercisesAPI] Attempting to sync exercise with server');
-        const response = await this.makeAuthenticatedRequest({
-          method: 'POST',
-          url: `${this.baseUrl}/create`,
-          data: exercise
-        }).catch(async (error) => {
-          console.warn("[ExercisesAPI] Server sync failed, updating to pending_sync for later:", error);
-          // If immediate sync fails, mark as pending_sync with background priority for later retry
-          await this.db.execute(
-            `UPDATE exercises SET sync_status = 'pending_sync', sync_priority = 'background' WHERE exercise_id = ?`,
-            [exercise_id]
-          );
-          return { data: exercise };
-        });
-
-        // Only update the sync status and server-provided ID if sync was successful
-        if (response.data.exercise_id && response.data.exercise_id !== exercise_id) {
-          console.log('[ExercisesAPI] Server sync successful, updating sync status');
-          await this.db.execute(
-            `UPDATE exercises 
-             SET sync_status = 'synced',
-                 exercise_id = ?,
-                 sync_priority = NULL,
-                 last_synced_at = ?
-             WHERE exercise_id = ?`,
-            [response.data.exercise_id, now, exercise_id]
-          );
-        } else {
-          // Just update sync status if using same ID
-          await this.db.execute(
-            `UPDATE exercises 
-             SET sync_status = 'synced',
-                 sync_priority = NULL,
-                 last_synced_at = ?
-             WHERE exercise_id = ?`,
-            [now, exercise_id]
-          );
+        try {
+          console.log('[ExercisesAPI] Syncing exercise immediately');
+          await this.syncSpecificExercise(exerciseId);
+        } catch (syncError) {
+          console.warn('[ExercisesAPI] Immediate sync failed, will sync later:', syncError);
+          // Don't throw - exercise is still created locally
         }
-      } else {
-        console.log('[ExercisesAPI] Exercise stored locally only, no immediate sync');
       }
 
-      console.log('[ExercisesAPI] Exercise creation complete, clearing cache');
-      this.cache.clearPattern('^exercises:');
-
-      return exercise;
+      return stored;
     } catch (error) {
       console.error("[ExercisesAPI] Create exercise error:", error);
+      throw error;
+    }
+  }
+
+  async updateExercise(exerciseId, { name, equipment, muscle_group, instruction = null }) {
+    try {
+      await this.ensureInitialized();
+      
+      const now = new Date().toISOString();
+      const updateData = {
+        name: name.trim(),
+        equipment,
+        muscle_group,
+        instruction: instruction?.trim() || null,
+        updated_at: now,
+        sync_priority: 'immediate'
+      };
+
+      console.log('[ExercisesAPI] Updating exercise:', exerciseId, updateData);
+
+      // Update locally first
+      await this.db.execute(
+        `UPDATE exercises 
+         SET name = ?, equipment = ?, muscle_group = ?, instruction = ?, 
+             updated_at = ?, sync_status = 'pending_sync', sync_priority = ?
+         WHERE exercise_id = ?`,
+        [
+          updateData.name,
+          updateData.equipment,
+          updateData.muscle_group,
+          updateData.instruction,
+          updateData.updated_at,
+          updateData.sync_priority,
+          exerciseId
+        ]
+      );
+
+      // Clear cache
+      this.clearExerciseCache(exerciseId);
+      this.cache.clear('exercises:all');
+
+      // Try to sync immediately
+      try {
+        await this.syncSpecificExercise(exerciseId);
+      } catch (syncError) {
+        console.warn('[ExercisesAPI] Immediate sync failed, will sync later:', syncError);
+      }
+
+      // Return updated exercise
+      return await this.getExerciseById(exerciseId);
+    } catch (error) {
+      console.error("[ExercisesAPI] Update exercise error:", error);
+      throw error;
+    }
+  }
+
+  async deleteExercise(exerciseId) {
+    try {
+      await this.ensureInitialized();
+      
+      console.log('[ExercisesAPI] Marking exercise for deletion:', exerciseId);
+
+      // Check if exercise exists and is not already marked for deletion
+      const existingExercise = await this.db.query(
+        `SELECT * FROM exercises WHERE exercise_id = ? AND sync_status != 'pending_delete'`,
+        [exerciseId]
+      );
+      
+      if (!existingExercise || existingExercise.length === 0) {
+        throw new Error("Exercise not found");
+      }
+
+      try {
+        await this.db.execute("BEGIN TRANSACTION");
+        
+        // Mark exercise as pending deletion instead of deleting immediately
+        await this.db.execute(
+          `UPDATE exercises 
+           SET sync_status = 'pending_delete',
+               updated_at = ?
+           WHERE exercise_id = ?`,
+          [new Date().toISOString(), exerciseId]
+        );
+
+        // Also mark related workout_exercises as pending deletion
+        await this.db.execute(
+          `UPDATE workout_exercises 
+           SET sync_status = 'pending_delete',
+               updated_at = ?
+           WHERE exercise_id = ?`,
+          [new Date().toISOString(), exerciseId]
+        );
+
+        // Also mark related template_exercises as pending deletion
+        await this.db.execute(
+          `UPDATE template_exercises 
+           SET sync_status = 'pending_delete',
+               updated_at = ?
+           WHERE exercise_id = ?`,
+          [new Date().toISOString(), exerciseId]
+        );
+
+        await this.db.execute("COMMIT");
+        
+        console.log('[ExercisesAPI] Exercise marked for deletion, clearing caches');
+        this.clearExerciseCache(exerciseId);
+        this.cache.clear('exercises:all');
+
+        return { success: true, message: "Exercise deleted successfully" };
+      } catch (error) {
+        await this.db.execute("ROLLBACK");
+        console.error('[ExercisesAPI] Error marking exercise for deletion:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("[ExercisesAPI] Delete exercise error:", error);
+      throw error;
+    }
+  }
+
+  async syncSpecificExercise(exerciseId) {
+    try {
+      const [exercise] = await this.db.query(
+        'SELECT * FROM exercises WHERE exercise_id = ?',
+        [exerciseId]
+      );
+
+      if (!exercise) {
+        console.log('[ExercisesAPI] Exercise not found for sync:', exerciseId);
+        return;
+      }
+
+      if (exercise.sync_status === 'pending_delete') {
+        try {
+          // Check if exercise was ever synced to server (has last_synced_at timestamp)
+          if (exercise.last_synced_at) {
+            console.log(`[ExercisesAPI] Syncing deletion of exercise ${exerciseId} (was previously synced)`);
+            
+            const deleteUrl = `${this.baseUrl}/${exerciseId}`;
+            console.log(`[ExercisesAPI] syncSpecific DELETE URL: ${deleteUrl}`);
+            console.log(`[ExercisesAPI] syncSpecific Base URL: ${this.baseUrl}`);
+            console.log(`[ExercisesAPI] syncSpecific Exercise ID: ${exerciseId}`);
+            
+            // Send delete request to server
+            await this.makeAuthenticatedRequest({
+              method: 'DELETE',
+              url: deleteUrl
+            });
+            
+            console.log(`[ExercisesAPI] Successfully deleted exercise ${exerciseId} from server`);
+          } else {
+            console.log(`[ExercisesAPI] Exercise ${exerciseId} was never synced to server, skipping server deletion`);
+          }
+
+          // Delete from local database regardless of server deletion
+          await this.db.execute("BEGIN TRANSACTION");
+          
+          await this.db.execute(
+            'DELETE FROM exercises WHERE exercise_id = ?',
+            [exerciseId]
+          );
+          
+          await this.db.execute("COMMIT");
+          console.log(`[ExercisesAPI] Successfully deleted exercise ${exerciseId} from local database`);
+        } catch (error) {
+          if (error.response && error.response.status === 404) {
+            // Exercise doesn't exist on server, just delete locally
+            console.log(`[ExercisesAPI] Exercise ${exerciseId} not found on server (404) - deleting locally`);
+            
+            await this.db.execute("BEGIN TRANSACTION");
+            
+            await this.db.execute(
+              'DELETE FROM exercises WHERE exercise_id = ?',
+              [exerciseId]
+            );
+
+            await this.db.execute("COMMIT");
+          } else {
+            await this.db.execute("ROLLBACK");
+            console.error(`[ExercisesAPI] Failed to delete exercise ${exerciseId}:`, error);
+            throw error;
+          }
+        }
+      } else if (exercise.sync_status === 'pending_sync') {
+        try {
+          // Always use POST for pending_sync exercises (like template pattern)
+          const response = await this.makeAuthenticatedRequest({
+            method: 'POST',
+            url: `${this.baseUrl}/create`,
+            data: exercise
+          });
+
+          // Get server's exercise_id from response
+          const serverExerciseId = response.data.exercise_id;
+          const now = new Date().toISOString();
+
+          if (serverExerciseId && serverExerciseId !== exerciseId) {
+            console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
+            // Update local database with server's ID
+            await this.db.execute(
+              `UPDATE exercises 
+               SET exercise_id = ?, sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
+               WHERE exercise_id = ?`,
+              [serverExerciseId, now, exerciseId]
+            );
+            
+            // Also update any related records that might reference this exercise
+            await this.db.execute(
+              `UPDATE workout_exercises 
+               SET exercise_id = ?
+               WHERE exercise_id = ?`,
+              [serverExerciseId, exerciseId]
+            );
+            
+            await this.db.execute(
+              `UPDATE template_exercises 
+               SET exercise_id = ?
+               WHERE exercise_id = ?`,
+              [serverExerciseId, exerciseId]
+            );
+          } else {
+            // Update sync status using existing ID
+            await this.db.execute(
+              `UPDATE exercises 
+               SET sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
+               WHERE exercise_id = ?`,
+              [now, exerciseId]
+            );
+          }
+          
+          console.log(`[ExercisesAPI] Successfully synced exercise ${exerciseId} -> ${serverExerciseId || exerciseId}`);
+          
+          // Clear cache to ensure fresh data with correct IDs
+          this.cache.clearPattern('^exercises:');
+        } catch (error) {
+          console.error(`[ExercisesAPI] Failed to sync exercise ${exerciseId}:`, error);
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('[ExercisesAPI] Sync specific exercise error:', error);
       throw error;
     }
   }

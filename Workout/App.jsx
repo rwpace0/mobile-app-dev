@@ -70,12 +70,6 @@ const MainStack = () => {
     }
   };
 
-  const handleDiscardWorkout = () => {
-    endWorkout();
-  };
-
-  // Debug logging
-
   return (
     <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -123,7 +117,6 @@ const MainStack = () => {
         <ActiveMini
           visible={true}
           onResume={handleResumeWorkout}
-          onDiscard={handleDiscardWorkout}
           workoutName={activeWorkout.name || `Workout on ${new Date().toLocaleDateString()}`}
           duration={activeWorkout.duration || 0}
         />

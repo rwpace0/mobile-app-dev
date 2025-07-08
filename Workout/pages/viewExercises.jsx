@@ -46,6 +46,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const [imageError, setImageError] = useState(false);
+  
   const imagePath = item.local_media_path ? 
     `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}` : 
     null;

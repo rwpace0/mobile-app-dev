@@ -18,6 +18,8 @@ import * as FileSystem from 'expo-file-system';
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import Header from "../components/header";
+import BottomSheetModal from "../components/modals/bottomModal";
+import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();
@@ -31,6 +33,8 @@ const ExerciseDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showBottomModal, setShowBottomModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Cleanup function to clear exercise-specific cache on unmount
   useEffect(() => {
@@ -70,6 +74,49 @@ const ExerciseDetailPage = () => {
     setRefreshing(true);
     fetchData(false);
   }, [fetchData]);
+
+  const handleMenuPress = () => {
+    setShowBottomModal(true);
+  };
+
+  const handleEdit = () => {
+    setShowBottomModal(false);
+    navigation.navigate("CreateExercise", {
+      exerciseId: exercise.exercise_id,
+      exercise: exercise,
+      isEditing: true,
+    });
+  };
+
+  const handleDelete = () => {
+    setShowBottomModal(false);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      await exercisesAPI.deleteExercise(exercise.exercise_id);
+      navigation.goBack(); // Go back to the previous screen after deletion
+    } catch (error) {
+      console.error("Failed to delete exercise:", error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const actions = [
+    {
+      title: 'Edit Exercise',
+      icon: 'create-outline',
+      onPress: handleEdit,
+    },
+    {
+      title: 'Delete Exercise',
+      icon: 'trash-outline',
+      onPress: handleDelete,
+      destructive: true,
+    },
+  ];
 
   const renderSummaryTab = () => (
     <ScrollView 
@@ -223,10 +270,7 @@ const ExerciseDetailPage = () => {
         rightComponent={{
           type: 'icon',
           icon: 'ellipsis-horizontal',
-          onPress: () => {
-            // TODO: Add menu functionality
-            console.log('Exercise menu pressed');
-          }
+          onPress: handleMenuPress,
         }}
       />
 
@@ -252,6 +296,20 @@ const ExerciseDetailPage = () => {
 
       {/* Content */}
       {activeTab === "Summary" ? renderSummaryTab() : renderHistoryTab()}
+
+      <BottomSheetModal
+        visible={showBottomModal}
+        onClose={() => setShowBottomModal(false)}
+        title={exercise?.name}
+        actions={actions}
+      />
+
+      <DeleteConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title={`Delete ${exercise?.name}?`}
+      />
     </SafeAreaView>
   );
 };

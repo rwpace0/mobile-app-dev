@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from 'expo-image-picker';
 import { createStyles } from "../styles/createExercise.styles";
 import exercisesAPI from "../API/exercisesAPI";
@@ -52,6 +52,13 @@ const CreateExercise = () => {
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const navigation = useNavigation();
+  const route = useRoute();
+  
+  // Check if we're in editing mode
+  const isEditing = route.params?.isEditing || false;
+  const exerciseToEdit = route.params?.exercise || null;
+  const exerciseId = route.params?.exerciseId || null;
+  
   const [formData, setFormData] = useState({
     name: "",
     equipment: "",
@@ -64,6 +71,23 @@ const CreateExercise = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageError, setImageError] = useState(null);
+
+  // Load exercise data for editing
+  useEffect(() => {
+    if (isEditing && exerciseToEdit) {
+      setFormData({
+        name: exerciseToEdit.name || "",
+        equipment: exerciseToEdit.equipment || "",
+        muscle_group: exerciseToEdit.muscle_group || "",
+        instruction: exerciseToEdit.instruction || "",
+      });
+      
+      // Set existing image if available
+      if (exerciseToEdit.local_media_path) {
+        setSelectedImage(`file://${exerciseToEdit.local_media_path}`);
+      }
+    }
+  }, [isEditing, exerciseToEdit]);
 
   const handleSubmit = async () => {
     // Reset error states
@@ -88,14 +112,21 @@ const CreateExercise = () => {
 
     try {
       setLoading(true);
-      console.log('[CreateExercise] Submitting form data:', formData);
+      console.log(`[CreateExercise] ${isEditing ? 'Updating' : 'Creating'} exercise:`, formData);
       
-      // Create exercise locally first (always offline-first)
-      const exercise = await exercisesAPI.createExercise(formData, false);
-      console.log("[CreateExercise] Exercise created locally:", exercise);
+      let exercise;
+      if (isEditing && exerciseId) {
+        // Update existing exercise
+        exercise = await exercisesAPI.updateExercise(exerciseId, formData);
+        console.log("[CreateExercise] Exercise updated:", exercise);
+      } else {
+        // Create new exercise
+        exercise = await exercisesAPI.createExercise(formData, false);
+        console.log("[CreateExercise] Exercise created locally:", exercise);
+      }
 
-      // If there's a selected image, sync to backend first, then upload media
-      if (selectedImage) {
+      // Handle image upload if there's a new image selected
+      if (selectedImage && !selectedImage.startsWith('file://')) {
         try {
           setUploadingMedia(true);
           
@@ -113,20 +144,19 @@ const CreateExercise = () => {
           console.error("Failed to upload media:", mediaError);
           Alert.alert(
             "Warning",
-            "Exercise created but failed to upload image. You can try adding the image later."
+            `Exercise ${isEditing ? 'updated' : 'created'} but failed to upload image. You can try adding the image later.`
           );
         } finally {
           setUploadingMedia(false);
         }
       }
 
-      
       navigation.goBack();
     } catch (error) {
-      console.error("Failed to create exercise:", error);
+      console.error(`Failed to ${isEditing ? 'update' : 'create'} exercise:`, error);
       Alert.alert(
         "Error",
-        error.response?.data?.error || "Failed to create exercise"
+        error.response?.data?.error || `Failed to ${isEditing ? 'update' : 'create'} exercise`
       );
     } finally {
       setLoading(false);
@@ -176,14 +206,14 @@ const CreateExercise = () => {
             { flex: 1, textAlign: "center" },
           ]}
         >
-          Create Exercise
+          {isEditing ? 'Edit Exercise' : 'Create Exercise'}
         </Text>
         <TouchableOpacity onPress={handleSubmit} disabled={loading || uploadingMedia}>
           <Text style={[
             styles.headerActionTextActive,
             (loading || uploadingMedia) && { opacity: 0.5 }
           ]}>
-            {loading ? 'Creating...' : uploadingMedia ? 'Uploading...' : 'Create'}
+            {loading ? (isEditing ? 'Updating...' : 'Creating...') : uploadingMedia ? 'Uploading...' : (isEditing ? 'Update' : 'Create')}
           </Text>
         </TouchableOpacity>
       </View>

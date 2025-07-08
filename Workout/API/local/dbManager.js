@@ -206,7 +206,7 @@ class DatabaseManager {
       try {
         const tableInfo = await this.db.getAllAsync('PRAGMA table_info(exercises)');
         const hasSyncPriority = tableInfo.some(col => col.name === 'sync_priority');
-        console.log(`[DatabaseManager] sync_priority column exists: ${hasSyncPriority}`);
+        
         
         if (!hasSyncPriority) {
           console.log('Adding missing sync_priority column to exercises table');

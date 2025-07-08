@@ -25,7 +25,7 @@ export const getMe = async (req, res) => {
       if (!user) {
         return res.status(401).json({ error: 'User not found' });
       }
-
+      console.log(token);
       console.log('User data retrieved:', user);
 
       // Return only auth user data - profile data should be handled separately

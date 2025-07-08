@@ -72,14 +72,36 @@ class APIBase {
     const token = await storage.getItem("auth_token");
     if (!token) throw new Error("No auth token found");
 
+    // Add detailed logging for debugging
+    console.log(`[APIBase] Making ${config.method} request to: ${config.url}`);
+    console.log(`[APIBase] Request config:`, {
+      method: config.method,
+      url: config.url,
+      data: config.data,
+      headers: config.headers
+    });
+
     return this.rateLimiter.queueRequest(async () => {
-      return await axios({
-        ...config,
-        headers: {
-          ...config.headers,
-          Authorization: `Bearer ${token}`
-        }
-      });
+      try {
+        const response = await axios({
+          ...config,
+          headers: {
+            ...config.headers,
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        console.log(`[APIBase] ${config.method} ${config.url} - SUCCESS (${response.status})`);
+        console.log(`[APIBase] Response data:`, response.data);
+        return response;
+      } catch (error) {
+        console.error(`[APIBase] ${config.method} ${config.url} - FAILED`);
+        console.error(`[APIBase] Error status:`, error.response?.status);
+        console.error(`[APIBase] Error data:`, error.response?.data);
+        console.error(`[APIBase] Error config:`, error.config);
+        console.error(`[APIBase] Full error:`, error);
+        throw error;
+      }
     });
   }
 
