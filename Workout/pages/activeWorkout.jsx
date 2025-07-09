@@ -158,7 +158,7 @@ const ActiveWorkoutPage = () => {
           .map((set, idx) => ({
             weight: Number(set.weight),
             reps: Number(set.reps),
-            rir: set.rir || 0,
+            rir: set.rir ? Number(set.rir) : null,
             set_order: idx + 1,
           }));
 

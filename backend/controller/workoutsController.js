@@ -29,8 +29,11 @@ export async function createWorkout(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    // Create authenticated client
+    const supabaseWithAuth = getClientToken(token);
+
     // Insert into workouts table
-    const { data: workout, error: insertError } = await supabase
+    const { data: workout, error: insertError } = await supabaseWithAuth
       .from("workouts")
       .insert([
         {
@@ -324,7 +327,7 @@ export async function updateWorkout(req, res) {
             set_order: set.set_order || 1,
             weight: set.weight || 0,
             reps: set.reps || 0,
-            rir: set.rir || 0,
+            rir: set.rir ? Number(set.rir) : null,
           }));
 
           const { error: setsError } = await supabaseWithAuth
@@ -361,11 +364,13 @@ export async function finishWorkout(req, res) {
       return res.status(401).json({ error: "No token provided" });
     }
     // Get user data from Supabase
-    const supabaseWithAuth = getClientToken(token);
     const {
       data: { user },
       error: userError,
-    } = await supabaseWithAuth.auth.getUser(token);
+    } = await supabase.auth.getUser(token);
+    
+    // Create authenticated client
+    const supabaseWithAuth = getClientToken(token);
     if (userError || !user) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
@@ -478,12 +483,14 @@ export async function getWorkoutCountsByWeek(req, res) {
     if (!token) {
       return res.status(401).json({ error: "No token provided" });
     }
-    const supabaseWithAuth = getClientToken(token);
     // Get user data from Supabase
     const {
       data: { user },
       error: userError,
-    } = await supabaseWithAuth.auth.getUser(token);
+    } = await supabase.auth.getUser(token);
+    
+    // Create authenticated client
+    const supabaseWithAuth = getClientToken(token);
     if (userError || !user) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }

@@ -164,7 +164,7 @@ class WorkoutAPI extends APIBase {
         sets: (exercise.sets || []).map((set, setIndex) => ({
           weight: Number(set.weight) || 0,
           reps: Number(set.reps) || 0,
-          rir: Number(set.rir) || 0,
+          rir: set.rir != null ? Number(set.rir) : null,
           set_order: set.set_order || setIndex + 1
         }))
       };

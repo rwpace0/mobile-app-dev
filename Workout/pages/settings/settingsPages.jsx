@@ -184,12 +184,6 @@ const SettingsPage = () => {
               icon="timer-outline"
             />
             <SettingToggle
-              title="Show Weight History"
-              value={settings.showWeightHistory}
-              onValueChange={() => toggleSetting("showWeightHistory")}
-              icon="bar-chart-outline"
-            />
-            <SettingToggle
               title="Countdown Timer"
               value={settings.countdownTimer}
               onValueChange={() => toggleSetting("countdownTimer")}
