@@ -15,12 +15,14 @@ import { createStyles } from "../styles/workoutHistory.styles";
 import { getColors } from "../constants/colors";
 import { Spacing } from "../constants/theme";
 import { useTheme } from "../state/SettingsContext";
+import { useWeight } from "../utils/useWeight";
 
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const weight = useWeight();
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -139,7 +141,7 @@ const WorkoutHistoryPage = () => {
           </View>
           <View style={styles.statItemWithIcon}>
             <Ionicons name="barbell-outline" size={20} color={colors.textSecondary} style={styles.statIcon} />
-            <Text style={styles.statText}>{volume} kg</Text>
+            <Text style={styles.statText}>{weight.formatVolume(volume)}</Text>
           </View>
         </View>
 
@@ -161,7 +163,7 @@ const WorkoutHistoryPage = () => {
                   </Text>
                 </View>
                 <Text style={styles.bestSet}>
-                  {bestSet ? `${bestSet.weight} kg × ${bestSet.reps}` : ''}
+                  {bestSet ? weight.formatSet(bestSet.weight, bestSet.reps) : ''}
                 </Text>
               </View>
             );
@@ -169,7 +171,7 @@ const WorkoutHistoryPage = () => {
         </View>
       </TouchableOpacity>
     );
-  }, [navigation, formatDate]);
+  }, [navigation, formatDate, weight]);
 
   const renderFooter = useCallback(() => {
     if (!loadingMore) return null;

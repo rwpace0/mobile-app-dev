@@ -15,6 +15,7 @@ import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import workoutAPI from "../API/workoutAPI";
 import Header from "../components/header";
+import { useWeight } from "../utils/useWeight";
 
 const formatDate = (isoString) => {
   try {
@@ -29,9 +30,13 @@ const formatDate = (isoString) => {
   }
 };
 
-const calculateVolume = (sets) => {
+const calculateVolume = (sets, weightUtils) => {
   return sets.reduce((total, set) => {
-    return total + (set.weight * set.reps || 0);
+    // Convert weight from storage to user's preferred unit before calculating volume
+    const convertedWeight = weightUtils.fromStorage(set.weight);
+    // Round to avoid floating point precision issues
+    const roundedWeight = Math.round(convertedWeight * 100) / 100;
+    return total + (roundedWeight * set.reps || 0);
   }, 0);
 };
 
@@ -41,6 +46,7 @@ const WorkoutDetail = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const weight = useWeight();
   const { workout_id } = route.params || {};
   const [workout, setWorkout] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -116,7 +122,7 @@ const WorkoutDetail = () => {
   }
 
   const totalVolume = workout.exercises?.reduce((total, ex) => {
-    return total + calculateVolume(ex.sets || []);
+    return total + calculateVolume(ex.sets || [], weight);
   }, 0);
 
   const totalSets = workout.exercises?.reduce((total, ex) => {
@@ -166,7 +172,7 @@ const WorkoutDetail = () => {
                 color={colors.textSecondary}
                 style={styles.statIcon}
               />
-              <Text style={styles.statText}>{Math.round(totalVolume)} kg</Text>
+              <Text style={styles.statText}>{weight.formatVolume(Math.round(totalVolume))}</Text>
             </View>
             <View style={styles.statItemWithIcon}>
               <Ionicons
@@ -208,7 +214,7 @@ const WorkoutDetail = () => {
                     {set.set_order || setIdx + 1}
                   </Text>
                   <Text style={styles.setValue}>
-                    {set.weight}kg × {set.reps} reps
+                    {weight.formatSet(set.weight, set.reps)} reps
                   </Text>
                   <Text style={styles.setValue}>
                     {set.rir !== null && set.rir !== undefined

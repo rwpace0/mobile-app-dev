@@ -16,6 +16,7 @@ import Header from "../components/header";
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import { createStyles } from "../styles/workoutPages.styles";
+import { useWeight } from "../utils/useWeight";
 
 const EditWorkoutPage = () => {
   const navigation = useNavigation();
@@ -23,6 +24,7 @@ const EditWorkoutPage = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const weight = useWeight();
   const { workout_id } = route.params || {};
   
   const [exercises, setExercises] = useState([]);
@@ -68,14 +70,20 @@ const EditWorkoutPage = () => {
       const initialStates = {};
       workout.exercises.forEach(ex => {
         initialStates[ex.exercise_id] = {
-          sets: ex.sets.map((set, index) => ({
-            id: (index + 1).toString(),
-            weight: set.weight.toString(),
-            reps: set.reps.toString(),
-            total: (set.weight * set.reps).toString(),
-            completed: true, // Existing sets are considered completed
-            rir: set.rir
-          })),
+          sets: ex.sets.map((set, index) => {
+            // Convert weight from storage to user's preferred unit for editing
+            const convertedWeight = weight.fromStorage(set.weight);
+            // Round to avoid floating point precision issues
+            const roundedWeight = Math.round(convertedWeight * 100) / 100;
+            return {
+              id: (index + 1).toString(),
+              weight: roundedWeight.toString(),
+              reps: set.reps.toString(),
+              total: (roundedWeight * set.reps).toString(),
+              completed: true, // Existing sets are considered completed
+              rir: set.rir
+            };
+          }),
           notes: ex.notes || ""
         };
       });
@@ -87,7 +95,11 @@ const EditWorkoutPage = () => {
       let setsCount = 0;
       workout.exercises.forEach(ex => {
         ex.sets.forEach(set => {
-          volume += set.weight * set.reps;
+          // Convert weight from storage to user's preferred unit for volume calculation
+          const convertedWeight = weight.fromStorage(set.weight);
+          // Round to avoid floating point precision issues
+          const roundedWeight = Math.round(convertedWeight * 100) / 100;
+          volume += roundedWeight * set.reps;
           setsCount++;
         });
       });
@@ -168,7 +180,7 @@ const EditWorkoutPage = () => {
         const sets = (state.sets || [])
           .filter((set) => set.weight && set.reps)
           .map((set, idx) => ({
-            weight: Number(set.weight),
+            weight: weight.toStorage(Number(set.weight)),
             reps: Number(set.reps),
             rir: (set.rir !== "" && set.rir != null) ? Number(set.rir) : null,
             set_order: idx + 1,
@@ -269,7 +281,7 @@ const EditWorkoutPage = () => {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>{Math.round(totalVolume)} kg</Text>
+            <Text style={styles.statValue}>{weight.formatVolume(Math.round(totalVolume))}</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Sets</Text>

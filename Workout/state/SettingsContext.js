@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -122,7 +122,7 @@ export const SettingsProvider = ({ children }) => {
     await updateSetting('theme', newTheme);
   };
 
-  const value = {
+  const value = useMemo(() => ({
     // Settings state
     settings,
     isLoaded,
@@ -153,7 +153,14 @@ export const SettingsProvider = ({ children }) => {
     distanceUnit: settings.distanceUnit,
     bodyMeasurementUnit: settings.bodyMeasurementUnit,
     use24Hour: settings.use24Hour,
-  };
+  }), [
+    settings,
+    isLoaded,
+    updateSetting,
+    updateSettings,
+    actualTheme,
+    changeTheme,
+  ]);
 
   return (
     <SettingsContext.Provider value={value}>

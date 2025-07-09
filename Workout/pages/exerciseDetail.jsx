@@ -20,6 +20,7 @@ import { useTheme } from "../state/SettingsContext";
 import Header from "../components/header";
 import BottomSheetModal from "../components/modals/bottomModal";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
+import { useWeight } from "../utils/useWeight";
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();
@@ -27,6 +28,7 @@ const ExerciseDetailPage = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const weight = useWeight();
   const [activeTab, setActiveTab] = useState("Summary");
   const [exercise, setExercise] = useState(null);
   const [history, setHistory] = useState([]);
@@ -218,7 +220,7 @@ const ExerciseDetailPage = () => {
                   <View key={set.set_id} style={styles.setRow}>
                     <Text style={styles.setNumber}>Set {set.set_order}</Text>
                     <Text style={styles.setInfo}>
-                      {set.weight}kg × {set.reps} reps
+                      {weight.formatSet(set.weight, set.reps)} reps
                     </Text>
                     <Text style={styles.setRir}>
                       {set.rir !== null && set.rir !== undefined ? `${set.rir} RIR` : '-'}

@@ -9,6 +9,7 @@ import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import SwipeToDelete from "../animations/SwipeToDelete";
 import exercisesAPI from "../API/exercisesAPI";
+import { useWeight } from "../utils/useWeight";
 
 const ActiveExerciseComponent = ({
   exercise,
@@ -32,6 +33,7 @@ const ActiveExerciseComponent = ({
   const { showPreviousPerformance } = useSettings();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const weight = useWeight();
 
   // Update state when initialState prop changes (for restored workouts)
   useEffect(() => {
@@ -76,23 +78,32 @@ const ActiveExerciseComponent = ({
               return currentTotal > bestTotal ? set : best;
             });
             
+            // Convert weight from storage to user's preferred unit for display
+            const convertedWeight = weight.fromStorage(bestSet.weight);
+            // Round to avoid floating point precision issues
+            const roundedWeight = Math.round(convertedWeight * 100) / 100;
             const performanceData = {
-              weight: bestSet.weight,
+              weight: roundedWeight,
               reps: bestSet.reps,
-              total: (bestSet.weight || 0) * (bestSet.reps || 0),
+              total: roundedWeight * (bestSet.reps || 0),
               date: lastWorkout.date_performed || lastWorkout.created_at,
             };
             setPreviousPerformance(performanceData);
             
             // Initialize sets based on previous workout if current sets are empty
             if (!hasPrefilledData && sets.length === 0) {
-              const initialSets = lastWorkout.sets.map((prevSet, index) => ({
-                id: (index + 1).toString(),
-                weight: showPreviousPerformance ? prevSet.weight.toString() : "",
-                reps: showPreviousPerformance ? prevSet.reps.toString() : "",
-                total: showPreviousPerformance ? Math.round(prevSet.weight * prevSet.reps).toString() : "",
-                completed: false,
-              }));
+              const initialSets = lastWorkout.sets.map((prevSet, index) => {
+                const convertedWeight = weight.fromStorage(prevSet.weight);
+                // Round to avoid floating point precision issues
+                const roundedWeight = Math.round(convertedWeight * 100) / 100;
+                return {
+                  id: (index + 1).toString(),
+                  weight: showPreviousPerformance ? roundedWeight.toString() : "",
+                  reps: showPreviousPerformance ? prevSet.reps.toString() : "",
+                  total: showPreviousPerformance ? Math.round(roundedWeight * prevSet.reps).toString() : "",
+                  completed: false,
+                };
+              });
               
               setSets(initialSets);
               setHasPrefilledData(true);
@@ -239,7 +250,8 @@ const ActiveExerciseComponent = ({
     let defaultReps = lastSet ? lastSet.reps : "";
     
     if (showPreviousPerformance && previousPerformance && (!lastSet || (!lastSet.weight && !lastSet.reps))) {
-      defaultWeight = previousPerformance.weight.toString();
+      // previousPerformance.weight is already converted from storage, round to avoid floating point issues
+      defaultWeight = (Math.round(previousPerformance.weight * 100) / 100).toString();
       defaultReps = previousPerformance.reps.toString();
     }
 
@@ -340,7 +352,7 @@ const ActiveExerciseComponent = ({
             <Text style={[styles.setHeaderCell, styles.previousCell]}>PREVIOUS</Text>
           )}
           <Text style={[styles.setHeaderCell, styles.weightHeaderCell]}>
-            {showPreviousPerformance ? "LBS" : "KG"}
+            {weight.unitLabel()}
           </Text>
           <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>REPS</Text>
           {!showPreviousPerformance && (
@@ -367,7 +379,7 @@ const ActiveExerciseComponent = ({
               <View style={styles.previousCell}>
                 <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
                   {previousPerformance ? (
-                    `${previousPerformance.weight}lbs x ${previousPerformance.reps}`
+                    `${previousPerformance.weight}${weight.unit} × ${previousPerformance.reps}`
                   ) : loadingPrevious ? (
                     "Loading..."
                   ) : (
@@ -382,7 +394,7 @@ const ActiveExerciseComponent = ({
                 value={set.weight}
                 onChangeText={(value) => handleWeightChange(set.id, value)}
                 keyboardType="numeric"
-                placeholder={showPreviousPerformance && previousPerformance ? previousPerformance.weight.toString() : "0"}
+                placeholder={showPreviousPerformance && previousPerformance ? Math.round(previousPerformance.weight * 100) / 100 + "" : "0"}
                 placeholderTextColor={colors.textSecondary}
                 selectTextOnFocus={true}
               />

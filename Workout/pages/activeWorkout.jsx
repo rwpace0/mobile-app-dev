@@ -17,6 +17,7 @@ import { useTheme } from "../state/SettingsContext";
 import { createStyles } from "../styles/workoutPages.styles";
 import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
 import { useActiveWorkout } from "../state/ActiveWorkoutContext";
+import { useWeight } from "../utils/useWeight";
 
 const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
@@ -24,6 +25,7 @@ const ActiveWorkoutPage = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const weight = useWeight();
   const { activeWorkout, startWorkout, updateWorkout, endWorkout } = useActiveWorkout();
   
   const [exercises, setExercises] = useState([]);
@@ -156,7 +158,7 @@ const ActiveWorkoutPage = () => {
         const sets = (state.sets || [])
           .filter((set) => set.weight && set.reps)
           .map((set, idx) => ({
-            weight: Number(set.weight),
+            weight: weight.toStorage(Number(set.weight)),
             reps: Number(set.reps),
             rir: set.rir ? Number(set.rir) : null,
             set_order: idx + 1,
@@ -253,7 +255,7 @@ const ActiveWorkoutPage = () => {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>{totalVolume} kg</Text>
+            <Text style={styles.statValue}>{weight.formatVolume(totalVolume)}</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Sets</Text>
