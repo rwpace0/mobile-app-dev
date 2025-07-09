@@ -13,7 +13,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { createStyles } from "../styles/display.styles";
 import exercisesAPI from "../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from "expo-file-system";
 import { mediaCache } from "../API/local/MediaCache";
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
@@ -46,16 +46,13 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const [imageError, setImageError] = useState(false);
-  
-  const imagePath = item.local_media_path ? 
-    `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}` : 
-    null;
+
+  const imagePath = item.local_media_path
+    ? `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}`
+    : null;
 
   return (
-    <TouchableOpacity
-      style={styles.exerciseItem}
-      onPress={() => onPress(item)}
-    >
+    <TouchableOpacity style={styles.exerciseItem} onPress={() => onPress(item)}>
       <View style={styles.exerciseRow}>
         <View style={styles.exerciseIconContainer}>
           {imagePath && !imageError ? (
@@ -80,7 +77,11 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
               item.muscle_group.slice(1)}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
+        <Ionicons
+          name="chevron-forward"
+          size={24}
+          color={colors.textSecondary}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -102,7 +103,9 @@ const ViewExercisesPage = () => {
     if (showLoading) setLoading(true);
     try {
       const data = await exercisesAPI.getExercises();
-      const sortedData = (data || []).sort((a, b) => a.name.localeCompare(b.name));
+      const sortedData = (data || []).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
       setExercises(sortedData);
       setFilteredExercises(sortedData);
       setError(null);
@@ -128,21 +131,27 @@ const ViewExercisesPage = () => {
     loadExercises(false);
   }, [loadExercises]);
 
-  const handleExercisePress = useCallback((exercise) => {
-    navigation.navigate("ExerciseDetail", {
-      exerciseId: exercise.exercise_id,
-    });
-  }, [navigation]);
+  const handleExercisePress = useCallback(
+    (exercise) => {
+      navigation.navigate("ExerciseDetail", {
+        exerciseId: exercise.exercise_id,
+      });
+    },
+    [navigation]
+  );
 
-  const renderExerciseItem = useCallback(({ item }) => {
-    return (
-      <ExerciseItem
-        item={item}
-        onPress={handleExercisePress}
-        searchText={searchText}
-      />
-    );
-  }, [handleExercisePress, searchText]);
+  const renderExerciseItem = useCallback(
+    ({ item }) => {
+      return (
+        <ExerciseItem
+          item={item}
+          onPress={handleExercisePress}
+          searchText={searchText}
+        />
+      );
+    },
+    [handleExercisePress, searchText]
+  );
 
   // search function that properly filters results
   useEffect(() => {
@@ -161,9 +170,13 @@ const ViewExercisesPage = () => {
 
         return nameMatch || muscleGroupMatch || instructionMatch;
       });
-      setFilteredExercises(filtered.sort((a, b) => a.name.localeCompare(b.name)));
+      setFilteredExercises(
+        filtered.sort((a, b) => a.name.localeCompare(b.name))
+      );
     } else {
-      setFilteredExercises([...exercises].sort((a, b) => a.name.localeCompare(b.name)));
+      setFilteredExercises(
+        [...exercises].sort((a, b) => a.name.localeCompare(b.name))
+      );
     }
   }, [searchText, exercises]);
 
@@ -179,8 +192,8 @@ const ViewExercisesPage = () => {
     return (
       <View style={styles.centerContent}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton} 
+        <TouchableOpacity
+          style={styles.retryButton}
           onPress={() => loadExercises()}
         >
           <Text style={styles.retryText}>Retry</Text>
@@ -194,14 +207,13 @@ const ViewExercisesPage = () => {
       <Header
         title="Exercises"
         leftComponent={{
-          type: 'custom',
-          icon: 'close-outline',
-          onPress: () => navigation.goBack()
+          type: "back",
+          onPress: () => navigation.goBack(),
         }}
         rightComponent={{
-          type: 'button',
-          text: 'Create',
-          onPress: () => navigation.navigate("CreateExercise")
+          type: "button",
+          text: "Create",
+          onPress: () => navigation.navigate("CreateExercise"),
         }}
       />
 
@@ -223,7 +235,11 @@ const ViewExercisesPage = () => {
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText("")}>
-              <Ionicons name="close-circle" size={22} color={colors.textFaded} />
+              <Ionicons
+                name="close-circle"
+                size={22}
+                color={colors.textFaded}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -251,7 +267,9 @@ const ViewExercisesPage = () => {
           ListEmptyComponent={
             <View style={styles.emptyListContainer}>
               <Text style={styles.emptyListText}>
-                {searchText ? "No matching exercises found" : "No exercises available"}
+                {searchText
+                  ? "No matching exercises found"
+                  : "No exercises available"}
               </Text>
             </View>
           }

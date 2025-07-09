@@ -157,6 +157,48 @@ export const createStyles = (isDark = true) => {
     fontSize: FontSize.medium,
     fontWeight: FontWeight.semiBold,
   },
+  
+  // Segmented Control styles
+  unitSection: {
+    paddingHorizontal: Spacing.m,
+    paddingVertical: Spacing.s,
+  },
+  unitSectionTitle: {
+    fontSize: FontSize.base,
+    color: colors.textFaded,
+    marginBottom: Spacing.s,
+    fontWeight: FontWeight.medium,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: colors.backgroundCard,
+    borderRadius: BorderRadius.lg,
+    padding: 2,
+    marginBottom: Spacing.s,
+  },
+  segmentedOption: {
+    flex: 1,
+    paddingVertical: Spacing.m,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentedOptionActive: {
+    backgroundColor: colors.primaryBlue,
+  },
+  segmentedOptionInactive: {
+    backgroundColor: 'transparent',
+  },
+  segmentedOptionText: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.medium,
+  },
+  segmentedOptionTextActive: {
+    color: '#FFFFFF',
+  },
+  segmentedOptionTextInactive: {
+    color: colors.textSecondary,
+  },
 });
 };
 

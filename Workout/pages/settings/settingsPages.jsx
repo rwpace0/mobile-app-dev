@@ -149,6 +149,42 @@ const SettingDropdown = ({
   );
 };
 
+const SegmentedControl = ({ title, value, options, onSelect }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
+
+  return (
+    <View style={styles.unitSection}>
+      <Text style={styles.unitSectionTitle}>{title}</Text>
+      <View style={styles.segmentedControl}>
+        {options.map((option) => {
+          const isActive = value === option;
+          return (
+            <TouchableOpacity
+              key={option}
+              style={[
+                styles.segmentedOption,
+                isActive ? styles.segmentedOptionActive : styles.segmentedOptionInactive,
+              ]}
+              onPress={() => onSelect(option)}
+            >
+              <Text
+                style={[
+                  styles.segmentedOptionText,
+                  isActive ? styles.segmentedOptionTextActive : styles.segmentedOptionTextInactive,
+                ]}
+              >
+                {option}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
 
 
 const SettingsPage = () => {
@@ -218,18 +254,23 @@ const SettingsPage = () => {
       case "units":
         return (
           <>
-            <SettingToggle
-              title="Use Metric System"
-              value={settings.useMetric}
-              onValueChange={() => toggleSetting("useMetric")}
-              IconComponent={MaterialIcons}
-              icon="straighten"
+            <SegmentedControl
+              title="Weight"
+              value={settings.weightUnit}
+              options={['kg', 'lbs']}
+              onSelect={(value) => updateSetting('weightUnit', value)}
             />
-            <SettingToggle
-              title="24-Hour Time"
-              value={settings.use24Hour}
-              onValueChange={() => toggleSetting("use24Hour")}
-              icon="time-outline"
+            <SegmentedControl
+              title="Distance"
+              value={settings.distanceUnit}
+              options={['kilometers', 'miles']}
+              onSelect={(value) => updateSetting('distanceUnit', value)}
+            />
+            <SegmentedControl
+              title="Body Measurements"
+              value={settings.bodyMeasurementUnit}
+              options={['cm', 'in']}
+              onSelect={(value) => updateSetting('bodyMeasurementUnit', value)}
             />
           </>
         );
@@ -257,7 +298,7 @@ const SettingsPage = () => {
       case "privacy":
         return "Privacy & Social";
       case "units":
-        return "Units";
+        return "Select Units";
       case "theme":
         return "Theme";
       default:

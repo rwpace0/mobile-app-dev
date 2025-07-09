@@ -45,7 +45,9 @@ const DEFAULT_SETTINGS = {
   allowComments: false,
   
   // Units settings
-  useMetric: true,
+  weightUnit: 'lbs', // 'kg' or 'lbs'
+  distanceUnit: 'miles', // 'kilometers' or 'miles'
+  bodyMeasurementUnit: 'in', // 'cm' or 'in'
   use24Hour: true,
 };
 
@@ -147,7 +149,9 @@ export const SettingsProvider = ({ children }) => {
     shareWorkouts: settings.shareWorkouts,
     showProfile: settings.showProfile,
     allowComments: settings.allowComments,
-    useMetric: settings.useMetric,
+    weightUnit: settings.weightUnit,
+    distanceUnit: settings.distanceUnit,
+    bodyMeasurementUnit: settings.bodyMeasurementUnit,
     use24Hour: settings.use24Hour,
   };
 

@@ -235,8 +235,7 @@ const AddExercisePage = ({ route }) => {
         <Header
           title="Add Exercise"
           leftComponent={{
-            type: "custom",
-            icon: "close-outline",
+            type: "down",
             onPress: () => navigation.goBack()
           }}
           rightComponent={{
