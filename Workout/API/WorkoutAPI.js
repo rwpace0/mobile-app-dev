@@ -71,33 +71,20 @@ class WorkoutAPI extends APIBase {
               return acc;
             }, {});
 
-            // Check if workout already exists on server (for updates)
-            let method = 'POST';
-            let url = `${this.baseUrl}/create`;
-            
-            try {
-              const existingWorkout = await this.makeAuthenticatedRequest({
-                method: 'GET',
-                url: `${this.baseUrl}/${workout.workout_id}`
-              });
-              
-              if (existingWorkout) {
-                method = 'PUT';
-                url = `${this.baseUrl}/${workout.workout_id}`;
-              }
-            } catch (error) {
-              // Workout doesn't exist on server, use POST
-              console.log(`[WorkoutAPI] Workout ${workout.workout_id} not found on server, creating new`);
-            }
-
+            // Use upsert to handle both creation and updates in one call
             const response = await this.makeAuthenticatedRequest({
-              method,
-              url,
+              method: 'POST',
+              url: `${this.baseUrl}/upsert`,
               data: {
-                ...workout,
+                workout_id: workout.workout_id,
+                name: workout.name,
+                date_performed: workout.date_performed,
+                duration: workout.duration,
                 exercises: Object.values(exercisesWithSets)
               }
             });
+
+            console.log(`[WorkoutAPI] Workout ${workout.workout_id} upserted successfully`);
 
             // Update sync status to synced
             const now = new Date().toISOString();
