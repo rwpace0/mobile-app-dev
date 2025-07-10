@@ -156,7 +156,11 @@ class ExercisesAPI extends APIBase {
   }
 
   clearExerciseCache(exerciseId) {
+    console.log(`[ExercisesAPI] Clearing cache for exercise ${exerciseId}`);
+    console.log(`[ExercisesAPI] Cache size before clear:`, this.cache.getStats().size);
     this.cache.clearPattern(`^exercise:${exerciseId}`);
+    console.log(`[ExercisesAPI] Cache size after clear:`, this.cache.getStats().size);
+    console.log(`[ExercisesAPI] Cleared cache pattern: ^exercise:${exerciseId}`);
   }
 
   async storeLocally(exercise, syncStatus = "synced") {
@@ -231,61 +235,107 @@ class ExercisesAPI extends APIBase {
     try {
       await this.ensureInitialized();
       
-      return this.handleOfflineFirst(`exercise:${exerciseId}:history`, async () => {
-        // Get all workouts containing this exercise with their sets
-        const history = await this.db.query(`
-          SELECT 
-            w.workout_id,
-            w.name,
-            w.date_performed,
-            w.created_at,
-            we.workout_exercises_id,
-            s.set_id,
-            s.weight,
-            s.reps,
-            s.rir,
-            s.set_order
-          FROM workouts w
-          JOIN workout_exercises we ON w.workout_id = we.workout_id
-          LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
-          WHERE we.exercise_id = ?
-            AND w.sync_status != 'pending_delete'
-            AND we.sync_status != 'pending_delete'
-          ORDER BY 
-            COALESCE(w.date_performed, w.created_at) DESC,
-            we.exercise_order ASC,
-            s.set_order ASC
-        `, [exerciseId]);
+      console.log(`[ExercisesAPI] Getting exercise history for ${exerciseId}`);
+      console.log(`[ExercisesAPI] Cache stats:`, this.cache.getStats());
+      
+      const cacheKey = `exercise:${exerciseId}:history`;
+      const cachedData = this.cache.get(cacheKey);
+      console.log(`[ExercisesAPI] Cached data exists:`, !!cachedData);
+      
+      if (cachedData) {
+        console.log(`[ExercisesAPI] Returning cached data for ${exerciseId}:`, cachedData.length, 'workouts');
+        return cachedData;
+      }
 
-        // Group sets by workout
-        const workoutMap = new Map();
-        
-        history.forEach(row => {
-          if (!workoutMap.has(row.workout_exercises_id)) {
-            workoutMap.set(row.workout_exercises_id, {
-              workout_exercises_id: row.workout_exercises_id,
-              workout_id: row.workout_id,
-              name: row.name,
-              date_performed: row.date_performed,
-              created_at: row.created_at,
-              sets: []
-            });
-          }
-          
-          if (row.set_id) {
-            const workout = workoutMap.get(row.workout_exercises_id);
-            workout.sets.push({
-              set_id: row.set_id,
-              weight: row.weight,
-              reps: row.reps,
-              rir: row.rir,
-              set_order: row.set_order
-            });
-          }
-        });
+      console.log(`[ExercisesAPI] No cache found, querying database for ${exerciseId}`);
+      
+      // Get all workouts containing this exercise with their sets
+      const history = await this.db.query(`
+        SELECT 
+          w.workout_id,
+          w.name,
+          w.date_performed,
+          w.created_at,
+          w.sync_status,
+          we.workout_exercises_id,
+          s.set_id,
+          s.weight,
+          s.reps,
+          s.rir,
+          s.set_order
+        FROM workouts w
+        JOIN workout_exercises we ON w.workout_id = we.workout_id
+        LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+        WHERE we.exercise_id = ?
+          AND w.sync_status != 'pending_delete'
+          AND we.sync_status != 'pending_delete'
+        ORDER BY 
+          COALESCE(w.date_performed, w.created_at) DESC,
+          we.exercise_order ASC,
+          s.set_order ASC
+      `, [exerciseId]);
 
-        return Array.from(workoutMap.values());
+      console.log(`[ExercisesAPI] Found ${history.length} history records for ${exerciseId}`);
+      history.forEach((record, index) => {
+        if (index < 3) { // Log first 3 records
+          console.log(`[ExercisesAPI] Record ${index}:`, {
+            workout_id: record.workout_id,
+            name: record.name,
+            sync_status: record.sync_status,
+            date_performed: record.date_performed,
+            created_at: record.created_at,
+            weight: record.weight,
+            reps: record.reps
+          });
+        }
       });
+
+      // Group sets by workout
+      const workoutMap = new Map();
+      
+      history.forEach(row => {
+        if (!workoutMap.has(row.workout_exercises_id)) {
+          workoutMap.set(row.workout_exercises_id, {
+            workout_exercises_id: row.workout_exercises_id,
+            workout_id: row.workout_id,
+            name: row.name,
+            date_performed: row.date_performed,
+            created_at: row.created_at,
+            sets: []
+          });
+        }
+        
+        if (row.set_id) {
+          const workout = workoutMap.get(row.workout_exercises_id);
+          workout.sets.push({
+            set_id: row.set_id,
+            weight: row.weight,
+            reps: row.reps,
+            rir: row.rir,
+            set_order: row.set_order
+          });
+        }
+      });
+
+      const result = Array.from(workoutMap.values());
+      console.log(`[ExercisesAPI] Grouped into ${result.length} workouts for ${exerciseId}`);
+      result.forEach((workout, index) => {
+        if (index < 2) { // Log first 2 workouts
+          console.log(`[ExercisesAPI] Workout ${index}:`, {
+            workout_id: workout.workout_id,
+            name: workout.name,
+            date_performed: workout.date_performed,
+            sets_count: workout.sets.length,
+            first_set: workout.sets[0]
+          });
+        }
+      });
+
+      // Cache the result
+      this.cache.set(cacheKey, result);
+      console.log(`[ExercisesAPI] Cached result for ${exerciseId}`);
+
+      return result;
     } catch (error) {
       console.error("[ExercisesAPI] Get exercise history error:", error);
       return [];

@@ -221,8 +221,8 @@ const ActiveWorkoutPage = () => {
     setTotalSets(newTotalSets);
   }, [exerciseTotals]);
 
-  const handleSettings = () => {
-    console.log("Settings");
+  const handleSettings = (type) => {
+    navigation.navigate("WorkoutSettings", { type: "workouts" });
   };
 
   const handleMinimizeWorkout = () => {
@@ -280,6 +280,18 @@ const ActiveWorkoutPage = () => {
               <Ionicons name="add" size={20} color={colors.textWhite} />
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+                <Text style={styles.settingsText}>Workout Settings</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
+                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+                <Text style={styles.discardText}>Discard Workout</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={styles.exercisesContainer}>
@@ -305,19 +317,21 @@ const ActiveWorkoutPage = () => {
               <Ionicons name="add" size={20} color={colors.textWhite} />
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+                <Text style={styles.settingsText}>Workout Settings</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
+                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+                <Text style={styles.discardText}>Discard Workout</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-          <Text style={styles.settingsText}>Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-          <Text style={styles.discardText}>Discard Workout</Text>
-        </TouchableOpacity>
-      </View>
 
       <DeleteConfirmModal
         visible={showDeleteConfirm}

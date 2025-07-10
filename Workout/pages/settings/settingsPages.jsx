@@ -190,7 +190,7 @@ const SegmentedControl = ({ title, value, options, onSelect }) => {
 const SettingsPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { type, subtype } = route.params;
+  const { type, subtype } = route.params || {};
   const { theme, changeTheme, isDark } = useTheme();
   const { settings, updateSetting } = useSettings();
   const colors = getColors(isDark);
@@ -201,6 +201,19 @@ const SettingsPage = () => {
   };
 
   const themeOptions = ["system", "light", "dark"];
+
+  // Check if this is accessed from active workout (modal navigation)
+  const isFromActiveWorkout = route.name === "WorkoutSettings";
+
+  const getHeaderLeftComponent = () => {
+    if (isFromActiveWorkout) {
+      return {
+        type: "down",
+        onPress: () => navigation.goBack()
+      };
+    }
+    return { type: "back" };
+  };
 
   const getPageContent = () => {
     switch (type) {
@@ -308,7 +321,7 @@ const SettingsPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title={getPageTitle()} leftComponent={{ type: "back" }} />
+      <Header title={getPageTitle()} leftComponent={getHeaderLeftComponent()} />
       <ScrollView>{getPageContent()}</ScrollView>
     </SafeAreaView>
   );

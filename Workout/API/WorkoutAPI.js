@@ -7,6 +7,7 @@ import { backgroundProcessor } from "./local/BackgroundProcessor";
 import { v4 as uuid } from "uuid";
 import { storage } from "./tokenStorage";
 import { syncManager } from "./local/syncManager";
+import exercisesAPI from "./exercisesAPI";
 
 class WorkoutAPI extends APIBase {
   constructor() {
@@ -85,6 +86,21 @@ class WorkoutAPI extends APIBase {
             });
 
             console.log(`[WorkoutAPI] Workout ${workout.workout_id} upserted successfully`);
+
+            // Clear exercise history caches for all exercises in this synced workout
+            // This ensures future queries get fresh data including this workout
+            const uniqueExerciseIds = new Set();
+            Object.values(exercisesWithSets).forEach(exercise => {
+              if (exercise.exercise_id) {
+                uniqueExerciseIds.add(exercise.exercise_id);
+              }
+            });
+            
+            uniqueExerciseIds.forEach(exerciseId => {
+              // Clear cache from exercisesAPI where the exercise history is actually cached
+              exercisesAPI.clearExerciseCache(exerciseId);
+              console.log(`[WorkoutAPI] Cleared exercise cache for ${exerciseId} after sync`);
+            });
 
             // Update sync status to synced
             const now = new Date().toISOString();
@@ -571,6 +587,16 @@ class WorkoutAPI extends APIBase {
         this.cache.clearPattern('^workouts:');
         this.workoutCache.clearAll();
 
+        // Clear exercise history caches for all exercises in this workout
+        // This ensures previous performance data includes the just-finished workout
+        workout.exercises.forEach(exercise => {
+          if (exercise.exercise_id) {
+            // Clear cache from exercisesAPI where the exercise history is actually cached
+            exercisesAPI.clearExerciseCache(exercise.exercise_id);
+            console.log(`[WorkoutAPI] Cleared exercise cache for ${exercise.exercise_id}`);
+          }
+        });
+
         // Return the locally stored workout - sync will happen in background
         return workout;
       } catch (error) {
@@ -695,6 +721,16 @@ class WorkoutAPI extends APIBase {
         console.log('[WorkoutAPI] Local workout update successful, clearing caches');
         this.cache.clearPattern('^workouts:');
         this.workoutCache.clearAll();
+
+        // Clear exercise history caches for all exercises in this workout
+        // This ensures previous performance data includes the updated workout
+        updatedWorkout.exercises.forEach(exercise => {
+          if (exercise.exercise_id) {
+            // Clear cache from exercisesAPI where the exercise history is actually cached
+            exercisesAPI.clearExerciseCache(exercise.exercise_id);
+            console.log(`[WorkoutAPI] Cleared exercise cache for ${exercise.exercise_id}`);
+          }
+        });
 
         // Return the updated workout
         return updatedWorkout;
