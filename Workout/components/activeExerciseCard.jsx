@@ -27,6 +27,7 @@ const ActiveExerciseComponent = ({
   const [remainingTime, setRemainingTime] = useState(0);
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const [previousPerformance, setPreviousPerformance] = useState(null);
+  const [previousWorkoutSets, setPreviousWorkoutSets] = useState([]); // Store all sets from previous workout
   const [loadingPrevious, setLoadingPrevious] = useState(false);
   const [hasPrefilledData, setHasPrefilledData] = useState(!!initialState?.sets);
   const { isDark } = useTheme();
@@ -71,6 +72,18 @@ const ActiveExerciseComponent = ({
         if (history && history.length > 0) {
           const lastWorkout = history[0]; // Most recent workout
           if (lastWorkout.sets && lastWorkout.sets.length > 0) {
+            // Store all previous sets for individual display
+            const convertedPreviousSets = lastWorkout.sets.map(set => {
+              const convertedWeight = weight.fromStorage(set.weight);
+              const roundedWeight = weight.roundToHalf(convertedWeight);
+              return {
+                weight: roundedWeight,
+                reps: set.reps,
+                total: roundedWeight * (set.reps || 0)
+              };
+            });
+            setPreviousWorkoutSets(convertedPreviousSets);
+            
             // Find the best set (highest total weight moved) for display
             const bestSet = lastWorkout.sets.reduce((best, set) => {
               const currentTotal = (set.weight || 0) * (set.reps || 0);
@@ -80,8 +93,8 @@ const ActiveExerciseComponent = ({
             
             // Convert weight from storage to user's preferred unit for display
             const convertedWeight = weight.fromStorage(bestSet.weight);
-            // Round to avoid floating point precision issues
-            const roundedWeight = Math.round(convertedWeight * 100) / 100;
+            // Round to only allow whole numbers and .5 increments
+            const roundedWeight = weight.roundToHalf(convertedWeight);
             const performanceData = {
               weight: roundedWeight,
               reps: bestSet.reps,
@@ -94,8 +107,8 @@ const ActiveExerciseComponent = ({
             if (!hasPrefilledData && sets.length === 0) {
               const initialSets = lastWorkout.sets.map((prevSet, index) => {
                 const convertedWeight = weight.fromStorage(prevSet.weight);
-                // Round to avoid floating point precision issues
-                const roundedWeight = Math.round(convertedWeight * 100) / 100;
+                // Round to only allow whole numbers and .5 increments
+                const roundedWeight = weight.roundToHalf(convertedWeight);
                 return {
                   id: (index + 1).toString(),
                   weight: showPreviousPerformance ? roundedWeight.toString() : "",
@@ -249,9 +262,17 @@ const ActiveExerciseComponent = ({
     let defaultWeight = lastSet ? lastSet.weight : "";
     let defaultReps = lastSet ? lastSet.reps : "";
     
-    if (showPreviousPerformance && previousPerformance && (!lastSet || (!lastSet.weight && !lastSet.reps))) {
-      // previousPerformance.weight is already converted from storage, round to avoid floating point issues
-      defaultWeight = (Math.round(previousPerformance.weight * 100) / 100).toString();
+    // Get the corresponding previous set for this new set number
+    const newSetIndex = sets.length;
+    const correspondingPreviousSet = previousWorkoutSets[newSetIndex];
+    
+    if (showPreviousPerformance && correspondingPreviousSet && (!lastSet || (!lastSet.weight && !lastSet.reps))) {
+      // Use the corresponding previous set data for this set number
+      defaultWeight = correspondingPreviousSet.weight.toString();
+      defaultReps = correspondingPreviousSet.reps.toString();
+    } else if (showPreviousPerformance && previousPerformance && (!lastSet || (!lastSet.weight && !lastSet.reps))) {
+      // Fallback to best set data if no corresponding previous set
+      defaultWeight = weight.roundToHalf(previousPerformance.weight).toString();
       defaultReps = previousPerformance.reps.toString();
     }
 
@@ -295,9 +316,9 @@ const ActiveExerciseComponent = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.exerciseName}>
-          {exerciseDetails?.name || exercise.name}
-        </Text>
+        <Text style={styles.exerciseName}>{exerciseDetails?.name || ""}</Text>
+        
+          
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => setShowDeleteConfirm(true)}
@@ -306,14 +327,16 @@ const ActiveExerciseComponent = ({
         </TouchableOpacity>
       </View>
 
-      <TextInput
-        style={styles.exerciseNotes}
-        placeholder="Add notes here..."
-        placeholderTextColor={colors.textFaded}
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-      />
+      <View style={styles.notesContainer}>
+        <TextInput
+          style={styles.notesInput}
+          placeholder="Add notes here..."
+          placeholderTextColor={colors.textFaded}
+          value={notes}
+          onChangeText={setNotes}
+          multiline
+        />
+      </View>
 
       <TouchableOpacity
         style={styles.restTimerContainer}
@@ -362,73 +385,78 @@ const ActiveExerciseComponent = ({
         </View>
 
         {/* Set Rows */}
-        {sets.map((set, index) => (
-          <SwipeToDelete
-            key={set.id}
-            onDelete={() => handleDeleteSet(set.id)}
-            style={[
-              styles.setRow,
-              set.completed &&
-                (set.id === "W" ? styles.warmupSetRow : styles.completedSetRow),
-            ]}
-          >
-            <View style={styles.setNumberCell}>
-              <Text style={styles.setCell}>{set.id}</Text>
-            </View>
-            {showPreviousPerformance && (
-              <View style={styles.previousCell}>
-                <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
-                  {previousPerformance ? (
-                    `${previousPerformance.weight}${weight.unit} × ${previousPerformance.reps}`
-                  ) : loadingPrevious ? (
-                    "Loading..."
-                  ) : (
-                    "No data"
-                  )}
-                </Text>
+        {sets.map((set, index) => {
+          // Get the corresponding previous set for this set number
+          const correspondingPreviousSet = previousWorkoutSets[index];
+          
+          return (
+            <SwipeToDelete
+              key={set.id}
+              onDelete={() => handleDeleteSet(set.id)}
+              style={[
+                styles.setRow,
+                set.completed &&
+                  (set.id === "W" ? styles.warmupSetRow : styles.completedSetRow),
+              ]}
+            >
+              <View style={styles.setNumberCell}>
+                <Text style={styles.setCell}>{set.id}</Text>
               </View>
-            )}
-            <View style={styles.weightHeaderCell}>
-              <TextInput
-                style={styles.weightInput}
-                value={set.weight}
-                onChangeText={(value) => handleWeightChange(set.id, value)}
-                keyboardType="numeric"
-                placeholder={showPreviousPerformance && previousPerformance ? Math.round(previousPerformance.weight * 100) / 100 + "" : "0"}
-                placeholderTextColor={colors.textSecondary}
-                selectTextOnFocus={true}
-              />
-            </View>
-            <View style={styles.repsHeaderCell}>
-              <TextInput
-                style={styles.repsInput}
-                value={set.reps}
-                onChangeText={(value) => handleRepsChange(set.id, value)}
-                keyboardType="numeric"
-                placeholder={showPreviousPerformance && previousPerformance ? previousPerformance.reps.toString() : "0"}
-                placeholderTextColor={colors.textSecondary}
-                selectTextOnFocus={true}
-              />
-            </View>
-            {!showPreviousPerformance && (
-              <View style={styles.totalCell}>
-                <Text style={styles.setCell}>{set.total}</Text>
-              </View>
-            )}
-            <View style={styles.completedCell}>
-              <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
-                <View
-                  style={[
-                    styles.checkmarkContainer,
-                    set.completed && styles.completedCheckmark,
-                  ]}
-                >
-                  <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
+              {showPreviousPerformance && (
+                <View style={styles.previousCell}>
+                  <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
+                    {correspondingPreviousSet ? (
+                      `${correspondingPreviousSet.weight}${weight.unit} × ${correspondingPreviousSet.reps}`
+                    ) : loadingPrevious ? (
+                      "Loading..."
+                    ) : (
+                      "No data"
+                    )}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-            </View>
-          </SwipeToDelete>
-        ))}
+              )}
+              <View style={styles.weightHeaderCell}>
+                <TextInput
+                  style={styles.weightInput}
+                  value={set.weight}
+                  onChangeText={(value) => handleWeightChange(set.id, value)}
+                  keyboardType="numeric"
+                  placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.weight + "" : "0"}
+                  placeholderTextColor={colors.textSecondary}
+                  selectTextOnFocus={true}
+                />
+              </View>
+              <View style={styles.repsHeaderCell}>
+                <TextInput
+                  style={styles.repsInput}
+                  value={set.reps}
+                  onChangeText={(value) => handleRepsChange(set.id, value)}
+                  keyboardType="numeric"
+                  placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.reps.toString() : "0"}
+                  placeholderTextColor={colors.textSecondary}
+                  selectTextOnFocus={true}
+                />
+              </View>
+              {!showPreviousPerformance && (
+                <View style={styles.totalCell}>
+                  <Text style={styles.setCell}>{set.total}</Text>
+                </View>
+              )}
+              <View style={styles.completedCell}>
+                <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
+                  <View
+                    style={[
+                      styles.checkmarkContainer,
+                      set.completed && styles.completedCheckmark,
+                    ]}
+                  >
+                    <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </SwipeToDelete>
+          );
+        })}
       </View>
 
       {/* Add Set Button */}

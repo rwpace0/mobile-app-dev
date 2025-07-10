@@ -6,7 +6,9 @@ import {
   calculateVolume, 
   getUnitLabel,
   convertWeightForStorage,
-  convertWeightFromStorage 
+  convertWeightFromStorage,
+  roundToHalfIncrement,
+  formatSmartDecimals
 } from './weightUtils';
 
 /**
@@ -114,6 +116,10 @@ export const useWeight = () => {
       // Conversion functions
       toStorage,
       fromStorage,
+
+      // Rounding functions
+      roundToHalf: roundToHalfIncrement,
+      formatSmart: formatSmartDecimals,
     };
   }, [weightUnit]); // Only recreate when weightUnit changes
 }; 

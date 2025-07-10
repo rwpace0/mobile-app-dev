@@ -7,26 +7,37 @@ const KG_TO_LBS = 2.20462;
 const LBS_TO_KG = 0.453592;
 
 /**
+ * Round weight to only allow whole numbers and .5 increments
+ * @param {number} weight - The weight value to round
+ * @returns {number} Rounded weight (only whole numbers and .5)
+ */
+const roundToHalfIncrement = (weight) => {
+  if (typeof weight !== 'number' || isNaN(weight)) {
+    return 0;
+  }
+  // First fix floating point precision issues by rounding to 10 decimal places
+  const precisionFixed = Math.round(weight * 10000000000) / 10000000000;
+  // Then round to nearest 0.5
+  return Math.round(precisionFixed * 2) / 2;
+};
+
+/**
  * Smart number formatting that removes unnecessary .0 decimals
+ * Only allows whole numbers and .5 increments
  * @param {number} num - The number to format
- * @param {number} maxDecimals - Maximum decimal places to show
  * @returns {string} Formatted number string
  */
-const formatSmartDecimals = (num, maxDecimals = 1) => {
-  // First, round to a reasonable precision to avoid floating point issues
-  // Round to 6 decimal places first to eliminate floating point errors
-  const precisionFixed = Math.round(num * 1000000) / 1000000;
-  
-  // Then round to the desired decimal places
-  const rounded = Math.round(precisionFixed * Math.pow(10, maxDecimals)) / Math.pow(10, maxDecimals);
+const formatSmartDecimals = (num) => {
+  // First, round to half increments
+  const rounded = roundToHalfIncrement(num);
   
   // If it's a whole number, don't show decimals
   if (rounded % 1 === 0) {
     return rounded.toString();
   }
   
-  // Otherwise, show up to maxDecimals, removing trailing zeros
-  return rounded.toFixed(maxDecimals).replace(/\.?0+$/, '');
+  // Otherwise, show as .5
+  return rounded.toFixed(1);
 };
 
 /**
@@ -74,7 +85,7 @@ export const formatWeight = (weight, preferredUnit = 'kg', decimals = null) => {
   // Use smart formatting if no specific decimal count is provided
   if (decimals === null) {
     const maxDecimals = preferredUnit === 'lbs' ? 1 : 1; // Allow 1 decimal for both units
-    const formattedValue = formatSmartDecimals(convertedWeight, maxDecimals);
+    const formattedValue = formatSmartDecimals(convertedWeight);
     return `${formattedValue} ${preferredUnit}`;
   } else {
     // Use specific decimal count if provided
@@ -100,7 +111,7 @@ export const formatWeightValue = (weight, preferredUnit = 'kg', decimals = null)
   // Use smart formatting if no specific decimal count is provided
   if (decimals === null) {
     const maxDecimals = preferredUnit === 'lbs' ? 1 : 1; // Allow 1 decimal for both units
-    return formatSmartDecimals(convertedWeight, maxDecimals);
+    return formatSmartDecimals(convertedWeight);
   } else {
     // Use specific decimal count if provided
     return convertedWeight.toFixed(decimals);
@@ -136,7 +147,7 @@ export const getUnitLabel = (unit) => {
  * Convert weight for storage (convert user input to kg for consistent storage)
  * @param {number} weight - The weight value entered by user
  * @param {string} userUnit - The unit the user entered ('kg' or 'lbs')
- * @returns {number} Weight converted to kg for storage
+ * @returns {number} Weight converted to kg for storage (rounded to .5 increments)
  */
 export const convertWeightForStorage = (weight, userUnit) => {
   return convertWeight(weight, userUnit, 'kg');
@@ -150,4 +161,7 @@ export const convertWeightForStorage = (weight, userUnit) => {
  */
 export const convertWeightFromStorage = (weight, preferredUnit) => {
   return convertWeight(weight, 'kg', preferredUnit);
-}; 
+};
+
+// Export the roundToHalfIncrement function
+export { roundToHalfIncrement, formatSmartDecimals };
