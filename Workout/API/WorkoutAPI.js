@@ -1,11 +1,11 @@
 import "react-native-get-random-values";
-import getBaseUrl from "./getBaseUrl";
+import getBaseUrl from "./utils/getBaseUrl";
 import APIBase from './utils/APIBase';
 import { dbManager } from "./local/dbManager";
 import { workoutCache } from "./local/WorkoutCache";
 import { backgroundProcessor } from "./local/BackgroundProcessor";
 import { v4 as uuid } from "uuid";
-import { storage } from "./tokenStorage";
+import { storage } from "./local/tokenStorage";
 import { syncManager } from "./local/syncManager";
 import exercisesAPI from "./exercisesAPI";
 

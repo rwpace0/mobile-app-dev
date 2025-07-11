@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { createStyles } from '../styles/header.styles';
-import { getColors } from '../constants/colors';
-import { useTheme } from '../state/SettingsContext';
+import { createStyles } from '../../styles/header.styles';
+import { getColors } from '../../constants/colors';
+import { useTheme } from '../../state/SettingsContext';
 
 const Header = ({ title, leftComponent, rightComponent }) => {
   const navigation = useNavigation();

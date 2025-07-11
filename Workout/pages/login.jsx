@@ -7,7 +7,7 @@ import {
   Image,
   Alert,
 } from "react-native";
-import { useAuth } from "../API/authContext";
+import { useAuth } from "../API/auth/authContext";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";

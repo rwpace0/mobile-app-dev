@@ -1,6 +1,6 @@
 import axios from 'axios';
 import NetInfo from '@react-native-community/netinfo';
-import { storage } from '../tokenStorage';
+import { storage } from '../local/tokenStorage';
 import RateLimiter from './RateLimiter';
 import LocalStorageManager from './LocalStorageManager';
 import Cache from './Cache';

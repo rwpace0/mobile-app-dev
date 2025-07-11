@@ -13,14 +13,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from 'expo-image-picker';
-import { createStyles } from "../styles/createExercise.styles";
-import exercisesAPI from "../API/exercisesAPI";
-import { mediaAPI } from "../API/mediaAPI";
-import { requestMediaLibraryPermission, validateImageFile } from "../utils/permissions";
-import Header from "./header";
-import { getColors } from "../constants/colors";
-import { Spacing } from "../constants/theme";
-import { useTheme } from "../state/SettingsContext";
+import { createStyles } from "../../styles/createExercise.styles";
+import exercisesAPI from "../../API/exercisesAPI";
+import { mediaAPI } from "../../API/mediaAPI";
+import { requestMediaLibraryPermission, validateImageFile } from "../../utils/permissions";
+import Header from "../../components/static/header";
+import { getColors } from "../../constants/colors";
+import { Spacing } from "../../constants/theme";
+import { useTheme } from "../../state/SettingsContext";
 
 const equipmentOptions = [
   "Dumbbell",

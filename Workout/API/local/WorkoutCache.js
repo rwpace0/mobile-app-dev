@@ -73,10 +73,10 @@ class LRUCache {
 class WorkoutCache {
   constructor() {
     // Cache for detailed workout data - increased size from 200 to 500
-    this.workoutDetailsCache = new LRUCache(500);
+    this.workoutDetailsCache = new LRUCache(50);
 
     // Cache for workout lists (e.g. paginated results) - increased size from 15 to 30
-    this.workoutListCache = new LRUCache(30);
+    this.workoutListCache = new LRUCache(10);
 
     // Background cleanup interval - run cleanup every 5 minutes instead of 1
     setInterval(() => this.cleanupExpired(), 5 * 60 * 1000);

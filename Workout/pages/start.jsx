@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import templateAPI from "../API/templateAPI";
 import exercisesAPI from "../API/exercisesAPI";
-import Header from "../components/header";
+import Header from "../components/static/header";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/start.styles";
 import { useTheme } from "../state/SettingsContext";

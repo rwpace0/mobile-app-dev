@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from './authAPI';
-import getBaseUrl from './getBaseUrl';
-import { storage } from './tokenStorage';
+import getBaseUrl from '../utils/getBaseUrl';
+import { storage } from '../local/tokenStorage';
 
 const AuthContext = createContext(null);
 

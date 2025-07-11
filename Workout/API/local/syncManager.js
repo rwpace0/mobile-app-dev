@@ -1,5 +1,5 @@
 import NetInfo from "@react-native-community/netinfo";
-import { storage } from "../tokenStorage";
+import { storage } from "./tokenStorage";
 import { AppState } from "react-native";
 
 class SyncManager {

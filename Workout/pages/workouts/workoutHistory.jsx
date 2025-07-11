@@ -9,13 +9,13 @@ import {
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import workoutAPI from "../API/workoutAPI";
-import Header from "../components/header";
-import { createStyles } from "../styles/workoutHistory.styles";
-import { getColors } from "../constants/colors";
-import { Spacing } from "../constants/theme";
-import { useTheme } from "../state/SettingsContext";
-import { useWeight } from "../utils/useWeight";
+import workoutAPI from "../../API/workoutAPI";
+import Header from "../../components/static/header";
+import { createStyles } from "../../styles/workoutHistory.styles";
+import { getColors } from "../../constants/colors";
+import { Spacing } from "../../constants/theme";
+import { useTheme } from "../../state/SettingsContext";
+import { useWeight } from "../../utils/useWeight";
 
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();

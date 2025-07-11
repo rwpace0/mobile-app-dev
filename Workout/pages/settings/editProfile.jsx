@@ -12,11 +12,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../API/authContext';
+import { useAuth } from '../../API/auth/authContext';
 import { createStyles } from '../../styles/editProfile.styles';
 import { getColors } from '../../constants/colors';
 import { useTheme } from '../../state/SettingsContext';
-import Header from '../../components/header';
+import Header from '../../components/static/header';
 import { mediaAPI } from '../../API/mediaAPI';
 import { mediaCache } from '../../API/local/MediaCache';
 import { profileAPI } from '../../API/profileAPI';

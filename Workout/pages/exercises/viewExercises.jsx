@@ -10,14 +10,14 @@ import {
   Image,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { createStyles } from "../styles/display.styles";
-import exercisesAPI from "../API/exercisesAPI";
+import { createStyles } from "../../styles/display.styles";
+import exercisesAPI from "../../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
-import { mediaCache } from "../API/local/MediaCache";
-import { getColors } from "../constants/colors";
-import { useTheme } from "../state/SettingsContext";
-import Header from "../components/header";
+import { mediaCache } from "../../API/local/MediaCache";
+import { getColors } from "../../constants/colors";
+import { useTheme } from "../../state/SettingsContext";
+import Header from "../../components/static/header";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style, highlightStyle }) => {

@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
-import { useAuth } from '../API/authContext';
-import getBaseUrl from '../API/getBaseUrl';
+import { useAuth } from '../API/auth/authContext';
+import getBaseUrl from '../API/utils/getBaseUrl';
 import { createStyles } from "../styles/login.styles";
 
 const EmailVerification = () => {

@@ -9,14 +9,14 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../API/authContext';
-import { createStyles } from '../styles/profile.styles';
-import { getColors } from '../constants/colors';
-import { useTheme } from '../state/SettingsContext';
-import Header from '../components/header';
-import workoutAPI from '../API/workoutAPI';
-import { mediaCache } from '../API/local/MediaCache';
-import { profileAPI } from '../API/profileAPI';
+import { useAuth } from '../../API/auth/authContext';
+import { createStyles } from '../../styles/profile.styles';
+import { getColors } from '../../constants/colors';
+import { useTheme } from '../../state/SettingsContext';
+import Header from '../../components/static/header';
+import workoutAPI from '../../API/workoutAPI';
+import { mediaCache } from '../../API/local/MediaCache';
+import { profileAPI } from '../../API/profileAPI';
 import { useFocusEffect } from '@react-navigation/native';
 
 const Profile = ({ navigation }) => {

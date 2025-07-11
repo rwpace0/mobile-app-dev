@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { storage } from './tokenStorage';
-import getBaseUrl from './getBaseUrl';
+import { storage } from './local/tokenStorage';
+import getBaseUrl from './utils/getBaseUrl';
 import { mediaCache } from './local/MediaCache';
 import * as FileSystem from 'expo-file-system';
 

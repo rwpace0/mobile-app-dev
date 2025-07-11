@@ -13,14 +13,14 @@ import {
   Keyboard,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import exercisesAPI from "../API/exercisesAPI";
+import exercisesAPI from "../../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
-import Header from "./header";
+import Header from "../../components/static/header";
 import * as FileSystem from "expo-file-system";
-import { getColors } from "../constants/colors";
-import { Spacing } from "../constants/theme";
-import { useTheme } from "../state/SettingsContext";
-import { createStyles } from "../styles/display.styles";
+import { getColors } from "../../constants/colors";
+import { Spacing } from "../../constants/theme";
+import { useTheme } from "../../state/SettingsContext";
+import { createStyles } from "../../styles/display.styles";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style, highlightStyle }) => {

@@ -11,16 +11,16 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import exercisesAPI from "../API/exercisesAPI";
-import { createStyles } from "../styles/exerciseDetail.styles";
+import exercisesAPI from "../../API/exercisesAPI";
+import { createStyles } from "../../styles/exerciseDetail.styles";
 import { format } from "date-fns";
 import * as FileSystem from 'expo-file-system';
-import { getColors } from "../constants/colors";
-import { useTheme } from "../state/SettingsContext";
-import Header from "../components/header";
-import BottomSheetModal from "../components/modals/bottomModal";
-import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
-import { useWeight } from "../utils/useWeight";
+import { getColors } from "../../constants/colors";
+import { useTheme } from "../../state/SettingsContext";
+import Header from "../../components/static/header";
+import BottomSheetModal from "../../components/modals/bottomModal";
+import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
+import { useWeight } from "../../utils/useWeight";
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();

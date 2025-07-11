@@ -11,14 +11,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { createStyles } from "../styles/workoutPages.styles";
-import { getColors } from "../constants/colors";
-import { useTheme } from "../state/SettingsContext";
-import RoutineExerciseComponent from "../components/routineExerciseCard";
-import templateAPI from "../API/templateAPI";
-import exercisesAPI from "../API/exercisesAPI";
-import DeleteConfirmModal from "../components/modals/DeleteConfirmModal";
-import Header from "../components/header";
+import { createStyles } from "../../styles/workoutPages.styles";
+import { getColors } from "../../constants/colors";
+import { useTheme } from "../../state/SettingsContext";
+import RoutineExerciseComponent from "../../components/routineExerciseCard";
+import templateAPI from "../../API/templateAPI";
+import exercisesAPI from "../../API/exercisesAPI";
+import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
+import Header from "../../components/static/header";
 
 const EditRoutine = () => {
   const navigation = useNavigation();

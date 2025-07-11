@@ -10,13 +10,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import ActiveExerciseComponent from "../components/activeExerciseCard";
-import workoutAPI from "../API/workoutAPI";
-import Header from "../components/header";
-import { getColors } from "../constants/colors";
-import { useTheme } from "../state/SettingsContext";
-import { createStyles } from "../styles/workoutPages.styles";
-import { useWeight } from "../utils/useWeight";
+import ActiveExerciseComponent from "../../components/activeExerciseCard";
+import workoutAPI from "../../API/workoutAPI";
+import Header from "../../components/static/header";
+import { getColors } from "../../constants/colors";
+import { useTheme } from "../../state/SettingsContext";
+import { createStyles } from "../../styles/workoutPages.styles";
+import { useWeight } from "../../utils/useWeight";
 
 const EditWorkoutPage = () => {
   const navigation = useNavigation();

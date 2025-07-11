@@ -16,7 +16,7 @@ import {
 } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { createStyles } from "../../styles/settings.styles";
-import Header from "../../components/header";
+import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
 import { useSettings, useTheme } from "../../state/SettingsContext";
 

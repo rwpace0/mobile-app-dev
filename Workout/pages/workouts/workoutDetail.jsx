@@ -10,12 +10,12 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { createStyles } from "../styles/workoutHistory.styles";
-import { getColors } from "../constants/colors";
-import { useTheme } from "../state/SettingsContext";
-import workoutAPI from "../API/workoutAPI";
-import Header from "../components/header";
-import { useWeight } from "../utils/useWeight";
+import { createStyles } from "../../styles/workoutHistory.styles";
+import { getColors } from "../../constants/colors";
+import { useTheme } from "../../state/SettingsContext";
+import workoutAPI from "../../API/workoutAPI";
+import Header from "../../components/static/header";
+import { useWeight } from "../../utils/useWeight";
 
 const formatDate = (isoString) => {
   try {

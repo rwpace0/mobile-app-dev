@@ -88,6 +88,123 @@ export async function createTemplate(req, res) {
   }
 }
 
+export async function updateTemplate(req, res) {
+  try {
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "No authorization header" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    // Get user data from Supabase
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    // Create authenticated client
+    const supabaseWithAuth = getClientToken(token);
+
+    const { templateId } = req.params;
+    const { name, is_public, exercises } = req.body;
+
+    // Basic validation
+    if (!templateId || !name || !Array.isArray(exercises)) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check if template exists and belongs to the user
+    const { data: existingTemplate, error: templateCheckError } = await supabaseWithAuth
+      .from("workout_templates")
+      .select("template_id, created_by")
+      .eq("template_id", templateId)
+      .eq("created_by", user.id)
+      .single();
+
+    if (templateCheckError || !existingTemplate) {
+      return res.status(404).json({ error: "Template not found or access denied" });
+    }
+
+    // 1. Update the template record
+    const { data: updatedTemplate, error: templateUpdateError } = await supabaseWithAuth
+      .from("workout_templates")
+      .update({
+        name,
+        is_public: is_public || false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("template_id", templateId)
+      .select()
+      .single();
+
+    if (templateUpdateError) {
+      console.error("Template update error:", templateUpdateError);
+      return res.status(500).json({
+        error: "Failed to update template",
+        details: templateUpdateError.message,
+      });
+    }
+
+    // 2. Delete existing template exercises
+    const { error: deleteExercisesError } = await supabaseWithAuth
+      .from("template_exercises")
+      .delete()
+      .eq("template_id", templateId);
+
+    if (deleteExercisesError) {
+      console.error("Template exercises delete error:", deleteExercisesError);
+      return res.status(500).json({
+        error: "Failed to delete existing template exercises",
+        details: deleteExercisesError.message,
+      });
+    }
+
+    // 3. Insert new template exercises
+    let templateExercisesData = [];
+    if (exercises.length > 0) {
+      const templateExercisesToInsert = exercises.map((ex) => ({
+        template_id: templateId,
+        exercise_id: ex.exercise_id,
+        exercise_order: ex.exercise_order,
+        sets: ex.sets || 1,
+      }));
+
+      const { data: insertedExercises, error: templateExercisesError } =
+        await supabaseWithAuth
+          .from("template_exercises")
+          .insert(templateExercisesToInsert)
+          .select();
+
+      if (templateExercisesError) {
+        console.error("Template exercises insert error:", templateExercisesError);
+        return res.status(500).json({
+          error: "Failed to create template exercises",
+          details: templateExercisesError.message,
+        });
+      }
+
+      templateExercisesData = insertedExercises;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Template updated successfully",
+      template: updatedTemplate,
+      template_exercises: templateExercisesData,
+    });
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
 export async function getTemplates(req, res) {
   try {
     // Get the token from the Authorization header

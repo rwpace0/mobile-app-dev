@@ -15,10 +15,10 @@ import {
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { createStyles } from "../../styles/settings.styles";
-import Header from "../../components/header";
+import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
-import { useAuth } from "../../API/authContext";
+import { useAuth } from "../../API/auth/authContext";
 
 const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {
   const { isDark } = useTheme();
