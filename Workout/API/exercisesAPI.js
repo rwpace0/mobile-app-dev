@@ -412,7 +412,7 @@ class ExercisesAPI extends APIBase {
     }
   }
 
-  async updateExercise(exerciseId, { name, equipment, muscle_group, instruction = null }) {
+  async updateExercise(exerciseId, { name, equipment, muscle_group, instruction = null }, syncImmediately = false) {
     try {
       await this.ensureInitialized();
       
@@ -433,7 +433,7 @@ class ExercisesAPI extends APIBase {
         muscle_group,
         instruction: instruction?.trim() || null,
         updated_at: now,
-        sync_priority: 'background'
+        sync_priority: syncImmediately ? 'immediate' : 'background'
       };
 
       console.log('[ExercisesAPI] Updating exercise:', exerciseId, updateData);
@@ -460,9 +460,16 @@ class ExercisesAPI extends APIBase {
       this.clearExerciseCache(exerciseId);
       this.cache.clear('exercises:all');
 
-      // For text-only updates, let background sync handle it (offline-first approach)
-      // Only force immediate sync when media is involved via syncExerciseWithMedia
-      console.log('[ExercisesAPI] Exercise updated locally, will sync in background');
+      if (syncImmediately) {
+        try {
+            console.log('[ExercisesAPI] Syncing exercise immediately');
+            await this.syncSpecificExercise(exerciseId);
+        } catch (syncError) {
+            console.warn('[ExercisesAPI] Immediate sync failed, will sync later:', syncError);
+        }
+      } else {
+        console.log('[ExercisesAPI] Exercise updated locally, will sync in background');
+      }
 
       // Return updated exercise
       return await this.getExerciseById(exerciseId);
