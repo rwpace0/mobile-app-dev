@@ -149,7 +149,7 @@ export async function updateExercise(req, res) {
     // Check if exercise exists and belongs to the user
     const { data: exercise, error: exerciseCheckError } = await supabaseWithAuth
       .from("exercises")
-      .select("exercise_id, created_by, is_public")
+      .select("exercise_id, created_by, is_public, media_url")
       .eq("exercise_id", exerciseId)
       .single();
 
@@ -167,7 +167,7 @@ export async function updateExercise(req, res) {
       return res.status(403).json({ error: "You don't have permission to update this exercise" });
     }
 
-    // Update the exercise
+    // Update the exercise - preserve existing media_url if not provided
     const { data: updatedExercise, error: updateError } = await supabaseWithAuth
       .from("exercises")
       .update({
@@ -175,6 +175,8 @@ export async function updateExercise(req, res) {
         equipment,
         muscle_group,
         instruction: instruction || null,
+        // Preserve existing media_url if not explicitly provided
+        media_url: req.body.media_url !== undefined ? req.body.media_url : exercise.media_url,
         updated_at: new Date().toISOString(),
       })
       .eq("exercise_id", exerciseId)

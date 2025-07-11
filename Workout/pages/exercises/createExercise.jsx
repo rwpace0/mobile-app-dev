@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { createStyles } from "../../styles/createExercise.styles";
 import exercisesAPI from "../../API/exercisesAPI";
 import { mediaAPI } from "../../API/mediaAPI";
@@ -94,7 +95,7 @@ const CreateExercise = () => {
       
       // Set existing image if available
       if (exerciseToEdit.local_media_path) {
-        setSelectedImage(`file://${exerciseToEdit.local_media_path}`);
+        setSelectedImage(`file://${FileSystem.cacheDirectory}app_media/exercises/${exerciseToEdit.local_media_path}`);
       }
     }
   }, [isEditing, exerciseToEdit, navigation]);
@@ -135,8 +136,11 @@ const CreateExercise = () => {
         console.log("[CreateExercise] Exercise created locally:", exercise);
       }
 
-      // Handle image upload if there's a new image selected
-      if (selectedImage && !selectedImage.startsWith('http')) {
+      // Handle image upload only if there's a new image selected
+      const hasNewImage = selectedImage && !selectedImage.startsWith('http') && 
+                          (!isEditing || !selectedImage.includes(FileSystem.cacheDirectory));
+      
+      if (hasNewImage) {
         try {
           setUploadingMedia(true);
           
@@ -160,6 +164,9 @@ const CreateExercise = () => {
         } finally {
           setUploadingMedia(false);
         }
+      } else {
+        // No image upload needed - exercise update is already stored locally and will sync in background
+        console.log(`[CreateExercise] Exercise ${isEditing ? 'updated' : 'created'} locally, will sync in background`);
       }
 
       navigation.goBack();

@@ -33,43 +33,25 @@ class ExercisesAPI extends APIBase {
               continue;
             }
 
-            // Always use POST for pending_sync exercises (like template pattern)
+            // Determine if this is a new exercise or an update
+            const isUpdate = exercise.last_synced_at && exercise.sync_status === 'pending_sync';
+            const method = isUpdate ? 'PUT' : 'POST';
+            const url = isUpdate ? `${this.baseUrl}/${exercise.exercise_id}` : `${this.baseUrl}/create`;
+
+            console.log(`[ExercisesAPI] ${isUpdate ? 'Updating' : 'Creating'} exercise ${exercise.exercise_id} via ${method} ${url}`);
+
             const response = await this.makeAuthenticatedRequest({
-              method: 'POST',
-              url: `${this.baseUrl}/create`,
+              method,
+              url,
               data: exercise
             });
 
-            // Get server's exercise_id from response
-            const serverExerciseId = response.data.exercise_id;
             const now = new Date().toISOString();
 
-            if (serverExerciseId && serverExerciseId !== exercise.exercise_id) {
-              console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exercise.exercise_id}`);
-              // Update local database with server's ID
-              await this.db.execute(
-                `UPDATE exercises 
-                 SET exercise_id = ?, sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
-                 WHERE exercise_id = ?`,
-                [serverExerciseId, now, exercise.exercise_id]
-              );
+            if (isUpdate) {
+              // For updates, just mark as synced - no ID changes expected
+              console.log(`[ExercisesAPI] Exercise ${exercise.exercise_id} updated successfully`);
               
-              // Also update any related records that might reference this exercise
-              await this.db.execute(
-                `UPDATE workout_exercises 
-                 SET exercise_id = ?
-                 WHERE exercise_id = ?`,
-                [serverExerciseId, exercise.exercise_id]
-              );
-              
-              await this.db.execute(
-                `UPDATE template_exercises 
-                 SET exercise_id = ?
-                 WHERE exercise_id = ?`,
-                [serverExerciseId, exercise.exercise_id]
-              );
-            } else {
-              // Update sync status using existing ID
               await this.db.execute(
                 `UPDATE exercises 
                  SET sync_status = 'synced',
@@ -78,9 +60,48 @@ class ExercisesAPI extends APIBase {
                  WHERE exercise_id = ?`,
                 [now, exercise.exercise_id]
               );
+            } else {
+              // For new exercises, server might assign a new ID
+              const serverExerciseId = response.data.exercise_id;
+
+              if (serverExerciseId && serverExerciseId !== exercise.exercise_id) {
+                console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exercise.exercise_id}`);
+                // Update local database with server's ID
+                await this.db.execute(
+                  `UPDATE exercises 
+                   SET exercise_id = ?, sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
+                   WHERE exercise_id = ?`,
+                  [serverExerciseId, now, exercise.exercise_id]
+                );
+                
+                // Also update any related records that might reference this exercise
+                await this.db.execute(
+                  `UPDATE workout_exercises 
+                   SET exercise_id = ?
+                   WHERE exercise_id = ?`,
+                  [serverExerciseId, exercise.exercise_id]
+                );
+                
+                await this.db.execute(
+                  `UPDATE template_exercises 
+                   SET exercise_id = ?
+                   WHERE exercise_id = ?`,
+                  [serverExerciseId, exercise.exercise_id]
+                );
+              } else {
+                // Update sync status using existing ID
+                await this.db.execute(
+                  `UPDATE exercises 
+                   SET sync_status = 'synced',
+                       sync_priority = NULL,
+                       last_synced_at = ?
+                   WHERE exercise_id = ?`,
+                  [now, exercise.exercise_id]
+                );
+              }
             }
 
-            console.log(`[ExercisesAPI] Successfully synced exercise ${exercise.exercise_id} -> ${serverExerciseId || exercise.exercise_id}`);
+            console.log(`[ExercisesAPI] Successfully ${isUpdate ? 'updated' : 'created'} exercise ${exercise.exercise_id}`);
             
             // Clear cache to ensure fresh data with correct IDs
             this.cache.clearPattern('^exercises:');
@@ -395,6 +416,16 @@ class ExercisesAPI extends APIBase {
     try {
       await this.ensureInitialized();
       
+      // Get existing exercise to preserve media_url and other fields
+      const [existingExercise] = await this.db.query(
+        'SELECT * FROM exercises WHERE exercise_id = ?',
+        [exerciseId]
+      );
+
+      if (!existingExercise) {
+        throw new Error('Exercise not found');
+      }
+      
       const now = new Date().toISOString();
       const updateData = {
         name: name.trim(),
@@ -402,12 +433,13 @@ class ExercisesAPI extends APIBase {
         muscle_group,
         instruction: instruction?.trim() || null,
         updated_at: now,
-        sync_priority: 'immediate'
+        sync_priority: 'background'
       };
 
       console.log('[ExercisesAPI] Updating exercise:', exerciseId, updateData);
+      console.log('[ExercisesAPI] Preserving existing media_url:', existingExercise.media_url);
 
-      // Update locally first
+      // Update locally first - preserve existing media_url
       await this.db.execute(
         `UPDATE exercises 
          SET name = ?, equipment = ?, muscle_group = ?, instruction = ?, 
@@ -428,12 +460,9 @@ class ExercisesAPI extends APIBase {
       this.clearExerciseCache(exerciseId);
       this.cache.clear('exercises:all');
 
-      // Try to sync immediately
-      try {
-        await this.syncSpecificExercise(exerciseId);
-      } catch (syncError) {
-        console.warn('[ExercisesAPI] Immediate sync failed, will sync later:', syncError);
-      }
+      // For text-only updates, let background sync handle it (offline-first approach)
+      // Only force immediate sync when media is involved via syncExerciseWithMedia
+      console.log('[ExercisesAPI] Exercise updated locally, will sync in background');
 
       // Return updated exercise
       return await this.getExerciseById(exerciseId);
@@ -597,52 +626,71 @@ class ExercisesAPI extends APIBase {
         }
       } else if (exercise.sync_status === 'pending_sync') {
         try {
-          // Always use POST for pending_sync exercises (like template pattern)
+          // Determine if this is a new exercise or an update
+          const isUpdate = exercise.last_synced_at;
+          const method = isUpdate ? 'PUT' : 'POST';
+          const url = isUpdate ? `${this.baseUrl}/${exerciseId}` : `${this.baseUrl}/create`;
+
+          console.log(`[ExercisesAPI] ${isUpdate ? 'Updating' : 'Creating'} exercise ${exerciseId} via ${method} ${url}`);
+
           const response = await this.makeAuthenticatedRequest({
-            method: 'POST',
-            url: `${this.baseUrl}/create`,
+            method,
+            url,
             data: exercise
           });
 
-          // Get server's exercise_id from response
-          const serverExerciseId = response.data.exercise_id;
           const now = new Date().toISOString();
 
-          if (serverExerciseId && serverExerciseId !== exerciseId) {
-            console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
-            // Update local database with server's ID
-            await this.db.execute(
-              `UPDATE exercises 
-               SET exercise_id = ?, sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
-               WHERE exercise_id = ?`,
-              [serverExerciseId, now, exerciseId]
-            );
+          if (isUpdate) {
+            // For updates, just mark as synced - no ID changes expected
+            console.log(`[ExercisesAPI] Exercise ${exerciseId} updated successfully`);
             
-            // Also update any related records that might reference this exercise
-            await this.db.execute(
-              `UPDATE workout_exercises 
-               SET exercise_id = ?
-               WHERE exercise_id = ?`,
-              [serverExerciseId, exerciseId]
-            );
-            
-            await this.db.execute(
-              `UPDATE template_exercises 
-               SET exercise_id = ?
-               WHERE exercise_id = ?`,
-              [serverExerciseId, exerciseId]
-            );
-          } else {
-            // Update sync status using existing ID
             await this.db.execute(
               `UPDATE exercises 
                SET sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
                WHERE exercise_id = ?`,
               [now, exerciseId]
             );
+          } else {
+            // For new exercises, server might assign a new ID
+            const serverExerciseId = response.data.exercise_id;
+
+            if (serverExerciseId && serverExerciseId !== exerciseId) {
+              console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
+              // Update local database with server's ID
+              await this.db.execute(
+                `UPDATE exercises 
+                 SET exercise_id = ?, sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
+                 WHERE exercise_id = ?`,
+                [serverExerciseId, now, exerciseId]
+              );
+              
+              // Also update any related records that might reference this exercise
+              await this.db.execute(
+                `UPDATE workout_exercises 
+                 SET exercise_id = ?
+                 WHERE exercise_id = ?`,
+                [serverExerciseId, exerciseId]
+              );
+              
+              await this.db.execute(
+                `UPDATE template_exercises 
+                 SET exercise_id = ?
+                 WHERE exercise_id = ?`,
+                [serverExerciseId, exerciseId]
+              );
+            } else {
+              // Update sync status using existing ID
+              await this.db.execute(
+                `UPDATE exercises 
+                 SET sync_status = 'synced', sync_priority = NULL, last_synced_at = ?
+                 WHERE exercise_id = ?`,
+                [now, exerciseId]
+              );
+            }
           }
           
-          console.log(`[ExercisesAPI] Successfully synced exercise ${exerciseId} -> ${serverExerciseId || exerciseId}`);
+          console.log(`[ExercisesAPI] Successfully ${isUpdate ? 'updated' : 'created'} exercise ${exerciseId}`);
           
           // Clear cache to ensure fresh data with correct IDs
           this.cache.clearPattern('^exercises:');
@@ -701,33 +749,29 @@ class ExercisesAPI extends APIBase {
         updated_at: exercise.updated_at
       };
       
-      console.log('[ExercisesAPI] Making server request to create exercise:', exerciseForServer);
+      // Determine if this is a new exercise or an update
+      const isUpdate = exercise.last_synced_at;
+      const method = isUpdate ? 'PUT' : 'POST';
+      const url = isUpdate ? `${this.baseUrl}/${exerciseId}` : `${this.baseUrl}/create`;
+      
+      console.log(`[ExercisesAPI] Making server request to ${isUpdate ? 'update' : 'create'} exercise:`, exerciseForServer);
       
       // Sync to server
       const response = await this.makeAuthenticatedRequest({
-        method: 'POST',
-        url: `${this.baseUrl}/create`,
+        method,
+        url,
         data: exerciseForServer
       });
       
       console.log('[ExercisesAPI] Server response:', response.data);
       
-      // Update sync status and use server's exercise_id if different
+      // Update sync status
       const now = new Date().toISOString();
-      const serverExerciseId = response.data.exercise_id;
       
-      if (serverExerciseId && serverExerciseId !== exerciseId) {
-        console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
-        await this.db.execute(
-          `UPDATE exercises 
-           SET exercise_id = ?,
-               sync_status = 'synced',
-               sync_priority = NULL,
-               last_synced_at = ?
-           WHERE exercise_id = ?`,
-          [serverExerciseId, now, exerciseId]
-        );
-      } else {
+      if (isUpdate) {
+        // For updates, just mark as synced - no ID changes expected
+        console.log(`[ExercisesAPI] Exercise ${exerciseId} updated successfully`);
+        
         await this.db.execute(
           `UPDATE exercises 
            SET sync_status = 'synced',
@@ -736,6 +780,31 @@ class ExercisesAPI extends APIBase {
            WHERE exercise_id = ?`,
           [now, exerciseId]
         );
+      } else {
+        // For new exercises, server might assign a new ID
+        const serverExerciseId = response.data.exercise_id;
+        
+        if (serverExerciseId && serverExerciseId !== exerciseId) {
+          console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
+          await this.db.execute(
+            `UPDATE exercises 
+             SET exercise_id = ?,
+                 sync_status = 'synced',
+                 sync_priority = NULL,
+                 last_synced_at = ?
+             WHERE exercise_id = ?`,
+            [serverExerciseId, now, exerciseId]
+          );
+        } else {
+          await this.db.execute(
+            `UPDATE exercises 
+             SET sync_status = 'synced',
+                 sync_priority = NULL,
+                 last_synced_at = ?
+             WHERE exercise_id = ?`,
+            [now, exerciseId]
+          );
+        }
       }
       
       console.log('[ExercisesAPI] Exercise synced successfully with server');
@@ -743,7 +812,7 @@ class ExercisesAPI extends APIBase {
       
       return {
         ...exercise,
-        exercise_id: serverExerciseId || exerciseId,
+        exercise_id: isUpdate ? exerciseId : (response.data.exercise_id || exerciseId),
         sync_status: 'synced',
         last_synced_at: now
       };
