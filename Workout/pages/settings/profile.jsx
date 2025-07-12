@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  Alert,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,8 @@ import workoutAPI from '../../API/workoutAPI';
 import { mediaCache } from '../../API/local/MediaCache';
 import { profileAPI } from '../../API/profileAPI';
 import { useFocusEffect } from '@react-navigation/native';
+import AlertModal from '../../components/modals/AlertModal';
+import { useAlertModal } from '../../utils/useAlertModal';
 
 const Profile = ({ navigation }) => {
   const [activeMetric, setActiveMetric] = useState('Duration');
@@ -28,6 +29,7 @@ const Profile = ({ navigation }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const { alertState, showInfo, hideAlert } = useAlertModal();
 
   const fetchWorkoutCount = async () => {
     try {
@@ -145,7 +147,7 @@ const Profile = ({ navigation }) => {
       case 'Statistics':
       case 'Measures':
       case 'Calendar':
-        Alert.alert(
+        showInfo(
           'Coming Soon',
           `The ${screen} feature will be available in a future update!`
         );
@@ -208,6 +210,19 @@ const Profile = ({ navigation }) => {
         {renderProfile()}
         {renderDashboard()}
       </ScrollView>
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </SafeAreaView>
   );
 };

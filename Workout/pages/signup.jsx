@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Alert,
 } from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { authAPI } from "../API/auth/authAPI";
@@ -14,6 +13,8 @@ import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import debounce from "lodash/debounce";
+import AlertModal from "../components/modals/AlertModal";
+import { useAlertModal } from "../utils/useAlertModal";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -30,6 +31,7 @@ const SignUpPage = ({ navigation }) => {
   const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const { signup, error } = useAuth();
+  const { alertState, showError, showSuccess, hideAlert } = useAlertModal();
 
   // Debounced availability check
   const checkAvailability = useCallback(
@@ -135,19 +137,19 @@ const SignUpPage = ({ navigation }) => {
 
   const handleSignup = async () => {
     if (!email || !password || !username) {
-      Alert.alert("Error", "Please fill in all fields");
+      showError("Error", "Please fill in all fields");
       return;
     }
 
     if (!validateEmail(email)) {
       setEmailError(true);
-      Alert.alert("Error", "Please enter a valid email address");
+      showError("Error", "Please enter a valid email address");
       return;
     }
 
     if (!validateUsername(username)) {
       setUsernameError(true);
-      Alert.alert(
+      showError(
         "Error",
         "Username must be 3-20 characters and can only contain letters, numbers, underscores, and hyphens"
       );
@@ -155,12 +157,12 @@ const SignUpPage = ({ navigation }) => {
     }
 
     if (!isUsernameAvailable || isCheckingUsername) {
-      Alert.alert("Error", "Please choose a different username");
+      showError("Error", "Please choose a different username");
       return;
     }
 
     if (!isPasswordValid) {
-      Alert.alert("Error", "Please meet all password requirements");
+      showError("Error", "Please meet all password requirements");
       return;
     }
 
@@ -175,18 +177,15 @@ const SignUpPage = ({ navigation }) => {
       }
 
       const result = await signup(email, password, username);
-      Alert.alert(
+      showSuccess(
         "Success",
         "Registration successful! Please check your email to verify your account.",
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]
+        {
+          onConfirm: () => navigation.navigate("Login"),
+        }
       );
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to sign up");
+      showError("Error", error.message || "Failed to sign up");
     } finally {
       setLoading(false);
     }
@@ -318,6 +317,19 @@ const SignUpPage = ({ navigation }) => {
           <Text style={styles.bluetextFooter}>Log in</Text>
         </Text>
       </TouchableOpacity>
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </View>
   );
 };

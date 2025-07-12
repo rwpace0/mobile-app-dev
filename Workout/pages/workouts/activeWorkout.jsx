@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  Alert,
+  
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -18,6 +18,8 @@ import { createStyles } from "../../styles/workoutPages.styles";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import { useActiveWorkout } from "../../state/ActiveWorkoutContext";
 import { useWeight } from "../../utils/useWeight";
+import AlertModal from "../../components/modals/AlertModal";
+import { useAlertModal } from "../../utils/useAlertModal";
 
 const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
@@ -35,6 +37,7 @@ const ActiveWorkoutPage = () => {
   const [workoutName, setWorkoutName] = useState("");
   const [exerciseTotals, setExerciseTotals] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { alertState, showError, showWarning, showInfo, showSuccess, hideAlert } = useAlertModal();
 
   // Initialize state on mount - optimized for faster loading
   useEffect(() => {
@@ -176,7 +179,7 @@ const ActiveWorkoutPage = () => {
       const validExercises = exercisesPayload.filter(ex => ex.sets.length > 0);
 
       if (validExercises.length === 0) {
-        Alert.alert(
+        showWarning(
           "No Sets Recorded",
           "Please add at least one set with weight and reps before finishing the workout."
         );
@@ -198,7 +201,7 @@ const ActiveWorkoutPage = () => {
       navigation.goBack();
     } catch (err) {
       console.error("Failed to save workout:", err);
-      Alert.alert(
+      showError(
         "Error",
         "Failed to save workout. Please try again."
       );
@@ -228,6 +231,40 @@ const ActiveWorkoutPage = () => {
   const handleMinimizeWorkout = () => {
     // Close the screen, but keep the workout active in context
     navigation.goBack();
+  };
+
+  // Example functions showing different alert types
+  const handleShowInfo = () => {
+    showInfo(
+      "Workout Tips",
+      "Remember to maintain proper form and take adequate rest between sets for optimal results."
+    );
+  };
+
+  const handleShowSuccess = () => {
+    showSuccess(
+      "Great Job!",
+      "You've completed 5 sets. Keep up the momentum!"
+    );
+  };
+
+  const handleShowWarningWithConfirm = () => {
+    showWarning(
+      "Unsaved Changes",
+      "You have unsaved changes. Are you sure you want to leave?",
+      {
+        showCancel: true,
+        confirmText: "Leave",
+        cancelText: "Stay",
+        onConfirm: () => {
+          console.log("User chose to leave");
+          navigation.goBack();
+        },
+        onCancel: () => {
+          console.log("User chose to stay");
+        }
+      }
+    );
   };
 
   return (
@@ -338,6 +375,18 @@ const ActiveWorkoutPage = () => {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDiscard}
         title="Discard Workout?"
+      />
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
       />
     </SafeAreaView>
   );

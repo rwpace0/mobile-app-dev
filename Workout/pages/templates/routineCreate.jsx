@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -17,6 +16,8 @@ import RoutineExerciseComponent from "../../components/routineExerciseCard";
 import templateAPI from "../../API/templateAPI";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import Header from "../../components/static/header";
+import AlertModal from "../../components/modals/AlertModal";
+import { useAlertModal } from "../../utils/useAlertModal";
 
 const RoutineCreate = () => {
   const navigation = useNavigation();
@@ -29,6 +30,7 @@ const RoutineCreate = () => {
   const [totalSets, setTotalSets] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const { alertState, showError, hideAlert } = useAlertModal();
 
 
 
@@ -65,12 +67,12 @@ const RoutineCreate = () => {
 
     // Validate routine name
     if (!routineName.trim()) {
-      Alert.alert("Error", "Please enter a routine name");
+      showError("Error", "Please enter a routine name");
       return;
     }
 
     if (exercises.length === 0) {
-      Alert.alert("Error", "Please add at least one exercise");
+      showError("Error", "Please add at least one exercise");
       return;
     }
 
@@ -98,7 +100,7 @@ const RoutineCreate = () => {
       console.log("Template save response:", response);
     } catch (error) {
       console.error("Failed to save template:", error);
-      Alert.alert(
+      showError(
         "Error",
         error.response?.data?.error ||
           error.message ||
@@ -194,6 +196,19 @@ const RoutineCreate = () => {
         onClose={() => setShowCancelConfirm(false)}
         onConfirm={() => navigation.goBack()}
         title="Discard Changes?"
+      />
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
       />
     </SafeAreaView>
   );

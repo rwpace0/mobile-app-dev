@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { getColors } from "../constants/colors";
@@ -12,6 +11,8 @@ import { useTheme } from "../state/SettingsContext";
 import { useAuth } from '../API/auth/authContext';
 import getBaseUrl from '../API/utils/getBaseUrl';
 import { createStyles } from "../styles/login.styles";
+import AlertModal from '../components/modals/AlertModal';
+import { useAlertModal } from '../utils/useAlertModal';
 
 const EmailVerification = () => {
   const { isDark } = useTheme();
@@ -20,6 +21,7 @@ const EmailVerification = () => {
   const [countdown, setCountdown] = useState(60);
   const [isResending, setIsResending] = useState(false);
   const { user, error } = useAuth();
+  const { alertState, showError, showSuccess, hideAlert } = useAlertModal();
 
   useEffect(() => {
     let timer;
@@ -51,9 +53,9 @@ const EmailVerification = () => {
       }
 
       setCountdown(60);
-      Alert.alert('Success', 'Verification email sent successfully!');
+      showSuccess('Success', 'Verification email sent successfully!');
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError('Error', error.message);
     } finally {
       setIsResending(false);
     }
@@ -97,6 +99,19 @@ const EmailVerification = () => {
           </Text>
         )}
       </TouchableOpacity>
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </View>
   );
 };

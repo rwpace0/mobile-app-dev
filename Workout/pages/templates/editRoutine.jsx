@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +18,8 @@ import templateAPI from "../../API/templateAPI";
 import exercisesAPI from "../../API/exercisesAPI";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import Header from "../../components/static/header";
+import AlertModal from "../../components/modals/AlertModal";
+import { useAlertModal } from "../../utils/useAlertModal";
 
 const EditRoutine = () => {
   const navigation = useNavigation();
@@ -27,7 +28,7 @@ const EditRoutine = () => {
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const { template_id } = route.params || {};
-  
+ 
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
   const [totalSets, setTotalSets] = useState(0);
@@ -35,6 +36,7 @@ const EditRoutine = () => {
   const [loading, setLoading] = useState(true);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [originalTemplate, setOriginalTemplate] = useState(null);
+  const { alertState, showError, showSuccess, hideAlert } = useAlertModal();
 
   useEffect(() => {
     if (template_id) {
@@ -48,8 +50,7 @@ const EditRoutine = () => {
       const template = await templateAPI.getTemplateById(template_id);
       
       if (!template) {
-        Alert.alert("Error", "Template not found");
-        navigation.goBack();
+        showError("Error", "Template not found");
         return;
       }
 
@@ -77,7 +78,7 @@ const EditRoutine = () => {
       }
     } catch (error) {
       console.error("Error loading template:", error);
-      Alert.alert("Error", "Failed to load routine data");
+      showError("Error", "Failed to load routine data");
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -124,12 +125,12 @@ const EditRoutine = () => {
 
     // Validate routine name
     if (!routineName.trim()) {
-      Alert.alert("Error", "Please enter a routine name");
+      showError("Error", "Please enter a routine name");
       return;
     }
 
     if (exercises.length === 0) {
-      Alert.alert("Error", "Please add at least one exercise");
+      showError("Error", "Please add at least one exercise");
       return;
     }
 
@@ -156,12 +157,12 @@ const EditRoutine = () => {
       const response = await templateAPI.updateTemplate(template_id, templateData);
       console.log("Template update response:", response);
       
-      Alert.alert("Success", "Routine updated successfully", [
-        { text: "OK", onPress: () => navigation.goBack() }
-      ]);
+      showSuccess("Success", "Routine updated successfully", {
+        onConfirm: () => navigation.goBack()
+      });
     } catch (error) {
       console.error("Failed to update template:", error);
-      Alert.alert(
+      showError(
         "Error",
         error.response?.data?.error ||
           error.message ||
@@ -271,6 +272,18 @@ const EditRoutine = () => {
         onConfirm={() => navigation.goBack()}
         title="Discard Changes?"
         message="Are you sure you want to discard your changes?"
+      />
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
       />
     </SafeAreaView>
   );

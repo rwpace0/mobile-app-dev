@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  Alert,
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +16,9 @@ import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/workoutPages.styles";
 import { useWeight } from "../../utils/useWeight";
+import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
+import AlertModal from "../../components/modals/AlertModal";
+import { useAlertModal } from "../../utils/useAlertModal";
 
 const EditWorkoutPage = () => {
   const navigation = useNavigation();
@@ -35,6 +37,8 @@ const EditWorkoutPage = () => {
   const [workoutName, setWorkoutName] = useState("");
   const [originalWorkout, setOriginalWorkout] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { alertState, showError, showWarning, hideAlert } = useAlertModal();
 
   useEffect(() => {
     if (workout_id) {
@@ -48,7 +52,7 @@ const EditWorkoutPage = () => {
       const workout = await workoutAPI.getWorkoutById(workout_id);
       
       if (!workout) {
-        Alert.alert("Error", "Workout not found");
+        
         navigation.goBack();
         return;
       }
@@ -109,7 +113,7 @@ const EditWorkoutPage = () => {
 
     } catch (error) {
       console.error("Error loading workout:", error);
-      Alert.alert("Error", "Failed to load workout data");
+      
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -141,18 +145,12 @@ const EditWorkoutPage = () => {
   };
 
   const handleDiscard = () => {
-    Alert.alert(
-      "Discard Changes",
-      "Are you sure you want to discard all changes? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Discard", 
-          style: "destructive",
-          onPress: () => navigation.goBack()
-        }
-      ]
-    );
+    if (showDeleteConfirm) {
+      // End workout in context
+      navigation.goBack();
+    } else {
+      setShowDeleteConfirm(true);
+    }
   };
 
   const handleExerciseStateChange = (exercise_id, { sets, notes }) => {
@@ -165,7 +163,7 @@ const EditWorkoutPage = () => {
   const handleSave = async () => {
     try {
       if (!workoutName.trim()) {
-        Alert.alert("Error", "Please enter a workout name");
+        showError("Error", "Please enter a workout name");
         return;
       }
 
@@ -198,7 +196,7 @@ const EditWorkoutPage = () => {
       const validExercises = exercisesPayload.filter(ex => ex.sets.length > 0);
 
       if (validExercises.length === 0) {
-        Alert.alert(
+        showWarning(
           "No Sets Recorded",
           "Please add at least one set with weight and reps before saving the workout."
         );
@@ -214,14 +212,10 @@ const EditWorkoutPage = () => {
 
       await workoutAPI.updateWorkout(workout_id, payload);
       
-      Alert.alert(
-        "Success",
-        "Workout updated successfully!",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
-      );
+      navigation.goBack();
     } catch (err) {
       console.error("Failed to update workout:", err);
-      Alert.alert(
+      showError(
         "Error",
         "Failed to update workout. Please try again."
       );
@@ -340,6 +334,26 @@ const EditWorkoutPage = () => {
           <Text style={styles.discardText}>Discard Changes</Text>
         </TouchableOpacity>
       </View>
+
+      <DeleteConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDiscard}
+        title="Discard Edits?"
+      />
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </SafeAreaView>
   );
 };

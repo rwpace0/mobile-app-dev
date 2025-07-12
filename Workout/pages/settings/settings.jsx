@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert,
 } from "react-native";
 import {
   Ionicons,
@@ -19,6 +18,8 @@ import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { useAuth } from "../../API/auth/authContext";
+import AlertModal from "../../components/modals/AlertModal";
+import { useAlertModal } from "../../utils/useAlertModal";
 
 const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {
   const { isDark } = useTheme();
@@ -51,12 +52,13 @@ const Settings = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const { alertState, showError, hideAlert } = useAlertModal();
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to logout");
+      showError("Error", error.message || "Failed to logout");
       console.log(error);
     }
   };
@@ -127,6 +129,19 @@ const Settings = () => {
           onPress={() => navigateToSettings('theme')}
         />
       </ScrollView>
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </SafeAreaView>
   );
 };

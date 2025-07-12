@@ -8,7 +8,6 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -22,6 +21,8 @@ import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
+import AlertModal from "../../components/modals/AlertModal";
+import { useAlertModal } from "../../utils/useAlertModal";
 
 const equipmentOptions = [
   "Dumbbell",
@@ -73,16 +74,16 @@ const CreateExercise = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageError, setImageError] = useState(null);
   const [newImageSelected, setNewImageSelected] = useState(false);
-
+  const { alertState, showError, showWarning, hideAlert } = useAlertModal();
+  
   // Load exercise data for editing
   useEffect(() => {
     if (isEditing && exerciseToEdit) {
       // Check if trying to edit a public exercise
       if (exerciseToEdit.is_public) {
-        Alert.alert(
-          "Cannot Edit Public Exercise",
-          "Public exercises cannot be modified. You can create a new exercise based on this one instead.",
-          [{ text: "OK", onPress: () => navigation.goBack() }]
+        showWarning(
+          "Warning",
+          "You are editing a public exercise. This will make it visible to all users. Are you sure you want to continue?"
         );
         return;
       }
@@ -153,7 +154,7 @@ const CreateExercise = () => {
           console.log("[CreateExercise] Media uploaded:", { mediaUrl, localPath });
         } catch (mediaError) {
           console.error("Failed to upload media:", mediaError);
-          Alert.alert(
+          showWarning(
             "Warning",
             `Exercise ${isEditing ? 'updated' : 'created'} but failed to upload image. You can try adding the image later.`
           );
@@ -165,7 +166,7 @@ const CreateExercise = () => {
       navigation.goBack();
     } catch (error) {
       console.error(`Failed to ${isEditing ? 'update' : 'create'} exercise:`, error);
-      Alert.alert(
+      showError(
         "Error",
         error.response?.data?.error || `Failed to ${isEditing ? 'update' : 'create'} exercise`
       );
@@ -397,6 +398,18 @@ const CreateExercise = () => {
           </View>
         )}
       </ScrollView>
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </SafeAreaView>
   );
 };

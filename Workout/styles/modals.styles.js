@@ -93,6 +93,68 @@ export const createStyles = (isDark = true) => {
     fontWeight: FontWeight.semiBold,
     textAlign: 'center',
   },
+  
+  // Alert Modal Styles
+  alertModalContent: {
+    backgroundColor: colors.backgroundPrimary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.l,
+    width: '100%',
+    maxWidth: 320,
+    ...Shadow.large,
+  },
+  alertIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.xxxl,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: Spacing.m,
+  },
+  alertModalTitle: {
+    color: colors.textPrimary,
+    fontSize: FontSize.large,
+    fontWeight: FontWeight.semiBold,
+    textAlign: 'center',
+    marginBottom: Spacing.s,
+  },
+  alertModalText: {
+    color: colors.textPrimary,
+    fontSize: FontSize.medium,
+    textAlign: 'center',
+    marginBottom: Spacing.l,
+    lineHeight: 20,
+  },
+  alertModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  alertModalButton: {
+    backgroundColor: colors.primaryBlue,
+    flex: 1,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    maxWidth: 120,
+  },
+  alertModalButtonText: {
+    color: colors.textWhite,
+    fontSize: FontSize.medium,
+    fontWeight: FontWeight.semiBold,
+    textAlign: 'center',
+  },
+  
+  // Alert Modal Icon Container Variants
+  alertIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.xxxl,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: Spacing.m,
+  },
   modalTitle: {
     color: colors.textPrimary,
     fontSize: FontSize.large,

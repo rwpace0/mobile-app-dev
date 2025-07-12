@@ -5,12 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Alert,
 } from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
+import AlertModal from "../components/modals/AlertModal";
+import { useAlertModal } from "../utils/useAlertModal";
 
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -20,10 +21,11 @@ const LoginPage = ({ navigation }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const { alertState, showError, hideAlert } = useAlertModal();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      showError("Error", "Please fill in all fields");
       return;
     }
 
@@ -32,7 +34,7 @@ const LoginPage = ({ navigation }) => {
       await login(email, password);
       // navigation will be handled by the auth state change
     } catch (error) {
-      Alert.alert("Error", error.message || "Failed to login");
+      showError("Error", error.message || "Failed to login");
     } finally {
       setLoading(false);
     }
@@ -94,6 +96,19 @@ const LoginPage = ({ navigation }) => {
       >
         <Text style={styles.textFooter}>Forgot your password?</Text>
       </TouchableOpacity>
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </View>
   );
 };

@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   Image,
   TextInput,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,6 +20,8 @@ import { mediaAPI } from '../../API/mediaAPI';
 import { mediaCache } from '../../API/local/MediaCache';
 import { profileAPI } from '../../API/profileAPI';
 import { requestMediaLibraryPermission, validateImageFile } from '../../utils/permissions';
+import AlertModal from '../../components/modals/AlertModal';
+import { useAlertModal } from '../../utils/useAlertModal';
 
 const EditProfile = () => {
   const navigation = useNavigation();
@@ -34,6 +35,7 @@ const EditProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
+  const { alertState, showError, showSuccess, showWarning, hideAlert } = useAlertModal();
 
   useEffect(() => {
     fetchProfileData();
@@ -56,7 +58,7 @@ const EditProfile = () => {
         
       } catch (error) {
         console.error('Error fetching profile data:', error);
-        Alert.alert('Error', 'Failed to load profile data');
+        showError('Error', 'Failed to load profile data');
       } finally {
         setLoading(false);
       }
@@ -83,11 +85,11 @@ const EditProfile = () => {
           validateImageFile(imageUri, result.assets[0].fileSize);
           setSelectedImage(imageUri);
         } catch (error) {
-          Alert.alert('Error', error.message);
+          showError('Error', error.message);
         }
       }
     } catch (error) {
-      Alert.alert('Error', error.message);
+      showError('Error', error.message);
     }
   };
 
@@ -119,16 +121,16 @@ const EditProfile = () => {
           setSelectedImage(null); // Clear selected image after upload
         } catch (error) {
           console.error('Avatar upload error:', error);
-          Alert.alert('Warning', 'Profile updated but failed to upload image. Please try again.');
+          showWarning('Warning', 'Profile updated but failed to upload image. Please try again.');
         }
       }
       
-      Alert.alert('Success', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      showSuccess('Success', 'Profile updated successfully!', {
+        onConfirm: () => navigation.goBack()
+      });
     } catch (error) {
       console.error('Save profile error:', error);
-      Alert.alert('Error', 'Failed to save profile. Please try again.');
+      showError('Error', 'Failed to save profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -216,6 +218,19 @@ const EditProfile = () => {
           )}
         </View>
       </ScrollView>
+
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+      />
     </SafeAreaView>
   );
 };
