@@ -390,71 +390,71 @@ const ActiveExerciseComponent = ({
           const correspondingPreviousSet = previousWorkoutSets[index];
           
           return (
-            <SwipeToDelete
-              key={set.id}
-              onDelete={() => handleDeleteSet(set.id)}
-              style={[
-                styles.setRow,
-                set.completed &&
-                  (set.id === "W" ? styles.warmupSetRow : styles.completedSetRow),
-              ]}
-            >
-              <View style={styles.setNumberCell}>
-                <Text style={styles.setCell}>{set.id}</Text>
-              </View>
-              {showPreviousPerformance && (
-                <View style={styles.previousCell}>
-                  <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
-                    {correspondingPreviousSet ? (
-                      `${correspondingPreviousSet.weight}${weight.unit} × ${correspondingPreviousSet.reps}`
-                    ) : loadingPrevious ? (
-                      "Loading..."
-                    ) : (
-                      "No data"
-                    )}
-                  </Text>
+            <View key={set.id} style={{ width: '100%' }}>
+              <SwipeToDelete
+                onDelete={() => handleDeleteSet(set.id)}
+                style={[
+                  styles.setRow,
+                  set.completed 
+                ]}
+              >
+                <View style={styles.setNumberCell}>
+                  <Text style={styles.setCell}>{set.id}</Text>
                 </View>
-              )}
-              <View style={styles.weightHeaderCell}>
-                <TextInput
-                  style={styles.weightInput}
-                  value={set.weight}
-                  onChangeText={(value) => handleWeightChange(set.id, value)}
-                  keyboardType="numeric"
-                  placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.weight + "" : "0"}
-                  placeholderTextColor={colors.textSecondary}
-                  selectTextOnFocus={true}
-                />
-              </View>
-              <View style={styles.repsHeaderCell}>
-                <TextInput
-                  style={styles.repsInput}
-                  value={set.reps}
-                  onChangeText={(value) => handleRepsChange(set.id, value)}
-                  keyboardType="numeric"
-                  placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.reps.toString() : "0"}
-                  placeholderTextColor={colors.textSecondary}
-                  selectTextOnFocus={true}
-                />
-              </View>
-              {!showPreviousPerformance && (
-                <View style={styles.totalCell}>
-                  <Text style={styles.setCell}>{set.total}</Text>
-                </View>
-              )}
-              <View style={styles.completedCell}>
-                <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
-                  <View
-                    style={[
-                      styles.checkmarkContainer,
-                      set.completed && styles.completedCheckmark,
-                    ]}
-                  >
-                    <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
+                {showPreviousPerformance && (
+                  <View style={styles.previousCell}>
+                    <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
+                      {correspondingPreviousSet ? (
+                        `${correspondingPreviousSet.weight}${weight.unit} × ${correspondingPreviousSet.reps}`
+                      ) : loadingPrevious ? (
+                        "Loading..."
+                      ) : (
+                        "No data"
+                      )}
+                    </Text>
                   </View>
-                </TouchableOpacity>
-              </View>
-            </SwipeToDelete>
+                )}
+                <View style={styles.weightHeaderCell}>
+                  <TextInput
+                    style={styles.weightInput}
+                    value={set.weight}
+                    onChangeText={(value) => handleWeightChange(set.id, value)}
+                    keyboardType="numeric"
+                    placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.weight + "" : "0"}
+                    placeholderTextColor={colors.textSecondary}
+                    selectTextOnFocus={true}
+                  />
+                </View>
+                <View style={styles.repsHeaderCell}>
+                  <TextInput
+                    style={styles.repsInput}
+                    value={set.reps}
+                    onChangeText={(value) => handleRepsChange(set.id, value)}
+                    keyboardType="numeric"
+                    placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.reps.toString() : "0"}
+                    placeholderTextColor={colors.textSecondary}
+                    selectTextOnFocus={true}
+                  />
+                </View>
+                {!showPreviousPerformance && (
+                  <View style={styles.totalCell}>
+                    <Text style={styles.setCell}>{set.total}</Text>
+                  </View>
+                )}
+                <View style={styles.completedCell}>
+                  <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
+                    <View
+                      style={[
+                        styles.checkmarkContainer,
+                        set.completed && styles.completedCheckmark,
+                      ]}
+                    >
+                      <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </SwipeToDelete>
+            </View>
           );
         })}
       </View>
