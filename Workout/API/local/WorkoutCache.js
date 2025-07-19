@@ -79,7 +79,7 @@ class WorkoutCache {
     this.workoutListCache = new LRUCache(10);
 
     // Background cleanup interval - run cleanup every 5 minutes instead of 1
-    setInterval(() => this.cleanupExpired(), 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(() => this.cleanupExpired(), 5 * 60 * 1000);
   }
 
   getWorkoutDetails(workoutId) {
@@ -155,6 +155,19 @@ class WorkoutCache {
     this.workoutDetailsCache.clear();
     this.workoutListCache.clear();
   }
+
+  destroy() {
+    // Clear the cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+
+    // Clear all cached data
+    this.clearAll();
+
+    console.log('[WorkoutCache] Destroyed and cleaned up');
+  }
 }
 
-export const workoutCache = new WorkoutCache(); 
+export const workoutCache = new WorkoutCache();

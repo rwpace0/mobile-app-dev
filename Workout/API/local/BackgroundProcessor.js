@@ -232,6 +232,25 @@ class BackgroundProcessor {
       console.error('[BackgroundProcessor] Failed to schedule sync:', error);
     });
   }
+
+  destroy() {
+    // Clear the processing interval
+    if (this.processingInterval) {
+      clearInterval(this.processingInterval);
+      this.processingInterval = null;
+    }
+
+    // Clear all task queues
+    this.taskQueue.clear();
+
+    // Clear prefetch buffer
+    this.prefetchBuffer.clear();
+
+    // Reset processing state
+    this.isProcessing = false;
+
+    console.log('[BackgroundProcessor] Destroyed and cleaned up');
+  }
 }
 
-export const backgroundProcessor = new BackgroundProcessor(); 
+export const backgroundProcessor = new BackgroundProcessor();
