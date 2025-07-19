@@ -67,7 +67,7 @@ const RoutineDetail = () => {
         if (showLoading) setLoading(true);
         setError(null);
 
-        // Fetch both template info and last workout
+        // Fetch template info and check if routine has been performed
         const [templateResponse, lastWorkoutResponse] = await Promise.all([
           templateAPI.getTemplateById(template_id),
           workoutAPI.getLastWorkoutForTemplate(template_id),
@@ -76,23 +76,28 @@ const RoutineDetail = () => {
         setTemplate(templateResponse);
         setWorkout(lastWorkoutResponse);
 
-        // If no workout history, fetch exercise names for template exercises
+        // If no workout history, fetch exercise names and recent data for template exercises
         if (!lastWorkoutResponse && templateResponse?.exercises) {
           const exercisesWithNames = await Promise.all(
             templateResponse.exercises.map(async (exercise) => {
-              const exerciseDetails = await exercisesAPI.getExerciseById(exercise.exercise_id);
+              const [exerciseDetails, exerciseHistory] = await Promise.all([
+                exercisesAPI.getExerciseById(exercise.exercise_id),
+                exercisesAPI.getExerciseHistory(exercise.exercise_id) // Get exercise history
+              ]);
+              
               return {
                 ...exercise,
                 name: exerciseDetails?.name || "Unknown Exercise",
-                muscle_group: exerciseDetails?.muscle_group || ""
+                muscle_group: exerciseDetails?.muscle_group || "",
+                recentSets: exerciseHistory?.length > 0 ? exerciseHistory[0].sets : null
               };
             })
           );
           setTemplateExercisesWithNames(exercisesWithNames);
         }
 
-        // Don't set error if no workout but template exists
-        if (!lastWorkoutResponse && !templateResponse) {
+        // Set error only if template doesn't exist
+        if (!templateResponse) {
           setError("Failed to load routine data");
         }
       } catch (err) {
@@ -146,10 +151,11 @@ const RoutineDetail = () => {
         })),
     }));
 
-    // Navigate to activeWorkout with the exercises
+    // Navigate to activeWorkout with the exercises and template ID
     navigation.navigate("activeWorkout", {
       selectedExercises,
       workoutName: template.name,
+      templateId: template_id, // Pass template ID to link workout to template
     });
   }, [navigation, template]);
 
@@ -354,14 +360,29 @@ const RoutineDetail = () => {
                   <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
                   <Text style={styles.setHeaderText}>RIR</Text>
                 </View>
-                {Array(exerciseData.sets || 1).fill().map((_, setIdx) => (
-                  <View key={setIdx} style={styles.setRow}>
-                    <Text style={styles.setNumber}>
-                      {setIdx + 1}
-                    </Text>
-                    
-                  </View>
-                ))}
+                {Array(exerciseData.sets || 1).fill().map((_, setIdx) => {
+                  // Use recent data if available, otherwise show placeholders
+                  const recentSet = exerciseData.recentSets?.[setIdx];
+                  return (
+                    <View key={setIdx} style={styles.setRow}>
+                      <Text style={styles.setNumber}>
+                        {setIdx + 1}
+                      </Text>
+                      <Text style={[styles.setValue, { opacity: recentSet ? 1 : 0.5 }]}>
+                        {recentSet 
+                          ? `${weight.formatSet(recentSet.weight, recentSet.reps)} reps`
+                          : "- reps"
+                        }
+                      </Text>
+                      <Text style={[styles.setValue, { opacity: recentSet ? 1 : 0.5 }]}>
+                        {recentSet && recentSet.rir !== null && recentSet.rir !== undefined
+                          ? `${recentSet.rir}`
+                          : "-"
+                        }
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
             );
           })

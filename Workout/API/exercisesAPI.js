@@ -269,47 +269,34 @@ class ExercisesAPI extends APIBase {
       }
 
       console.log(`[ExercisesAPI] No cache found, querying database for ${exerciseId}`);
-      
-      // Get all workouts containing this exercise with their sets
-      const history = await this.db.query(`
-        SELECT 
-          w.workout_id,
-          w.name,
-          w.date_performed,
-          w.created_at,
-          w.sync_status,
-          we.workout_exercises_id,
-          s.set_id,
-          s.weight,
-          s.reps,
-          s.rir,
-          s.set_order
-        FROM workouts w
-        JOIN workout_exercises we ON w.workout_id = we.workout_id
-        LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
-        WHERE we.exercise_id = ?
-          AND w.sync_status != 'pending_delete'
-          AND we.sync_status != 'pending_delete'
-        ORDER BY 
-          COALESCE(w.date_performed, w.created_at) DESC,
-          we.exercise_order ASC,
-          s.set_order ASC
-      `, [exerciseId]);
+    
+    // Get all workouts containing this exercise with their sets
+    const history = await this.db.query(`
+      SELECT 
+        w.workout_id,
+        w.name,
+        w.date_performed,
+        w.created_at,
+        w.sync_status,
+        we.workout_exercises_id,
+        s.set_id,
+        s.weight,
+        s.reps,
+        s.rir,
+        s.set_order
+      FROM workouts w
+      JOIN workout_exercises we ON w.workout_id = we.workout_id
+      LEFT JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+      WHERE we.exercise_id = ?
+        AND w.sync_status != 'pending_delete'
+        AND we.sync_status != 'pending_delete'
+      ORDER BY 
+        COALESCE(w.date_performed, w.created_at) DESC,
+        we.exercise_order ASC,
+        s.set_order ASC
+    `, [exerciseId]);
 
       console.log(`[ExercisesAPI] Found ${history.length} history records for ${exerciseId}`);
-      history.forEach((record, index) => {
-        if (index < 3) { // Log first 3 records
-          console.log(`[ExercisesAPI] Record ${index}:`, {
-            workout_id: record.workout_id,
-            name: record.name,
-            sync_status: record.sync_status,
-            date_performed: record.date_performed,
-            created_at: record.created_at,
-            weight: record.weight,
-            reps: record.reps
-          });
-        }
-      });
 
       // Group sets by workout
       const workoutMap = new Map();

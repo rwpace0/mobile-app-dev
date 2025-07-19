@@ -180,7 +180,7 @@ class WorkoutAPI extends APIBase {
       // First store the workout
       await this.storage.storeEntity(workout, {
         table: 'workouts',
-        fields: ['user_id', 'name', 'date_performed', 'duration'],
+        fields: ['user_id', 'name', 'date_performed', 'duration', 'template_id'],
         syncStatus
       });
 
@@ -382,33 +382,15 @@ class WorkoutAPI extends APIBase {
     try {
       await this.ensureInitialized();
       
-      // Get template exercises
-      const templateExercises = await this.db.query(
-        `SELECT exercise_id, exercise_order FROM template_exercises 
-         WHERE template_id = ? ORDER BY exercise_order`,
-        [templateId]
-      );
-      
-      if (templateExercises.length === 0) {
-        return null;
-      }
-      
-      // Find workouts that have all the same exercises in the same order
+      // Find workouts created from this specific template only
       const workoutIds = await this.db.query(`
-        SELECT DISTINCT w.workout_id, w.date_performed
-        FROM workouts w
-        INNER JOIN workout_exercises we ON w.workout_id = we.workout_id
-        WHERE w.sync_status != 'pending_delete'
-        GROUP BY w.workout_id
-        HAVING COUNT(we.exercise_id) = ? 
-          AND COUNT(CASE WHEN we.exercise_id IN (${templateExercises.map(() => '?').join(',')}) THEN 1 END) = ?
-        ORDER BY w.date_performed DESC
+        SELECT workout_id, date_performed
+        FROM workouts
+        WHERE template_id = ? 
+          AND sync_status != 'pending_delete'
+        ORDER BY date_performed DESC
         LIMIT 1
-      `, [
-        templateExercises.length,
-        ...templateExercises.map(ex => ex.exercise_id),
-        templateExercises.length
-      ]);
+      `, [templateId]);
       
       if (workoutIds.length === 0) {
         return null;
@@ -573,6 +555,7 @@ class WorkoutAPI extends APIBase {
         name: workoutData.name,
         date_performed: workoutData.date_performed,
         duration: workoutData.duration || 0,
+        template_id: workoutData.templateId || null, // Store template ID if workout was created from template
         exercises: workoutData.exercises || [],
         created_at: now,
         updated_at: now

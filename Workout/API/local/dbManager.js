@@ -74,12 +74,14 @@ class DatabaseManager {
                     name TEXT,
                     date_performed DATETIME,
                     duration INTEGER,
+                    template_id TEXT,
                     created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
                     updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
                     sync_status TEXT DEFAULT 'synced'
                         CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
                     version INTEGER DEFAULT 1,
-                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    FOREIGN KEY (template_id) REFERENCES workout_templates (template_id) ON DELETE SET NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS workout_exercises (
@@ -194,6 +196,15 @@ class DatabaseManager {
           // Column might already exist, that's fine
         }
 
+        // Add template_id to workouts table if it doesn't exist
+        try {
+          await this.db.execAsync('ALTER TABLE workouts ADD COLUMN template_id TEXT;');
+          console.log('[DatabaseManager] Added template_id column to workouts table');
+        } catch (e) {
+          // Column might already exist, that's fine
+          console.log('[DatabaseManager] template_id column already exists or failed to add:', e.message);
+        }
+
         // Update version - check if version 2 exists first
         const [version2Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 2');
         if (!version2Exists) {
@@ -215,6 +226,24 @@ class DatabaseManager {
         }
       } catch (error) {
         console.error('Error checking/adding sync_priority column:', error);
+        throw error;
+      }
+
+      // Force check for template_id column and add if missing (regardless of version)
+      // This handles cases where the column is missing from existing databases
+      try {
+        const workoutsTableInfo = await this.db.getAllAsync('PRAGMA table_info(workouts)');
+        const hasTemplateId = workoutsTableInfo.some(col => col.name === 'template_id');
+        
+        if (!hasTemplateId) {
+          console.log('[DatabaseManager] Adding missing template_id column to workouts table');
+          await this.db.execAsync('ALTER TABLE workouts ADD COLUMN template_id TEXT;');
+          console.log('[DatabaseManager] Successfully added template_id column');
+        } else {
+          console.log('[DatabaseManager] template_id column already exists in workouts table');
+        }
+      } catch (error) {
+        console.error('[DatabaseManager] Error checking/adding template_id column:', error);
         throw error;
       }
 
