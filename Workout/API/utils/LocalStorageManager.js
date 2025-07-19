@@ -26,7 +26,9 @@ class LocalStorageManager {
       updated_at: entity.updated_at || now,
       sync_status: syncStatus,
       version: entity.version || 1,
-      last_synced_at: now
+      // Explicitly set last_synced_at based on sync status
+      // This overrides any database DEFAULT values
+      last_synced_at: syncStatus === 'synced' ? now : null
     };
 
     // Add the specified fields from the entity
@@ -79,7 +81,9 @@ class LocalStorageManager {
             updated_at: item.updated_at || now,
             sync_status: syncStatus,
             version: item.version || 1,
-            last_synced_at: now,
+            // Explicitly set last_synced_at based on sync status for relations
+            // This overrides any database DEFAULT values
+            last_synced_at: syncStatus === 'synced' ? now : null,
             ...item
           };
 

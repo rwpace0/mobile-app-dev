@@ -170,15 +170,15 @@ class TemplateAPI extends APIBase {
               continue;
             }
 
-            // Determine if this is a new template or an update
-            const isUpdate =
-              template.last_synced_at &&
-              template.sync_status === "pending_sync";
+            // A template is an update if it has been synced before (has last_synced_at)
+            // New templates (never synced) will have last_synced_at = null and should use POST
+            // Updated templates will have last_synced_at != null and should use PUT
+            const isUpdate = template.last_synced_at != null;
+            
             const method = isUpdate ? "PUT" : "POST";
             const url = isUpdate
               ? `${this.baseUrl}/${template.template_id}`
               : `${this.baseUrl}/create`;
-
             console.log(
               `[TemplateAPI] ${isUpdate ? "Updating" : "Creating"} template ${
                 template.template_id
@@ -547,8 +547,8 @@ class TemplateAPI extends APIBase {
 
           await this.db.execute(
             `INSERT INTO template_exercises 
-            (template_exercise_id, template_id, exercise_id, exercise_order, sets, created_at, updated_at, sync_status, version, last_synced_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (template_exercise_id, template_id, exercise_id, exercise_order, sets, created_at, updated_at, sync_status, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               templateExerciseId,
               templateId,
@@ -559,7 +559,6 @@ class TemplateAPI extends APIBase {
               updatedTemplate.updated_at,
               "pending_sync",
               1,
-              new Date().toISOString(),
             ]
           );
         }

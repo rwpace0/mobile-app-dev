@@ -144,14 +144,17 @@ export const createStyles = (isDark = true) => {
     paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.m,
+    alignSelf: 'center',
     ...Shadow.medium,
+    width: '100%',
   },
   
   addExerciseText: {
     color: colors.textWhite,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.medium,
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.s,
+    textAlign: 'center',
   },
   
   buttonContainer: {

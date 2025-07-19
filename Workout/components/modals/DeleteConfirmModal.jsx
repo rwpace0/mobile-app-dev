@@ -19,21 +19,9 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
     >
       <View style={styles.centerModalContainer}>
         <View style={styles.deleteModalContent}>
-          <View style={styles.deleteIconContainer}>
-            <Ionicons name="trash-outline" size={32} color={colors.accentRed} />
-          </View>
-          <Text style={styles.deleteModalTitle}>{title}</Text>
-          <Text style={styles.deleteModalText}>
-            This action cannot be undone.
-          </Text>
+          <Text style={styles.deleteModalText}>{title}</Text>
           <View style={styles.deleteModalButtons}>
-            <TouchableOpacity 
-              style={styles.deleteModalCancelButton} 
-              onPress={onClose}
-            >
-              <Text style={styles.deleteModalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
+          <TouchableOpacity 
               style={styles.deleteModalConfirmButton} 
               onPress={() => {
                 onConfirm();
@@ -42,6 +30,13 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
             >
               <Text style={styles.deleteModalConfirmText}>Delete</Text>
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.deleteModalCancelButton} 
+              onPress={onClose}
+            >
+              <Text style={styles.deleteModalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+           
           </View>
         </View>
       </View>

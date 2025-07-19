@@ -181,7 +181,7 @@ const ActiveWorkoutPage = () => {
       if (validExercises.length === 0) {
         showWarning(
           "No Sets Recorded",
-          "Please add at least one set with weight and reps before finishing the workout."
+          "Add an exercise"
         );
         return;
       }
@@ -314,19 +314,19 @@ const ActiveWorkoutPage = () => {
               style={styles.addExerciseButton}
               onPress={handleAddExercise}
             >
-              <Ionicons name="add" size={20} color={colors.textWhite} />
+              <Ionicons name="add" size={20} color={colors.textWhite}/>
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
                 <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
-                <Text style={styles.settingsText}>Workout Settings</Text>
+                <Text style={styles.settingsText}>Settings</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
                 <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
-                <Text style={styles.discardText}>Discard Workout</Text>
+                <Text style={styles.discardText}>Discard</Text>
               </TouchableOpacity>
             </View>
           </View>
