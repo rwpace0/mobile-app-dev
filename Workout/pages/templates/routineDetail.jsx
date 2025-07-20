@@ -53,7 +53,9 @@ const RoutineDetail = () => {
   const { template_id } = route.params || {};
   const [workout, setWorkout] = useState(null);
   const [template, setTemplate] = useState(null);
-  const [templateExercisesWithNames, setTemplateExercisesWithNames] = useState([]);
+  const [templateExercisesWithNames, setTemplateExercisesWithNames] = useState(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,25 +73,28 @@ const RoutineDetail = () => {
         const [templateResponse, lastWorkoutResponse] = await Promise.all([
           templateAPI.getTemplateById(template_id),
           workoutAPI.getLastWorkoutForTemplate(template_id),
+          console.log("Template ID:", template_id),
         ]);
 
         setTemplate(templateResponse);
         setWorkout(lastWorkoutResponse);
-
+        console.log("Template:", templateResponse);
+        console.log("Last workout:", lastWorkoutResponse);
         // If no workout history, fetch exercise names and recent data for template exercises
         if (!lastWorkoutResponse && templateResponse?.exercises) {
           const exercisesWithNames = await Promise.all(
             templateResponse.exercises.map(async (exercise) => {
               const [exerciseDetails, exerciseHistory] = await Promise.all([
                 exercisesAPI.getExerciseById(exercise.exercise_id),
-                exercisesAPI.getExerciseHistory(exercise.exercise_id) // Get exercise history
+                exercisesAPI.getExerciseHistory(exercise.exercise_id), // Get exercise history
               ]);
-              
+
               return {
                 ...exercise,
                 name: exerciseDetails?.name || "Unknown Exercise",
                 muscle_group: exerciseDetails?.muscle_group || "",
-                recentSets: exerciseHistory?.length > 0 ? exerciseHistory[0].sets : null
+                recentSets:
+                  exerciseHistory?.length > 0 ? exerciseHistory[0].sets : null,
               };
             })
           );
@@ -198,18 +203,20 @@ const RoutineDetail = () => {
   // Use workout data if available, otherwise use template data
   const displayData = workout || template;
   const hasWorkoutHistory = !!workout;
-  
-  const totalVolume = hasWorkoutHistory ? 
-    workout.exercises?.reduce((total, ex) => {
-      return total + calculateVolume(ex.sets || [], weight);
-    }, 0) : 0;
 
-  const totalSets = hasWorkoutHistory ?
-    workout.exercises?.reduce((total, ex) => {
-      return total + (ex.sets?.length || 0);
-    }, 0) : template.exercises?.reduce((total, ex) => {
-      return total + (ex.sets || 1);
-    }, 0);
+  const totalVolume = hasWorkoutHistory
+    ? workout.exercises?.reduce((total, ex) => {
+        return total + calculateVolume(ex.sets || [], weight);
+      }, 0)
+    : 0;
+
+  const totalSets = hasWorkoutHistory
+    ? workout.exercises?.reduce((total, ex) => {
+        return total + (ex.sets?.length || 0);
+      }, 0)
+    : template.exercises?.reduce((total, ex) => {
+        return total + (ex.sets || 1);
+      }, 0);
 
   return (
     <SafeAreaView style={styles.detailContainer}>
@@ -235,7 +242,11 @@ const RoutineDetail = () => {
             <Text
               style={[
                 styles.detailDate,
-                { opacity: 0.8, fontSize: FontSize.caption, marginTop: Spacing.xxs },
+                {
+                  opacity: 0.8,
+                  fontSize: FontSize.caption,
+                  marginTop: Spacing.xxs,
+                },
               ]}
             >
               Last performed: {formatDate(workout.date_performed)}
@@ -244,7 +255,11 @@ const RoutineDetail = () => {
             <Text
               style={[
                 styles.detailDate,
-                { opacity: 0.8, fontSize: FontSize.caption, marginTop: Spacing.xxs },
+                {
+                  opacity: 0.8,
+                  fontSize: FontSize.caption,
+                  marginTop: Spacing.xxs,
+                },
               ]}
             >
               Last performed: Never
@@ -273,7 +288,9 @@ const RoutineDetail = () => {
                   color={colors.textSecondary}
                   style={styles.statIcon}
                 />
-                <Text style={styles.statText}>{weight.formatVolume(Math.round(totalVolume))}</Text>
+                <Text style={styles.statText}>
+                  {weight.formatVolume(Math.round(totalVolume))}
+                </Text>
               </View>
             )}
             <View style={styles.statItemWithIcon}>
@@ -296,97 +313,111 @@ const RoutineDetail = () => {
         </TouchableOpacity>
 
         {/* Display exercises from workout history or template */}
-        {hasWorkoutHistory ? (
-          // Display workout exercises with actual data
-          workout.exercises?.map((exerciseData, idx) => {
-            if (!exerciseData || !exerciseData.workout_exercises_id) return null;
-            return (
-              <View
-                key={exerciseData.workout_exercises_id}
-                style={styles.exerciseCard}
-              >
-                <TouchableOpacity
-                  onPress={() => handleExercisePress(exerciseData)}
+        {hasWorkoutHistory
+          ? // Display workout exercises with actual data
+            workout.exercises?.map((exerciseData, idx) => {
+              if (!exerciseData || !exerciseData.workout_exercises_id)
+                return null;
+              return (
+                <View
+                  key={exerciseData.workout_exercises_id}
+                  style={styles.exerciseCard}
                 >
-                  <Text style={styles.exerciseCardTitle}>
-                    {exerciseData.name || "Unknown Exercise"}
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleExercisePress(exerciseData)}
+                  >
+                    <Text style={styles.exerciseCardTitle}>
+                      {exerciseData.name || "Unknown Exercise"}
+                    </Text>
+                  </TouchableOpacity>
 
-                {exerciseData.notes && (
-                  <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
-                )}
-                <View style={styles.setHeader}>
-                  <Text style={styles.setHeaderText}>SET</Text>
-                  <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
-                  <Text style={styles.setHeaderText}>RIR</Text>
-                </View>
-                {(exerciseData.sets || []).map((set, setIdx) => (
-                  <View key={set.set_id || setIdx} style={styles.setRow}>
-                    <Text style={styles.setNumber}>
-                      {set.set_order || setIdx + 1}
+                  {exerciseData.notes && (
+                    <Text style={styles.exerciseNotes}>
+                      {exerciseData.notes}
                     </Text>
-                    <Text style={styles.setValue}>
-                      {weight.formatSet(set.weight, set.reps)} reps
-                    </Text>
-                    <Text style={styles.setValue}>
-                      {set.rir !== null && set.rir !== undefined
-                        ? `${set.rir}`
-                        : "-"}
-                    </Text>
+                  )}
+                  <View style={styles.setHeader}>
+                    <Text style={styles.setHeaderText}>SET</Text>
+                    <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
+                    <Text style={styles.setHeaderText}>RIR</Text>
                   </View>
-                ))}
-              </View>
-            );
-          })
-        ) : (
-          // Display template exercises without workout data
-          templateExercisesWithNames?.map((exerciseData, idx) => {
-            return (
-              <View
-                key={exerciseData.exercise_id || idx}
-                style={styles.exerciseCard}
-              >
-                <TouchableOpacity
-                  onPress={() => handleExercisePress(exerciseData)}
-                >
-                  <Text style={styles.exerciseCardTitle}>
-                    {exerciseData.name || "Unknown Exercise"}
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={styles.setHeader}>
-                  <Text style={styles.setHeaderText}>SET</Text>
-                  <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
-                  <Text style={styles.setHeaderText}>RIR</Text>
-                </View>
-                {Array(exerciseData.sets || 1).fill().map((_, setIdx) => {
-                  // Use recent data if available, otherwise show placeholders
-                  const recentSet = exerciseData.recentSets?.[setIdx];
-                  return (
-                    <View key={setIdx} style={styles.setRow}>
+                  {(exerciseData.sets || []).map((set, setIdx) => (
+                    <View key={set.set_id || setIdx} style={styles.setRow}>
                       <Text style={styles.setNumber}>
-                        {setIdx + 1}
+                        {set.set_order || setIdx + 1}
                       </Text>
-                      <Text style={[styles.setValue, { opacity: recentSet ? 1 : 0.5 }]}>
-                        {recentSet 
-                          ? `${weight.formatSet(recentSet.weight, recentSet.reps)} reps`
-                          : "- reps"
-                        }
+                      <Text style={styles.setValue}>
+                        {weight.formatSet(set.weight, set.reps)} reps
                       </Text>
-                      <Text style={[styles.setValue, { opacity: recentSet ? 1 : 0.5 }]}>
-                        {recentSet && recentSet.rir !== null && recentSet.rir !== undefined
-                          ? `${recentSet.rir}`
-                          : "-"
-                        }
+                      <Text style={styles.setValue}>
+                        {set.rir !== null && set.rir !== undefined
+                          ? `${set.rir}`
+                          : "-"}
                       </Text>
                     </View>
-                  );
-                })}
-              </View>
-            );
-          })
-        )}
+                  ))}
+                </View>
+              );
+            })
+          : // Display template exercises without workout data
+            templateExercisesWithNames?.map((exerciseData, idx) => {
+              return (
+                <View
+                  key={exerciseData.exercise_id || idx}
+                  style={styles.exerciseCard}
+                >
+                  <TouchableOpacity
+                    onPress={() => handleExercisePress(exerciseData)}
+                  >
+                    <Text style={styles.exerciseCardTitle}>
+                      {exerciseData.name || "Unknown Exercise"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.setHeader}>
+                    <Text style={styles.setHeaderText}>SET</Text>
+                    <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
+                    <Text style={styles.setHeaderText}>RIR</Text>
+                  </View>
+                  {Array(exerciseData.sets || 1)
+                    .fill()
+                    .map((_, setIdx) => {
+                      // Use recent data if available, otherwise show placeholders
+                      const recentSet = exerciseData.recentSets?.[setIdx];
+                      return (
+                        <View key={setIdx} style={styles.setRow}>
+                          <Text style={styles.setNumber}>{setIdx + 1}</Text>
+                          <Text
+                            style={[
+                              styles.setValue,
+                              { opacity: recentSet ? 1 : 0.5 },
+                            ]}
+                          >
+                            {recentSet
+                              ? `${weight.formatSet(
+                                  recentSet.weight,
+                                  recentSet.reps
+                                )} reps`
+                              : "- reps"}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.setValue,
+                              { opacity: recentSet ? 1 : 0.5 },
+                            ]}
+                          >
+                            {recentSet &&
+                            recentSet.rir !== null &&
+                            recentSet.rir !== undefined
+                              ? `${recentSet.rir}`
+                              : "-"}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                </View>
+              );
+            })}
       </ScrollView>
     </SafeAreaView>
   );

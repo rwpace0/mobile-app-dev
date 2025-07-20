@@ -29,6 +29,7 @@ const ActiveWorkoutPage = () => {
   const styles = createStyles(isDark);
   const weight = useWeight();
   const { activeWorkout, startWorkout, updateWorkout, endWorkout } = useActiveWorkout();
+  const { templateId } = route.params || {};
   
   const [exercises, setExercises] = useState([]);
   const [totalVolume, setTotalVolume] = useState(0);
@@ -191,6 +192,7 @@ const ActiveWorkoutPage = () => {
         date_performed: datePerformed,
         duration: activeWorkout?.duration || 0,
         exercises: validExercises,
+        templateId: templateId,
       };
 
       await workoutAPI.finishWorkout(payload);

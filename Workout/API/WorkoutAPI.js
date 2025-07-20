@@ -178,11 +178,25 @@ class WorkoutAPI extends APIBase {
       console.log("[WorkoutAPI] Storing workout with exercises:", JSON.stringify(workout.exercises));
       
       // First store the workout
-      await this.storage.storeEntity(workout, {
-        table: 'workouts',
-        fields: ['user_id', 'name', 'date_performed', 'duration', 'template_id'],
-        syncStatus
-      });
+      // First store the workout
+      await this.db.execute(
+        `INSERT OR REPLACE INTO workouts 
+        (workout_id, user_id, name, date_performed, duration, template_id, created_at, updated_at, sync_status, version, last_synced_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [
+          workout.workout_id,
+          workout.user_id,
+          workout.name,
+          workout.date_performed,
+          workout.duration,
+          workout.template_id,
+          workout.created_at,
+          workout.updated_at,
+          syncStatus,
+          1, // version
+          null // last_synced_at
+        ]
+      );
 
       // Then store each exercise and its sets
       for (const exercise of workout.exercises) {
