@@ -381,18 +381,39 @@ class ExercisesAPI extends APIBase {
       this.clearExerciseCache(exerciseId);
       this.cache.clear('exercises:all');
 
+      let finalExerciseId = exerciseId;
+
       // If syncImmediately is true, try to sync to backend immediately
       if (syncImmediately) {
         try {
           console.log('[ExercisesAPI] Syncing exercise immediately');
           await this.syncSpecificExercise(exerciseId);
+          
+          // After sync, get the updated exercise (which may have a new server-assigned ID)
+          const [updatedExercise] = await this.db.query(
+            'SELECT * FROM exercises WHERE exercise_id = ? OR exercise_id IN (SELECT exercise_id FROM exercises WHERE name = ? AND created_by = ? AND created_at = ?)',
+            [exerciseId, exerciseData.name, exerciseData.created_by, exerciseData.created_at]
+          );
+          
+          if (updatedExercise) {
+            finalExerciseId = updatedExercise.exercise_id;
+            console.log('[ExercisesAPI] Final exercise ID after sync:', finalExerciseId);
+            return updatedExercise;
+          }
         } catch (syncError) {
           console.warn('[ExercisesAPI] Immediate sync failed, will sync later:', syncError);
           // Don't throw - exercise is still created locally
         }
       }
 
-      return stored;
+      // Return the full exercise object with the correct ID
+      return {
+        ...exerciseData,
+        exercise_id: finalExerciseId,
+        sync_status: 'pending_sync',
+        version: 1,
+        last_synced_at: null
+      };
     } catch (error) {
       console.error("[ExercisesAPI] Create exercise error:", error);
       throw error;

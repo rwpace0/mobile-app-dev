@@ -235,7 +235,7 @@ export async function deleteExercise(req, res) {
     // Check if exercise exists and belongs to the user
     const { data: exercise, error: exerciseCheckError } = await supabaseWithAuth
       .from("exercises")
-      .select("exercise_id, created_by, is_public")
+      .select("exercise_id, created_by, is_public, media_url")
       .eq("exercise_id", exerciseId)
       .single();
 
@@ -312,6 +312,31 @@ export async function deleteExercise(req, res) {
         error: "Failed to delete related workout exercises",
         details: workoutExercisesError.message,
       });
+    }
+
+    // Delete the exercise image if it exists
+    if (exercise.media_url) {
+      try {
+        // Extract filename from URL for deletion
+        const urlParts = exercise.media_url.split('/');
+        const bucketPath = urlParts[urlParts.length - 1];
+        const fileName = `${exercise.created_by}/${bucketPath.split('?')[0]}`;
+        
+        // Delete the file from storage
+        const { error: storageError } = await supabaseWithAuth.storage
+          .from('exercise-media')
+          .remove([fileName]);
+        
+        if (storageError) {
+          console.error('Error deleting exercise media:', storageError);
+          // Continue with exercise deletion even if media deletion fails
+        } else {
+          console.log('Successfully deleted exercise media:', fileName);
+        }
+      } catch (mediaError) {
+        console.error('Error processing media deletion:', mediaError);
+        // Continue with exercise deletion even if media deletion fails
+      }
     }
 
     // Delete the exercise
