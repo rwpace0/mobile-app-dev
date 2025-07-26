@@ -76,7 +76,9 @@ export const createStyles = (isDark = true) => {
     marginRight: Spacing.s,
   },
   googleText: {
-    ...components.buttonText,
+    fontSize: FontSize.base,
+      fontWeight: '600',
+      color: colors.primaryBlue,
   },
   textFooter: {
     color: colors.textFooter,
@@ -139,6 +141,11 @@ export const createStyles = (isDark = true) => {
     position: 'absolute',
     right: Spacing.m,
   },
+  bgButton: {
+    fontSize: FontSize.base,
+      fontWeight: '600',
+      color: colors.textWhite,
+  }
 });
 };
 
