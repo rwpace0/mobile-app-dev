@@ -163,6 +163,7 @@ export const createStyles = (isDark = true) => {
   },
   detailHeader: {
     paddingHorizontal: Spacing.m,
+    marginTop: Spacing.m,
     marginBottom: Spacing.l,
   },
   detailTitle: {

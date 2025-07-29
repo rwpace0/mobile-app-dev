@@ -96,9 +96,10 @@ export const createStyles = (isDark = true) => {
     paddingHorizontal: Spacing.xxs,
     borderBottomWidth: 1,
     borderBottomColor: colors.overlayWhite,
+    backgroundColor: colors.backgroundCard,
   },
   completedSetRow: {
-    backgroundColor: colors.successOverlay,
+    
   },
   warmupSetRow: {
     backgroundColor: colors.warningOverlay,
@@ -246,6 +247,26 @@ export const createStyles = (isDark = true) => {
   modalCloseText: {
     color: colors.textSecondary,
     fontSize: FontSize.medium,
+  },
+  hiddenItemContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: colors.accentRed,
+    height: '100%',
+  },
+  hiddenItemLeft: {
+    flex: 1,
+    backgroundColor: colors.backgroundCard,
+  },
+  deleteAction: {
+    backgroundColor: colors.accentRed,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 75,
+    height: '100%',
+    paddingHorizontal: 10,
   },
 });
 };

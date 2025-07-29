@@ -30,7 +30,7 @@ export const createStyles = (isDark = true) => {
   },
   buttonContainer: {
     width: '100%',
-    gap: Spacing.m,
+    
   },
   button: {
     ...components.button,

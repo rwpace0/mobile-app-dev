@@ -61,13 +61,14 @@ export const createStyles = (isDark = true) => {
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
-    marginBottom: Spacing.s,
+    
   },
   
   startEmptyWorkoutText: {
     color: colors.textWhite,
     fontSize: FontSize.medium,
     marginLeft: Spacing.s,
+    textAlign: "center",
   },
   
   routineActionButtons: {
@@ -76,7 +77,7 @@ export const createStyles = (isDark = true) => {
   },
   
   routineActionButton: {
-    flexDirection: "row",
+    flexDirection: "row",s
     alignItems: "center",
     backgroundColor: colors.backgroundCard,
     paddingVertical: Spacing.s,

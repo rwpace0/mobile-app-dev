@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SwipeListView } from 'react-native-swipe-list-view';
 import { getColors } from "../constants/colors";
 import { FontSize } from "../constants/theme";
 import { createStyles } from "../styles/activeExercise.styles";
 import { useTheme, useSettings } from "../state/SettingsContext";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
-import SwipeToDelete from "../animations/SwipeToDelete";
 import exercisesAPI from "../API/exercisesAPI";
 import { useWeight } from "../utils/useWeight";
 
@@ -313,12 +313,100 @@ const ActiveExerciseComponent = ({
     setRemainingTime(0);
   };
 
+  // Convert sets to the format expected by SwipeListView
+  const swipeListData = sets.map((set, index) => ({
+    key: `${set.id}-${index}`, // Unique key for SwipeListView
+    set: set,
+    index: index
+  }));
+
+  // Render the front row (visible content)
+  const renderItem = ({ item }) => {
+    const { set, index } = item;
+    const correspondingPreviousSet = previousWorkoutSets[index];
+    
+    return (
+      <View style={[
+        styles.setRow,
+        set.completed && styles.completedSetRow
+      ]}>
+        <View style={styles.setNumberCell}>
+          <Text style={styles.setCell}>{set.id}</Text>
+        </View>
+        {showPreviousPerformance && (
+          <View style={styles.previousCell}>
+            <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
+              {correspondingPreviousSet ? (
+                `${correspondingPreviousSet.weight}${weight.unit} × ${correspondingPreviousSet.reps}`
+              ) : loadingPrevious ? (
+                "Loading..."
+              ) : (
+                "No data"
+              )}
+            </Text>
+          </View>
+        )}
+        <View style={styles.weightHeaderCell}>
+          <TextInput
+            style={styles.weightInput}
+            value={set.weight}
+            onChangeText={(value) => handleWeightChange(set.id, value)}
+            keyboardType="numeric"
+            placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.weight + "" : "0"}
+            placeholderTextColor={colors.textSecondary}
+            selectTextOnFocus={true}
+          />
+        </View>
+        <View style={styles.repsHeaderCell}>
+          <TextInput
+            style={styles.repsInput}
+            value={set.reps}
+            onChangeText={(value) => handleRepsChange(set.id, value)}
+            keyboardType="numeric"
+            placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.reps.toString() : "0"}
+            placeholderTextColor={colors.textSecondary}
+            selectTextOnFocus={true}
+          />
+        </View>
+        {!showPreviousPerformance && (
+          <View style={styles.totalCell}>
+            <Text style={styles.setCell}>{set.total}</Text>
+          </View>
+        )}
+        <View style={styles.completedCell}>
+          <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
+            <View
+              style={[
+                styles.checkmarkContainer,
+                set.completed && styles.completedCheckmark,
+              ]}
+            >
+              <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  // Render the hidden row (delete action)
+  const renderHiddenItem = ({ item }) => (
+    <View style={styles.hiddenItemContainer}>
+      <View style={styles.hiddenItemLeft} />
+      <TouchableOpacity
+        style={styles.deleteAction}
+        onPress={() => handleDeleteSet(item.set.id)}
+      >
+        <Ionicons name="trash-outline" size={24} color="white" />
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.exerciseName}>{exerciseDetails?.name || ""}</Text>
         
-          
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => setShowDeleteConfirm(true)}
@@ -384,79 +472,20 @@ const ActiveExerciseComponent = ({
           <Text style={[styles.setHeaderCell, styles.completedCell]}></Text>
         </View>
 
-        {/* Set Rows */}
-        {sets.map((set, index) => {
-          // Get the corresponding previous set for this set number
-          const correspondingPreviousSet = previousWorkoutSets[index];
-          
-          return (
-            <View key={set.id} style={{ width: '100%' }}>
-              <SwipeToDelete
-                onDelete={() => handleDeleteSet(set.id)}
-                style={[
-                  styles.setRow,
-                  set.completed 
-                ]}
-              >
-                <View style={styles.setNumberCell}>
-                  <Text style={styles.setCell}>{set.id}</Text>
-                </View>
-                {showPreviousPerformance && (
-                  <View style={styles.previousCell}>
-                    <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
-                      {correspondingPreviousSet ? (
-                        `${correspondingPreviousSet.weight}${weight.unit} × ${correspondingPreviousSet.reps}`
-                      ) : loadingPrevious ? (
-                        "Loading..."
-                      ) : (
-                        "No data"
-                      )}
-                    </Text>
-                  </View>
-                )}
-                <View style={styles.weightHeaderCell}>
-                  <TextInput
-                    style={styles.weightInput}
-                    value={set.weight}
-                    onChangeText={(value) => handleWeightChange(set.id, value)}
-                    keyboardType="numeric"
-                    placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.weight + "" : "0"}
-                    placeholderTextColor={colors.textSecondary}
-                    selectTextOnFocus={true}
-                  />
-                </View>
-                <View style={styles.repsHeaderCell}>
-                  <TextInput
-                    style={styles.repsInput}
-                    value={set.reps}
-                    onChangeText={(value) => handleRepsChange(set.id, value)}
-                    keyboardType="numeric"
-                    placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.reps.toString() : "0"}
-                    placeholderTextColor={colors.textSecondary}
-                    selectTextOnFocus={true}
-                  />
-                </View>
-                {!showPreviousPerformance && (
-                  <View style={styles.totalCell}>
-                    <Text style={styles.setCell}>{set.total}</Text>
-                  </View>
-                )}
-                <View style={styles.completedCell}>
-                  <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
-                    <View
-                      style={[
-                        styles.checkmarkContainer,
-                        set.completed && styles.completedCheckmark,
-                      ]}
-                    >
-                      <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </SwipeToDelete>
-            </View>
-          );
-        })}
+        {/* Swipe List for Sets */}
+        <SwipeListView
+          data={swipeListData}
+          renderItem={renderItem}
+          renderHiddenItem={renderHiddenItem}
+          rightOpenValue={-75}
+          disableRightSwipe={true}
+          keyExtractor={(item) => item.key}
+          scrollEnabled={false}
+          closeOnRowBeginSwipe={false}
+          closeOnScroll={false}
+          closeOnRowPress={false}
+          closeOnRowOpen={false}
+        />
       </View>
 
       {/* Add Set Button */}
