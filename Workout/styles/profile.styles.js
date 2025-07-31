@@ -168,14 +168,10 @@ export const createStyles = (isDark = true) => {
   },
 
   dashboardGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: Spacing.m,
   },
 
   dashboardItem: {
-    flex: 1,
-    minWidth: "45%",
     backgroundColor: colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.m,

@@ -163,28 +163,28 @@ const Profile = ({ navigation }) => {
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Statistics')}
         >
-          <Ionicons name="stats-chart" size={24} color={colors.textPrimary} />
+          <Ionicons name="stats-chart" size={24} color={colors.primaryBlue} />
           <Text style={styles.dashboardItemText}>Statistics</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Exercises')}
         >
-          <Ionicons name="barbell-outline" size={24} color={colors.textPrimary} />
+          <Ionicons name="barbell-outline" size={24} color={colors.primaryBlue} />
           <Text style={styles.dashboardItemText}>Exercises</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Measures')}
         >
-          <Ionicons name="body-outline" size={24} color={colors.textPrimary} />
+          <Ionicons name="body-outline" size={24} color={colors.primaryBlue} />
           <Text style={styles.dashboardItemText}>Measures</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.dashboardItem}
           onPress={() => handleDashboardPress('Calendar')}
         >
-          <Ionicons name="calendar-outline" size={24} color={colors.textPrimary} />
+          <Ionicons name="calendar-outline" size={24} color={colors.primaryBlue} />
           <Text style={styles.dashboardItemText}>Calendar</Text>
         </TouchableOpacity>
       </View>

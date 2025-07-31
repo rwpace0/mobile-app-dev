@@ -1,62 +1,72 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createStyles } from "../../styles/navbar.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { useNavigationState } from "@react-navigation/native";
 
-const Navbar = ({ state, descriptors, navigation }) => {
+// Configuration object to reduce code duplication
+const ROUTE_CONFIG = {
+  Profile: {
+    nestedScreens: ['ProfileMain', 'Settings', 'AccountSettings', 'EditProfile', 'SettingsPage'],
+    icon: { focused: 'person', unfocused: 'person-outline' },
+    displayName: 'Profile'
+  },
+  WorkoutHistory: {
+    nestedScreens: ['WorkoutHistoryMain', 'WorkoutDetail'],
+    icon: { focused: 'stats-chart', unfocused: 'stats-chart-outline' },
+    displayName: 'History'
+  },
+  Start: {
+    nestedScreens: ['StartMain', 'ExerciseDetail', 'ViewExercises', 'RoutineDetail'],
+    icon: { focused: 'barbell', unfocused: 'barbell-outline' },
+    displayName: 'Workout'
+  }
+};
+
+const VISIBLE_TABS = ['WorkoutHistory', 'Start', 'Profile'];
+
+const Navbar = ({ state, navigation }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   
+  // Memoize current nested route calculation
+  const currentNestedRoute = useMemo(() => {
+    const currentTab = state.routes[state.index];
+    if (currentTab?.state?.routes) {
+      const nestedRoute = currentTab.state.routes[currentTab.state.index];
+      return nestedRoute?.name;
+    }
+    return currentTab?.name;
+  }, [state]);
+  
+  // Memoize parent tab calculation
+  const getParentTab = useMemo(() => {
+    return (routeName) => {
+      for (const [tabName, config] of Object.entries(ROUTE_CONFIG)) {
+        if (config.nestedScreens.includes(routeName)) {
+          return tabName;
+        }
+      }
+      return routeName;
+    };
+  }, []);
+
+  const parentTab = getParentTab(currentNestedRoute);
+
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const label =
-          options.tabBarLabel !== undefined
-            ? options.tabBarLabel
-            : options.title !== undefined
-            ? options.title
-            : route.name;
-
-        const isFocused = state.index === index;
-
-        // icons based on route name
-        let iconName;
-        if (route.name === "Home") {
-          iconName = isFocused ? "home" : "home-outline";
-        } else if (route.name === "Start" || route.name === "ActiveWorkout") {
-          iconName = isFocused ? "barbell" : "barbell-outline";
-        } else if (route.name === "AddExercise") {
-          iconName = isFocused ? "stats-chart" : "stats-chart-outline";
-        } else if (route.name === "Profile") {
-          iconName = isFocused ? "person" : "person-outline";
-        } else if (route.name === "WorkoutHistory") {
-          iconName = isFocused ? "stats-chart" : "stats-chart-outline";
-        } else {
-          iconName = isFocused ? "apps" : "apps-outline";
-        }
-
-        // hidden screens from the navbar
-        if (
-          route.name === "Login" ||
-          route.name === "SignUp" ||
-          route.name === "activeWorkout" ||
-          route.name === "RoutineCreate" ||
-          route.name === "CreateExercise" ||
-          route.name === "WorkoutDetail" ||
-          route.name === "ExerciseDetail" ||
-          route.name === "ViewExercises" ||
-          route.name === "Settings" ||
-          route.name === "AddExercise" ||
-          route.name === "SettingsPage" ||
-          route.name === "editWorkout" ||
-          route.name === "RoutineDetail"
-        ) {
+        // Only show visible tabs
+        if (!VISIBLE_TABS.includes(route.name)) {
           return null;
         }
+
+        const config = ROUTE_CONFIG[route.name];
+        const isFocused = route.name === parentTab;
+        const iconName = isFocused ? config.icon.focused : config.icon.unfocused;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -68,13 +78,6 @@ const Navbar = ({ state, descriptors, navigation }) => {
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
           }
-        };
-
-        // Get display name for the tab
-        const getDisplayName = (routeName) => {
-          if (routeName === "Start") return "Workout";
-          if (routeName === "WorkoutHistory") return "History";
-          return label;
         };
 
         return (
@@ -93,7 +96,7 @@ const Navbar = ({ state, descriptors, navigation }) => {
               color={isFocused ? colors.primaryLight : colors.textFaded}
             />
             <Text style={isFocused ? styles.tabTextActive : styles.tabText}>
-              {getDisplayName(route.name)}
+              {config.displayName}
             </Text>
           </TouchableOpacity>
         );
@@ -102,4 +105,4 @@ const Navbar = ({ state, descriptors, navigation }) => {
   );
 };
 
-export default Navbar;
+export default React.memo(Navbar);

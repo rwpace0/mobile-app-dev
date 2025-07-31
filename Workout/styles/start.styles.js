@@ -77,7 +77,7 @@ export const createStyles = (isDark = true) => {
   },
   
   routineActionButton: {
-    flexDirection: "row",s
+    flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.backgroundCard,
     paddingVertical: Spacing.s,

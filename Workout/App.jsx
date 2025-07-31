@@ -39,7 +39,59 @@ const Stack = createNativeStackNavigator();
 // Create navigation reference for global navigation
 const navigationRef = createNavigationContainerRef();
 
-// Auth Stack (Welcome, Login, Signup)
+// Common screen options for slide animations
+const slideFromRightOptions = {
+  animation: 'slide_from_right',
+  headerShown: false,
+};
+
+const modalOptions = {
+  presentation: "fullScreenModal",
+  animationTypeForReplace: "push",
+  headerShown: false,
+};
+
+// Screen configuration for each stack - reduces duplication
+const stackScreens = {
+  profile: [
+    { name: "ProfileMain", component: Profile },
+    { name: "Settings", component: Settings, options: slideFromRightOptions },
+    { name: "AccountSettings", component: AccountSettings, options: slideFromRightOptions },
+    { name: "EditProfile", component: EditProfile, options: slideFromRightOptions },
+    { name: "SettingsPage", component: SettingsPage, options: slideFromRightOptions },
+  ],
+  workoutHistory: [
+    { name: "WorkoutHistoryMain", component: WorkoutHistory },
+    { name: "WorkoutDetail", component: WorkoutDetail, options: slideFromRightOptions },
+  ],
+  start: [
+    { name: "StartMain", component: startPage },
+    { name: "ExerciseDetail", component: ExerciseDetail, options: slideFromRightOptions },
+    { name: "ViewExercises", component: ViewExercises, options: slideFromRightOptions },
+    { name: "RoutineDetail", component: RoutineDetail, options: slideFromRightOptions },
+  ]
+};
+
+// Generic stack creator - reduces code duplication
+const createStackNavigator = (screens) => () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    {screens.map(({ name, component, options = {} }) => (
+      <Stack.Screen 
+        key={name}
+        name={name} 
+        component={component}
+        options={options}
+      />
+    ))}
+  </Stack.Navigator>
+);
+
+// Create stack navigators using the generic creator
+const ProfileStack = createStackNavigator(stackScreens.profile);
+const WorkoutHistoryStack = createStackNavigator(stackScreens.workoutHistory);
+const StartStack = createStackNavigator(stackScreens.start);
+
+// Auth Stack
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Welcome" component={WelcomePage} />
@@ -48,86 +100,60 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// Tab Navigator for main app sections - only contains main tab screens
+// Tab Navigator
 const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={{ headerShown: false }}
     tabBar={(props) => <Navbar {...props} />}
     initialRouteName="Start"
   >
-    <Tab.Screen name="WorkoutHistory" component={WorkoutHistory} />
-    <Tab.Screen name="Start" component={startPage} />
-    <Tab.Screen name="Profile" component={Profile} />
+    <Tab.Screen name="WorkoutHistory" component={WorkoutHistoryStack} />
+    <Tab.Screen name="Start" component={StartStack} />
+    <Tab.Screen name="Profile" component={ProfileStack} />
   </Tab.Navigator>
 );
 
-// Main Stack Navigator for detail/modal screens with ActiveMini overlay
-const MainStack = () => {
-  const { activeWorkout, endWorkout } = useActiveWorkout();
+// Modal screens configuration
+const modalScreens = [
+  { name: "AddExercise", component: AddExercisePage },
+  { name: "activeWorkout", component: ActiveWorkoutPage },
+  { name: "RoutineCreate", component: RoutineCreate },
+  { name: "EditTemplate", component: EditRoutine },
+  { name: "CreateExercise", component: CreateExercise },
+  { name: "WorkoutSettings", component: SettingsPage },
+];
 
-  const handleResumeWorkout = () => {
+// Main Stack Navigator
+const MainStack = () => {
+  const { activeWorkout } = useActiveWorkout();
+
+  const handleResumeWorkout = React.useCallback(() => {
     if (navigationRef.isReady()) {
       navigationRef.navigate('activeWorkout');
     }
-  };
+  }, []);
 
   return (
     <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={TabNavigator} />
-        <Stack.Screen
-          name="AddExercise"
-          component={AddExercisePage}
-          options={{
-            presentation: "fullScreenModal",
-            animationTypeForReplace: "push",
-          }}
+        
+        {/* Modal screens */}
+        {modalScreens.map(({ name, component }) => (
+          <Stack.Screen
+            key={name}
+            name={name}
+            component={component}
+            options={modalOptions}
+          />
+        ))}
+        
+        {/* Special case screen */}
+        <Stack.Screen 
+          name="editWorkout" 
+          component={editWorkout} 
+          options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="activeWorkout"
-          component={ActiveWorkoutPage}
-          options={{
-            presentation: "fullScreenModal",
-            animationTypeForReplace: "push",
-          }}
-        />
-        <Stack.Screen
-          name="RoutineCreate"
-          component={RoutineCreate}
-          options={{
-            presentation: "fullScreenModal",
-            animationTypeForReplace: "push",
-          }}
-        />
-        <Stack.Screen
-          name="EditTemplate"
-          component={EditRoutine}
-          options={{
-            presentation: "fullScreenModal",
-            animationTypeForReplace: "push",
-          }}
-        />
-        <Stack.Screen name="CreateExercise" component={CreateExercise} options={{
-    presentation: "fullScreenModal",
-    animationTypeForReplace: "push",
-  }}/>
-        <Stack.Screen
-          name="WorkoutSettings"
-          component={SettingsPage}
-          options={{
-            presentation: "fullScreenModal",
-            animationTypeForReplace: "push",
-          }}
-        />
-        <Stack.Screen name="WorkoutDetail" component={WorkoutDetail} />
-        <Stack.Screen name="editWorkout" component={editWorkout} />
-        <Stack.Screen name="ExerciseDetail" component={ExerciseDetail} />
-        <Stack.Screen name="ViewExercises" component={ViewExercises} />
-        <Stack.Screen name="Settings" component={Settings} />
-        <Stack.Screen name="SettingsPage" component={SettingsPage} />
-        <Stack.Screen name="AccountSettings" component={AccountSettings} />
-        <Stack.Screen name="EditProfile" component={EditProfile} />
-        <Stack.Screen name="RoutineDetail" component={RoutineDetail} />
       </Stack.Navigator>
       
       {activeWorkout && (
@@ -142,14 +168,13 @@ const MainStack = () => {
   );
 };
 
-// Root Navigator
-const RootNavigator = () => {
+// Root Navigator with memoization
+const RootNavigator = React.memo(() => {
   const { user, loading } = useAuth();
 
   // Cleanup old files when user is authenticated
   React.useEffect(() => {
     if (user?.isAuthenticated) {
-      // Run cleanup after a short delay to avoid blocking initial app load
       const cleanup = async () => {
         try {
           await mediaAPI.cleanupOldFiles();
@@ -173,17 +198,14 @@ const RootNavigator = () => {
         user.isAuthenticated ? (
           <Stack.Screen name="Main" component={MainStack} />
         ) : (
-          <Stack.Screen
-            name="EmailVerification"
-            component={EmailVerification}
-          />
+          <Stack.Screen name="EmailVerification" component={EmailVerification} />
         )
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
       )}
     </Stack.Navigator>
   );
-};
+});
 
 export default function App() {
   return (
