@@ -20,6 +20,7 @@ import { useActiveWorkout } from "../../state/ActiveWorkoutContext";
 import { useWeight } from "../../utils/useWeight";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
+import { hapticLight } from '../../utils/hapticFeedback';
 
 const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
@@ -103,6 +104,7 @@ const ActiveWorkoutPage = () => {
   };
 
   const handleAddExercise = () => {
+    hapticLight();
     navigation.navigate("AddExercise", {
       onExercisesSelected: (selectedExercises) => {
         setExercises((prev) => {

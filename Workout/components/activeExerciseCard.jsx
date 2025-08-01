@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SwipeListView } from 'react-native-swipe-list-view';
+import { SwipeListView } from "react-native-swipe-list-view";
 import { getColors } from "../constants/colors";
 import { FontSize } from "../constants/theme";
 import { createStyles } from "../styles/activeExercise.styles";
@@ -10,6 +10,7 @@ import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import exercisesAPI from "../API/exercisesAPI";
 import { useWeight } from "../utils/useWeight";
+import { hapticLight } from "../utils/hapticFeedback";
 
 const ActiveExerciseComponent = ({
   exercise,
@@ -29,7 +30,9 @@ const ActiveExerciseComponent = ({
   const [previousPerformance, setPreviousPerformance] = useState(null);
   const [previousWorkoutSets, setPreviousWorkoutSets] = useState([]); // Store all sets from previous workout
   const [loadingPrevious, setLoadingPrevious] = useState(false);
-  const [hasPrefilledData, setHasPrefilledData] = useState(!!initialState?.sets);
+  const [hasPrefilledData, setHasPrefilledData] = useState(
+    !!initialState?.sets
+  );
   const { isDark } = useTheme();
   const { showPreviousPerformance } = useSettings();
   const colors = getColors(isDark);
@@ -50,7 +53,9 @@ const ActiveExerciseComponent = ({
   useEffect(() => {
     const fetchExerciseDetails = async () => {
       try {
-        const details = await exercisesAPI.getExerciseById(exercise.exercise_id);
+        const details = await exercisesAPI.getExerciseById(
+          exercise.exercise_id
+        );
         setExerciseDetails(details);
       } catch (error) {
         console.error("Failed to fetch exercise details:", error);
@@ -64,33 +69,35 @@ const ActiveExerciseComponent = ({
   useEffect(() => {
     const fetchPreviousPerformance = async () => {
       if (!exercise.exercise_id) return;
-      
+
       try {
         setLoadingPrevious(true);
-        const history = await exercisesAPI.getExerciseHistory(exercise.exercise_id);
-        
+        const history = await exercisesAPI.getExerciseHistory(
+          exercise.exercise_id
+        );
+
         if (history && history.length > 0) {
           const lastWorkout = history[0]; // Most recent workout
           if (lastWorkout.sets && lastWorkout.sets.length > 0) {
             // Store all previous sets for individual display
-            const convertedPreviousSets = lastWorkout.sets.map(set => {
+            const convertedPreviousSets = lastWorkout.sets.map((set) => {
               const convertedWeight = weight.fromStorage(set.weight);
               const roundedWeight = weight.roundToHalf(convertedWeight);
               return {
                 weight: roundedWeight,
                 reps: set.reps,
-                total: roundedWeight * (set.reps || 0)
+                total: roundedWeight * (set.reps || 0),
               };
             });
             setPreviousWorkoutSets(convertedPreviousSets);
-            
+
             // Find the best set (highest total weight moved) for display
             const bestSet = lastWorkout.sets.reduce((best, set) => {
               const currentTotal = (set.weight || 0) * (set.reps || 0);
               const bestTotal = (best.weight || 0) * (best.reps || 0);
               return currentTotal > bestTotal ? set : best;
             });
-            
+
             // Convert weight from storage to user's preferred unit for display
             const convertedWeight = weight.fromStorage(bestSet.weight);
             // Round to only allow whole numbers and .5 increments
@@ -102,7 +109,7 @@ const ActiveExerciseComponent = ({
               date: lastWorkout.date_performed || lastWorkout.created_at,
             };
             setPreviousPerformance(performanceData);
-            
+
             // Initialize sets based on previous workout if current sets are empty
             if (!hasPrefilledData && sets.length === 0) {
               const initialSets = lastWorkout.sets.map((prevSet, index) => {
@@ -111,25 +118,31 @@ const ActiveExerciseComponent = ({
                 const roundedWeight = weight.roundToHalf(convertedWeight);
                 return {
                   id: (index + 1).toString(),
-                  weight: showPreviousPerformance ? roundedWeight.toString() : "",
+                  weight: showPreviousPerformance
+                    ? roundedWeight.toString()
+                    : "",
                   reps: showPreviousPerformance ? prevSet.reps.toString() : "",
-                  total: showPreviousPerformance ? Math.round(roundedWeight * prevSet.reps).toString() : "",
+                  total: showPreviousPerformance
+                    ? Math.round(roundedWeight * prevSet.reps).toString()
+                    : "",
                   completed: false,
                 };
               });
-              
+
               setSets(initialSets);
               setHasPrefilledData(true);
             } else if (!hasPrefilledData && showPreviousPerformance) {
               // Pre-fill existing empty sets with previous performance data
-              setSets(prevSets => 
-                prevSets.map(set => {
+              setSets((prevSets) =>
+                prevSets.map((set) => {
                   if (!set.weight && !set.reps) {
                     return {
                       ...set,
                       weight: performanceData.weight.toString(),
                       reps: performanceData.reps.toString(),
-                      total: Math.round(performanceData.weight * performanceData.reps).toString(),
+                      total: Math.round(
+                        performanceData.weight * performanceData.reps
+                      ).toString(),
                     };
                   }
                   return set;
@@ -140,26 +153,30 @@ const ActiveExerciseComponent = ({
           }
         } else if (!hasPrefilledData && sets.length === 0) {
           // No previous workout found, add one empty set to get started
-          setSets([{
-            id: "1",
-            weight: "",
-            reps: "",
-            total: "",
-            completed: false,
-          }]);
+          setSets([
+            {
+              id: "1",
+              weight: "",
+              reps: "",
+              total: "",
+              completed: false,
+            },
+          ]);
           setHasPrefilledData(true);
         }
       } catch (error) {
         console.error("Failed to fetch previous performance:", error);
         // If there's an error and no sets exist, add one empty set
         if (!hasPrefilledData && sets.length === 0) {
-          setSets([{
-            id: "1",
-            weight: "",
-            reps: "",
-            total: "",
-            completed: false,
-          }]);
+          setSets([
+            {
+              id: "1",
+              weight: "",
+              reps: "",
+              total: "",
+              completed: false,
+            },
+          ]);
           setHasPrefilledData(true);
         }
       } finally {
@@ -261,16 +278,24 @@ const ActiveExerciseComponent = ({
     // Use previous performance data as defaults if available and setting is enabled
     let defaultWeight = lastSet ? lastSet.weight : "";
     let defaultReps = lastSet ? lastSet.reps : "";
-    
+
     // Get the corresponding previous set for this new set number
     const newSetIndex = sets.length;
     const correspondingPreviousSet = previousWorkoutSets[newSetIndex];
-    
-    if (showPreviousPerformance && correspondingPreviousSet && (!lastSet || (!lastSet.weight && !lastSet.reps))) {
+
+    if (
+      showPreviousPerformance &&
+      correspondingPreviousSet &&
+      (!lastSet || (!lastSet.weight && !lastSet.reps))
+    ) {
       // Use the corresponding previous set data for this set number
       defaultWeight = correspondingPreviousSet.weight.toString();
       defaultReps = correspondingPreviousSet.reps.toString();
-    } else if (showPreviousPerformance && previousPerformance && (!lastSet || (!lastSet.weight && !lastSet.reps))) {
+    } else if (
+      showPreviousPerformance &&
+      previousPerformance &&
+      (!lastSet || (!lastSet.weight && !lastSet.reps))
+    ) {
       // Fallback to best set data if no corresponding previous set
       defaultWeight = weight.roundToHalf(previousPerformance.weight).toString();
       defaultReps = previousPerformance.reps.toString();
@@ -280,7 +305,12 @@ const ActiveExerciseComponent = ({
       id: newSetId,
       weight: defaultWeight,
       reps: defaultReps,
-      total: defaultWeight && defaultReps ? Math.round(parseFloat(defaultWeight) * parseFloat(defaultReps)).toString() : "",
+      total:
+        defaultWeight && defaultReps
+          ? Math.round(
+              parseFloat(defaultWeight) * parseFloat(defaultReps)
+            ).toString()
+          : "",
       completed: false,
     };
     setSets([...sets, newSet]);
@@ -291,6 +321,7 @@ const ActiveExerciseComponent = ({
   };
 
   const toggleSetCompletion = (index) => {
+    hapticLight();
     setSets((prev) =>
       prev.map((set, idx) => {
         if (idx === index) {
@@ -317,32 +348,32 @@ const ActiveExerciseComponent = ({
   const swipeListData = sets.map((set, index) => ({
     key: `${set.id}-${index}`, // Unique key for SwipeListView
     set: set,
-    index: index
+    index: index,
   }));
 
   // Render the front row (visible content)
   const renderItem = ({ item }) => {
     const { set, index } = item;
     const correspondingPreviousSet = previousWorkoutSets[index];
-    
+
     return (
-      <View style={[
-        styles.setRow,
-        set.completed && styles.completedSetRow
-      ]}>
+      <View style={[styles.setRow, set.completed && styles.completedSetRow]}>
         <View style={styles.setNumberCell}>
           <Text style={styles.setCell}>{set.id}</Text>
         </View>
         {showPreviousPerformance && (
           <View style={styles.previousCell}>
-            <Text style={[styles.setCell, { color: colors.textSecondary, fontSize: FontSize.small }]}>
-              {correspondingPreviousSet ? (
-                `${correspondingPreviousSet.weight}${weight.unit} × ${correspondingPreviousSet.reps}`
-              ) : loadingPrevious ? (
-                "Loading..."
-              ) : (
-                "No data"
-              )}
+            <Text
+              style={[
+                styles.setCell,
+                { color: colors.textSecondary, fontSize: FontSize.small },
+              ]}
+            >
+              {correspondingPreviousSet
+                ? `${correspondingPreviousSet.weight}${weight.unit} × ${correspondingPreviousSet.reps}`
+                : loadingPrevious
+                ? "-"
+                : "-"}
             </Text>
           </View>
         )}
@@ -352,7 +383,11 @@ const ActiveExerciseComponent = ({
             value={set.weight}
             onChangeText={(value) => handleWeightChange(set.id, value)}
             keyboardType="numeric"
-            placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.weight + "" : "0"}
+            placeholder={
+              showPreviousPerformance && correspondingPreviousSet
+                ? correspondingPreviousSet.weight + ""
+                : "0"
+            }
             placeholderTextColor={colors.textSecondary}
             selectTextOnFocus={true}
           />
@@ -363,7 +398,11 @@ const ActiveExerciseComponent = ({
             value={set.reps}
             onChangeText={(value) => handleRepsChange(set.id, value)}
             keyboardType="numeric"
-            placeholder={showPreviousPerformance && correspondingPreviousSet ? correspondingPreviousSet.reps.toString() : "0"}
+            placeholder={
+              showPreviousPerformance && correspondingPreviousSet
+                ? correspondingPreviousSet.reps.toString()
+                : "0"
+            }
             placeholderTextColor={colors.textSecondary}
             selectTextOnFocus={true}
           />
@@ -406,7 +445,7 @@ const ActiveExerciseComponent = ({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.exerciseName}>{exerciseDetails?.name || ""}</Text>
-        
+
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => setShowDeleteConfirm(true)}
@@ -460,12 +499,16 @@ const ActiveExerciseComponent = ({
         <View style={styles.setHeaderRow}>
           <Text style={[styles.setHeaderCell, styles.setNumberCell]}>SET</Text>
           {showPreviousPerformance && (
-            <Text style={[styles.setHeaderCell, styles.previousCell]}>PREVIOUS</Text>
+            <Text style={[styles.setHeaderCell, styles.previousCell]}>
+              PREVIOUS
+            </Text>
           )}
           <Text style={[styles.setHeaderCell, styles.weightHeaderCell]}>
             {weight.unitLabel()}
           </Text>
-          <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>REPS</Text>
+          <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>
+            REPS
+          </Text>
           {!showPreviousPerformance && (
             <Text style={[styles.setHeaderCell, styles.totalCell]}>TOTAL</Text>
           )}

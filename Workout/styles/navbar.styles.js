@@ -14,24 +14,24 @@ export const createStyles = (isDark = true) => {
   tabBar: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    alignItems: "center",
+    alignItems: "flex-start",
     borderTopWidth: 1,
     borderTopColor: colors.borderColor,
-    paddingVertical: Spacing.s,
-    
+    paddingTop: Spacing.none,
+    paddingBottom: Spacing.l,
     backgroundColor: colors.backgroundPrimary,
   },
 
   tabItem: {
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     padding: Spacing.xs,
     flex: 1,
   },
 
   tabItemActive: {
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     padding: Spacing.xs,
     flex: 1,
   },

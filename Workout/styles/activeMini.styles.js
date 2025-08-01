@@ -12,8 +12,8 @@ export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
   
   // Calculate navbar height dynamically
-  // Navbar has: paddingVertical (12*2) + icon (24) + text (12) + text marginTop (4) + tabItem padding (8*2) + borderTop (1)
-  const navbarHeight = (Spacing.s * 2) + 24 + FontSize.small + Spacing.xxs + (Spacing.xs * 2) + 1; // Added +1 for borderTop
+  // Navbar has: paddingBottom (24) + icon (24) + text (12) + text marginTop (4) + tabItem padding (8*2) + borderTop (1)
+  const navbarHeight = Spacing.l + 24 + FontSize.small + Spacing.xxs + (Spacing.xs * 2) + 1; // 24 + 24 + 12 + 4 + 16 + 1 = 81px
   
   return StyleSheet.create({
     container: {

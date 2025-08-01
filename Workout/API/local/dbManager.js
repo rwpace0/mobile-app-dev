@@ -240,7 +240,7 @@ class DatabaseManager {
           await this.db.execAsync('ALTER TABLE workouts ADD COLUMN template_id TEXT;');
           console.log('[DatabaseManager] Successfully added template_id column');
         } else {
-          console.log('[DatabaseManager] template_id column already exists in workouts table');
+          
         }
       } catch (error) {
         console.error('[DatabaseManager] Error checking/adding template_id column:', error);

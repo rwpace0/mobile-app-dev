@@ -94,6 +94,7 @@ const Navbar = ({ state, navigation }) => {
               name={iconName}
               size={24}
               color={isFocused ? colors.primaryLight : colors.textFaded}
+              
             />
             <Text style={isFocused ? styles.tabTextActive : styles.tabText}>
               {config.displayName}
