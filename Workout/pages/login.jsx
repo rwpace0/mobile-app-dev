@@ -17,15 +17,56 @@ const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const { login, error } = useAuth();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const { alertState, showError, hideAlert } = useAlertModal();
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    setEmailError(false);
+    setLoginError(""); // Clear login error when user starts typing
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    setPasswordError(false);
+    setLoginError(""); // Clear login error when user starts typing
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      showError("Error", "Please fill in all fields");
+    // Reset all errors
+    setEmailError(false);
+    setPasswordError(false);
+    setLoginError("");
+
+    // Validate inputs
+    let hasErrors = false;
+
+    if (!email) {
+      setEmailError(true);
+      hasErrors = true;
+    } else if (!validateEmail(email)) {
+      setEmailError(true);
+      hasErrors = true;
+    }
+
+    if (!password) {
+      setPasswordError(true);
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      showError("Error", "Please fill in all fields correctly");
       return;
     }
 
@@ -34,7 +75,19 @@ const LoginPage = ({ navigation }) => {
       await login(email, password);
       // navigation will be handled by the auth state change
     } catch (error) {
-      showError("Error", error.message || "Failed to login");
+      const errorMessage = error.message || "Failed to login";
+      setLoginError(errorMessage);
+      
+      // Set specific field errors based on the error message
+      if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("user")) {
+        setEmailError(true);
+      }
+      if (errorMessage.toLowerCase().includes("password") || errorMessage.toLowerCase().includes("credentials") || errorMessage.toLowerCase().includes("invalid")) {
+        setPasswordError(true);
+        setLoginError("Invalid password");
+      }
+      
+      showError("Error", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -47,29 +100,51 @@ const LoginPage = ({ navigation }) => {
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
-          style={styles.textInput}
+          style={[
+            styles.textInput,
+            emailError ? styles.textInputError : null,
+          ]}
           placeholder="Enter your email"
           placeholderTextColor={colors.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={handleEmailChange}
           editable={!loading}
         />
+        {emailError && (
+          <Text style={styles.errorText}>
+            {!email ? "Email is required" : "Invalid email address"}
+          </Text>
+        )}
       </View>
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Password</Text>
         <TextInput
-          style={styles.textInput}
+          style={[
+            styles.textInput,
+            passwordError ? styles.textInputError : null,
+          ]}
           placeholder="Enter your password"
           placeholderTextColor={colors.placeholder}
           secureTextEntry
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
           editable={!loading}
         />
+        {passwordError && (
+          <Text style={styles.errorText}>
+            {!password ? "Password is required" : "Invalid password"}
+          </Text>
+        )}
       </View>
+
+      {loginError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{loginError}</Text>
+        </View>
+      )}
 
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}

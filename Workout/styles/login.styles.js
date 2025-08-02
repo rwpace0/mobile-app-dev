@@ -131,6 +131,10 @@ export const createStyles = (isDark = true) => {
     fontSize: FontSize.small,
     marginBottom: Spacing.s,
   },
+  errorContainer: {
+    width: '100%',
+    marginBottom: Spacing.m,
+  },
   inputWrapper: {
     position: 'relative',
     width: '100%',
