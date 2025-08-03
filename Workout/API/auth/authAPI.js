@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { storage } from '../local/tokenStorage';
+import { tokenManager } from '../utils/tokenManager';
 import getBaseUrl from "../utils/getBaseUrl";
 
 const API_URL = `${getBaseUrl()}/auth`;
@@ -15,14 +16,14 @@ const api = axios.create({
 
 // Add token to requests if it exists
 api.interceptors.request.use(async (config) => {
-  const token = await storage.getItem('auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const accessToken = await tokenManager.getValidToken();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 });
 
-// Add response interceptor for better error handling
+// Add response interceptor for better error handling and token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -30,11 +31,27 @@ api.interceptors.response.use(
     if (!error.response) {
       throw new Error('Network error - please check your connection');
     }
-    // Handle specific error codes
+    
+    // Handle 401 errors with token refresh
     if (error.response.status === 401) {
-      // Clear invalid token
-      await storage.removeItem('auth_token');
+      try {
+        // Try to get a valid token (this will attempt refresh if needed)
+        const accessToken = await tokenManager.getValidToken();
+        if (accessToken) {
+          // Retry the original request with new token
+          const originalRequest = error.config;
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return axios(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        // Clear all tokens if refresh fails
+        await tokenManager.clearTokens();
+        throw new Error('Session expired. Please login again.');
+      }
     }
+    
+    // Handle specific error codes
     if (error.response.data?.code === 'EXPIRED_LINK') {
       throw new Error('Verification link has expired. Please request a new one.');
     }
@@ -64,7 +81,11 @@ export const authAPI = {
       const response = await api.post('/login', { email, password });
       
       if (response.data.session?.access_token) {
-        await storage.setItem('auth_token', response.data.session.access_token);
+        await storage.setTokens(
+          response.data.session.access_token,
+          response.data.session.refresh_token,
+          response.data.session.expires_in
+        );
       }
       
       return response.data;
@@ -78,11 +99,11 @@ export const authAPI = {
   logout: async () => {
     try {
       await api.post('/logout');
-      await storage.removeItem('auth_token');
+      await storage.clearTokens();
     } catch (error) {
       console.error('Logout error:', error);
-      // Still remove token even if logout fails
-      await storage.removeItem('auth_token');
+      // Still remove tokens even if logout fails
+      await storage.clearTokens();
       throw error;
     }
   },
@@ -103,9 +124,13 @@ export const authAPI = {
       const response = await api.get('/verify-email', {
         params: { token_hash, type }
       });
-      // If verification is successful, store the session token
+      // If verification is successful, store the session tokens
       if (response.data.session?.access_token) {
-        await storage.setItem('auth_token', response.data.session.access_token);
+        await storage.setTokens(
+          response.data.session.access_token,
+          response.data.session.refresh_token,
+          response.data.session.expires_in
+        );
       }
       return response.data;
     } catch (error) {
@@ -116,16 +141,9 @@ export const authAPI = {
   // Check if user is authenticated
   isAuthenticated: async () => {
     try {
-      const token = await storage.getItem('auth_token');
-      if (!token) return false;
-      
-      // Validate token by making a request to /me
-      const response = await api.get('/me');
-      return response.status === 200;
+      return await tokenManager.isAuthenticated();
     } catch (error) {
       console.error('Auth check error:', error);
-      // If token is invalid, remove it
-      await storage.removeItem('auth_token');
       return false;
     }
   },
@@ -137,6 +155,17 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error('Update username error:', error);
+      throw error;
+    }
+  },
+
+  // Refresh token
+  refreshToken: async (refreshToken) => {
+    try {
+      const response = await api.post('/refresh', { refresh_token: refreshToken });
+      return response.data;
+    } catch (error) {
+      console.error('Token refresh error:', error);
       throw error;
     }
   },

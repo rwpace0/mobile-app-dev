@@ -6,6 +6,7 @@ import { workoutCache } from "./local/WorkoutCache";
 import { backgroundProcessor } from "./local/BackgroundProcessor";
 import { v4 as uuid } from "uuid";
 import { storage } from "./local/tokenStorage";
+import { tokenManager } from "./utils/tokenManager";
 import { syncManager } from "./local/syncManager";
 import exercisesAPI from "./exercisesAPI";
 
@@ -930,9 +931,9 @@ class WorkoutAPI extends APIBase {
   }
 
   async getUserId() {
-    const token = await storage.getItem('auth_token')
-    if (!token) throw new Error("No auth token found");
-    return JSON.parse(atob(token.split(".")[1])).sub;
+    const accessToken = await tokenManager.getValidToken()
+    if (!accessToken) throw new Error("No auth token found");
+    return JSON.parse(atob(accessToken.split(".")[1])).sub;
   }
 
   // Background processing methods

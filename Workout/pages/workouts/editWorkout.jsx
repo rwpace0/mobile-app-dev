@@ -28,7 +28,7 @@ const EditWorkoutPage = () => {
   const styles = createStyles(isDark);
   const weight = useWeight();
   const { workout_id } = route.params || {};
-  
+
   const [exercises, setExercises] = useState([]);
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [totalVolume, setTotalVolume] = useState(0);
@@ -50,9 +50,8 @@ const EditWorkoutPage = () => {
     try {
       setLoading(true);
       const workout = await workoutAPI.getWorkoutById(workout_id);
-      
+
       if (!workout) {
-        
         navigation.goBack();
         return;
       }
@@ -62,17 +61,17 @@ const EditWorkoutPage = () => {
       setWorkoutDuration(workout.duration || 0);
 
       // Transform workout exercises to match the format expected by ActiveExerciseComponent
-      const transformedExercises = workout.exercises.map(ex => ({
+      const transformedExercises = workout.exercises.map((ex) => ({
         exercise_id: ex.exercise_id,
         name: ex.name,
-        muscle_group: ex.muscle_group
+        muscle_group: ex.muscle_group,
       }));
 
       setExercises(transformedExercises);
 
       // Set up exercise states with existing sets and notes
       const initialStates = {};
-      workout.exercises.forEach(ex => {
+      workout.exercises.forEach((ex) => {
         initialStates[ex.exercise_id] = {
           sets: ex.sets.map((set, index) => {
             // Convert weight from storage to user's preferred unit for editing
@@ -85,10 +84,10 @@ const EditWorkoutPage = () => {
               reps: set.reps.toString(),
               total: (roundedWeight * set.reps).toString(),
               completed: true, // Existing sets are considered completed
-              rir: set.rir
+              rir: set.rir,
             };
           }),
-          notes: ex.notes || ""
+          notes: ex.notes || "",
         };
       });
 
@@ -97,8 +96,8 @@ const EditWorkoutPage = () => {
       // Calculate initial totals
       let volume = 0;
       let setsCount = 0;
-      workout.exercises.forEach(ex => {
-        ex.sets.forEach(set => {
+      workout.exercises.forEach((ex) => {
+        ex.sets.forEach((set) => {
           // Convert weight from storage to user's preferred unit for volume calculation
           const convertedWeight = weight.fromStorage(set.weight);
           // Round to avoid floating point precision issues
@@ -107,20 +106,17 @@ const EditWorkoutPage = () => {
           setsCount++;
         });
       });
-      
+
       setTotalVolume(volume);
       setTotalSets(setsCount);
-
     } catch (error) {
       console.error("Error loading workout:", error);
-      
+
       navigation.goBack();
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const formatDuration = (seconds) => {
     if (seconds < 60) return `${seconds}s`;
@@ -173,14 +169,14 @@ const EditWorkoutPage = () => {
           sets: [],
           notes: "",
         };
-        
+
         // Only include sets with weight and reps
         const sets = (state.sets || [])
           .filter((set) => set.weight && set.reps)
           .map((set, idx) => ({
             weight: weight.toStorage(Number(set.weight)),
             reps: Number(set.reps),
-            rir: (set.rir !== "" && set.rir != null) ? Number(set.rir) : null,
+            rir: set.rir !== "" && set.rir != null ? Number(set.rir) : null,
             set_order: idx + 1,
           }));
 
@@ -193,7 +189,9 @@ const EditWorkoutPage = () => {
       });
 
       // Filter out exercises with no sets
-      const validExercises = exercisesPayload.filter(ex => ex.sets.length > 0);
+      const validExercises = exercisesPayload.filter(
+        (ex) => ex.sets.length > 0
+      );
 
       if (validExercises.length === 0) {
         showWarning(
@@ -205,20 +203,18 @@ const EditWorkoutPage = () => {
 
       const payload = {
         name: workoutName,
-        date_performed: originalWorkout?.date_performed || new Date().toISOString(),
+        date_performed:
+          originalWorkout?.date_performed || new Date().toISOString(),
         duration: workoutDuration,
         exercises: validExercises,
       };
 
       await workoutAPI.updateWorkout(workout_id, payload);
-      
+
       navigation.goBack();
     } catch (err) {
       console.error("Failed to update workout:", err);
-      showError(
-        "Error",
-        "Failed to update workout. Please try again."
-      );
+      showError("Error", "Failed to update workout. Please try again.");
     }
   };
 
@@ -244,12 +240,12 @@ const EditWorkoutPage = () => {
       <Header
         title="Edit Workout"
         leftComponent={{
-          type: 'back',
+          type: "back",
         }}
         rightComponent={{
-          type: 'button',
-          text: 'Save',
-          onPress: handleSave
+          type: "button",
+          text: "Save",
+          onPress: handleSave,
         }}
       />
 
@@ -275,7 +271,9 @@ const EditWorkoutPage = () => {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>{weight.formatVolume(Math.round(totalVolume))}</Text>
+            <Text style={styles.statValue}>
+              {weight.formatVolume(Math.round(totalVolume))}
+            </Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Sets</Text>
@@ -286,7 +284,11 @@ const EditWorkoutPage = () => {
         {exercises.length === 0 ? (
           <View style={styles.emptyWorkoutContainer}>
             <View style={styles.iconContainer}>
-              <Ionicons name="barbell-outline" size={42} color={colors.textSecondary} />
+              <Ionicons
+                name="barbell-outline"
+                size={42}
+                color={colors.textSecondary}
+              />
             </View>
             <Text style={styles.getStartedText}>No exercises</Text>
             <Text style={styles.instructionText}>
@@ -358,4 +360,4 @@ const EditWorkoutPage = () => {
   );
 };
 
-export default EditWorkoutPage; 
+export default EditWorkoutPage;

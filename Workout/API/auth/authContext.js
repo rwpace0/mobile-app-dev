@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from './authAPI';
 import getBaseUrl from '../utils/getBaseUrl';
 import { storage } from '../local/tokenStorage';
+import { tokenManager } from '../utils/tokenManager';
 
 const AuthContext = createContext(null);
 
@@ -17,42 +18,125 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const token = await storage.getItem('auth_token');
-      if (!token) {
-        console.log('No token found, user is not authenticated');
+      // First, check if we have any tokens at all
+      const { accessToken, refreshToken } = await storage.getTokens();
+      
+      if (!accessToken && !refreshToken) {
+        console.log('No tokens found, user is not authenticated');
         setUser(null);
         setLoading(false);
         return;
       }
 
-      let retryCount = 0;
-      const maxRetries = 3;
+      // Check if current token is expired
+      const isExpired = await storage.isTokenExpired();
+      
+      if (isExpired && !refreshToken) {
+        console.log('Token expired and no refresh token available');
+        await tokenManager.clearTokens();
+        setUser(null);
+        setLoading(false);
+        return;
+      }
 
-      const attemptAuthCheck = async () => {
-        try {
-          const response = await fetch(`${getBaseUrl()}/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
+      // Get valid token (this will refresh if needed using local refresh token)
+      const validToken = await tokenManager.getValidToken();
+      if (!validToken) {
+        console.log('No valid token available after refresh attempt');
+        // Try to validate refresh token on server and get fresh tokens
+        if (refreshToken) {
+          try {
+            console.log('Attempting server-side refresh token validation');
+            const response = await fetch(`${getBaseUrl()}/auth/refresh`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ refresh_token: refreshToken })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (data.session?.access_token) {
+                // Store new tokens
+                await storage.setTokens(
+                  data.session.access_token,
+                  data.session.refresh_token,
+                  data.session.expires_in
+                );
+                
+                // Get user data with new token
+                const userResponse = await fetch(`${getBaseUrl()}/auth/me`, {
+                  headers: {
+                    'Authorization': `Bearer ${data.session.access_token}`
+                  }
+                });
+                
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  await storage.setItem('cached_user_data', JSON.stringify(userData));
+                  
+                  if (userData.email_confirmed_at) {
+                    setUser({
+                      ...userData,
+                      isAuthenticated: true
+                    });
+                  } else {
+                    setUser({
+                      ...userData,
+                      isAuthenticated: false
+                    });
+                  }
+                  setLoading(false);
+                  return;
+                }
+              }
             }
-          });
-          
-          if (response.status === 429 && retryCount < maxRetries) {
-            retryCount++;
-            console.log(`Rate limit exceeded, retry ${retryCount}/${maxRetries} in 5 seconds...`);
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            return attemptAuthCheck();
+          } catch (serverError) {
+            console.error('Server-side refresh validation failed:', serverError);
           }
-          
-          if (!response.ok) {
-            console.log('Failed to fetch user data, clearing token');
-            await storage.removeItem('auth_token');
-            setUser(null);
-            setLoading(false);
-            return;
-          }
+        }
+        
+        // If we get here, refresh token is invalid or server validation failed
+        await tokenManager.clearTokens();
+        await storage.removeItem('cached_user_data');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
 
+      // Check if we have cached user data
+      const cachedUserData = await storage.getItem('cached_user_data');
+      if (cachedUserData) {
+        try {
+          const userData = JSON.parse(cachedUserData);
+          console.log('Using cached user data - no server call needed');
+          setUser({
+            ...userData,
+            isAuthenticated: !!userData.email_confirmed_at
+          });
+          setLoading(false);
+          return;
+        } catch (error) {
+          console.log('Failed to parse cached user data, will fetch fresh data');
+        }
+      }
+
+      // Only make server call if we don't have cached user data
+      // This should only happen on first login or after cache is cleared
+      console.log('No cached user data, making server call to get user info');
+      try {
+        const response = await fetch(`${getBaseUrl()}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${validToken}`
+          }
+        });
+        
+        if (response.ok) {
           const userData = await response.json();
           
+          // Cache the user data permanently (until logout or token invalidation)
+          await storage.setItem('cached_user_data', JSON.stringify(userData));
           
           // Only set user as authenticated if email is verified
           if (userData.email_confirmed_at) {
@@ -66,22 +150,21 @@ export const AuthProvider = ({ children }) => {
               isAuthenticated: false
             });
           }
-          setLoading(false);
-        } catch (error) {
-          console.error('Token validation failed:', error);
-          if (error.message.includes('Too many requests') && retryCount < maxRetries) {
-            retryCount++;
-            console.log(`Rate limit exceeded, retry ${retryCount}/${maxRetries} in 5 seconds...`);
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            return attemptAuthCheck();
-          }
-          await storage.removeItem('auth_token');
+        } else {
+          // Token is invalid on server, clear local tokens and cache
+          console.log('Token invalid on server, clearing local tokens');
+          await tokenManager.clearTokens();
+          await storage.removeItem('cached_user_data');
           setUser(null);
-          setLoading(false);
         }
-      };
-
-      await attemptAuthCheck();
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        await tokenManager.clearTokens();
+        await storage.removeItem('cached_user_data');
+        setUser(null);
+      }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Auth check failed:', error);
       setUser(null);
@@ -96,10 +179,6 @@ export const AuthProvider = ({ children }) => {
       const data = await authAPI.login(email, password);
       console.log('Login successful');
       
-      if (data.session?.access_token) {
-        await storage.setItem('auth_token', data.session.access_token);
-      }
-      
       // Check email verification status
       const response = await fetch(`${getBaseUrl()}/auth/me`, {
         headers: {
@@ -112,7 +191,6 @@ export const AuthProvider = ({ children }) => {
       }
 
       const userData = await response.json();
-      
       
       if (!userData.email_confirmed_at) {
         setUser({ ...userData, isAuthenticated: false });
@@ -151,7 +229,9 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       await authAPI.logout();
-      await storage.removeItem('auth_token');
+      await tokenManager.clearTokens();
+      // Clear cached user data
+      await storage.removeItem('cached_user_data');
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
@@ -177,9 +257,6 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authAPI.verifyEmail(token_hash, type);
-      if (response.session?.access_token) {
-        await storage.setItem('auth_token', response.session.access_token);
-      }
       await checkAuth(); // Refresh user data after verification
       return response;
     } catch (error) {

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import NetInfo from '@react-native-community/netinfo';
 import { storage } from '../local/tokenStorage';
+import { tokenManager } from './tokenManager';
 import RateLimiter from './RateLimiter';
 import LocalStorageManager from './LocalStorageManager';
 import Cache from './Cache';
@@ -69,8 +70,8 @@ class APIBase {
   }
 
   async makeAuthenticatedRequest(config) {
-    const token = await storage.getItem("auth_token");
-    if (!token) throw new Error("No auth token found");
+    const accessToken = await tokenManager.getValidToken();
+    if (!accessToken) throw new Error("No auth token found");
 
     // Add detailed logging for debugging
     console.log(`[APIBase] Making ${config.method} request to: ${config.url}`);
@@ -87,7 +88,7 @@ class APIBase {
           ...config,
           headers: {
             ...config.headers,
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${accessToken}`
           }
         });
         

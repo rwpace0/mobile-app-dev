@@ -1,11 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { authAPI } from "../API/auth/authAPI";
 import { createStyles } from "../styles/login.styles";
@@ -226,9 +220,7 @@ const SignUpPage = ({ navigation }) => {
         <TextInput
           style={[
             styles.textInput,
-            emailError || emailAvailabilityError
-              ? styles.textInputError
-              : null,
+            emailError || emailAvailabilityError ? styles.textInputError : null,
           ]}
           placeholder="Enter your email"
           placeholderTextColor={colors.placeholder}
@@ -269,7 +261,9 @@ const SignUpPage = ({ navigation }) => {
               <Ionicons
                 name={requirement.met ? "checkmark-circle" : "close-circle"}
                 size={20}
-                color={requirement.met ? colors.accentGreen : colors.textSecondary}
+                color={
+                  requirement.met ? colors.accentGreen : colors.textSecondary
+                }
               />
               <Text
                 style={[

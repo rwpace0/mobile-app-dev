@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
@@ -77,16 +71,23 @@ const LoginPage = ({ navigation }) => {
     } catch (error) {
       const errorMessage = error.message || "Failed to login";
       setLoginError(errorMessage);
-      
+
       // Set specific field errors based on the error message
-      if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("user")) {
+      if (
+        errorMessage.toLowerCase().includes("email") ||
+        errorMessage.toLowerCase().includes("user")
+      ) {
         setEmailError(true);
       }
-      if (errorMessage.toLowerCase().includes("password") || errorMessage.toLowerCase().includes("credentials") || errorMessage.toLowerCase().includes("invalid")) {
+      if (
+        errorMessage.toLowerCase().includes("password") ||
+        errorMessage.toLowerCase().includes("credentials") ||
+        errorMessage.toLowerCase().includes("invalid")
+      ) {
         setPasswordError(true);
         setLoginError("Invalid password");
       }
-      
+
       showError("Error", errorMessage);
     } finally {
       setLoading(false);
@@ -100,10 +101,7 @@ const LoginPage = ({ navigation }) => {
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Email</Text>
         <TextInput
-          style={[
-            styles.textInput,
-            emailError ? styles.textInputError : null,
-          ]}
+          style={[styles.textInput, emailError ? styles.textInputError : null]}
           placeholder="Enter your email"
           placeholderTextColor={colors.placeholder}
           keyboardType="email-address"

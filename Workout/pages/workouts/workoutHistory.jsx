@@ -32,39 +32,42 @@ const WorkoutHistoryPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [visibleWorkouts, setVisibleWorkouts] = useState([]);
 
-  const fetchWorkouts = useCallback(async (nextCursor = null, shouldRefresh = false) => {
-    try {
-      if (shouldRefresh) {
-        setRefreshing(true);
-      } else if (!nextCursor) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-      setError(null);
+  const fetchWorkouts = useCallback(
+    async (nextCursor = null, shouldRefresh = false) => {
+      try {
+        if (shouldRefresh) {
+          setRefreshing(true);
+        } else if (!nextCursor) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+        setError(null);
 
-      const response = await workoutAPI.getWorkoutsCursor({
-        cursor: nextCursor,
-        limit: 20
-      });
+        const response = await workoutAPI.getWorkoutsCursor({
+          cursor: nextCursor,
+          limit: 20,
+        });
 
-      if (shouldRefresh || !nextCursor) {
-        setWorkouts(response.workouts);
-      } else {
-        setWorkouts(prev => [...prev, ...response.workouts]);
+        if (shouldRefresh || !nextCursor) {
+          setWorkouts(response.workouts);
+        } else {
+          setWorkouts((prev) => [...prev, ...response.workouts]);
+        }
+
+        setCursor(response.nextCursor);
+        setHasMore(response.hasMore);
+      } catch (err) {
+        console.error("Failed to fetch workouts:", err);
+        setError(err.message || "Failed to load workout history");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
       }
-      
-      setCursor(response.nextCursor);
-      setHasMore(response.hasMore);
-    } catch (err) {
-      console.error("Failed to fetch workouts:", err);
-      setError(err.message || "Failed to load workout history");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const onRefresh = useCallback(() => {
     setCursor(null);
@@ -82,27 +85,33 @@ const WorkoutHistoryPage = () => {
       fetchWorkouts();
       return () => {
         // Clear workout cache when leaving the screen
-        workoutAPI.cache.clearPattern('^workouts:');
+        workoutAPI.cache.clearPattern("^workouts:");
       };
     }, [fetchWorkouts])
   );
 
-  const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-    const newVisibleWorkouts = viewableItems.map(item => item.item);
-    setVisibleWorkouts(newVisibleWorkouts);
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }) => {
+      const newVisibleWorkouts = viewableItems.map((item) => item.item);
+      setVisibleWorkouts(newVisibleWorkouts);
 
-    // Update scroll direction and trigger smart prefetch
-    if (viewableItems.length > 0) {
-      const firstVisible = viewableItems[0].index;
-      const lastKnownFirst = visibleWorkouts[0]?.workout_id;
-      const direction = !lastKnownFirst || firstVisible >= workouts.findIndex(w => w.workout_id === lastKnownFirst)
-        ? 'down'
-        : 'up';
-      
-      workoutAPI.updateScrollDirection(direction);
-      workoutAPI.triggerSmartPrefetch(newVisibleWorkouts, workouts);
-    }
-  }, [workouts, visibleWorkouts]);
+      // Update scroll direction and trigger smart prefetch
+      if (viewableItems.length > 0) {
+        const firstVisible = viewableItems[0].index;
+        const lastKnownFirst = visibleWorkouts[0]?.workout_id;
+        const direction =
+          !lastKnownFirst ||
+          firstVisible >=
+            workouts.findIndex((w) => w.workout_id === lastKnownFirst)
+            ? "down"
+            : "up";
+
+        workoutAPI.updateScrollDirection(direction);
+        workoutAPI.triggerSmartPrefetch(newVisibleWorkouts, workouts);
+      }
+    },
+    [workouts, visibleWorkouts]
+  );
 
   const viewabilityConfig = {
     itemVisiblePercentThreshold: 50,
@@ -112,8 +121,8 @@ const WorkoutHistoryPage = () => {
   const formatDate = useCallback((dateString) => {
     try {
       const date = new Date(dateString);
-      const day = date.toLocaleDateString(undefined, { weekday: 'long' });
-      const month = date.toLocaleDateString(undefined, { month: 'long' });
+      const day = date.toLocaleDateString(undefined, { weekday: "long" });
+      const month = date.toLocaleDateString(undefined, { month: "long" });
       const dateNum = date.getDate();
       return `${day}, ${month} ${dateNum}`;
     } catch (err) {
@@ -122,56 +131,83 @@ const WorkoutHistoryPage = () => {
     }
   }, []);
 
-  const renderWorkoutCard = useCallback(({ item: workout }) => {
-    const duration = Math.round((workout.duration || 0) / 60);
-    const volume = workout.totalVolume || 0;
+  const renderWorkoutCard = useCallback(
+    ({ item: workout }) => {
+      const duration = Math.round((workout.duration || 0) / 60);
+      const volume = workout.totalVolume || 0;
 
-    return (
-      <TouchableOpacity
-        style={styles.workoutCard}
-        onPress={() => navigation.navigate("WorkoutDetail", { workout_id: workout.workout_id })}
-      >
-        <Text style={styles.workoutTitle}>{workout.name || "Workout"}</Text>
-        <Text style={styles.workoutDate}>{formatDate(workout.date_performed)}</Text>
+      return (
+        <TouchableOpacity
+          style={styles.workoutCard}
+          onPress={() =>
+            navigation.navigate("WorkoutDetail", {
+              workout_id: workout.workout_id,
+            })
+          }
+        >
+          <Text style={styles.workoutTitle}>{workout.name || "Workout"}</Text>
+          <Text style={styles.workoutDate}>
+            {formatDate(workout.date_performed)}
+          </Text>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statItemWithIcon}>
-            <Ionicons name="time-outline" size={20} color={colors.textSecondary} style={styles.statIcon} />
-            <Text style={styles.statText}>{duration}m</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItemWithIcon}>
+              <Ionicons
+                name="time-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statText}>{duration}m</Text>
+            </View>
+            <View style={styles.statItemWithIcon}>
+              <Ionicons
+                name="barbell-outline"
+                size={20}
+                color={colors.textSecondary}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statText}>{weight.formatVolume(volume)}</Text>
+            </View>
           </View>
-          <View style={styles.statItemWithIcon}>
-            <Ionicons name="barbell-outline" size={20} color={colors.textSecondary} style={styles.statIcon} />
-            <Text style={styles.statText}>{weight.formatVolume(volume)}</Text>
-          </View>
-        </View>
 
-        <View style={styles.exerciseList}>
-          {(workout.exercises || []).map((exercise, index) => {
-            // Find the heaviest set for this exercise
-            const sets = exercise.sets || [];
-            const bestSet = sets.length > 0 
-              ? sets.reduce((best, current) => {
-                  return (!best || current.weight > best.weight) ? current : best;
-                }, sets[0])
-              : null;
-            
-            return (
-              <View key={exercise.workout_exercises_id || index} style={styles.exerciseRow}>
-                <View style={styles.exerciseInfo}>
-                  <Text style={styles.exerciseTitle}>
-                    {sets.length} × {exercise.name || 'Unknown Exercise'}
+          <View style={styles.exerciseList}>
+            {(workout.exercises || []).map((exercise, index) => {
+              // Find the heaviest set for this exercise
+              const sets = exercise.sets || [];
+              const bestSet =
+                sets.length > 0
+                  ? sets.reduce((best, current) => {
+                      return !best || current.weight > best.weight
+                        ? current
+                        : best;
+                    }, sets[0])
+                  : null;
+
+              return (
+                <View
+                  key={exercise.workout_exercises_id || index}
+                  style={styles.exerciseRow}
+                >
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseTitle}>
+                      {sets.length} × {exercise.name || "Unknown Exercise"}
+                    </Text>
+                  </View>
+                  <Text style={styles.bestSet}>
+                    {bestSet
+                      ? weight.formatSet(bestSet.weight, bestSet.reps)
+                      : ""}
                   </Text>
                 </View>
-                <Text style={styles.bestSet}>
-                  {bestSet ? weight.formatSet(bestSet.weight, bestSet.reps) : ''}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      </TouchableOpacity>
-    );
-  }, [navigation, formatDate, weight]);
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [navigation, formatDate, weight]
+  );
 
   const renderFooter = useCallback(() => {
     if (!loadingMore) return null;
@@ -200,7 +236,7 @@ const WorkoutHistoryPage = () => {
       <FlatList
         data={workouts}
         renderItem={renderWorkoutCard}
-        keyExtractor={item => item.workout_id}
+        keyExtractor={(item) => item.workout_id}
         contentContainerStyle={{ paddingVertical: Spacing.m }}
         onRefresh={onRefresh}
         refreshing={refreshing}
@@ -211,14 +247,9 @@ const WorkoutHistoryPage = () => {
         ListFooterComponent={renderFooter}
         ListEmptyComponent={
           <View style={styles.loadingContainer}>
-            <Text style={styles.errorText}>
-              {error || "No workouts found"}
-            </Text>
+            <Text style={styles.errorText}>{error || "No workouts found"}</Text>
             {error && (
-              <TouchableOpacity 
-                style={styles.retryButton} 
-                onPress={onRefresh}
-              >
+              <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             )}

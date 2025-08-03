@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { storage } from './local/tokenStorage';
+import { tokenManager } from './utils/tokenManager';
 import getBaseUrl from './utils/getBaseUrl';
 
 const API_URL = `${getBaseUrl()}/profile`;
@@ -13,10 +14,10 @@ const api = axios.create({
 
 // Add token to requests if it exists
 api.interceptors.request.use(async (config) => {
-  const token = await storage.getItem('auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+      const accessToken = await tokenManager.getValidToken();
+      if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
   return config;
 });
 

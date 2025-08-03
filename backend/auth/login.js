@@ -30,11 +30,12 @@ export const login = async (req, res) => {
       });
     }
 
-    // Return success response with user data and session
+    // Return success response with user data and session (including refresh token)
     return res.status(200).json({
       message: 'Login successful',
       user: data.user,
-      session: data.session
+      session: data.session,
+      refresh_token: data.session.refresh_token
     });
 
   } catch (error) {

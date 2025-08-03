@@ -31,8 +31,6 @@ const WorkoutStartPage = () => {
   const [showTemplateOptions, setShowTemplateOptions] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
-  
-
   const fetchTemplates = useCallback(async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true);
@@ -145,8 +143,8 @@ const WorkoutStartPage = () => {
 
   const handleEditTemplate = useCallback(() => {
     if (selectedTemplate) {
-      navigation.navigate("EditTemplate", { 
-        template_id: selectedTemplate.template_id
+      navigation.navigate("EditTemplate", {
+        template_id: selectedTemplate.template_id,
       });
     }
     setShowTemplateOptions(false);
@@ -155,14 +153,14 @@ const WorkoutStartPage = () => {
 
   const handleDuplicateTemplate = useCallback(async () => {
     if (!selectedTemplate) return;
-    
+
     try {
       setLoading(true);
       await templateAPI.duplicateTemplate(
-        selectedTemplate.template_id, 
+        selectedTemplate.template_id,
         `${selectedTemplate.name} (Copy)`
       );
-      
+
       // Refresh the templates list
       await fetchTemplates(false);
     } catch (error) {
@@ -177,11 +175,11 @@ const WorkoutStartPage = () => {
 
   const handleDeleteTemplate = useCallback(async () => {
     if (!selectedTemplate) return;
-    
+
     try {
       setLoading(true);
       await templateAPI.deleteTemplate(selectedTemplate.template_id);
-      
+
       // Refresh the templates list
       await fetchTemplates(false);
     } catch (error) {
@@ -283,8 +281,8 @@ const WorkoutStartPage = () => {
     }
 
     return templates.map((template) => (
-      <TouchableOpacity 
-        key={template.template_id} 
+      <TouchableOpacity
+        key={template.template_id}
         style={styles.templateContainer}
         onPress={() => handleTemplatePress(template)}
         activeOpacity={0.7}

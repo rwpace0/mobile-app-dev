@@ -172,7 +172,9 @@ const WorkoutDetail = () => {
                 color={colors.textSecondary}
                 style={styles.statIcon}
               />
-              <Text style={styles.statText}>{weight.formatVolume(Math.round(totalVolume))}</Text>
+              <Text style={styles.statText}>
+                {weight.formatVolume(Math.round(totalVolume))}
+              </Text>
             </View>
             <View style={styles.statItemWithIcon}>
               <Ionicons
