@@ -16,7 +16,25 @@ class TemplateAPI extends APIBase {
     });
 
     // Register sync function with sync manager
-    syncManager.registerSyncFunction("templates", async () => {
+    syncManager.registerSyncFunction("templates", async (isInitialSync = false) => {
+      // If this is an initial sync and local table is empty, fetch from server first
+      if (isInitialSync) {
+        const [localCount] = await this.db.query(
+          `SELECT COUNT(*) as count FROM workout_templates WHERE sync_status != 'pending_delete'`
+        );
+        
+        if (localCount.count === 0) {
+          console.log('[TemplateAPI] Local table empty, fetching initial data from server');
+          try {
+            await this._fetchFromServer();
+            console.log('[TemplateAPI] Initial data fetch completed');
+            return; // Skip the normal sync process since we just fetched everything
+          } catch (error) {
+            console.error('[TemplateAPI] Initial data fetch failed:', error);
+            // Continue with normal sync process
+          }
+        }
+      }
       try {
         // Handle templates pending creation/update
         const pendingTemplates = await this.db.query(
@@ -704,13 +722,34 @@ class TemplateAPI extends APIBase {
   }
 
   async _fetchFromServer() {
-    console.log("[TemplateAPI] Fetching templates from server");
-    const response = await this.makeAuthenticatedRequest({
-      method: "GET",
-      url: this.baseUrl,
-    });
-    console.log("[TemplateAPI] Server fetch complete");
-    return response.data;
+    console.log("[TemplateAPI] Fetching templates from server for initial population");
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: "GET",
+        url: this.baseUrl,
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`[TemplateAPI] Retrieved ${response.data.length} templates from server`);
+        
+        // Store each template locally
+        for (const template of response.data) {
+          try {
+            await this.storeLocally(template, 'synced');
+            console.log(`[TemplateAPI] Stored template ${template.template_id} locally`);
+          } catch (error) {
+            console.error(`[TemplateAPI] Failed to store template ${template.template_id}:`, error);
+          }
+        }
+        
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error("[TemplateAPI] Failed to fetch templates from server:", error);
+      throw error;
+    }
   }
 
   async getUserId() {

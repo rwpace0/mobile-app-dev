@@ -24,7 +24,25 @@ class WorkoutAPI extends APIBase {
     this.backgroundProcessor = backgroundProcessor;
 
     // Register sync function with sync manager
-    syncManager.registerSyncFunction('workouts', async () => {
+    syncManager.registerSyncFunction('workouts', async (isInitialSync = false) => {
+      // If this is an initial sync and local table is empty, fetch from server first
+      if (isInitialSync) {
+        const [localCount] = await this.db.query(
+          `SELECT COUNT(*) as count FROM workouts WHERE sync_status != 'pending_delete'`
+        );
+        
+        if (localCount.count === 0) {
+          console.log('[WorkoutAPI] Local table empty, fetching initial data from server');
+          try {
+            await this._fetchFromServer();
+            console.log('[WorkoutAPI] Initial data fetch completed');
+            return; // Skip the normal sync process since we just fetched everything
+          } catch (error) {
+            console.error('[WorkoutAPI] Initial data fetch failed:', error);
+            // Continue with normal sync process
+          }
+        }
+      }
       try {
         const pendingWorkouts = await this.db.query(
           `SELECT * FROM workouts WHERE sync_status IN ('pending_sync', 'pending_delete')`
@@ -920,20 +938,43 @@ class WorkoutAPI extends APIBase {
     }
   }
 
-  async _fetchFromServer() {
-    console.log('[WorkoutAPI] Fetching workouts from server');
-    const response = await this.makeAuthenticatedRequest({
-      method: 'GET',
-      url: this.baseUrl
-    });
-    
-    return response.data;
-  }
+
 
   async getUserId() {
     const accessToken = await tokenManager.getValidToken()
     if (!accessToken) throw new Error("No auth token found");
     return JSON.parse(atob(accessToken.split(".")[1])).sub;
+  }
+
+  async _fetchFromServer() {
+    console.log('[WorkoutAPI] Fetching workouts from server for initial population');
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'GET',
+        url: this.baseUrl
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`[WorkoutAPI] Retrieved ${response.data.length} workouts from server`);
+        
+        // Store each workout locally
+        for (const workout of response.data) {
+          try {
+            await this.storeLocally(workout, 'synced');
+            console.log(`[WorkoutAPI] Stored workout ${workout.workout_id} locally`);
+          } catch (error) {
+            console.error(`[WorkoutAPI] Failed to store workout ${workout.workout_id}:`, error);
+          }
+        }
+        
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('[WorkoutAPI] Failed to fetch workouts from server:', error);
+      throw error;
+    }
   }
 
   // Background processing methods

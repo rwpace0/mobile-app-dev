@@ -232,6 +232,10 @@ export const AuthProvider = ({ children }) => {
       await tokenManager.clearTokens();
       // Clear cached user data
       await storage.removeItem('cached_user_data');
+      // Clear local database
+      const { dbManager } = await import('../local/dbManager');
+      console.log("Clearing local database");
+      await dbManager.clearAllData();
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);

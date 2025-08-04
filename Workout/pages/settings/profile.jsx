@@ -66,10 +66,27 @@ const Profile = ({ navigation }) => {
             
             // Sync username to local database if it exists in backend
             if (backendProfile.username) {
-              await mediaCache.updateLocalProfile(user.id, {
-                display_name: backendProfile.display_name || '',
-                username: backendProfile.username
-              });
+              // Check if a profile with this username already exists in local database
+              const { dbManager } = await import('../../API/local/dbManager');
+              const [existingUsernameProfile] = await dbManager.query(
+                'SELECT user_id FROM profiles WHERE username = ?',
+                [backendProfile.username]
+              );
+              
+              if (existingUsernameProfile && existingUsernameProfile.user_id !== user.id) {
+                // A profile with this username already exists for a different user
+                // Update the existing profile to use the current user's ID
+                await dbManager.execute(
+                  'UPDATE profiles SET user_id = ?, display_name = ?, sync_status = ?, updated_at = datetime("now") WHERE username = ?',
+                  [user.id, backendProfile.display_name || '', 'synced', backendProfile.username]
+                );
+              } else {
+                // No conflict, proceed with normal update
+                await mediaCache.updateLocalProfile(user.id, {
+                  display_name: backendProfile.display_name || '',
+                  username: backendProfile.username
+                });
+              }
               
               // Get updated local profile data
               profileData = await mediaCache.getLocalProfile(user.id);

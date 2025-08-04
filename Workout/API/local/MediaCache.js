@@ -1,12 +1,25 @@
 import * as FileSystem from 'expo-file-system';
 import Cache from '../utils/Cache';
 import { dbManager } from './dbManager';
+import { syncManager } from './syncManager';
 
 class MediaCache {
   constructor() {
     this.cache = new Cache('media', 50);
     this.baseDir = `${FileSystem.cacheDirectory}app_media/`;
     this.init();
+
+    // Register sync function with sync manager
+    syncManager.registerSyncFunction('media', async (isInitialSync = false) => {
+      try {
+        console.log('[MediaCache] Performing media sync - cleanup old files');
+        await this.cleanupOldFiles();
+        console.log('[MediaCache] Media sync completed');
+      } catch (error) {
+        console.error('[MediaCache] Media sync error:', error);
+        // Don't throw error as media sync is not critical
+      }
+    });
   }
 
   async init() {
@@ -106,9 +119,9 @@ class MediaCache {
       );
 
       if (!profileExists) {
-        // Create the profile if it doesn't exist
+        // Create the profile if it doesn't exist using INSERT OR REPLACE to handle username conflicts
         await dbManager.execute(
-          'INSERT INTO profiles (user_id, avatar_url, local_avatar_path, display_name, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"), datetime("now"))',
+          'INSERT OR REPLACE INTO profiles (user_id, avatar_url, local_avatar_path, display_name, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"), datetime("now"))',
           [userId, cleanAvatarUrl, filename, '', 'pending_sync']
         );
       } else {
@@ -280,11 +293,33 @@ class MediaCache {
       };
 
       if (!existingProfile) {
-        // Create new profile
-        await dbManager.execute(
-          'INSERT INTO profiles (user_id, display_name, username, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
-          [userId, updateData.display_name, updateData.username, updateData.sync_status]
-        );
+        // Check if a profile with the same username already exists
+        if (updateData.username) {
+          const [existingUsernameProfile] = await dbManager.query(
+            'SELECT user_id FROM profiles WHERE username = ?',
+            [updateData.username]
+          );
+          
+          if (existingUsernameProfile) {
+            // A profile with this username already exists, update it instead of creating a new one
+            await dbManager.execute(
+              'UPDATE profiles SET user_id = ?, display_name = ?, sync_status = ?, updated_at = datetime("now") WHERE username = ?',
+              [userId, updateData.display_name, updateData.sync_status, updateData.username]
+            );
+          } else {
+            // Create new profile
+            await dbManager.execute(
+              'INSERT INTO profiles (user_id, display_name, username, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
+              [userId, updateData.display_name, updateData.username, updateData.sync_status]
+            );
+          }
+        } else {
+          // Create new profile without username
+          await dbManager.execute(
+            'INSERT INTO profiles (user_id, display_name, username, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
+            [userId, updateData.display_name, updateData.username, updateData.sync_status]
+          );
+        }
       } else {
         // Update existing profile
         const updateFields = ['display_name = ?', 'sync_status = ?', 'updated_at = datetime("now")'];

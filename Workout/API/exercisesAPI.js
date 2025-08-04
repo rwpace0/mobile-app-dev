@@ -16,7 +16,25 @@ class ExercisesAPI extends APIBase {
     });
 
     // Register sync function with sync manager  
-    syncManager.registerSyncFunction('exercises', async () => {
+    syncManager.registerSyncFunction('exercises', async (isInitialSync = false) => {
+      // If this is an initial sync and local table is empty, fetch from server first
+      if (isInitialSync) {
+        const [localCount] = await this.db.query(
+          `SELECT COUNT(*) as count FROM exercises WHERE sync_status != 'pending_delete'`
+        );
+        
+        if (localCount.count === 0) {
+          console.log('[ExercisesAPI] Local table empty, fetching initial data from server');
+          try {
+            await this._fetchFromServer();
+            console.log('[ExercisesAPI] Initial data fetch completed');
+            return; // Skip the normal sync process since we just fetched everything
+          } catch (error) {
+            console.error('[ExercisesAPI] Initial data fetch failed:', error);
+            // Continue with normal sync process
+          }
+        }
+      }
       try {
         // Handle exercises pending creation/update
         const pendingExercises = await this.db.query(
@@ -721,13 +739,34 @@ class ExercisesAPI extends APIBase {
   }
 
   async _fetchFromServer() {
-    console.log('[ExercisesAPI] Fetching exercises from server');
-    const response = await this.makeAuthenticatedRequest({
-      method: 'GET',
-      url: this.baseUrl
-    });
-    console.log('[ExercisesAPI] Server fetch complete');
-    return response.data;
+    console.log('[ExercisesAPI] Fetching exercises from server for initial population');
+    try {
+      const response = await this.makeAuthenticatedRequest({
+        method: 'GET',
+        url: this.baseUrl
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        console.log(`[ExercisesAPI] Retrieved ${response.data.length} exercises from server`);
+        
+        // Store each exercise locally
+        for (const exercise of response.data) {
+          try {
+            await this.storeLocally(exercise, 'synced');
+            console.log(`[ExercisesAPI] Stored exercise ${exercise.exercise_id} locally`);
+          } catch (error) {
+            console.error(`[ExercisesAPI] Failed to store exercise ${exercise.exercise_id}:`, error);
+          }
+        }
+        
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('[ExercisesAPI] Failed to fetch exercises from server:', error);
+      throw error;
+    }
   }
 
   async syncExerciseWithMedia(exerciseId) {

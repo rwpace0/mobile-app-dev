@@ -315,6 +315,20 @@ class DatabaseManager {
     }
   }
 
+  async clearAllData() {
+    await this.initializationPromise;
+    if (!this.db) throw new Error("Database not initialized");
+    // Order matters due to foreign key constraints
+    await this.db.execAsync('DELETE FROM sets');
+    await this.db.execAsync('DELETE FROM workout_exercises');
+    await this.db.execAsync('DELETE FROM workouts');
+    await this.db.execAsync('DELETE FROM template_exercises');
+    await this.db.execAsync('DELETE FROM workout_templates');
+    await this.db.execAsync('DELETE FROM exercises');
+    await this.db.execAsync('DELETE FROM profiles');
+    await this.db.execAsync('DELETE FROM workout_summaries');
+  }
+
   async close() {
     if (this.db) {
       await this.db.closeAsync();

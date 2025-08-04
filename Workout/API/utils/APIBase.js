@@ -123,7 +123,7 @@ class APIBase {
     if (netInfo.isConnected) {
       try {
         const serverData = await this._fetchFromServer();
-        await this.storeLocally(serverData);
+        // Don't call storeLocally here since _fetchFromServer already stores individual entities
         this.cache.set(cacheKey, serverData);
         return serverData;
       } catch (error) {

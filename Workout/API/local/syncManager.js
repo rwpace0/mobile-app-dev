@@ -110,8 +110,16 @@ class SyncManager {
   async performInitialSync() {
     console.log("Performing initial sync...");
     try {
-      // Only sync workouts initially - user's primary data
-      await this.forceSyncResource('workouts');
+      // Sync all resources for initial population
+      const resources = ['exercises', 'workouts', 'templates'];
+      for (const resource of resources) {
+        try {
+          await this.forceSyncResource(resource, true); // Pass true for initial sync
+        } catch (error) {
+          console.error(`Initial sync failed for ${resource}:`, error);
+          // Continue with other resources even if one fails
+        }
+      }
     } catch (error) {
       console.error("Initial sync failed:", error);
     }
@@ -202,7 +210,7 @@ class SyncManager {
       }
 
       console.log(`Syncing ${resource}...`);
-      await syncFunction();
+      await syncFunction(false); // Normal sync, not initial
       this.lastSyncTimes[resource] = Date.now();
       
       // Reset failure count on successful sync
@@ -225,7 +233,7 @@ class SyncManager {
   }
 
   // Force immediate sync
-  async forceSyncResource(resource) {
+  async forceSyncResource(resource, isInitialSync = false) {
     try {
       const netInfo = await NetInfo.fetch();
       if (!netInfo.isConnected) {
@@ -239,8 +247,8 @@ class SyncManager {
         );
       }
 
-      console.log(`Force syncing ${resource}...`);
-      await syncFunction();
+      console.log(`Force syncing ${resource}${isInitialSync ? ' (initial)' : ''}...`);
+      await syncFunction(isInitialSync);
       this.lastSyncTimes[resource] = Date.now();
       
       // Reset failure count on successful sync

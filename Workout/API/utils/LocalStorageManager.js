@@ -68,11 +68,17 @@ class LocalStorageManager {
           [entityId]
         );
 
+        // Get the table schema to know which fields are valid
+        const tableInfo = await this.db.query(`PRAGMA table_info(${relationTable})`);
+        const validFields = tableInfo.map(col => col.name);
+
         // Insert new relations
         for (const [index, item] of relationData.entries()) {
           // Special case for workout_exercises table
           const relationIdField = relationTable === 'workout_exercises' ? 'workout_exercises_id' : `${relationTable.slice(0, -1)}_id`;
           const relationId = item[relationIdField] || uuid();
+          
+          // Start with required fields
           const relationFields = {
             [relationIdField]: relationId,
             [parentIdField]: entityId,
@@ -84,8 +90,14 @@ class LocalStorageManager {
             // Explicitly set last_synced_at based on sync status for relations
             // This overrides any database DEFAULT values
             last_synced_at: syncStatus === 'synced' ? now : null,
-            ...item
           };
+
+          // Only add fields from item that exist in the table schema
+          for (const [key, value] of Object.entries(item)) {
+            if (validFields.includes(key) && !relationFields.hasOwnProperty(key)) {
+              relationFields[key] = value;
+            }
+          }
 
           const rFieldNames = Object.keys(relationFields);
           const rplaceholders = rFieldNames.map(() => '?').join(', ');
