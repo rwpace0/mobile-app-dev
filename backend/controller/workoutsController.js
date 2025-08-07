@@ -872,3 +872,117 @@ export async function upsertWorkout(req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
+export async function getWorkoutsWithDetails(req, res) {
+  try {
+    console.log("getWorkoutsWithDetails: Starting request");
+    
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "No authorization header" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    // Get user data from Supabase
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      console.log("Authentication error:", userError);
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    console.log(`getWorkoutsWithDetails: Fetching complete data for user ${user.id}`);
+
+    // Create a client with the user's token
+    const supabaseWithAuth = getClientToken(token);
+
+    // Get all workouts for the user with their exercises and sets
+    const { data: workouts, error: workoutsError } = await supabaseWithAuth
+      .from("workouts")
+      .select(`
+        *,
+        workout_exercises (
+          workout_exercises_id,
+          exercise_order,
+          notes,
+          exercises (
+            exercise_id,
+            name,
+            muscle_group
+          )
+        ),
+        sets (
+          set_id,
+          workout_exercises_id,
+          weight,
+          reps,
+          rir,
+          set_order
+        )
+      `)
+      .eq("user_id", user.id)
+      .order("date_performed", { ascending: false });
+
+    if (workoutsError) {
+      console.error("Database query error:", workoutsError);
+      return res.status(500).json({ error: workoutsError.message });
+    }
+
+    console.log(`getWorkoutsWithDetails: Retrieved ${workouts?.length || 0} workouts from database`);
+
+    // Process the data to match the expected format
+    const processedWorkouts = workouts.map(workout => {
+      // Group sets by workout_exercises_id
+      const setsByExercise = {};
+      if (workout.sets) {
+        workout.sets.forEach(set => {
+          if (!setsByExercise[set.workout_exercises_id]) {
+            setsByExercise[set.workout_exercises_id] = [];
+          }
+          setsByExercise[set.workout_exercises_id].push(set);
+        });
+      }
+
+      // Process exercises with their sets
+      const exercises = (workout.workout_exercises || []).map(we => ({
+        workout_exercises_id: we.workout_exercises_id,
+        exercise_id: we.exercises?.exercise_id,
+        exercise_order: we.exercise_order,
+        notes: we.notes,
+        name: we.exercises?.name,
+        muscle_group: we.exercises?.muscle_group,
+        sets: setsByExercise[we.workout_exercises_id] || []
+      }));
+
+      // Sort exercises by order
+      exercises.sort((a, b) => a.exercise_order - b.exercise_order);
+
+      return {
+        workout_id: workout.workout_id,
+        user_id: workout.user_id,
+        name: workout.name,
+        date_performed: workout.date_performed,
+        duration: workout.duration,
+        template_id: workout.template_id,
+        created_at: workout.created_at,
+        updated_at: workout.updated_at,
+        exercises: exercises
+      };
+    });
+
+    console.log(`getWorkoutsWithDetails: Returning ${processedWorkouts.length} processed workouts`);
+    res.json(processedWorkouts);
+  } catch (err) {
+    console.error("Network or unexpected error:", err);
+    res.status(500).json({
+      error: "Failed to connect to Supabase API",
+      message: err.message,
+    });
+  }
+}

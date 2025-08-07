@@ -25,22 +25,25 @@ class WorkoutAPI extends APIBase {
 
     // Register sync function with sync manager
     syncManager.registerSyncFunction('workouts', async (isInitialSync = false) => {
-      // If this is an initial sync and local table is empty, fetch from server first
+      // If this is an initial sync and local table is empty, fetch complete data from server first
       if (isInitialSync) {
         const [localCount] = await this.db.query(
           `SELECT COUNT(*) as count FROM workouts WHERE sync_status != 'pending_delete'`
         );
         
         if (localCount.count === 0) {
-          console.log('[WorkoutAPI] Local table empty, fetching initial data from server');
+          console.log('[WorkoutAPI] Local table empty, fetching complete initial data from server');
           try {
             await this._fetchFromServer();
-            console.log('[WorkoutAPI] Initial data fetch completed');
+            console.log('[WorkoutAPI] Complete initial data fetch completed');
             return; // Skip the normal sync process since we just fetched everything
           } catch (error) {
-            console.error('[WorkoutAPI] Initial data fetch failed:', error);
+            console.error('[WorkoutAPI] Complete initial data fetch failed:', error);
             // Continue with normal sync process
           }
+        } else {
+          // Check if existing workouts have missing exercise data
+          await this._populateMissingExerciseData();
         }
       }
       try {
@@ -949,19 +952,20 @@ class WorkoutAPI extends APIBase {
   async _fetchFromServer() {
     console.log('[WorkoutAPI] Fetching workouts from server for initial population');
     try {
+      // Use the new endpoint that returns complete workout data with exercises and sets
       const response = await this.makeAuthenticatedRequest({
         method: 'GET',
-        url: this.baseUrl
+        url: `${this.baseUrl}/with-details`
       });
       
       if (response.data && Array.isArray(response.data)) {
-        console.log(`[WorkoutAPI] Retrieved ${response.data.length} workouts from server`);
+        console.log(`[WorkoutAPI] Retrieved ${response.data.length} complete workouts from server`);
         
-        // Store each workout locally
+        // Store each workout locally with complete data
         for (const workout of response.data) {
           try {
             await this.storeLocally(workout, 'synced');
-            console.log(`[WorkoutAPI] Stored workout ${workout.workout_id} locally`);
+            console.log(`[WorkoutAPI] Stored complete workout ${workout.workout_id} locally`);
           } catch (error) {
             console.error(`[WorkoutAPI] Failed to store workout ${workout.workout_id}:`, error);
           }
@@ -974,6 +978,45 @@ class WorkoutAPI extends APIBase {
     } catch (error) {
       console.error('[WorkoutAPI] Failed to fetch workouts from server:', error);
       throw error;
+    }
+  }
+
+  async _populateMissingExerciseData() {
+    console.log('[WorkoutAPI] Checking for workouts with missing exercise data');
+    try {
+      // Check if we have any workouts without exercise data
+      const workoutsWithoutExercises = await this.db.query(`
+        SELECT w.workout_id 
+        FROM workouts w 
+        LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id 
+        WHERE w.sync_status != 'pending_delete' 
+        AND we.workout_exercises_id IS NULL
+      `);
+
+      if (workoutsWithoutExercises.length > 0) {
+        console.log(`[WorkoutAPI] Found ${workoutsWithoutExercises.length} workouts with missing exercise data`);
+        
+        // Fetch complete data for these workouts
+        const workoutIds = workoutsWithoutExercises.map(w => w.workout_id);
+        
+        for (const workoutId of workoutIds) {
+          try {
+            const response = await this.makeAuthenticatedRequest({
+              method: 'GET',
+              url: `${this.baseUrl}/${workoutId}`
+            });
+            
+            if (response.data) {
+              await this.storeLocally(response.data, 'synced');
+              console.log(`[WorkoutAPI] Populated exercise data for workout ${workoutId}`);
+            }
+          } catch (error) {
+            console.error(`[WorkoutAPI] Failed to populate exercise data for workout ${workoutId}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[WorkoutAPI] Error checking for missing exercise data:', error);
     }
   }
 
@@ -1004,6 +1047,36 @@ class WorkoutAPI extends APIBase {
       this.workoutCache.setWorkoutDetails(workoutId, workout);
     }
     return workout;
+  }
+
+  async populateCompleteWorkoutData() {
+    console.log('[WorkoutAPI] Manually triggering complete workout data population');
+    try {
+      await this._fetchFromServer();
+      await this._populateMissingExerciseData();
+      console.log('[WorkoutAPI] Complete workout data population finished');
+    } catch (error) {
+      console.error('[WorkoutAPI] Error during complete workout data population:', error);
+      throw error;
+    }
+  }
+
+  // Public method to check if workouts have complete data
+  async hasCompleteWorkoutData() {
+    try {
+      const [incompleteCount] = await this.db.query(`
+        SELECT COUNT(*) as count 
+        FROM workouts w 
+        LEFT JOIN workout_exercises we ON w.workout_id = we.workout_id 
+        WHERE w.sync_status != 'pending_delete' 
+        AND we.workout_exercises_id IS NULL
+      `);
+      
+      return incompleteCount.count === 0;
+    } catch (error) {
+      console.error('[WorkoutAPI] Error checking complete workout data:', error);
+      return false;
+    }
   }
 }
 
