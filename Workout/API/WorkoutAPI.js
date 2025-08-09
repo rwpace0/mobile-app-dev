@@ -518,8 +518,8 @@ class WorkoutAPI extends APIBase {
         const exerciseObj = {
           workout_exercises_id: exercise.workout_exercises_id,
           exercise_id: exercise.exercise_id,
-          name: exercise.exercise_name,
-          muscle_group: exercise.muscle_group,
+          name: exercise.exercise_name || "Unknown Exercise", // Handle deleted exercises
+          muscle_group: exercise.muscle_group || "",
           exercise_order: exercise.exercise_order,
           notes: exercise.notes,
           sets: []
@@ -790,8 +790,15 @@ class WorkoutAPI extends APIBase {
           exerciseCount: 0
         };
 
-        await this.db.execute("BEGIN TRANSACTION");
-        transaction = true;
+        // Try to start a transaction - if it fails, one is already active
+        try {
+          await this.db.execute("BEGIN TRANSACTION");
+          transaction = true;
+          console.log(`[WorkoutAPI] Started new transaction for workout ${workout.workout_id}`);
+        } catch (transactionError) {
+          // Transaction might already be active, proceed without starting one
+          console.log(`[WorkoutAPI] Transaction may already be active for workout ${workout.workout_id}, proceeding without new transaction`);
+        }
         
         await this.db.execute(
           `
@@ -808,8 +815,12 @@ class WorkoutAPI extends APIBase {
           ]
         );
 
-        await this.db.execute("COMMIT");
-        transaction = false;
+        // Only commit if we started the transaction
+        if (transaction) {
+          await this.db.execute("COMMIT");
+          transaction = false;
+          console.log(`[WorkoutAPI] Committed transaction for workout ${workout.workout_id}`);
+        }
         return emptySummary;
       }
 
@@ -823,8 +834,6 @@ class WorkoutAPI extends APIBase {
         `,
         [workout.workout_id]
       );
-
-      
 
       let totalVolume = 0;
       const exerciseDetails = workoutExercises.map((exercise) => {
@@ -851,7 +860,7 @@ class WorkoutAPI extends APIBase {
 
         return {
           id: exercise.exercise_id,
-          name: exercise.name,
+          name: exercise.name || 'Unknown Exercise', // Handle case where exercise name is null
           sets: exerciseSets.length,
           bestSet: bestSet
             ? { weight: Number(bestSet.weight) || 0, reps: Number(bestSet.reps) || 0 }
@@ -869,9 +878,15 @@ class WorkoutAPI extends APIBase {
       console.log(`[WorkoutAPI] Calculated summary for workout ${workout.workout_id}:`, 
         `${workoutExercises.length} exercises, ${sets.length} sets, ${totalVolume}kg total volume`);
 
-      // Store the summary
-      await this.db.execute("BEGIN TRANSACTION");
-      transaction = true;
+      // Try to start a transaction - if it fails, one is already active
+      try {
+        await this.db.execute("BEGIN TRANSACTION");
+        transaction = true;
+        console.log(`[WorkoutAPI] Started new transaction for workout ${workout.workout_id}`);
+      } catch (transactionError) {
+        // Transaction might already be active, proceed without starting one
+        console.log(`[WorkoutAPI] Transaction may already be active for workout ${workout.workout_id}, proceeding without new transaction`);
+      }
 
       await this.db.execute(
         `
@@ -888,8 +903,12 @@ class WorkoutAPI extends APIBase {
         ]
       );
 
-      await this.db.execute("COMMIT");
-      transaction = false;
+      // Only commit if we started the transaction
+      if (transaction) {
+        await this.db.execute("COMMIT");
+        transaction = false;
+        console.log(`[WorkoutAPI] Committed transaction for workout ${workout.workout_id}`);
+      }
 
       return summaryData;
     } catch (error) {
@@ -897,6 +916,7 @@ class WorkoutAPI extends APIBase {
       if (transaction) {
         try {
           await this.db.execute("ROLLBACK");
+          console.log(`[WorkoutAPI] Rolled back transaction for workout ${workout.workout_id}`);
         } catch (rollbackError) {
           console.log("[WorkoutAPI] Rollback failed:", rollbackError.message);
         }
