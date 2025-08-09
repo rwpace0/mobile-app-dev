@@ -245,6 +245,12 @@ const WorkoutHistoryPage = () => {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         ListFooterComponent={renderFooter}
+        // Performance optimizations
+        removeClippedSubviews={true}
+        initialNumToRender={8}
+        maxToRenderPerBatch={3}
+        windowSize={8}
+        updateCellsBatchingPeriod={50}
         ListEmptyComponent={
           <View style={styles.loadingContainer}>
             <Text style={styles.errorText}>{error || "No workouts found"}</Text>

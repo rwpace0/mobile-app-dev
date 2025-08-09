@@ -8,6 +8,8 @@ class MemoryManager {
     this.cleanupTasks = new Set();
     this.lightCleanupInterval = null;
     this.initialized = false;
+    this.lastCleanupTime = Date.now();
+    this.memoryThreshold = 80; // Percentage threshold for emergency cleanup
   }
 
   init() {
@@ -25,6 +27,11 @@ class MemoryManager {
     this.lightCleanupInterval = setInterval(() => {
       this.performLightCleanup();
     }, 2 * 60 * 1000);
+
+    // Set up memory monitoring every 30 seconds
+    this.memoryMonitoringInterval = setInterval(() => {
+      this.checkMemoryUsage();
+    }, 30 * 1000);
 
     this.initialized = true;
     console.log('[MemoryManager] Initialized with', this.cleanupTasks.size, 'cleanup tasks');
@@ -44,13 +51,36 @@ class MemoryManager {
       this.performFullCleanup();
     } else if (nextAppState === 'active') {
       console.log('[MemoryManager] App becoming active');
+      // Perform light cleanup when app becomes active again
+      setTimeout(() => this.performLightCleanup(), 1000);
+    }
+  }
+
+  checkMemoryUsage() {
+    try {
+      // Check if we should perform emergency cleanup based on time or memory pressure
+      const timeSinceLastCleanup = Date.now() - this.lastCleanupTime;
+      
+      // If more than 5 minutes since last cleanup, perform light cleanup
+      if (timeSinceLastCleanup > 5 * 60 * 1000) {
+        console.log('[MemoryManager] Performing scheduled cleanup');
+        this.performLightCleanup();
+        this.lastCleanupTime = Date.now();
+      }
+    } catch (error) {
+      console.error('[MemoryManager] Memory check failed:', error);
     }
   }
 
   performLightCleanup() {
     try {
-      // Light cleanup - only expired cache items
+      // Light cleanup - only expired cache items and garbage collection
       workoutCache.cleanupExpired();
+      
+      // Clear any expired media cache items
+      if (mediaCache.cleanupExpired) {
+        mediaCache.cleanupExpired();
+      }
       
       // Force garbage collection if available (development only)
       if (__DEV__ && global.gc) {
@@ -74,9 +104,18 @@ class MemoryManager {
         }
       }
 
+      // Clear all caches
+      workoutCache.clear();
+      
+      // Clear media cache if available
+      if (mediaCache.clear) {
+        mediaCache.clear();
+      }
+
       // Force garbage collection if available
       this.forceGarbageCollection();
       
+      this.lastCleanupTime = Date.now();
       console.log('[MemoryManager] Full cleanup completed');
     } catch (error) {
       console.error('[MemoryManager] Full cleanup failed:', error);
@@ -91,9 +130,15 @@ class MemoryManager {
       workoutCache.clearAll();
       backgroundProcessor.clearTasks();
       
+      // Clear all caches
+      if (mediaCache.clearAll) {
+        mediaCache.clearAll();
+      }
+      
       // Force multiple garbage collections
       this.forceGarbageCollection(3);
       
+      this.lastCleanupTime = Date.now();
       console.log('[MemoryManager] Emergency cleanup completed');
     } catch (error) {
       console.error('[MemoryManager] Emergency cleanup failed:', error);
@@ -101,13 +146,11 @@ class MemoryManager {
   }
 
   forceGarbageCollection(times = 1) {
-    if (global.gc) {
+    if (__DEV__ && global.gc) {
       for (let i = 0; i < times; i++) {
         global.gc();
       }
-      console.log(`[MemoryManager] Forced garbage collection ${times} times`);
-    } else {
-      console.log('[MemoryManager] Garbage collection not available');
+      console.log('[MemoryManager] Forced garbage collection', times, 'times');
     }
   }
 
@@ -116,6 +159,12 @@ class MemoryManager {
     if (this.lightCleanupInterval) {
       clearInterval(this.lightCleanupInterval);
       this.lightCleanupInterval = null;
+    }
+
+    // Clear memory monitoring interval
+    if (this.memoryMonitoringInterval) {
+      clearInterval(this.memoryMonitoringInterval);
+      this.memoryMonitoringInterval = null;
     }
 
     // Remove app state listener
@@ -132,36 +181,13 @@ class MemoryManager {
   }
 
   getMemoryStats() {
-    const stats = {
-      workoutCache: workoutCache.getStats(),
-      cleanupTasks: this.cleanupTasks.size,
-      initialized: this.initialized
+    return {
+      lastCleanupTime: this.lastCleanupTime,
+      cleanupTasksCount: this.cleanupTasks.size,
+      isInitialized: this.initialized,
+      timeSinceLastCleanup: Date.now() - this.lastCleanupTime
     };
-
-    // Add JSHeap info if available
-    if (performance && performance.memory) {
-      stats.jsHeap = {
-        used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
-        total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024),
-        limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024)
-      };
-    }
-
-    return stats;
   }
 }
 
-// Create singleton instance
 export const memoryManager = new MemoryManager();
-
-// Auto-initialize when module is imported
-memoryManager.init();
-
-// Export individual methods for convenience
-export const {
-  performLightCleanup,
-  performFullCleanup,
-  performEmergencyCleanup,
-  forceGarbageCollection,
-  getMemoryStats
-} = memoryManager;

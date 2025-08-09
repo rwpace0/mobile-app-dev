@@ -264,6 +264,13 @@ const ViewExercisesPage = () => {
           contentContainerStyle={styles.listContentContainer}
           refreshing={refreshing}
           onRefresh={handleRefresh}
+          // Performance optimizations
+          removeClippedSubviews={true}
+          initialNumToRender={10}
+          maxToRenderPerBatch={5}
+          windowSize={10}
+          updateCellsBatchingPeriod={50}
+          getItemLayout={null} // Will be added if we have fixed height items
           ListEmptyComponent={
             <View style={styles.emptyListContainer}>
               <Text style={styles.emptyListText}>
