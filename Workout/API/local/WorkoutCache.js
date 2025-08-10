@@ -72,14 +72,14 @@ class LRUCache {
 
 class WorkoutCache {
   constructor() {
-    // Cache for detailed workout data - increased size from 200 to 500
-    this.workoutDetailsCache = new LRUCache(50);
+    // Cache for detailed workout data - reduced from 50 to 25
+    this.workoutDetailsCache = new LRUCache(25);
 
-    // Cache for workout lists (e.g. paginated results) - increased size from 15 to 30
-    this.workoutListCache = new LRUCache(10);
+    // Cache for workout lists (e.g. paginated results) - reduced from 10 to 5
+    this.workoutListCache = new LRUCache(5);
 
-    // Background cleanup interval - run cleanup every 5 minutes instead of 1
-    this.cleanupInterval = setInterval(() => this.cleanupExpired(), 5 * 60 * 1000);
+    // Background cleanup interval - run cleanup every 3 minutes instead of 5
+    this.cleanupInterval = setInterval(() => this.cleanupExpired(), 3 * 60 * 1000);
   }
 
   getWorkoutDetails(workoutId) {
@@ -90,7 +90,7 @@ class WorkoutCache {
     return result;
   }
 
-  setWorkoutDetails(workoutId, workout, ttlMs = 30 * 60 * 1000) { // 30 minutes TTL
+  setWorkoutDetails(workoutId, workout, ttlMs = 15 * 60 * 1000) { // Reduced from 30 to 15 minutes TTL
     if (!workout) {
       console.warn(`[WorkoutCache] Attempted to cache null/undefined workout for ID ${workoutId}`);
       return;
@@ -100,19 +100,15 @@ class WorkoutCache {
   }
 
   getWorkoutList(cacheKey) {
-    const result = this.workoutListCache.get(cacheKey);
-    if (!result) {
-      console.log(`[WorkoutCache] Cache miss for workout list ${cacheKey}`);
-    }
-    return result;
+    return this.workoutListCache.get(cacheKey);
   }
 
-  setWorkoutList(cacheKey, workouts, ttlMs = 15 * 60 * 1000) { // 15 minutes TTL for lists
+  setWorkoutList(cacheKey, workouts, ttlMs = 8 * 60 * 1000) { // Reduced from 15 to 8 minutes TTL for lists
     if (!workouts) {
       console.warn(`[WorkoutCache] Attempted to cache null/undefined workout list for key ${cacheKey}`);
       return;
     }
-    console.log(`[WorkoutCache] Caching workout list ${cacheKey}`);
+    console.log(`[WorkoutCache] Caching workout list with key ${cacheKey}`);
     this.workoutListCache.set(cacheKey, workouts, ttlMs);
   }
 

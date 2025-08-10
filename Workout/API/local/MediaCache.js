@@ -5,8 +5,9 @@ import { syncManager } from './syncManager';
 
 class MediaCache {
   constructor() {
-    this.cache = new Cache('media', 50);
+    this.cache = new Cache('media', 25); // Reduced from 50 to 25
     this.baseDir = `${FileSystem.cacheDirectory}app_media/`;
+    this.maxFileSize = 10 * 1024 * 1024; // 10MB max file size
     this.init();
 
     // Register sync function with sync manager
@@ -47,6 +48,13 @@ class MediaCache {
 
   async downloadAndCacheFile(url, type, id) {
     try {
+      // Check file size before downloading
+      const fileSize = await this.getRemoteFileSize(url);
+      if (fileSize > this.maxFileSize) {
+        console.warn(`[MediaCache] File too large (${(fileSize / 1024 / 1024).toFixed(2)}MB), skipping download`);
+        return null;
+      }
+
       const localPath = this.generateLocalPath(type, id, url);
       
       // Download file
@@ -59,6 +67,17 @@ class MediaCache {
     } catch (error) {
       console.error('Failed to download and cache file:', error);
       throw error;
+    }
+  }
+
+  async getRemoteFileSize(url) {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      const contentLength = response.headers.get('content-length');
+      return contentLength ? parseInt(contentLength, 10) : 0;
+    } catch (error) {
+      console.warn('[MediaCache] Could not determine file size, proceeding with download');
+      return 0;
     }
   }
 

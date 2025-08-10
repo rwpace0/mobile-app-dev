@@ -7,8 +7,8 @@ class Cache {
       sets: 0,
       clears: 0
     };
-    this.maxSize = config.maxSize || 1000;
-    this.ttl = config.ttl || 5 * 60 * 1000; // 5 minutes default TTL
+    this.maxSize = config.maxSize || 100; // Reduced from 1000 to 100
+    this.ttl = config.ttl || 3 * 60 * 1000; // Reduced from 5 minutes to 3 minutes default TTL
   }
 
   _generateKey(key) {

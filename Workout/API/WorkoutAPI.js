@@ -22,6 +22,11 @@ class WorkoutAPI extends APIBase {
     });
     this.workoutCache = workoutCache; // Keep the specialized workout cache
     this.backgroundProcessor = backgroundProcessor;
+    
+    // Prefetching properties moved from BackgroundProcessor
+    this.prefetchBuffer = new Set();
+    this.prefetchSize = 15; // Number of workouts to prefetch
+    this.currentScrollDirection = 'down';
 
     // Register sync function with sync manager
     syncManager.registerSyncFunction('workouts', async (isInitialSync = false) => {
@@ -389,9 +394,9 @@ class WorkoutAPI extends APIBase {
       
 
       // Trigger background prefetch for next page if there are more results
-      if (hasMore && this.backgroundProcessor) {
+      if (hasMore) {
         const nextPageWorkoutIds = workoutIds.slice(limit).map(w => w.workout_id);
-        this.backgroundProcessor.prefetchWorkoutDetails(nextPageWorkoutIds, this);
+        this.prefetchWorkoutDetails(nextPageWorkoutIds);
       }
 
       return response;
@@ -405,6 +410,8 @@ class WorkoutAPI extends APIBase {
     try {
       await this.ensureInitialized();
 
+      // Note: This method is for explicit user requests and can make network calls
+      // For prefetching, use ensureWorkoutDetails() which is local-only
       return this.handleOfflineFirst(`workout:${workoutId}`, async () => {
         return await this._getWorkoutWithDetails(workoutId);
       });
@@ -1015,25 +1022,9 @@ class WorkoutAPI extends APIBase {
 
       if (workoutsWithoutExercises.length > 0) {
         console.log(`[WorkoutAPI] Found ${workoutsWithoutExercises.length} workouts with missing exercise data`);
-        
-        // Fetch complete data for these workouts
-        const workoutIds = workoutsWithoutExercises.map(w => w.workout_id);
-        
-        for (const workoutId of workoutIds) {
-          try {
-            const response = await this.makeAuthenticatedRequest({
-              method: 'GET',
-              url: `${this.baseUrl}/${workoutId}`
-            });
-            
-            if (response.data) {
-              await this.storeLocally(response.data, 'synced');
-              console.log(`[WorkoutAPI] Populated exercise data for workout ${workoutId}`);
-            }
-          } catch (error) {
-            console.error(`[WorkoutAPI] Failed to populate exercise data for workout ${workoutId}:`, error);
-          }
-        }
+        console.log('[WorkoutAPI] Missing exercise data should be populated during initial sync, not during normal operation');
+        // Don't make individual API calls - this data should be complete from initial sync
+        // If data is missing, it indicates a sync issue that should be resolved manually
       }
     } catch (error) {
       console.error('[WorkoutAPI] Error checking for missing exercise data:', error);
@@ -1042,17 +1033,192 @@ class WorkoutAPI extends APIBase {
 
   // Background processing methods
   updateScrollDirection(direction) {
-    this.backgroundProcessor.updateScrollDirection(direction);
+    this.currentScrollDirection = direction;
   }
 
   triggerSmartPrefetch(visibleWorkouts, allWorkouts) {
-    this.backgroundProcessor.smartPrefetch(visibleWorkouts, allWorkouts, this);
+    this.smartPrefetch(visibleWorkouts, allWorkouts);
+  }
+
+  // Prefetching methods moved from BackgroundProcessor
+  shouldPrefetch(workoutId) {
+    return !this.prefetchBuffer.has(workoutId);
+  }
+
+  markPrefetched(workoutId) {
+    this.prefetchBuffer.add(workoutId);
+    // Limit buffer size
+    if (this.prefetchBuffer.size > this.prefetchSize * 2) {
+      const [firstItem] = this.prefetchBuffer;
+      this.prefetchBuffer.delete(firstItem);
+    }
+  }
+
+  // Prefetch workout details (local-only)
+  prefetchWorkoutDetails(workoutIds) {
+    const idsToFetch = workoutIds.filter(id => this.shouldPrefetch(id));
+    
+    console.log(`[WorkoutAPI] Prefetching ${idsToFetch.length} workout details from local database`);
+    
+    for (const id of idsToFetch) {
+      this.backgroundProcessor.addTask(async () => {
+        try {
+          // This method is local-only and will never make network calls
+          const workout = await this.ensureWorkoutDetails(id);
+          if (workout) {
+            this.markPrefetched(id);
+            console.log(`[WorkoutAPI] Successfully prefetched workout ${id} locally`);
+          } else {
+            console.log(`[WorkoutAPI] Workout ${id} not available locally - skipping`);
+          }
+        } catch (error) {
+          console.error(`[WorkoutAPI] Failed to prefetch workout ${id}:`, error);
+        }
+      }, 'low');
+    }
+  }
+
+  // Smart prefetch based on scroll direction
+  smartPrefetch(visibleWorkouts, allWorkouts) {
+    if (!visibleWorkouts?.length || !allWorkouts?.length) return;
+
+    const visibleIds = new Set(visibleWorkouts.map(w => w.workout_id));
+    const allIds = allWorkouts.map(w => w.workout_id);
+    
+    // Find the range of visible workouts
+    const firstVisibleIndex = allIds.findIndex(id => visibleIds.has(id));
+    const lastVisibleIndex = allIds.findLastIndex(id => visibleIds.has(id));
+
+    if (firstVisibleIndex === -1 || lastVisibleIndex === -1) return;
+
+    // Determine which workouts to prefetch based on scroll direction
+    let prefetchIds = [];
+    const prefetchCount = 10; // Increased from 3 to 10 for more aggressive prefetching
+
+    if (this.currentScrollDirection === 'down') {
+      const endIndex = Math.min(lastVisibleIndex + prefetchCount + 1, allIds.length);
+      prefetchIds = allIds.slice(lastVisibleIndex + 1, endIndex);
+    } else {
+      const startIndex = Math.max(0, firstVisibleIndex - prefetchCount);
+      prefetchIds = allIds.slice(startIndex, firstVisibleIndex);
+    }
+
+    // Queue prefetch tasks with medium priority instead of low
+    prefetchIds.forEach(id => {
+      if (this.shouldPrefetch(id)) {
+        this.backgroundProcessor.addTask(async () => {
+          try {
+            // This method is local-only and will never make network calls
+            const workout = await this.ensureWorkoutDetails(id);
+            if (workout) {
+              this.markPrefetched(id);
+              console.log(`[WorkoutAPI] Smart prefetched workout ${id} locally`);
+            } else {
+              console.log(`[WorkoutAPI] Workout ${id} not available locally for smart prefetch`);
+            }
+          } catch (error) {
+            console.error(`[WorkoutAPI] Failed to smart prefetch workout ${id}:`, error);
+          }
+        }, 'medium'); // Changed from 'low' to 'medium' priority
+      }
+    });
+  }
+
+  // Background Summary Calculation (local-only)
+  async calculateMissingSummaries(workouts) {
+    const workoutsWithoutSummary = workouts.filter(w => !w.summary_data);
+    
+    console.log(`[WorkoutAPI] Calculating summaries for ${workoutsWithoutSummary.length} workouts locally`);
+    
+    workoutsWithoutSummary.forEach(workout => {
+      this.backgroundProcessor.addTask(async () => {
+        try {
+          const [existingSummary] = await this.db.query(`
+            SELECT * FROM workout_summaries WHERE workout_id = ?
+          `, [workout.workout_id]);
+
+          if (!existingSummary) {
+            const workoutExercises = await this.db.query(`
+              SELECT we.*, e.name, e.muscle_group
+              FROM workout_exercises we
+              LEFT JOIN exercises e ON we.exercise_id = e.exercise_id
+              WHERE we.workout_id = ?
+              ORDER BY we.exercise_order
+            `, [workout.workout_id]);
+
+            const sets = await this.db.query(`
+              SELECT * FROM sets WHERE workout_id = ?
+            `, [workout.workout_id]);
+
+            let totalVolume = 0;
+            const exerciseDetails = workoutExercises.map(exercise => {
+              const exerciseSets = sets.filter(s => 
+                s.workout_exercises_id === exercise.workout_exercises_id
+              );
+
+              const exerciseVolume = exerciseSets.reduce((total, set) => 
+                total + ((set.weight || 0) * (set.reps || 0)), 0
+              );
+
+              totalVolume += exerciseVolume;
+
+              return {
+                id: exercise.exercise_id,
+                name: exercise.name,
+                sets: exerciseSets.length,
+                volume: exerciseVolume
+              };
+            });
+
+            const summaryData = {
+              exercises: exerciseDetails,
+              totalVolume,
+              exerciseCount: workoutExercises.length
+            };
+
+            await this.db.execute(`
+              INSERT INTO workout_summaries 
+              (workout_id, summary_data, total_volume, exercise_count, last_calculated_at)
+              VALUES (?, ?, ?, ?, ?)
+            `, [
+              workout.workout_id,
+              JSON.stringify(summaryData),
+              totalVolume,
+              workoutExercises.length,
+              new Date().toISOString()
+            ]);
+          }
+        } catch (error) {
+          console.error('Failed to calculate summary:', error);
+        }
+      }, 'low');
+    });
   }
 
   getCacheStats() {
     return {
       memory: this.cache.getStats(),
-      workout: this.workoutCache.getStats()
+      workout: this.workoutCache.getStats(),
+      prefetch: {
+        bufferSize: this.prefetchBuffer.size,
+        maxSize: this.prefetchSize * 2,
+        scrollDirection: this.currentScrollDirection
+      }
+    };
+  }
+
+  // Prefetch buffer management
+  clearPrefetchBuffer() {
+    this.prefetchBuffer.clear();
+    console.log('[WorkoutAPI] Prefetch buffer cleared');
+  }
+
+  getPrefetchStats() {
+    return {
+      bufferSize: this.prefetchBuffer.size,
+      maxSize: this.prefetchSize * 2,
+      scrollDirection: this.currentScrollDirection,
+      prefetchedIds: Array.from(this.prefetchBuffer)
     };
   }
 
@@ -1061,11 +1227,18 @@ class WorkoutAPI extends APIBase {
     const cached = this.workoutCache.getWorkoutDetails(workoutId);
     if (cached) return cached;
 
-    // If not in cache, fetch it and store in cache
+    // If not in cache, fetch it from local database only
+    // This method is used for prefetching and should NEVER make network calls
     const workout = await this._getWorkoutWithDetails(workoutId);
     if (workout) {
       this.workoutCache.setWorkoutDetails(workoutId, workout);
+      console.log(`[WorkoutAPI] Prefetched workout ${workoutId} from local database`);
+    } else {
+      console.log(`[WorkoutAPI] Workout ${workoutId} not found locally - skipping prefetch (no network calls)`);
     }
+    
+    // Return workout (or null if not found locally) - NEVER make server calls
+    // This ensures prefetching is truly local-first and doesn't cause unnecessary network requests
     return workout;
   }
 
