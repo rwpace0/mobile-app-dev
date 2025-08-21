@@ -131,6 +131,24 @@ export const mediaAPI = {
     }
   },
 
+  downloadUserAvatar: async (userId, avatarUrl) => {
+    try {
+      return await mediaCache.downloadUserAvatarIfNeeded(userId, avatarUrl);
+    } catch (error) {
+      console.error('Download user avatar error:', error);
+      return null;
+    }
+  },
+
+  getUserAvatarPath: async (userId) => {
+    try {
+      return await mediaCache.getProfileAvatar(userId);
+    } catch (error) {
+      console.error('Get user avatar path error:', error);
+      return null;
+    }
+  },
+
   cleanupOldFiles: async () => {
     try {
       await mediaCache.cleanupOldFiles();

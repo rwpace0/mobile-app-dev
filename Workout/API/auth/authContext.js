@@ -6,6 +6,36 @@ import { tokenManager } from '../utils/tokenManager';
 
 const AuthContext = createContext(null);
 
+// Track avatar download to prevent duplicates
+let avatarDownloadInProgress = false;
+
+// Helper function to download user avatar
+const downloadUserAvatarOnce = async (userId) => {
+  if (avatarDownloadInProgress) {
+    return;
+  }
+  
+  avatarDownloadInProgress = true;
+  
+  try {
+    const { profileAPI } = await import('../profileAPI');
+    const { mediaCache } = await import('../local/MediaCache');
+    
+    const profileData = await profileAPI.getProfile();
+    if (profileData?.avatar_url) {
+      await mediaCache.downloadUserAvatarIfNeeded(userId, profileData.avatar_url);
+    }
+  } catch (error) {
+    console.error('[AuthContext] Failed to download user avatar:', error);
+    // Don't throw error - avatar download is not critical
+  } finally {
+    // Reset the flag after a short delay to allow for proper completion
+    setTimeout(() => {
+      avatarDownloadInProgress = false;
+    }, 5000);
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +111,9 @@ export const AuthProvider = ({ children }) => {
                       ...userData,
                       isAuthenticated: true
                     });
+                    
+                    // Download user's avatar in the background after authentication
+                    setTimeout(() => downloadUserAvatarOnce(userData.id), 2000);
                   } else {
                     setUser({
                       ...userData,
@@ -115,6 +148,12 @@ export const AuthProvider = ({ children }) => {
             ...userData,
             isAuthenticated: !!userData.email_confirmed_at
           });
+          
+          // Download user's avatar in the background if authenticated
+          if (userData.email_confirmed_at) {
+            setTimeout(() => downloadUserAvatarOnce(userData.id), 1500);
+          }
+          
           setLoading(false);
           return;
         } catch (error) {
@@ -144,6 +183,9 @@ export const AuthProvider = ({ children }) => {
               ...userData,
               isAuthenticated: true
             });
+            
+            // Download user's avatar in the background after server auth
+            setTimeout(() => downloadUserAvatarOnce(userData.id), 2000);
           } else {
             setUser({
               ...userData,
@@ -198,6 +240,10 @@ export const AuthProvider = ({ children }) => {
       }
       
       setUser({ ...userData, isAuthenticated: true });
+      
+      // Download user's avatar in the background after successful login
+      setTimeout(() => downloadUserAvatarOnce(userData.id), 1000);
+      
       return data;
     } catch (error) {
       console.error('Login failed:', error);

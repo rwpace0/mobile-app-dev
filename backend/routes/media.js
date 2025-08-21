@@ -1,5 +1,5 @@
 import express from 'express';
-import { uploadAvatar, uploadExerciseMedia, deleteMedia } from '../controller/mediaController.js';
+import { uploadAvatar, uploadExerciseMedia, deleteMedia, getAvatar } from '../controller/mediaController.js';
 import { uploadAvatar as avatarMiddleware, uploadExerciseMedia as exerciseMediaMiddleware, handleMulterError } from '../media/fileValidation.js';
 import { verifyToken } from '../auth/verifyToken.js';
 
@@ -10,6 +10,9 @@ router.use(verifyToken);
 
 // Handle avatar uploads
 router.post('/avatar', avatarMiddleware, handleMulterError, uploadAvatar);
+
+// Serve avatar images
+router.get('/avatar/:userId', getAvatar);
 
 // Handle exercise media uploads
 router.post('/exercise', exerciseMediaMiddleware, handleMulterError, uploadExerciseMedia);

@@ -46,19 +46,93 @@ class MediaCache {
     return `${this.baseDir}${type}/${id}_${timestamp}.${ext}`;
   }
 
-  async downloadAndCacheFile(url, type, id) {
+  async downloadAndCacheFile(url, type, id, isAvatar = false) {
     try {
-      // Check file size before downloading
-      const fileSize = await this.getRemoteFileSize(url);
-      if (fileSize > this.maxFileSize) {
-        console.warn(`[MediaCache] File too large (${(fileSize / 1024 / 1024).toFixed(2)}MB), skipping download`);
-        return null;
-      }
-
       const localPath = this.generateLocalPath(type, id, url);
       
-      // Download file
-      await FileSystem.downloadAsync(url, localPath);
+      let downloadResult;
+      
+      if (isAvatar) {
+        // For avatars, use the backend endpoint instead of direct Supabase URL
+        const { tokenManager } = await import('../utils/tokenManager');
+        const accessToken = await tokenManager.getValidToken();
+        
+        if (!accessToken) {
+          throw new Error('No access token available for avatar download');
+        }
+        
+        // Convert the URL or userId to backend avatar endpoint
+        let avatarUserId = id;
+        
+        // If we have a Supabase URL, extract the user ID from it
+        if (url.includes('supabase.co') && url.includes('avatars/')) {
+          const urlParts = url.split('/');
+          const avatarsIndex = urlParts.findIndex(part => part === 'avatars');
+          if (avatarsIndex !== -1 && urlParts[avatarsIndex + 1]) {
+            avatarUserId = urlParts[avatarsIndex + 1];
+          }
+        }
+        
+        const backendUrl = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/avatar/${avatarUserId}`;
+        
+        // Download file with authentication
+        downloadResult = await FileSystem.downloadAsync(backendUrl, localPath, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+      } else {
+        // For non-avatar files, use the original direct download
+        const fileSize = await this.getRemoteFileSize(url);
+        if (fileSize > this.maxFileSize) {
+          console.warn(`[MediaCache] File too large (${(fileSize / 1024 / 1024).toFixed(2)}MB), skipping download`);
+          return null;
+        }
+        
+        downloadResult = await FileSystem.downloadAsync(url, localPath);
+      }
+      
+      // Check if download failed with HTTP error
+      if (downloadResult.status >= 400) {
+        console.error(`[MediaCache] Download failed with HTTP ${downloadResult.status}`);
+        console.error(`[MediaCache] Response headers:`, downloadResult.headers);
+        
+        // Delete the error response file
+        try {
+          await FileSystem.deleteAsync(localPath);
+        } catch (e) {
+          // Ignore deletion errors
+        }
+        
+        throw new Error(`Download failed with HTTP ${downloadResult.status}. ${isAvatar ? 'Backend avatar endpoint may be unavailable.' : 'URL may be expired or invalid.'}`);
+      }
+      
+      // Verify the downloaded file
+      const fileInfo = await FileSystem.getInfoAsync(localPath);
+      
+      if (!fileInfo.exists) {
+        throw new Error('Downloaded file does not exist');
+      }
+      
+      if (fileInfo.size < 100) {
+        console.warn(`[MediaCache] Downloaded file is suspiciously small (${fileInfo.size} bytes), may be corrupted`);
+        
+        // Check if it's a JSON error response
+        if (downloadResult.headers['Content-Type']?.includes('application/json')) {
+          console.error(`[MediaCache] Downloaded file appears to be a JSON error response`);
+          // Try to read the error for debugging
+          try {
+            const errorContent = await FileSystem.readAsStringAsync(localPath);
+            console.error(`[MediaCache] Error response content:`, errorContent);
+          } catch (e) {
+            // Ignore read errors
+          }
+        }
+        
+        // Delete the corrupted file
+        await FileSystem.deleteAsync(localPath);
+        throw new Error(`Downloaded file is too small (${fileInfo.size} bytes), likely corrupted or error response`);
+      }
       
       // Add to LRU cache
       this.cache.set(url, localPath);
@@ -131,25 +205,17 @@ class MediaCache {
       // Clean up the avatar URL to prevent SQL injection
       const cleanAvatarUrl = avatarUrl.split('?')[0]; // Remove query parameters
       
-      // First, ensure the profile exists in the local database
-      const [profileExists] = await dbManager.query(
-        'SELECT user_id FROM profiles WHERE user_id = ?',
-        [userId]
+      // Use INSERT OR IGNORE first, then UPDATE if needed to handle username conflicts
+      await dbManager.execute(
+        'INSERT OR IGNORE INTO profiles (user_id, avatar_url, local_avatar_path, display_name, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"), datetime("now"))',
+        [userId, cleanAvatarUrl, filename, '', 'pending_sync']
       );
-
-      if (!profileExists) {
-        // Create the profile if it doesn't exist using INSERT OR REPLACE to handle username conflicts
-        await dbManager.execute(
-          'INSERT OR REPLACE INTO profiles (user_id, avatar_url, local_avatar_path, display_name, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"), datetime("now"))',
-          [userId, cleanAvatarUrl, filename, '', 'pending_sync']
-        );
-      } else {
-        // Update existing profile
-        await dbManager.execute(
-          'UPDATE profiles SET avatar_url = ?, local_avatar_path = ?, sync_status = ?, updated_at = datetime("now") WHERE user_id = ?',
-          [cleanAvatarUrl, filename, 'pending_sync', userId]
-        );
-      }
+      
+      // Then always update to ensure the avatar data is set correctly
+      await dbManager.execute(
+        'UPDATE profiles SET avatar_url = ?, local_avatar_path = ?, sync_status = ?, updated_at = datetime("now") WHERE user_id = ?',
+        [cleanAvatarUrl, filename, 'pending_sync', userId]
+      );
     } catch (error) {
       console.error('Failed to update profile avatar:', error);
       throw error;
@@ -221,35 +287,21 @@ class MediaCache {
   async getProfileAvatar(userId) {
     try {
       const [profile] = await dbManager.query(
-        'SELECT avatar_url, local_avatar_path FROM profiles WHERE user_id = ?',
+        'SELECT local_avatar_path FROM profiles WHERE user_id = ?',
         [userId]
       );
 
-      if (!profile) {
+      if (!profile?.local_avatar_path) {
         return null;
       }
 
-      // Check if local file exists
-      if (profile.local_avatar_path) {
-        const localPath = `${this.baseDir}avatars/${profile.local_avatar_path}`;
-        const fileInfo = await FileSystem.getInfoAsync(localPath);
-        if (fileInfo.exists) {
-          return localPath;
-        }
+      const localPath = `${this.baseDir}avatars/${profile.local_avatar_path}`;
+      const fileInfo = await FileSystem.getInfoAsync(localPath);
+      
+      if (fileInfo.exists && fileInfo.size > 100) { // Basic validation that file exists and has content
+        return localPath;
       }
-
-      // If no local file or local file doesn't exist, try to download from remote URL
-      if (profile.avatar_url) {
-        try {
-          const localPath = await this.downloadAndCacheFile(profile.avatar_url, 'avatars', userId);
-          await this.updateProfileAvatar(userId, profile.avatar_url, localPath);
-          return localPath;
-        } catch (error) {
-          console.error('Failed to download avatar:', error);
-          return null;
-        }
-      }
-
+      
       return null;
     } catch (error) {
       console.error('Failed to get profile avatar:', error);
@@ -299,64 +351,42 @@ class MediaCache {
 
   async updateLocalProfile(userId, profileData) {
     try {
-      // Check if profile exists
-      const [existingProfile] = await dbManager.query(
-        'SELECT user_id FROM profiles WHERE user_id = ?',
-        [userId]
-      );
-
       const updateData = {
         display_name: profileData.display_name || '',
         username: profileData.username || null,
         sync_status: profileData.username ? 'synced' : 'pending_sync' // If we have username from backend, it's synced
       };
 
-      if (!existingProfile) {
-        // Check if a profile with the same username already exists
-        if (updateData.username) {
-          const [existingUsernameProfile] = await dbManager.query(
-            'SELECT user_id FROM profiles WHERE username = ?',
-            [updateData.username]
-          );
-          
-          if (existingUsernameProfile) {
-            // A profile with this username already exists, update it instead of creating a new one
-            await dbManager.execute(
-              'UPDATE profiles SET user_id = ?, display_name = ?, sync_status = ?, updated_at = datetime("now") WHERE username = ?',
-              [userId, updateData.display_name, updateData.sync_status, updateData.username]
-            );
-          } else {
-            // Create new profile
-            await dbManager.execute(
-              'INSERT INTO profiles (user_id, display_name, username, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
-              [userId, updateData.display_name, updateData.username, updateData.sync_status]
-            );
-          }
-        } else {
-          // Create new profile without username
-          await dbManager.execute(
-            'INSERT INTO profiles (user_id, display_name, username, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
-            [userId, updateData.display_name, updateData.username, updateData.sync_status]
-          );
-        }
-      } else {
-        // Update existing profile
-        const updateFields = ['display_name = ?', 'sync_status = ?', 'updated_at = datetime("now")'];
-        const updateValues = [updateData.display_name, updateData.sync_status];
-        
-        // Only update username if it's provided (don't overwrite existing username with null)
-        if (updateData.username) {
-          updateFields.push('username = ?');
-          updateValues.push(updateData.username);
-        }
-        
-        updateValues.push(userId);
-        
+      // If username is provided, clear any existing profiles with the same username first
+      if (updateData.username) {
         await dbManager.execute(
-          `UPDATE profiles SET ${updateFields.join(', ')} WHERE user_id = ?`,
-          updateValues
+          'UPDATE profiles SET username = NULL WHERE username = ? AND user_id != ?',
+          [updateData.username, userId]
         );
       }
+
+      // Use INSERT OR IGNORE first, then UPDATE to handle all cases properly
+      await dbManager.execute(
+        'INSERT OR IGNORE INTO profiles (user_id, display_name, username, sync_status, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
+        [userId, updateData.display_name, updateData.username, updateData.sync_status]
+      );
+      
+      // Then always update to ensure the profile data is set correctly
+      const updateFields = ['display_name = ?', 'sync_status = ?', 'updated_at = datetime("now")'];
+      const updateValues = [updateData.display_name, updateData.sync_status];
+      
+      // Only update username if it's provided (don't overwrite existing username with null)
+      if (updateData.username) {
+        updateFields.push('username = ?');
+        updateValues.push(updateData.username);
+      }
+      
+      updateValues.push(userId);
+      
+      await dbManager.execute(
+        `UPDATE profiles SET ${updateFields.join(', ')} WHERE user_id = ?`,
+        updateValues
+      );
 
       return this.getLocalProfile(userId);
     } catch (error) {
@@ -374,6 +404,69 @@ class MediaCache {
     } catch (error) {
       console.error('Failed to mark profile as synced:', error);
       throw error;
+    }
+  }
+
+  async downloadUserAvatarIfNeeded(userId, avatarUrl) {
+    try {
+      if (!userId || !avatarUrl) {
+        console.log('[MediaCache] No userId or avatarUrl provided for avatar download');
+        return null;
+      }
+
+      // Check if we already have a local copy of this avatar
+      const [existingProfile] = await dbManager.query(
+        'SELECT local_avatar_path FROM profiles WHERE user_id = ?',
+        [userId]
+      );
+      
+      if (existingProfile?.local_avatar_path) {
+        const localPath = `${this.baseDir}avatars/${existingProfile.local_avatar_path}`;
+        const fileInfo = await FileSystem.getInfoAsync(localPath);
+        if (fileInfo.exists && fileInfo.size > 100) {
+          return localPath;
+        } else if (fileInfo.exists && fileInfo.size <= 100) {
+          console.log(`[MediaCache] Existing avatar file is corrupted (${fileInfo.size} bytes), will re-download`);
+          // Delete corrupted file
+          try {
+            await FileSystem.deleteAsync(localPath);
+          } catch (e) {
+            // Ignore deletion errors
+          }
+        }
+      }
+      
+      // Check if download is already in progress
+      const cacheKey = `downloading_${userId}`;
+      if (this.cache.get(cacheKey)) {
+        console.log(`[MediaCache] Avatar download already in progress for user ${userId}`);
+        return null;
+      }
+      
+      // Set download in progress flag
+      this.cache.set(cacheKey, true, 300); // 5 minute timeout
+      
+      try {
+        // Download the avatar
+        const localPath = await this.downloadAndCacheFile(avatarUrl, 'avatars', userId, true);
+        
+        if (localPath) {
+          // Update local profile with the new avatar path
+          const fileName = localPath.split('/').pop();
+          await this.updateProfileAvatar(userId, avatarUrl, fileName);
+          console.log(`[MediaCache] Successfully downloaded and cached avatar for user ${userId}`);
+          return localPath;
+        }
+        
+        return null;
+      } finally {
+        // Clear download in progress flag
+        this.cache.delete(cacheKey);
+      }
+    } catch (error) {
+      console.error(`[MediaCache] Failed to download avatar for user ${userId}:`, error);
+      // Don't throw error - avatar download is not critical
+      return null;
     }
   }
 

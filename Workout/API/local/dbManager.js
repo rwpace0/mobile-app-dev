@@ -301,7 +301,7 @@ class DatabaseManager {
         finalSql = finalSql.replace('?', value);
       });
 
-      console.log('[DatabaseManager] Final SQL:', finalSql);
+      //console.log('[DatabaseManager] Final SQL:', finalSql);
       
       // Execute the query directly
       const result = await this.db.execAsync(finalSql);

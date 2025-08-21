@@ -144,6 +144,70 @@ export const uploadExerciseMedia = async (req, res) => {
   }
 };
 
+export const getAvatar = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const requestingUserId = req.user.id;
+    
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    const supabaseWithToken = getClientToken(token);
+
+    // Get the user's profile to find their avatar
+    const { data: profile, error: profileError } = await supabaseWithToken
+      .from('profiles')
+      .select('avatar_url')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !profile?.avatar_url) {
+      return res.status(404).json({ error: 'Avatar not found' });
+    }
+
+    // Extract the file path from the avatar URL
+    // The avatar URL is a signed URL like: https://...supabase.co/storage/v1/object/sign/avatars/userId/filename.jpg?token=...
+    const urlParts = profile.avatar_url.split('/');
+    const avatarsIndex = urlParts.findIndex(part => part === 'avatars');
+    if (avatarsIndex === -1) {
+      return res.status(404).json({ error: 'Invalid avatar URL format' });
+    }
+    
+    // Get the path after 'avatars/' (e.g., "userId/timestamp.jpg")
+    const filePath = urlParts.slice(avatarsIndex + 1).join('/').split('?')[0]; // Remove query params
+
+    console.log('Fetching avatar file:', filePath);
+
+    // Download the file from Supabase storage
+    const { data: fileData, error: downloadError } = await supabaseWithToken.storage
+      .from('avatars')
+      .download(filePath);
+
+    if (downloadError || !fileData) {
+      console.error('Error downloading avatar:', downloadError);
+      return res.status(404).json({ error: 'Avatar file not found' });
+    }
+
+    // Convert the blob to buffer
+    const buffer = Buffer.from(await fileData.arrayBuffer());
+
+    // Set appropriate headers
+    res.set({
+      'Content-Type': 'image/jpeg',
+      'Content-Length': buffer.length,
+      'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+      'ETag': `"${userId}-avatar"`,
+    });
+
+    // Send the image data
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('Error serving avatar:', error);
+    res.status(500).json({ error: 'Failed to serve avatar', details: error.message });
+  }
+};
+
 export const deleteMedia = async (req, res) => {
   try {
     const { bucket, fileName } = req.body;

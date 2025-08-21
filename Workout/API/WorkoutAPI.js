@@ -294,12 +294,12 @@ class WorkoutAPI extends APIBase {
         searchTerm,
       } = params;
 
-      console.log('[WorkoutAPI] Fetching workouts cursor:', { cursor, limit, dateFrom, dateTo, searchTerm });
+      //console.log('[WorkoutAPI] Fetching workouts cursor:', { cursor, limit, dateFrom, dateTo, searchTerm });
 
       const cacheKey = this.workoutCache.generateListCacheKey(params);
       const cachedResult = this.workoutCache.getWorkoutList(cacheKey);
       if (cachedResult) {
-        console.log('[WorkoutAPI] Returning cached workout list');
+        //console.log('[WorkoutAPI] Returning cached workout list');
         return cachedResult;
       }
 
@@ -1058,7 +1058,7 @@ class WorkoutAPI extends APIBase {
   prefetchWorkoutDetails(workoutIds) {
     const idsToFetch = workoutIds.filter(id => this.shouldPrefetch(id));
     
-    console.log(`[WorkoutAPI] Prefetching ${idsToFetch.length} workout details from local database`);
+    //console.log(`[WorkoutAPI] Prefetching ${idsToFetch.length} workout details from local database`);
     
     for (const id of idsToFetch) {
       this.backgroundProcessor.addTask(async () => {
@@ -1067,9 +1067,9 @@ class WorkoutAPI extends APIBase {
           const workout = await this.ensureWorkoutDetails(id);
           if (workout) {
             this.markPrefetched(id);
-            console.log(`[WorkoutAPI] Successfully prefetched workout ${id} locally`);
+            //console.log(`[WorkoutAPI] Successfully prefetched workout ${id} locally`);
           } else {
-            console.log(`[WorkoutAPI] Workout ${id} not available locally - skipping`);
+            //console.log(`[WorkoutAPI] Workout ${id} not available locally - skipping`);
           }
         } catch (error) {
           console.error(`[WorkoutAPI] Failed to prefetch workout ${id}:`, error);
@@ -1112,9 +1112,9 @@ class WorkoutAPI extends APIBase {
             const workout = await this.ensureWorkoutDetails(id);
             if (workout) {
               this.markPrefetched(id);
-              console.log(`[WorkoutAPI] Smart prefetched workout ${id} locally`);
+              //console.log(`[WorkoutAPI] Smart prefetched workout ${id} locally`);
             } else {
-              console.log(`[WorkoutAPI] Workout ${id} not available locally for smart prefetch`);
+              //console.log(`[WorkoutAPI] Workout ${id} not available locally for smart prefetch`);
             }
           } catch (error) {
             console.error(`[WorkoutAPI] Failed to smart prefetch workout ${id}:`, error);
@@ -1232,7 +1232,7 @@ class WorkoutAPI extends APIBase {
     const workout = await this._getWorkoutWithDetails(workoutId);
     if (workout) {
       this.workoutCache.setWorkoutDetails(workoutId, workout);
-      console.log(`[WorkoutAPI] Prefetched workout ${workoutId} from local database`);
+      //console.log(`[WorkoutAPI] Prefetched workout ${workoutId} from local database`);
     } else {
       console.log(`[WorkoutAPI] Workout ${workoutId} not found locally - skipping prefetch (no network calls)`);
     }

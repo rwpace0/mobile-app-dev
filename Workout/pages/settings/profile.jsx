@@ -21,11 +21,10 @@ import AlertModal from '../../components/modals/AlertModal';
 import { useAlertModal } from '../../utils/useAlertModal';
 
 const Profile = ({ navigation }) => {
-  const [activeMetric, setActiveMetric] = useState('Duration');
   const [workoutCount, setWorkoutCount] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [displayName, setDisplayName] = useState('');
-  const { user, logout, updateUsername } = useAuth();
+  const { user } = useAuth();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -45,7 +44,12 @@ const Profile = ({ navigation }) => {
     if (user?.id) {
       try {
         const avatarPath = await mediaCache.getProfileAvatar(user.id);
-        setProfileAvatar(avatarPath);
+        
+        if (avatarPath) {
+          setProfileAvatar(avatarPath);
+        } else {
+          setProfileAvatar(null);
+        }
       } catch (error) {
         console.error('Error fetching profile avatar:', error);
         setProfileAvatar(null);
@@ -112,6 +116,15 @@ const Profile = ({ navigation }) => {
       fetchWorkoutCount();
       fetchProfileAvatar();
       fetchDisplayName();
+      
+      // One-time delayed re-check to allow background avatar download to finish
+      const timeoutId = setTimeout(() => {
+        if (!profileAvatar) {
+          fetchProfileAvatar();
+        }
+      }, 2500);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [user]);
 
@@ -137,6 +150,7 @@ const Profile = ({ navigation }) => {
         >
           {profileAvatar ? (
             <Image
+              key={profileAvatar} // Force re-render when path changes
               source={{ uri: profileAvatar }}
               style={styles.avatarImage}
               resizeMode="cover"

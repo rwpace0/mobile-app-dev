@@ -85,7 +85,7 @@ class WorkoutCache {
   getWorkoutDetails(workoutId) {
     const result = this.workoutDetailsCache.get(workoutId);
     if (!result) {
-      console.log(`[WorkoutCache] Cache miss for workout ${workoutId}`);
+      //console.log(`[WorkoutCache] Cache miss for workout ${workoutId}`);
     }
     return result;
   }
@@ -95,7 +95,7 @@ class WorkoutCache {
       console.warn(`[WorkoutCache] Attempted to cache null/undefined workout for ID ${workoutId}`);
       return;
     }
-    console.log(`[WorkoutCache] Caching workout ${workoutId}`);
+    //console.log(`[WorkoutCache] Caching workout ${workoutId}`);
     this.workoutDetailsCache.set(workoutId, workout, ttlMs);
   }
 
@@ -108,7 +108,7 @@ class WorkoutCache {
       console.warn(`[WorkoutCache] Attempted to cache null/undefined workout list for key ${cacheKey}`);
       return;
     }
-    console.log(`[WorkoutCache] Caching workout list with key ${cacheKey}`);
+    //console.log(`[WorkoutCache] Caching workout list with key ${cacheKey}`);
     this.workoutListCache.set(cacheKey, workouts, ttlMs);
   }
 
