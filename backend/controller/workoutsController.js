@@ -875,7 +875,7 @@ export async function upsertWorkout(req, res) {
 
 export async function getWorkoutsWithDetails(req, res) {
   try {
-    console.log("getWorkoutsWithDetails: Starting request");
+    //console.log("getWorkoutsWithDetails: Starting request");
     
     // Get the token from the Authorization header
     const authHeader = req.headers.authorization;
@@ -897,7 +897,7 @@ export async function getWorkoutsWithDetails(req, res) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
 
-    console.log(`getWorkoutsWithDetails: Fetching complete data for user ${user.id}`);
+    //console.log(`getWorkoutsWithDetails: Fetching complete data for user ${user.id}`);
 
     // Create a client with the user's token
     const supabaseWithAuth = getClientToken(token);
@@ -934,7 +934,7 @@ export async function getWorkoutsWithDetails(req, res) {
       return res.status(500).json({ error: workoutsError.message });
     }
 
-    console.log(`getWorkoutsWithDetails: Retrieved ${workouts?.length || 0} workouts from database`);
+    //console.log(`getWorkoutsWithDetails: Retrieved ${workouts?.length || 0} workouts from database`);
 
     // Process the data to match the expected format
     const processedWorkouts = workouts.map(workout => {
@@ -976,7 +976,7 @@ export async function getWorkoutsWithDetails(req, res) {
       };
     });
 
-    console.log(`getWorkoutsWithDetails: Returning ${processedWorkouts.length} processed workouts`);
+    //console.log(`getWorkoutsWithDetails: Returning ${processedWorkouts.length} processed workouts`);
     res.json(processedWorkouts);
   } catch (err) {
     console.error("Network or unexpected error:", err);

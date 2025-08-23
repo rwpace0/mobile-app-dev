@@ -46,7 +46,7 @@ class MediaCache {
     return `${this.baseDir}${type}/${id}_${timestamp}.${ext}`;
   }
 
-  async downloadAndCacheFile(url, type, id, isAvatar = false) {
+  async downloadAndCacheFile(url, type, id, isAvatar = false, isExerciseMedia = false) {
     try {
       const localPath = this.generateLocalPath(type, id, url);
       
@@ -81,6 +81,36 @@ class MediaCache {
             'Authorization': `Bearer ${accessToken}`
           }
         });
+      } else if (isExerciseMedia) {
+        // For exercise media, use the backend endpoint instead of direct Supabase URL
+        const { tokenManager } = await import('../utils/tokenManager');
+        const accessToken = await tokenManager.getValidToken();
+        
+        if (!accessToken) {
+          throw new Error('No access token available for exercise media download');
+        }
+        
+        // Extract exercise ID from the URL or use the provided id
+        let exerciseId = id;
+        
+        // If we have a Supabase URL, extract the exercise ID from it
+        if (url.includes('supabase.co') && url.includes('exercise-media/')) {
+          const urlParts = url.split('/');
+          const mediaIndex = urlParts.findIndex(part => part === 'exercise-media');
+          if (mediaIndex !== -1 && urlParts[mediaIndex + 1]) {
+            // The exercise ID might be in the URL path, but we'll use the provided id parameter
+            exerciseId = id;
+          }
+        }
+        
+        const backendUrl = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/exercise/${exerciseId}`;
+        
+        // Download file with authentication
+        downloadResult = await FileSystem.downloadAsync(backendUrl, localPath, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
       } else {
         // For non-avatar files, use the original direct download
         const fileSize = await this.getRemoteFileSize(url);
@@ -104,7 +134,8 @@ class MediaCache {
           // Ignore deletion errors
         }
         
-        throw new Error(`Download failed with HTTP ${downloadResult.status}. ${isAvatar ? 'Backend avatar endpoint may be unavailable.' : 'URL may be expired or invalid.'}`);
+        const errorType = isAvatar ? 'Backend avatar endpoint' : isExerciseMedia ? 'Backend exercise media endpoint' : 'URL';
+        throw new Error(`Download failed with HTTP ${downloadResult.status}. ${errorType} may be unavailable.`);
       }
       
       // Verify the downloaded file
@@ -309,6 +340,31 @@ class MediaCache {
     }
   }
 
+  async getExerciseMedia(exerciseId) {
+    try {
+      const [exercise] = await dbManager.query(
+        'SELECT local_media_path FROM exercises WHERE exercise_id = ?',
+        [exerciseId]
+      );
+
+      if (!exercise?.local_media_path) {
+        return null;
+      }
+
+      const localPath = `${this.baseDir}exercises/${exercise.local_media_path}`;
+      const fileInfo = await FileSystem.getInfoAsync(localPath);
+      
+      if (fileInfo.exists && fileInfo.size > 100) { // Basic validation that file exists and has content
+        return localPath;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to get exercise media:', error);
+      return null;
+    }
+  }
+
   async getLocalProfile(userId) {
     try {
       const [profile] = await dbManager.query(
@@ -466,6 +522,69 @@ class MediaCache {
     } catch (error) {
       console.error(`[MediaCache] Failed to download avatar for user ${userId}:`, error);
       // Don't throw error - avatar download is not critical
+      return null;
+    }
+  }
+
+  async downloadExerciseMediaIfNeeded(exerciseId, mediaUrl) {
+    try {
+      if (!exerciseId || !mediaUrl) {
+        console.log('[MediaCache] No exerciseId or mediaUrl provided for exercise media download');
+        return null;
+      }
+
+      // Check if we already have a local copy of this exercise media
+      const [existingExercise] = await dbManager.query(
+        'SELECT local_media_path FROM exercises WHERE exercise_id = ?',
+        [exerciseId]
+      );
+      
+      if (existingExercise?.local_media_path) {
+        const localPath = `${this.baseDir}exercises/${existingExercise.local_media_path}`;
+        const fileInfo = await FileSystem.getInfoAsync(localPath);
+        if (fileInfo.exists && fileInfo.size > 100) {
+          return localPath;
+        } else if (fileInfo.exists && fileInfo.size <= 100) {
+          console.log(`[MediaCache] Existing exercise media file is corrupted (${fileInfo.size} bytes), will re-download`);
+          // Delete corrupted file
+          try {
+            await FileSystem.deleteAsync(localPath);
+          } catch (e) {
+            // Ignore deletion errors
+          }
+        }
+      }
+      
+      // Check if download is already in progress
+      const cacheKey = `downloading_exercise_${exerciseId}`;
+      if (this.cache.get(cacheKey)) {
+        console.log(`[MediaCache] Exercise media download already in progress for exercise ${exerciseId}`);
+        return null;
+      }
+      
+      // Set download in progress flag
+      this.cache.set(cacheKey, true, 300); // 5 minute timeout
+      
+      try {
+        // Download the exercise media using the backend endpoint
+        const localPath = await this.downloadAndCacheFile(mediaUrl, 'exercises', exerciseId, false, true);
+        
+        if (localPath) {
+          // Update local exercise with the new media path
+          const fileName = localPath.split('/').pop();
+          await this.updateExerciseMedia(exerciseId, mediaUrl, fileName);
+          console.log(`[MediaCache] Successfully downloaded and cached exercise media for exercise ${exerciseId}`);
+          return localPath;
+        }
+        
+        return null;
+      } finally {
+        // Clear download in progress flag
+        this.cache.delete(cacheKey);
+      }
+    } catch (error) {
+      console.error(`[MediaCache] Failed to download exercise media for exercise ${exerciseId}:`, error);
+      // Don't throw error - exercise media download is not critical
       return null;
     }
   }

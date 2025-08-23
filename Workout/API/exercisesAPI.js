@@ -754,6 +754,18 @@ class ExercisesAPI extends APIBase {
           try {
             await this.storeLocally(exercise, 'synced');
             console.log(`[ExercisesAPI] Stored exercise ${exercise.exercise_id} locally`);
+            
+            // Download exercise media if it exists
+            if (exercise.media_url) {
+              try {
+                const { mediaCache } = await import('./local/MediaCache');
+                await mediaCache.downloadExerciseMediaIfNeeded(exercise.exercise_id, exercise.media_url);
+                console.log(`[ExercisesAPI] Downloaded media for exercise ${exercise.exercise_id}`);
+              } catch (mediaError) {
+                console.warn(`[ExercisesAPI] Failed to download media for exercise ${exercise.exercise_id}:`, mediaError);
+                // Don't fail the entire sync for media download issues
+              }
+            }
           } catch (error) {
             console.error(`[ExercisesAPI] Failed to store exercise ${exercise.exercise_id}:`, error);
           }
@@ -886,6 +898,26 @@ class ExercisesAPI extends APIBase {
     const token = await storage.getItem("auth_token");
     if (!token) throw new Error("No auth token found");
     return JSON.parse(atob(token.split(".")[1])).sub;
+  }
+
+  async getExerciseMedia(exerciseId) {
+    try {
+      const { mediaCache } = await import('./local/MediaCache');
+      return await mediaCache.getExerciseMedia(exerciseId);
+    } catch (error) {
+      console.error(`[ExercisesAPI] Failed to get exercise media for ${exerciseId}:`, error);
+      return null;
+    }
+  }
+
+  async downloadExerciseMedia(exerciseId, mediaUrl) {
+    try {
+      const { mediaCache } = await import('./local/MediaCache');
+      return await mediaCache.downloadExerciseMediaIfNeeded(exerciseId, mediaUrl);
+    } catch (error) {
+      console.error(`[ExercisesAPI] Failed to download exercise media for ${exerciseId}:`, error);
+      return null;
+    }
   }
 }
 

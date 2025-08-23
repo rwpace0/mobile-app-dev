@@ -166,7 +166,6 @@ export const getAvatar = async (req, res) => {
     }
 
     // Extract the file path from the avatar URL
-    // The avatar URL is a signed URL like: https://...supabase.co/storage/v1/object/sign/avatars/userId/filename.jpg?token=...
     const urlParts = profile.avatar_url.split('/');
     const avatarsIndex = urlParts.findIndex(part => part === 'avatars');
     if (avatarsIndex === -1) {
@@ -205,6 +204,108 @@ export const getAvatar = async (req, res) => {
   } catch (error) {
     console.error('Error serving avatar:', error);
     res.status(500).json({ error: 'Failed to serve avatar', details: error.message });
+  }
+};
+
+export const getExerciseMedia = async (req, res) => {
+  try {
+    const { exerciseId } = req.params;
+    const requestingUserId = req.user.id;
+    
+    console.log(`[getExerciseMedia] Request for exercise ID: ${exerciseId} from user: ${requestingUserId}`);
+    
+    // Get the token from the Authorization header
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
+    const supabaseWithToken = getClientToken(token);
+
+    // Get the exercise to find its media
+    const { data: exercise, error: exerciseError } = await supabaseWithToken
+      .from('exercises')
+      .select('media_url, name, created_by')
+      .eq('exercise_id', exerciseId)
+      .single();
+
+    console.log(`[getExerciseMedia] Database query result:`, { exercise, exerciseError });
+
+    if (exerciseError) {
+      console.error(`[getExerciseMedia] Database error for exercise ${exerciseId}:`, exerciseError);
+      return res.status(404).json({ error: 'Exercise not found', details: exerciseError.message });
+    }
+
+    if (!exercise) {
+      console.error(`[getExerciseMedia] Exercise ${exerciseId} not found in database`);
+      return res.status(404).json({ error: 'Exercise not found' });
+    }
+
+    if (!exercise.media_url) {
+      console.error(`[getExerciseMedia] Exercise ${exerciseId} has no media_url`);
+      return res.status(404).json({ error: 'Exercise media not found' });
+    }
+
+    console.log(`[getExerciseMedia] Exercise found:`, {
+      exerciseId,
+      name: exercise.name,
+      mediaUrl: exercise.media_url,
+      createdBy: exercise.created_by
+    });
+
+    // Extract the file path from the media URL
+    const urlParts = exercise.media_url.split('/');
+    const mediaIndex = urlParts.findIndex(part => part === 'exercise-media');
+    if (mediaIndex === -1) {
+      console.error(`[getExerciseMedia] Invalid media URL format for exercise ${exerciseId}:`, exercise.media_url);
+      return res.status(404).json({ error: 'Invalid exercise media URL format' });
+    }
+    
+    // Get the path after 'exercise-media/' (e.g., "userId/timestamp.jpg")
+    const filePath = urlParts.slice(mediaIndex + 1).join('/').split('?')[0]; // Remove query params
+
+    console.log(`[getExerciseMedia] Fetching exercise media file: ${filePath}`);
+
+    // Download the file from Supabase storage
+    const { data: fileData, error: downloadError } = await supabaseWithToken.storage
+      .from('exercise-media')
+      .download(filePath);
+
+    if (downloadError || !fileData) {
+      console.error(`[getExerciseMedia] Error downloading exercise media for ${exerciseId}:`, downloadError);
+      return res.status(404).json({ error: 'Exercise media file not found', details: downloadError?.message });
+    }
+
+    // Convert the blob to buffer
+    const buffer = Buffer.from(await fileData.arrayBuffer());
+
+    // Determine content type based on file extension
+    const fileExtension = filePath.split('.').pop().toLowerCase();
+    let contentType = 'image/jpeg'; // default
+    if (fileExtension === 'png') contentType = 'image/png';
+    else if (fileExtension === 'gif') contentType = 'image/gif';
+    else if (fileExtension === 'webp') contentType = 'image/webp';
+
+    console.log(`[getExerciseMedia] Successfully serving media for exercise ${exerciseId}:`, {
+      fileSize: buffer.length,
+      contentType,
+      filePath
+    });
+
+    // Set appropriate headers
+    res.set({
+      'Content-Type': contentType,
+      'Content-Length': buffer.length,
+      'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+      'ETag': `"${exerciseId}-media"`,
+      'X-Exercise-Name': exercise.name,
+      'X-Created-By': exercise.created_by,
+      'X-Local-Path': `exercise-media/${filePath}`,
+    });
+
+    // Send the image data
+    res.send(buffer);
+
+  } catch (error) {
+    console.error(`[getExerciseMedia] Error serving exercise media for ${req.params.exerciseId}:`, error);
+    res.status(500).json({ error: 'Failed to serve exercise media', details: error.message });
   }
 };
 
@@ -264,4 +365,4 @@ export const deleteMedia = async (req, res) => {
     console.error('Error deleting media:', error);
     res.status(500).json({ error: 'Failed to delete media' });
   }
-}; 
+};      

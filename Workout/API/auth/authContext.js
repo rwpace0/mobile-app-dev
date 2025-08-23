@@ -163,7 +163,7 @@ export const AuthProvider = ({ children }) => {
 
       // Only make server call if we don't have cached user data
       // This should only happen on first login or after cache is cleared
-      console.log('No cached user data, making server call to get user info');
+      // console.log('No cached user data, making server call to get user info');
       try {
         const response = await fetch(`${getBaseUrl()}/auth/me`, {
           headers: {

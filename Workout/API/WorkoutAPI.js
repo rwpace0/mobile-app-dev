@@ -202,7 +202,7 @@ class WorkoutAPI extends APIBase {
 
     try {
       await this.db.execute("BEGIN TRANSACTION");
-      console.log("[WorkoutAPI] Storing workout with exercises:", JSON.stringify(workout.exercises));
+      //console.log("[WorkoutAPI] Storing workout with exercises:", JSON.stringify(workout.exercises));
       
       // First store the workout
       // First store the workout
@@ -992,7 +992,7 @@ class WorkoutAPI extends APIBase {
         for (const workout of response.data) {
           try {
             await this.storeLocally(workout, 'synced');
-            console.log(`[WorkoutAPI] Stored complete workout ${workout.workout_id} locally`);
+            //console.log(`[WorkoutAPI] Stored complete workout ${workout.workout_id} locally`);
           } catch (error) {
             console.error(`[WorkoutAPI] Failed to store workout ${workout.workout_id}:`, error);
           }

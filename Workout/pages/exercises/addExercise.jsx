@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -110,37 +110,57 @@ const AddExercisePage = ({ route }) => {
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadExercises = async () => {
-      try {
-        setLoading(true);
-        const data = await exercisesAPI.getExercises();
-        if (isMounted) {
-          const sortedData = (data || []).sort((a, b) => a.name.localeCompare(b.name));
-          setExercises(sortedData);
-          setFilteredExercises(sortedData);
-          setSelectedExercises([]);
-        }
-      } catch (error) {
-        console.error("Failed to load exercises:", error);
-        if (isMounted) {
-          setError("Failed to load exercises");
-          setLoading(false);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
+  const loadExercises = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await exercisesAPI.getExercises();
+      const sortedData = (data || []).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      setExercises(sortedData);
+      setFilteredExercises(sortedData);
+      
+      // Download media for exercises that have media_url but no local_media_path
+      if (data && data.length > 0) {
+        const exercisesNeedingMedia = data.filter(ex => ex.media_url && !ex.local_media_path);
+        
+        if (exercisesNeedingMedia.length > 0) {
+          console.log(`[AddExercise] Found ${exercisesNeedingMedia.length} exercises needing media download`);
+          
+          // Download media in the background for better performance
+          setTimeout(async () => {
+            for (const exercise of exercisesNeedingMedia) {
+              try {
+                await exercisesAPI.downloadExerciseMedia(exercise.exercise_id, exercise.media_url);
+                console.log(`[AddExercise] Downloaded media for exercise ${exercise.exercise_id}`);
+              } catch (mediaError) {
+                console.warn(`[AddExercise] Failed to download media for exercise ${exercise.exercise_id}:`, mediaError);
+              }
+            }
+            
+            // Refresh the exercises list to show the updated local_media_path
+            const updatedExercises = await exercisesAPI.getExercises();
+            if (updatedExercises) {
+              const sortedUpdatedData = updatedExercises.sort((a, b) =>
+                a.name.localeCompare(b.name)
+              );
+              setExercises(sortedUpdatedData);
+              setFilteredExercises(sortedUpdatedData);
+            }
+          }, 1000); // Delay to avoid blocking the UI
         }
       }
-    };
-
-    loadExercises();
-    return () => {
-      isMounted = false;
-    };
+      
+    } catch (err) {
+      console.error("Failed to load exercises:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadExercises();
+  }, [loadExercises]);
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(

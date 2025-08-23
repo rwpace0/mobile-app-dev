@@ -133,10 +133,23 @@ export const mediaAPI = {
 
   downloadUserAvatar: async (userId, avatarUrl) => {
     try {
-      return await mediaCache.downloadUserAvatarIfNeeded(userId, avatarUrl);
+      // Download and cache the avatar
+      const localPath = await mediaCache.downloadUserAvatarIfNeeded(userId, avatarUrl);
+      return localPath;
     } catch (error) {
-      console.error('Download user avatar error:', error);
-      return null;
+      console.error('Download avatar error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+  },
+
+  downloadExerciseMedia: async (exerciseId, mediaUrl) => {
+    try {
+      // Download and cache the exercise media
+      const localPath = await mediaCache.downloadExerciseMediaIfNeeded(exerciseId, mediaUrl);
+      return localPath;
+    } catch (error) {
+      console.error('Download exercise media error:', error.response?.data || error.message);
+      throw error.response?.data || error;
     }
   },
 

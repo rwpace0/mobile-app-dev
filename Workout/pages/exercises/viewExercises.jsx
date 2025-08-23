@@ -101,19 +101,52 @@ const ViewExercisesPage = () => {
 
   const loadExercises = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
+    setError(null);
+
     try {
-      const data = await exercisesAPI.getExercises();
-      const sortedData = (data || []).sort((a, b) =>
+      const exercisesData = await exercisesAPI.getExercises();
+      const sortedData = (exercisesData || []).sort((a, b) =>
         a.name.localeCompare(b.name)
       );
       setExercises(sortedData);
       setFilteredExercises(sortedData);
-      setError(null);
+      
+      // Download media for exercises that have media_url but no local_media_path
+      if (exercisesData && exercisesData.length > 0) {
+        const exercisesNeedingMedia = exercisesData.filter(ex => ex.media_url && !ex.local_media_path);
+        
+        if (exercisesNeedingMedia.length > 0) {
+          console.log(`[ViewExercises] Found ${exercisesNeedingMedia.length} exercises needing media download`);
+          
+          // Download media in the background for better performance
+          setTimeout(async () => {
+            for (const exercise of exercisesNeedingMedia) {
+              try {
+                await exercisesAPI.downloadExerciseMedia(exercise.exercise_id, exercise.media_url);
+                console.log(`[ViewExercises] Downloaded media for exercise ${exercise.exercise_id}`);
+              } catch (mediaError) {
+                console.warn(`[ViewExercises] Failed to download media for exercise ${exercise.exercise_id}:`, mediaError);
+              }
+            }
+            
+            // Refresh the exercises list to show the updated local_media_path
+            const updatedExercises = await exercisesAPI.getExercises();
+            if (updatedExercises) {
+              const sortedUpdatedData = updatedExercises.sort((a, b) =>
+                a.name.localeCompare(b.name)
+              );
+              setExercises(sortedUpdatedData);
+              setFilteredExercises(sortedUpdatedData);
+            }
+          }, 1000); // Delay to avoid blocking the UI
+        }
+      }
+      
     } catch (err) {
-      console.error("Failed to load exercises:", err);
+      console.error("Error loading exercises:", err);
       setError(err.message || "Failed to load exercises");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
       setRefreshing(false);
     }
   }, []);

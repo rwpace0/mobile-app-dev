@@ -47,24 +47,46 @@ const ExerciseDetailPage = () => {
   }, [route.params.exerciseId]);
 
   const fetchData = useCallback(async (showLoading = true) => {
-    const exerciseId = route.params.exerciseId;
     if (showLoading) setLoading(true);
-    
+    setError(null);
+
     try {
-      const [exerciseData, historyData] = await Promise.all([
-        exercisesAPI.getExerciseById(exerciseId),
-        exercisesAPI.getExerciseHistory(exerciseId)
-      ]);
+      const exerciseId = route.params.exerciseId;
+      const exerciseData = await exercisesAPI.getExerciseById(exerciseId);
       
+      if (!exerciseData) {
+        setError('Exercise not found');
+        return;
+      }
+
       setExercise(exerciseData);
+
+      // Download exercise media if it exists on server but not locally
+      if (exerciseData.media_url && !exerciseData.local_media_path) {
+        try {
+          console.log('[ExerciseDetail] Downloading exercise media...');
+          await exercisesAPI.downloadExerciseMedia(exerciseData.exercise_id, exerciseData.media_url);
+          
+          // Refresh the exercise data to get the updated local_media_path
+          const updatedExercise = await exercisesAPI.getExerciseById(exerciseId);
+          if (updatedExercise) {
+            setExercise(updatedExercise);
+          }
+        } catch (mediaError) {
+          console.warn('[ExerciseDetail] Failed to download exercise media:', mediaError);
+          // Don't fail the entire page load for media download issues
+        }
+      }
+
+      // Fetch workout history for this exercise
+      const historyData = await exercisesAPI.getExerciseHistory(exerciseId);
       setHistory(historyData || []);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching exercise data:", err);
-      setError(err.message || "Failed to load exercise data");
+
+    } catch (error) {
+      console.error('Error fetching exercise data:', error);
+      setError(error.message || 'Failed to load exercise');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (showLoading) setLoading(false);
     }
   }, [route.params.exerciseId]);
 

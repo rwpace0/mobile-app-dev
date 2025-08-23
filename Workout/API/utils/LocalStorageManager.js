@@ -14,7 +14,7 @@ class LocalStorageManager {
       relations = []
     } = options;
 
-    console.log('[LocalStorageManager] Storing entity:', { table, entity, fields });
+    //console.log('[LocalStorageManager] Storing entity:', { table, entity, fields });
 
     const now = new Date().toISOString();
     const entityId = entity[idField] || uuid();
@@ -36,7 +36,7 @@ class LocalStorageManager {
       baseFields[field] = entity[field];
     });
 
-    console.log('[LocalStorageManager] Prepared fields:', baseFields);
+    //console.log('[LocalStorageManager] Prepared fields:', baseFields);
 
     // Create placeholders and values for SQL query
     const fieldNames = Object.keys(baseFields);
@@ -47,8 +47,8 @@ class LocalStorageManager {
     const query = `INSERT OR REPLACE INTO ${table} (${fieldNames.join(', ')})
                   VALUES (${placeholders})`;
     
-    console.log('[LocalStorageManager] Executing query:', query);
-    console.log('[LocalStorageManager] With values:', values);
+   // console.log('[LocalStorageManager] Executing query:', query);
+   // console.log('[LocalStorageManager] With values:', values);
 
     await this.db.execute(query, values);
 
