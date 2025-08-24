@@ -291,12 +291,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const resetPassword = async (email) => {
+  const requestPasswordReset = async (email) => {
     try {
       setError(null);
-      return await authAPI.resetPassword(email);
+      return await authAPI.requestPasswordReset(email);
     } catch (error) {
-      console.error('Password reset failed:', error);
+      console.error('Password reset request failed:', error);
+      const errorMessage = error.message || 'Failed to request password reset. Please try again.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const resetPasswordWithToken = async (token_hash, type, password) => {
+    try {
+      setError(null);
+      const response = await authAPI.resetPasswordWithToken(token_hash, type, password);
+      // If password reset is successful, store the session tokens
+      if (response.session?.access_token) {
+        await storage.setTokens(
+          response.session.access_token,
+          response.session.refresh_token,
+          response.session.expires_in
+        );
+        // Update user state
+        setUser({ ...response.user, isAuthenticated: true });
+      }
+      return response;
+    } catch (error) {
+      console.error('Password reset with token failed:', error);
       const errorMessage = error.message || 'Failed to reset password. Please try again.';
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -338,7 +361,8 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    resetPassword,
+    requestPasswordReset,
+    resetPasswordWithToken,
     verifyEmail,
     updateUsername,
   };

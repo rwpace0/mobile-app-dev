@@ -10,6 +10,7 @@ import WelcomePage from "./pages/welcome";
 import LoginPage from "./pages/login";
 import SignUpPage from "./pages/signup";
 import EmailVerification from "./pages/EmailVerification";
+import ResetPassword from "./pages/resetPassword";
 import AddExercisePage from "./pages/exercises/addExercise";
 import startPage from "./pages/start";
 import ActiveWorkoutPage from "./pages/workouts/activeWorkout";
@@ -98,6 +99,7 @@ const AuthStack = () => (
     <Stack.Screen name="Welcome" component={WelcomePage} />
     <Stack.Screen name="Login" component={LoginPage} />
     <Stack.Screen name="SignUp" component={SignUpPage} />
+    <Stack.Screen name="ResetPassword" component={ResetPassword} />
   </Stack.Navigator>
 );
 

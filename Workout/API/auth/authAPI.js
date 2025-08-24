@@ -108,10 +108,20 @@ export const authAPI = {
     }
   },
 
-  // Reset password
-  resetPassword: async (email) => {
+  // Request password reset
+  requestPasswordReset: async (email) => {
     try {
-      const response = await api.post('/reset-password', { email });
+      const response = await api.post('/request-password-reset', { email });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Reset password with token
+  resetPasswordWithToken: async (token_hash, type, password) => {
+    try {
+      const response = await api.post('/reset-password', { token_hash, type, password });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

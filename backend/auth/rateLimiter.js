@@ -11,6 +11,17 @@ export const emailVerificationLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Create a limiter for password reset requests
+export const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour window
+  max: 3, // limit each IP to 3 password reset requests per hour
+  message: {
+    error: 'Too many password reset requests. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Create a limiter for general auth endpoints
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes window
