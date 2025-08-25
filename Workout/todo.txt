@@ -1,5 +1,3 @@
-Refresh token
-Clear cache and db when users switch
 
 Implement Deep Link Handling - Most critical for email verification flow
 Add Account Deletion - Important for user privacy
@@ -8,8 +6,6 @@ Add Session Timeout - Security best practice
 Improve Error Messages - Better user experience
 
 Unverified users trying to access protected routes
-Token expiration during app usage
-Network interruptions during auth flows
 Multiple devices with same account
 Email verification link expiration
 Password reset token expiration

@@ -203,7 +203,7 @@ class ExercisesAPI extends APIBase {
   }
 
   async storeLocally(exercise, syncStatus = "synced") {
-    console.log('[ExercisesAPI] Storing exercise locally:', exercise);
+    //console.log('[ExercisesAPI] Storing exercise locally:', exercise);
     const result = await this.storage.storeEntity(exercise, {
       table: 'exercises',
       fields: [
@@ -221,7 +221,7 @@ class ExercisesAPI extends APIBase {
       ],
       syncStatus
     });
-    console.log('[ExercisesAPI] Store result:', result);
+    //console.log('[ExercisesAPI] Store result:', result);
     return result;
   }
 
@@ -753,14 +753,14 @@ class ExercisesAPI extends APIBase {
         for (const exercise of response.data) {
           try {
             await this.storeLocally(exercise, 'synced');
-            console.log(`[ExercisesAPI] Stored exercise ${exercise.exercise_id} locally`);
+            //console.log(`[ExercisesAPI] Stored exercise ${exercise.exercise_id} locally`);
             
             // Download exercise media if it exists
             if (exercise.media_url) {
               try {
                 const { mediaCache } = await import('./local/MediaCache');
                 await mediaCache.downloadExerciseMediaIfNeeded(exercise.exercise_id, exercise.media_url);
-                console.log(`[ExercisesAPI] Downloaded media for exercise ${exercise.exercise_id}`);
+                //console.log(`[ExercisesAPI] Downloaded media for exercise ${exercise.exercise_id}`);
               } catch (mediaError) {
                 console.warn(`[ExercisesAPI] Failed to download media for exercise ${exercise.exercise_id}:`, mediaError);
                 // Don't fail the entire sync for media download issues

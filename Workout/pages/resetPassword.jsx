@@ -7,6 +7,7 @@ import { useTheme } from "../state/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import AlertModal from "../components/modals/AlertModal";
 import { useAlertModal } from "../utils/useAlertModal";
+import { storage } from "../API/local/tokenStorage";
 
 const ResetPassword = ({ navigation, route }) => {
   const [email, setEmail] = useState("");
@@ -16,19 +17,71 @@ const ResetPassword = ({ navigation, route }) => {
   const [step, setStep] = useState("request"); // "request" or "reset"
   const [token_hash, setToken_hash] = useState("");
   const [type, setType] = useState("");
+
+  // Add this debug log to ensure component is mounting
+  React.useEffect(() => {
+    console.log('🏁 ResetPassword component mounted');
+    console.log('🏁 Props received:', { navigation: !!navigation, route });
+    return () => console.log('🏁 ResetPassword component unmounted');
+  }, []);
   
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
-  const { requestPasswordReset, resetPasswordWithToken } = useAuth();
+  const { requestPasswordReset, resetPasswordWithToken, setUser, updateUserPassword } = useAuth();
   const { alertState, showError, showSuccess, hideAlert } = useAlertModal();
 
   // Check if we have token parameters from deep link
   React.useEffect(() => {
-    if (route.params?.token_hash && route.params?.type) {
-      setToken_hash(route.params.token_hash);
-      setType(route.params.type);
+    console.log('🔍 ResetPassword route params:', route?.params);
+    console.log('🔍 Current step:', step);
+    console.log('🔍 Route object:', route);
+    
+    const accessToken = route?.params?.access_token;
+    const refreshToken = route?.params?.refresh_token;
+    const expiresIn = route?.params?.expires_in;
+    const type = route?.params?.type;
+    
+    console.log('🔍 Parsed params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, expiresIn, type });
+    
+    // If we have access_token, the user has a recovery session
+    if (accessToken && refreshToken && type === 'recovery') {
+      console.log('✅ User has recovery session - need to set new password');
+      
+      // Store the recovery session tokens temporarily
+      const setupRecoverySession = async () => {
+        try {
+          await storage.setTokens(accessToken, refreshToken, parseInt(expiresIn));
+          
+          // Set up the component state for password reset
+          setToken_hash(accessToken); // Use access_token as the token
+          setType(type);
+          setStep("reset");
+          
+          console.log('🔐 Recovery session set up - switching to reset step');
+          console.log('🔐 New step should be: reset');
+        } catch (error) {
+          console.error('Recovery session setup failed:', error);
+          showError("Error", "Failed to set up recovery session. Please try again.");
+        }
+      };
+      
+      setupRecoverySession();
+      return;
+    }
+    
+    // Otherwise, check for regular reset tokens
+    const token = route.params?.token || route.params?.token_hash;
+    
+    if (token && type === 'recovery') {
+      console.log('✅ Found reset password token, switching to reset step');
+      setToken_hash(token);
+      setType(type);
       setStep("reset");
+    } else if (route.params && Object.keys(route.params).length > 0) {
+      console.log('⚠️ Found params but no valid reset token:', route.params);
+    } else {
+      console.log('❌ No reset parameters found, showing email input');
     }
   }, [route.params]);
 
@@ -110,14 +163,30 @@ const ResetPassword = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      await resetPasswordWithToken(token_hash, type, password);
-      showSuccess(
-        "Success",
-        "Password reset successfully! You are now logged in.",
-        {
-          onConfirm: () => navigation.navigate("Start"),
-        }
-      );
+      
+      // If we have a recovery session (access_token), use updateUser
+      if (type === 'recovery' && route.params?.access_token) {
+        console.log('🔄 Updating password using recovery session');
+        await updateUserPassword(password);
+        
+        showSuccess(
+          "Success",
+          "Password updated successfully! You are now logged in.",
+          {
+            onConfirm: () => navigation.replace("Main"),
+          }
+        );
+      } else {
+        // Fallback to old method if needed
+        await resetPasswordWithToken(token_hash, type, password);
+        showSuccess(
+          "Success",
+          "Password reset successfully! You are now logged in.",
+          {
+            onConfirm: () => navigation.replace("Main"),
+          }
+        );
+      }
     } catch (error) {
       showError("Error", error.message || "Failed to reset password");
     } finally {
@@ -164,6 +233,11 @@ const ResetPassword = ({ navigation, route }) => {
       <Text style={styles.title}>Set New Password</Text>
       <Text style={styles.subtitle}>
         Enter your new password below.
+      </Text>
+      
+      {/* Debug info - remove later */}
+      <Text style={[styles.subtitle, { fontSize: 12, color: 'gray', marginTop: 10 }]}>
+        Debug: Step={step}, Type={type}, HasToken={!!token_hash}
       </Text>
 
       <View style={styles.inputContainer}>
@@ -246,6 +320,11 @@ const ResetPassword = ({ navigation, route }) => {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Debug header - remove later */}
+      <Text style={{ fontSize: 10, color: 'gray', textAlign: 'center', marginBottom: 10 }}>
+        Current Step: {step} | Type: {type || 'none'} | HasToken: {token_hash ? 'yes' : 'no'}
+      </Text>
+      
       {step === "request" ? renderRequestStep() : renderResetStep()}
 
       <TouchableOpacity
