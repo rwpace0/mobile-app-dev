@@ -14,14 +14,46 @@ import { createStyles } from "../styles/login.styles";
 import AlertModal from "../components/modals/AlertModal";
 import { useAlertModal } from "../utils/useAlertModal";
 
-const EmailVerification = () => {
+const EmailVerification = ({ navigation, route }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const [countdown, setCountdown] = useState(60);
   const [isResending, setIsResending] = useState(false);
-  const { user, error } = useAuth();
+  const [isVerifying, setIsVerifying] = useState(false);
+  const { user, error, verifyEmail } = useAuth();
   const { alertState, showError, showSuccess, hideAlert } = useAlertModal();
+
+  // Handle deep link verification
+  useEffect(() => {
+    const handleDeepLinkVerification = async () => {
+      const token_hash = route?.params?.token_hash;
+      const type = route?.params?.type;
+
+      if (token_hash && type) {
+        console.log('📧 Email verification deep link detected:', { token_hash, type });
+        setIsVerifying(true);
+        
+        try {
+          await verifyEmail(token_hash, type);
+          showSuccess(
+            "Success", 
+            "Email verified successfully! You are now logged in.",
+            {
+              onConfirm: () => navigation.replace("Main"),
+            }
+          );
+        } catch (error) {
+          console.error('Email verification failed:', error);
+          showError("Error", error.message || "Failed to verify email");
+        } finally {
+          setIsVerifying(false);
+        }
+      }
+    };
+
+    handleDeepLinkVerification();
+  }, [route?.params, verifyEmail, showSuccess, showError, navigation]);
 
   useEffect(() => {
     let timer;
@@ -65,13 +97,20 @@ const EmailVerification = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Verify Your Email</Text>
 
-      <View style={styles.messageContainer}>
-        <Text style={styles.message}>We've sent a verification email to:</Text>
-        <Text style={styles.email}>{user?.email}</Text>
-        <Text style={styles.instructions}>
-          Please check your email and click the verification link to continue.
-        </Text>
-      </View>
+      {isVerifying ? (
+        <View style={styles.messageContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.message}>Verifying your email...</Text>
+        </View>
+      ) : (
+        <View style={styles.messageContainer}>
+          <Text style={styles.message}>We've sent a verification email to:</Text>
+          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={styles.instructions}>
+            Please check your email and click the verification link to continue.
+          </Text>
+        </View>
+      )}
 
       {error && (
         <View style={styles.errorContainer}>

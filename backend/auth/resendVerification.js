@@ -1,4 +1,5 @@
 import { supabase } from '../database/supabaseClient.js';
+import { getEmailVerificationUrl } from '../config/urls.js';
 
 export const resendVerification = async (req, res) => {
   try {
@@ -8,12 +9,15 @@ export const resendVerification = async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
+    // Get the email verification URL from config
+    const emailVerificationUrl = getEmailVerificationUrl();
+    
     // Resend verification email
     const { error: resendError } = await supabase.auth.resend({
       type: 'signup',
       email,
       options: {
-        emailRedirectTo: `${process.env.FRONTEND_URL}/auth/verify-email`,
+        emailRedirectTo: emailVerificationUrl,
         // Set longer expiration time (24 hours)
         expiresIn: 86400
       },

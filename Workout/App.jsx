@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createNavigationContainerRef } from "@react-navigation/native";
+import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from "./API/auth/authContext";
 import { SettingsProvider } from "./state/SettingsContext";
 import { ActiveWorkoutProvider } from "./state/ActiveWorkoutContext";
@@ -39,6 +40,43 @@ const Stack = createNativeStackNavigator();
 
 // Create navigation reference for global navigation
 const navigationRef = createNavigationContainerRef();
+
+// Deep linking configuration
+const linking = {
+  prefixes: [
+    'workout://',
+    'exp://192.168.1.155:8081', // Development URL
+    'https://192.168.1.155:8081', // Alternative development URL
+  ],
+  config: {
+    screens: {
+      // Auth screens - accessible globally for deep links
+      Auth: {
+        screens: {
+          Welcome: 'auth/welcome',
+          Login: 'auth/login',
+          SignUp: 'auth/signup',
+        },
+      },
+      // Email verification screen
+      EmailVerification: 'auth/verify-email',
+      // Reset password as modal (accessible from any state)
+      ResetPassword: 'auth/reset-password',
+      // Main app screens
+      Main: {
+        screens: {
+          Tabs: {
+            screens: {
+              Start: 'start',
+              WorkoutHistory: 'history',
+              Profile: 'profile',
+            },
+          },
+        },
+      },
+    },
+  },
+};
 
 // Common screen options for slide animations
 const slideFromRightOptions = {
@@ -174,6 +212,106 @@ const MainStack = () => {
 // Root Navigator with memoization
 const RootNavigator = React.memo(() => {
   const { user, loading } = useAuth();
+  const [initialURL, setInitialURL] = React.useState(null);
+
+  // Handle initial deep link
+  React.useEffect(() => {
+    const getInitialURL = async () => {
+      const url = await Linking.getInitialURL();
+      if (url) {
+        setInitialURL(url);
+      }
+    };
+    getInitialURL();
+  }, []);
+
+  // Handle deep links while app is running
+  React.useEffect(() => {
+    const handleDeepLink = ({ url }) => {
+      handleURL(url);
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    return () => subscription?.remove();
+  }, []);
+
+  // Helper function to parse URL fragments (after #)
+  const parseURLFragments = React.useCallback((url) => {
+    const fragmentIndex = url.indexOf('#');
+    if (fragmentIndex === -1) return {};
+    
+    const fragment = url.substring(fragmentIndex + 1);
+    const params = {};
+    
+    fragment.split('&').forEach(pair => {
+      const [key, value] = pair.split('=');
+      if (key && value) {
+        params[decodeURIComponent(key)] = decodeURIComponent(value);
+      }
+    });
+    
+    return params;
+  }, []);
+
+  // Parse and handle URL navigation
+  const handleURL = React.useCallback((url) => {
+    if (!navigationRef.isReady()) return;
+
+    const parsedURL = Linking.parse(url);
+
+    // Parse both query params and URL fragments
+    const queryParams = parsedURL.queryParams || {};
+    const fragmentParams = parseURLFragments(url);
+    const allParams = { ...queryParams, ...fragmentParams };
+
+    // Only handle URLs that have valid paths - avoid processing empty/invalid URLs
+    if (!parsedURL.path || parsedURL.path === '/') {
+      return;
+    }
+
+    // Handle password reset links
+    if (parsedURL.path === 'auth/reset-password' || parsedURL.path === '/--/auth/reset-password') {
+      const { access_token, refresh_token, expires_in, expires_at, type, token_hash, token } = allParams;
+      
+      // Only navigate if we have the required parameters
+      if (access_token && refresh_token && type === 'recovery') {
+        const params = {
+          access_token,
+          refresh_token, 
+          expires_in: expires_in || expires_at, // Supabase may use expires_at instead
+          type,
+          token_hash: token_hash || token || access_token
+        };
+        
+        navigationRef.navigate('ResetPassword', params);
+      }
+      return;
+    }
+
+    // Handle email verification links
+    if (parsedURL.path === 'auth/verify-email' || parsedURL.path === 'auth/welcome' || parsedURL.path === '/--/auth/welcome') {
+      const { token_hash, type, token } = allParams;
+      
+      // Only navigate if we have the required parameters
+      if ((token_hash || token) && type) {
+        const params = {
+          token_hash: token_hash || token,
+          type
+        };
+        
+        navigationRef.navigate('EmailVerification', params);
+      }
+      return;
+    }
+  }, [parseURLFragments]);
+
+  // Handle initial URL when navigation is ready
+  React.useEffect(() => {
+    if (initialURL && navigationRef.isReady()) {
+      handleURL(initialURL);
+      setInitialURL(null); // Clear it so it doesn't run again
+    }
+  }, [initialURL, handleURL]);
 
   // Cleanup old files when user is authenticated
   React.useEffect(() => {
@@ -206,6 +344,16 @@ const RootNavigator = React.memo(() => {
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
       )}
+      
+      {/* Include ResetPassword as a modal that can be accessed from any state */}
+      <Stack.Screen 
+        name="ResetPassword" 
+        component={ResetPassword}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 });
@@ -215,7 +363,7 @@ export default function App() {
     <SettingsProvider>
       <AuthProvider>
         <ActiveWorkoutProvider>
-          <NavigationContainer ref={navigationRef}>
+          <NavigationContainer ref={navigationRef} linking={linking}>
             <RootNavigator />
           </NavigationContainer>
         </ActiveWorkoutProvider>

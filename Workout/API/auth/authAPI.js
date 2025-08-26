@@ -201,4 +201,36 @@ export const authAPI = {
     }
   },
 
+  // Update user password using recovery session
+  updateUserPassword: async (password, access_token, refresh_token) => {
+    try {
+      // Don't use the api instance with automatic token injection for recovery sessions
+      // Use direct axios call since the user is not authenticated yet
+      const response = await axios.post(`${getBaseUrl()}/auth/update-password`, {
+        password,
+        access_token,
+        refresh_token
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      });
+      
+      // Store new session tokens if provided
+      if (response.data.session?.access_token) {
+        await storage.setTokens(
+          response.data.session.access_token,
+          response.data.session.refresh_token,
+          response.data.session.expires_in
+        );
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Update password error:', error);
+      throw error.response?.data || error.message;
+    }
+  },
+
 }; 

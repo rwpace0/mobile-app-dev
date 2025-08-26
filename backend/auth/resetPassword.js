@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { supabase } from '../database/supabaseClient.js';
+import { getResetPasswordUrl } from '../config/urls.js';
 
 dotenv.config();
 
@@ -60,11 +61,11 @@ export const requestPasswordReset = async (req, res) => {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    console.log('Requesting password reset for email:', email);
-
     // Send password reset email using Supabase
+    const resetPasswordUrl = getResetPasswordUrl();
+    
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.IOS}/reset-password`,
+      redirectTo: resetPasswordUrl,
       // Set expiration time (1 hour)
       expiresIn: 3600,
     });
@@ -74,7 +75,7 @@ export const requestPasswordReset = async (req, res) => {
       return res.status(500).json({ error: 'Failed to send password reset email' });
     }
 
-    console.log('Password reset email sent successfully to:', email);
+
 
     return res.status(200).json({
       message: 'Password reset email sent successfully. Please check your email.',
@@ -94,7 +95,7 @@ export const resetPassword = async (req, res) => {
 
     // Handle error cases from the URL
     if (error) {
-      console.log('Password reset error from URL:', { error, error_description });
+  
       if (error === 'access_denied' && error_description?.includes('expired')) {
         return res.status(400).json({ 
           error: 'Password reset link has expired',
@@ -121,7 +122,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ error: passwordValidation.message });
     }
 
-    console.log('Attempting to reset password with Supabase');
+
 
     // Reset the password using Supabase
     const { data, error: resetError } = await supabase.auth.verifyOtp({
@@ -145,7 +146,7 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    console.log('Password reset successfully for user:', data.user?.id);
+
 
     // Return success response with session data for automatic login
     return res.status(200).json({
@@ -156,6 +157,75 @@ export const resetPassword = async (req, res) => {
 
   } catch (error) {
     console.error('Password reset error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Update user password using recovery session
+export const updateUserPassword = async (req, res) => {
+  try {
+    const { password, access_token, refresh_token } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required' });
+    }
+
+    if (!access_token || !refresh_token) {
+      return res.status(400).json({ error: 'Recovery session tokens are required' });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ error: passwordValidation.message });
+    }
+
+    // First, set the session with the recovery tokens
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    if (sessionError) {
+      console.error('Failed to set recovery session:', sessionError);
+      return res.status(400).json({ 
+        error: 'Invalid recovery session',
+        code: 'INVALID_SESSION',
+        message: 'The recovery link may be expired or invalid'
+      });
+    }
+
+    // Now update the password using the authenticated session
+    const { data, error: updateError } = await supabase.auth.updateUser({
+      password: password
+    });
+
+    if (updateError) {
+      console.error('Password update error:', updateError);
+      if (updateError.message.includes('expired')) {
+        return res.status(400).json({ 
+          error: 'Recovery session has expired',
+          code: 'EXPIRED_SESSION',
+          message: 'Please request a new password reset email'
+        });
+      }
+      return res.status(400).json({ 
+        error: updateError.message,
+        code: 'UPDATE_FAILED'
+      });
+    }
+
+
+
+    // Return success response with session data for automatic login
+    return res.status(200).json({
+      message: 'Password updated successfully',
+      session: data.session,
+      user: data.user
+    });
+
+  } catch (error) {
+    console.error('Password update error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }; 

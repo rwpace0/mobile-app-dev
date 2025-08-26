@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { supabase, supabaseAdmin } from "../database/supabaseClient.js";
+import { getEmailVerificationUrl } from "../config/urls.js";
 
 dotenv.config();
 
@@ -109,12 +110,16 @@ export const signup = async (req, res) => {
     }
 
     console.log("Attempting Supabase signup with email:", email);
+    
+    // Get the email verification URL from config
+    const emailVerificationUrl = getEmailVerificationUrl();
+    
     // Call Supabase Auth signup with email verification
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${process.env.FRONTEND_URL}/auth/verify-email`, //need to fix redirect
+        emailRedirectTo: emailVerificationUrl,
         data: {
           email_verified: false,
         },

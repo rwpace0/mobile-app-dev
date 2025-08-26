@@ -354,6 +354,38 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update user password using recovery session
+  const updateUserPassword = async (password, access_token, refresh_token) => {
+    try {
+      setError(null);
+      
+      // Use Supabase's updateUser method for password reset with recovery tokens
+      const response = await authAPI.updateUserPassword(password, access_token, refresh_token);
+      
+      // If password update is successful, the user is now logged in
+      if (response.session?.access_token) {
+        await storage.setTokens(
+          response.session.access_token,
+          response.session.refresh_token,
+          response.session.expires_in
+        );
+        
+        // Update user state with new session
+        setUser({ ...response.user, isAuthenticated: true });
+        
+        // Cache the updated user data
+        await storage.setItem('cached_user_data', JSON.stringify(response.user));
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Password update failed:', error);
+      const errorMessage = error.message || 'Failed to update password. Please try again.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -365,6 +397,7 @@ export const AuthProvider = ({ children }) => {
     resetPasswordWithToken,
     verifyEmail,
     updateUsername,
+    updateUserPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
