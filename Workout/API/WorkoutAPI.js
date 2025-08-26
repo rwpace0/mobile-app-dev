@@ -160,6 +160,13 @@ class WorkoutAPI extends APIBase {
             console.error(`[WorkoutAPI] Failed to sync workout ${workout.workout_id}:`, error);
           }
         }
+        
+        // Clear workout-related caches after sync operations
+        if (pendingWorkouts.length > 0) {
+          console.log('[WorkoutAPI] Clearing caches after workout sync');
+          this.cache.clearPattern('^workouts:');
+          this.workoutCache.clearAll();
+        }
       } catch (error) {
         console.error('[WorkoutAPI] Workout sync error:', error);
         throw error;
@@ -169,6 +176,17 @@ class WorkoutAPI extends APIBase {
 
   getTableName() {
     return 'workouts';
+  }
+
+  // Override APIBase _fetchInitialData to use complete workout data
+  async _fetchInitialData() {
+    console.log('[WorkoutAPI] Overriding _fetchInitialData to use complete workout data');
+    try {
+      await this._fetchFromServer();
+    } catch (error) {
+      console.error('[WorkoutAPI] Failed to fetch initial complete workout data:', error);
+      // Don't call super._fetchInitialData() as fallback since it would fetch incomplete data
+    }
   }
 
   async storeLocally(workout, syncStatus = "synced") {
@@ -954,14 +972,28 @@ class WorkoutAPI extends APIBase {
 
   async getTotalWorkoutCount() {
     try {
-      return this.handleOfflineFirst('workouts:total_count', async () => {
-        const result = await this.db.query(`
-          SELECT COUNT(*) as count
-          FROM workouts
-          WHERE sync_status != 'pending_delete'
-        `);
-        return result.length > 0 ? result[0].count : 0;
-      });
+      await this.ensureInitialized();
+      
+      // First check cache for the count
+      const cachedCount = this.cache.get('workouts:total_count');
+      if (cachedCount !== null && cachedCount !== undefined) {
+        return cachedCount;
+      }
+
+      // Get count from local database - this will only return a number
+      const result = await this.db.query(`
+        SELECT COUNT(*) as count
+        FROM workouts
+        WHERE sync_status != 'pending_delete'
+      `);
+      
+      const count = result.length > 0 ? result[0].count : 0;
+      
+      // Cache the count with a TTL to ensure it gets refreshed
+      this.cache.set('workouts:total_count', count);
+      
+      console.log(`[WorkoutAPI] Total workout count: ${count}`);
+      return count;
     } catch (error) {
       console.error("Get total workout count error:", error);
       return 0;
