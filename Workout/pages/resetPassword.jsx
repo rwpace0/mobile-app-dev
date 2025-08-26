@@ -301,6 +301,7 @@ const ResetPassword = ({ navigation, route }) => {
 
   return (
     <ScrollView 
+      style={{ backgroundColor: colors.backgroundPrimary }}
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
