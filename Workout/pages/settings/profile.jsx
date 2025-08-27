@@ -63,37 +63,49 @@ const Profile = ({ navigation }) => {
         // First, try to get from local cache
         let profileData = await mediaCache.getLocalProfile(user.id);
         
-        // If local data doesn't have username, fetch from backend and sync
+        // If local data doesn't have username, try to get from cached profile API data first
         if (!profileData.username) {
           try {
-            const backendProfile = await profileAPI.getProfile();
-            
-            // Sync username to local database if it exists in backend
-            if (backendProfile.username) {
-              // Check if a profile with this username already exists in local database
-              const { dbManager } = await import('../../API/local/dbManager');
-              const [existingUsernameProfile] = await dbManager.query(
-                'SELECT user_id FROM profiles WHERE username = ?',
-                [backendProfile.username]
-              );
-              
-              if (existingUsernameProfile && existingUsernameProfile.user_id !== user.id) {
-                // A profile with this username already exists for a different user
-                // Update the existing profile to use the current user's ID
-                await dbManager.execute(
-                  'UPDATE profiles SET user_id = ?, display_name = ?, sync_status = ?, updated_at = datetime("now") WHERE username = ?',
-                  [user.id, backendProfile.display_name || '', 'synced', backendProfile.username]
-                );
-              } else {
-                // No conflict, proceed with normal update
-                await mediaCache.updateLocalProfile(user.id, {
-                  display_name: backendProfile.display_name || '',
-                  username: backendProfile.username
-                });
-              }
-              
-              // Get updated local profile data
+            // Check if we have cached profile data from profileAPI
+            const cachedProfile = profileAPI.getCachedProfile();
+            if (cachedProfile && cachedProfile.username) {
+              // Use cached data to update local database
+              await mediaCache.updateLocalProfile(user.id, {
+                display_name: cachedProfile.display_name || '',
+                username: cachedProfile.username
+              });
               profileData = await mediaCache.getLocalProfile(user.id);
+            } else {
+              // Only fetch from backend if we don't have cached data
+              const backendProfile = await profileAPI.getProfile(false, user.id);
+              
+              // Sync username to local database if it exists in backend
+              if (backendProfile.username) {
+                // Check if a profile with this username already exists in local database
+                const { dbManager } = await import('../../API/local/dbManager');
+                const [existingUsernameProfile] = await dbManager.query(
+                  'SELECT user_id FROM profiles WHERE username = ?',
+                  [backendProfile.username]
+                );
+                
+                if (existingUsernameProfile && existingUsernameProfile.user_id !== user.id) {
+                  // A profile with this username already exists for a different user
+                  // Update the existing profile to use the current user's ID
+                  await dbManager.execute(
+                    'UPDATE profiles SET user_id = ?, display_name = ?, sync_status = ?, updated_at = datetime("now") WHERE username = ?',
+                    [user.id, backendProfile.display_name || '', 'synced', backendProfile.username]
+                  );
+                } else {
+                  // No conflict, proceed with normal update
+                  await mediaCache.updateLocalProfile(user.id, {
+                    display_name: backendProfile.display_name || '',
+                    username: backendProfile.username
+                  });
+                }
+                
+                // Get updated local profile data
+                profileData = await mediaCache.getLocalProfile(user.id);
+              }
             }
           } catch (backendError) {
             console.error('Error fetching profile from backend:', backendError);
@@ -128,15 +140,18 @@ const Profile = ({ navigation }) => {
     }
   }, [user]);
 
-  // Refresh workout count when the screen is focused
+  // Only refresh workout count when the screen is focused, not profile data
   useFocusEffect(
     React.useCallback(() => {
       if (user?.isAuthenticated) {
         fetchWorkoutCount();
-        fetchProfileAvatar();
-        fetchDisplayName();
+        // Don't refetch profile data on every focus - it's already cached
+        // Only refetch avatar if we don't have one
+        if (!profileAvatar) {
+          fetchProfileAvatar();
+        }
       }
-    }, [user])
+    }, [user, profileAvatar])
   );
 
 

@@ -108,7 +108,7 @@ const EditProfile = () => {
       // Then sync to backend
       await profileAPI.updateProfile({
         display_name: name
-      });
+      }, user.id);
 
       // Mark as synced
       await mediaCache.markProfileSynced(user.id);

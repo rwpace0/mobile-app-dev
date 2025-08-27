@@ -21,7 +21,14 @@ const downloadUserAvatarOnce = async (userId) => {
     const { profileAPI } = await import('../profileAPI');
     const { mediaCache } = await import('../local/MediaCache');
     
-    const profileData = await profileAPI.getProfile();
+    // Try to get cached profile data first
+    let profileData = profileAPI.getCachedProfile();
+    
+    // If no cached data, fetch it once and cache it
+    if (!profileData) {
+      profileData = await profileAPI.getProfile(false, userId);
+    }
+    
     if (profileData?.avatar_url) {
       await mediaCache.downloadUserAvatarIfNeeded(userId, profileData.avatar_url);
     }
@@ -241,6 +248,14 @@ export const AuthProvider = ({ children }) => {
       
       setUser({ ...userData, isAuthenticated: true });
       
+      // Pre-fetch and cache profile data for avatar download
+      try {
+        const { profileAPI } = await import('../profileAPI');
+        await profileAPI.getProfile(false, userData.id);
+      } catch (profileError) {
+        console.log('[AuthContext] Failed to pre-fetch profile data:', profileError.message);
+      }
+      
       // Download user's avatar in the background after successful login
       setTimeout(() => downloadUserAvatarOnce(userData.id), 1000);
       
@@ -278,6 +293,11 @@ export const AuthProvider = ({ children }) => {
       await tokenManager.clearTokens();
       // Clear cached user data
       await storage.removeItem('cached_user_data');
+      
+      // Clear profile cache
+      const { profileAPI } = await import('../profileAPI');
+      profileAPI.clearCache();
+      
       // Clear local database
       const { dbManager } = await import('../local/dbManager');
       console.log("Clearing local database");
