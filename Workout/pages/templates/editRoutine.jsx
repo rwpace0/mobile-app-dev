@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import DraggableFlatList from "react-native-draggable-flatlist";
 import { createStyles } from "../../styles/workoutPages.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
@@ -20,6 +21,7 @@ import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import Header from "../../components/static/header";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
+import { hapticLight } from "../../utils/hapticFeedback";
 
 const EditRoutine = () => {
   const navigation = useNavigation();
@@ -117,6 +119,25 @@ const EditRoutine = () => {
       prev.map((ex) =>
         ex.exercise_id === exerciseId ? { ...ex, sets: numSets } : ex
       )
+    );
+  };
+
+  const handleDragEnd = ({ data }) => {
+    hapticLight();
+    setExercises(data);
+  };
+
+  const renderExerciseItem = ({ item: exercise, drag, isActive }) => {
+    return (
+      <RoutineExerciseComponent
+        key={exercise.exercise_id}
+        exercise={exercise}
+        onUpdateTotals={updateTotals}
+        onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
+        onUpdateSets={handleUpdateSets}
+        drag={drag}
+        isActive={isActive}
+      />
     );
   };
 
@@ -242,27 +263,23 @@ const EditRoutine = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.exercisesContainer}>
-            {exercises.map((exercise) => (
-              <RoutineExerciseComponent
-                key={exercise.exercise_id}
-                exercise={exercise}
-                onUpdateTotals={updateTotals}
-                onRemoveExercise={() =>
-                  handleRemoveExercise(exercise.exercise_id)
-                }
-                onUpdateSets={handleUpdateSets}
-              />
-            ))}
-
-            <TouchableOpacity
-              style={styles.addExerciseButton}
-              onPress={handleAddExercise}
-            >
-              <Ionicons name="add" size={20} color={colors.textPrimary} />
-              <Text style={styles.addExerciseText}>Add Exercise</Text>
-            </TouchableOpacity>
-          </View>
+          <DraggableFlatList
+            data={exercises}
+            renderItem={renderExerciseItem}
+            keyExtractor={(item) => item.exercise_id.toString()}
+            onDragEnd={handleDragEnd}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.exercisesContainer}
+            ListFooterComponent={() => (
+              <TouchableOpacity
+                style={styles.addExerciseButton}
+                onPress={handleAddExercise}
+              >
+                <Ionicons name="add" size={20} color={colors.textPrimary} />
+                <Text style={styles.addExerciseText}>Add Exercise</Text>
+              </TouchableOpacity>
+            )}
+          />
         )}
       </ScrollView>
 

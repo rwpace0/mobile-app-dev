@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createNavigationContainerRef } from "@react-navigation/native";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Linking from 'expo-linking';
 import { AuthProvider, useAuth } from "./API/auth/authContext";
 import { SettingsProvider } from "./state/SettingsContext";
@@ -360,14 +361,16 @@ const RootNavigator = React.memo(() => {
 
 export default function App() {
   return (
-    <SettingsProvider>
-      <AuthProvider>
-        <ActiveWorkoutProvider>
-          <NavigationContainer ref={navigationRef} linking={linking}>
-            <RootNavigator />
-          </NavigationContainer>
-        </ActiveWorkoutProvider>
-      </AuthProvider>
-    </SettingsProvider>
+    <GestureHandlerRootView >
+      <SettingsProvider>
+        <AuthProvider>
+          <ActiveWorkoutProvider>
+            <NavigationContainer ref={navigationRef} linking={linking}>
+              <RootNavigator />
+            </NavigationContainer>
+          </ActiveWorkoutProvider>
+        </AuthProvider>
+      </SettingsProvider>
+    </GestureHandlerRootView>
   );
 }

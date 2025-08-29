@@ -18,6 +18,8 @@ const RoutineExerciseComponent = ({
   exercise,
   onUpdateSets,
   onRemoveExercise,
+  drag,
+  isActive,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -63,10 +65,21 @@ const RoutineExerciseComponent = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      isActive && { opacity: 0.8, transform: [{ scale: 1.02 }] }
+    ]}>
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.exerciseName}>
+        <TouchableOpacity 
+          style={{ flex: 1 }}
+          onLongPress={drag}
+          disabled={!drag}
+          activeOpacity={0.8}
+        >
+          <Text style={[
+            styles.exerciseName,
+            isActive && { opacity: 0.5 }
+          ]}>
             {exerciseDetails?.name || "Exercise"}
           </Text>
           {exerciseDetails?.muscle_group && (
@@ -75,7 +88,7 @@ const RoutineExerciseComponent = ({
                 exerciseDetails.muscle_group.slice(1)}
             </Text>
           )}
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => setShowDeleteConfirm(true)}

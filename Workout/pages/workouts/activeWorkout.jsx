@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import DraggableFlatList from "react-native-draggable-flatlist";
 import ActiveExerciseComponent from "../../components/activeExerciseCard";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
@@ -127,6 +128,26 @@ const ActiveWorkoutPage = () => {
       delete newStates[exerciseId];
       return newStates;
     });
+  };
+
+  const handleDragEnd = ({ data }) => {
+    hapticLight();
+    setExercises(data);
+  };
+
+  const renderExerciseItem = ({ item: exercise, drag, isActive }) => {
+    return (
+      <ActiveExerciseComponent
+        key={exercise.exercise_id}
+        exercise={exercise}
+        initialState={exerciseStates[exercise.exercise_id]}
+        onUpdateTotals={updateTotals}
+        onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
+        onStateChange={(state) => handleExerciseStateChange(exercise.exercise_id, state)}
+        drag={drag}
+        isActive={isActive}
+      />
+    );
   };
 
   const handleDiscard = () => {
@@ -286,93 +307,108 @@ const ActiveWorkoutPage = () => {
         }}
       />
 
-      <ScrollView style={styles.content}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Duration</Text>
-            <Text style={styles.statValue}>
-              {formatDuration(activeWorkout?.duration || 0)}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>{weight.formatVolume(totalVolume)}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Sets</Text>
-            <Text style={styles.statValue}>{totalSets}</Text>
-          </View>
-        </View>
-
+      <View style={styles.content}>
         {exercises.length === 0 ? (
-          <View style={styles.emptyWorkoutContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="barbell-outline" size={42} color={colors.textSecondary} />
+          <ScrollView style={styles.content}>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Duration</Text>
+                <Text style={styles.statValue}>
+                  {formatDuration(activeWorkout?.duration || 0)}
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Volume</Text>
+                <Text style={styles.statValue}>{weight.formatVolume(totalVolume)}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Sets</Text>
+                <Text style={styles.statValue}>{totalSets}</Text>
+              </View>
             </View>
-            <Text style={styles.getStartedText}>Get started</Text>
-            <Text style={styles.instructionText}>
-              Add an exercise to start your workout
-            </Text>
 
-            <TouchableOpacity
-              style={styles.addExerciseButton}
-              onPress={handleAddExercise}
-            >
-              <Ionicons name="add" size={20} color={colors.textWhite}/>
-              <Text style={styles.addExerciseText}>Add Exercise</Text>
-            </TouchableOpacity>
+            <View style={styles.emptyWorkoutContainer}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="barbell-outline" size={42} color={colors.textSecondary} />
+              </View>
+              <Text style={styles.getStartedText}>Get started</Text>
+              <Text style={styles.instructionText}>
+                Add an exercise to start your workout
+              </Text>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
-                <Text style={styles.settingsText}>Settings</Text>
+              <TouchableOpacity
+                style={styles.addExerciseButton}
+                onPress={handleAddExercise}
+              >
+                <Ionicons name="add" size={20} color={colors.textWhite}/>
+                <Text style={styles.addExerciseText}>Add Exercise</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
-                <Text style={styles.discardText}>Discard</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+                  <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+                  <Text style={styles.settingsText}>Settings</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
+                  <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+                  <Text style={styles.discardText}>Discard</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         ) : (
-          <View style={styles.exercisesContainer}>
-            {exercises.map((exercise) => (
-              <ActiveExerciseComponent
-                key={exercise.exercise_id}
-                exercise={exercise}
-                initialState={exerciseStates[exercise.exercise_id]}
-                onUpdateTotals={updateTotals}
-                onRemoveExercise={() =>
-                  handleRemoveExercise(exercise.exercise_id)
-                }
-                onStateChange={(state) =>
-                  handleExerciseStateChange(exercise.exercise_id, state)
-                }
-              />
-            ))}
+          <DraggableFlatList
+            data={exercises}
+            renderItem={renderExerciseItem}
+            keyExtractor={(item) => item.exercise_id.toString()}
+            onDragEnd={handleDragEnd}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.exercisesContainer}
+            ListHeaderComponent={() => (
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Duration</Text>
+                  <Text style={styles.statValue}>
+                    {formatDuration(activeWorkout?.duration || 0)}
+                  </Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Volume</Text>
+                  <Text style={styles.statValue}>{weight.formatVolume(totalVolume)}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Sets</Text>
+                  <Text style={styles.statValue}>{totalSets}</Text>
+                </View>
+              </View>
+            )}
+            ListFooterComponent={() => (
+              <View>
+                <TouchableOpacity
+                  style={styles.addExerciseButton}
+                  onPress={handleAddExercise}
+                >
+                  <Ionicons name="add" size={20} color={colors.textWhite} />
+                  <Text style={styles.addExerciseText}>Add Exercise</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.addExerciseButton}
-              onPress={handleAddExercise}
-            >
-              <Ionicons name="add" size={20} color={colors.textWhite} />
-              <Text style={styles.addExerciseText}>Add Exercise</Text>
-            </TouchableOpacity>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
+                    <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+                    <Text style={styles.settingsText}>Workout Settings</Text>
+                  </TouchableOpacity>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.settingsButton} onPress={handleSettings}>
-                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
-                <Text style={styles.settingsText}>Workout Settings</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
-                <Text style={styles.discardText}>Discard Workout</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                  <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
+                    <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+                    <Text style={styles.discardText}>Discard Workout</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          />
         )}
-      </ScrollView>
+      </View>
 
       <DeleteConfirmModal
         visible={showDeleteConfirm}

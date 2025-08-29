@@ -18,6 +18,8 @@ const ActiveExerciseComponent = ({
   onRemoveExercise,
   onStateChange,
   initialState,
+  drag,
+  isActive,
 }) => {
   const [sets, setSets] = useState(initialState?.sets || exercise.sets || []);
   const [notes, setNotes] = useState(initialState?.notes || "");
@@ -442,9 +444,24 @@ const ActiveExerciseComponent = ({
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      isActive && { opacity: 0.8, transform: [{ scale: 1.02 }] }
+    ]}>
       <View style={styles.header}>
-        <Text style={styles.exerciseName}>{exerciseDetails?.name || ""}</Text>
+        <TouchableOpacity 
+          style={{ flex: 1 }}
+          onLongPress={drag}
+          disabled={!drag}
+          activeOpacity={0.8}
+        >
+          <Text style={[
+            styles.exerciseName,
+            isActive && { opacity: 0.5 }
+          ]}>
+            {exerciseDetails?.name || ""}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.deleteButton}
