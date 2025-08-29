@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { v4 as uuid } from "uuid";
 
 class LocalStorageManager {
   constructor(db) {
@@ -11,108 +11,137 @@ class LocalStorageManager {
       idField = `${table.slice(0, -1)}_id`,
       fields,
       syncStatus = "synced",
-      relations = []
+      relations = [],
     } = options;
 
-    //console.log('[LocalStorageManager] Storing entity:', { table, entity, fields });
+    //console.log('[LocalStorageManager] Storing entity:', { table, entity, fields, relations });
 
     const now = new Date().toISOString();
     const entityId = entity[idField] || uuid();
 
-    // Prepare base fields
-    const baseFields = {
-      [idField]: entityId,
-      created_at: entity.created_at || now,
-      updated_at: entity.updated_at || now,
-      sync_status: syncStatus,
-      version: entity.version || 1,
-      // Explicitly set last_synced_at based on sync status
-      // This overrides any database DEFAULT values
-      last_synced_at: syncStatus === 'synced' ? now : null
-    };
+    try {
+      // Start transaction for data consistency
+      await this.db.execute("BEGIN TRANSACTION");
 
-    // Add the specified fields from the entity
-    fields.forEach(field => {
-      baseFields[field] = entity[field];
-    });
+      // Prepare base fields
+      const baseFields = {
+        [idField]: entityId,
+        created_at: entity.created_at || now,
+        updated_at: entity.updated_at || now,
+        sync_status: syncStatus,
+        version: entity.version || 1,
+        // Explicitly set last_synced_at based on sync status
+        // This overrides any database DEFAULT values
+        last_synced_at: syncStatus === "synced" ? now : null,
+      };
 
-    //console.log('[LocalStorageManager] Prepared fields:', baseFields);
+      // Add the specified fields from the entity
+      fields.forEach((field) => {
+        baseFields[field] = entity[field];
+      });
 
-    // Create placeholders and values for SQL query
-    const fieldNames = Object.keys(baseFields);
-    const placeholders = fieldNames.map(() => '?').join(', ');
-    const values = fieldNames.map(field => baseFields[field]);
+      //console.log('[LocalStorageManager] Prepared fields:', baseFields);
 
-    // Insert or replace main entity
-    const query = `INSERT OR REPLACE INTO ${table} (${fieldNames.join(', ')})
+      // Create placeholders and values for SQL query
+      const fieldNames = Object.keys(baseFields);
+      const placeholders = fieldNames.map(() => "?").join(", ");
+      const values = fieldNames.map((field) => baseFields[field]);
+
+      // Insert or replace main entity
+      const query = `INSERT OR REPLACE INTO ${table} (${fieldNames.join(", ")})
                   VALUES (${placeholders})`;
-    
-   // console.log('[LocalStorageManager] Executing query:', query);
-   // console.log('[LocalStorageManager] With values:', values);
 
-    await this.db.execute(query, values);
+      // console.log('[LocalStorageManager] Executing query:', query);
+      // console.log('[LocalStorageManager] With values:', values);
 
-    // Handle relations
-    for (const relation of relations) {
-      const {
-        table: relationTable,
-        data: relationData,
-        parentIdField = idField,
-        orderField
-      } = relation;
+      await this.db.execute(query, values);
 
-      if (Array.isArray(relationData)) {
-        // Delete existing relations
-        await this.db.execute(
-          `DELETE FROM ${relationTable} WHERE ${parentIdField} = ?`,
-          [entityId]
-        );
+      // Handle relations
+      for (const relation of relations) {
+        const {
+          table: relationTable,
+          data: relationData,
+          parentIdField = idField,
+          orderField,
+        } = relation;
 
-        // Get the table schema to know which fields are valid
-        const tableInfo = await this.db.query(`PRAGMA table_info(${relationTable})`);
-        const validFields = tableInfo.map(col => col.name);
-
-        // Insert new relations
-        for (const [index, item] of relationData.entries()) {
-          // Special case for workout_exercises table
-          const relationIdField = relationTable === 'workout_exercises' ? 'workout_exercises_id' : `${relationTable.slice(0, -1)}_id`;
-          const relationId = item[relationIdField] || uuid();
-          
-          // Start with required fields
-          const relationFields = {
-            [relationIdField]: relationId,
-            [parentIdField]: entityId,
-            ...(orderField && { [orderField]: index }),
-            created_at: item.created_at || now,
-            updated_at: item.updated_at || now,
-            sync_status: syncStatus,
-            version: item.version || 1,
-            // Explicitly set last_synced_at based on sync status for relations
-            // This overrides any database DEFAULT values
-            last_synced_at: syncStatus === 'synced' ? now : null,
-          };
-
-          // Only add fields from item that exist in the table schema
-          for (const [key, value] of Object.entries(item)) {
-            if (validFields.includes(key) && !relationFields.hasOwnProperty(key)) {
-              relationFields[key] = value;
-            }
-          }
-
-          const rFieldNames = Object.keys(relationFields);
-          const rplaceholders = rFieldNames.map(() => '?').join(', ');
-          const rValues = rFieldNames.map(field => relationFields[field]);
-
+        if (Array.isArray(relationData)) {
+          // Delete existing relations
           await this.db.execute(
-            `INSERT OR REPLACE INTO ${relationTable} (${rFieldNames.join(', ')})
-             VALUES (${rplaceholders})`,
-            rValues
+            `DELETE FROM ${relationTable} WHERE ${parentIdField} = ?`,
+            [entityId]
           );
+
+          // Get the table schema to know which fields are valid
+          const tableInfo = await this.db.query(
+            `PRAGMA table_info(${relationTable})`
+          );
+          const validFields = tableInfo.map((col) => col.name);
+
+          // Insert new relations
+          for (const [index, item] of relationData.entries()) {
+            // Special case for workout_exercises table
+            const relationIdField =
+              relationTable === "workout_exercises"
+                ? "workout_exercises_id"
+                : `${relationTable.slice(0, -1)}_id`;
+            const relationId = item[relationIdField] || uuid();
+
+            // Start with required fields
+            const relationFields = {
+              [relationIdField]: relationId,
+              [parentIdField]: entityId,
+              // Always set order field - use item's order if available, otherwise use index
+              ...(orderField && {
+                [orderField]:
+                  item[orderField] !== null && item[orderField] !== undefined
+                    ? item[orderField]
+                    : index,
+              }),
+              created_at: item.created_at || now,
+              updated_at: item.updated_at || now,
+              sync_status: syncStatus,
+              version: item.version || 1,
+              // Explicitly set last_synced_at based on sync status for relations
+              // This overrides any database DEFAULT values
+              last_synced_at: syncStatus === "synced" ? now : null,
+            };
+
+            // Only add fields from item that exist in the table schema
+            for (const [key, value] of Object.entries(item)) {
+              if (
+                validFields.includes(key) &&
+                !relationFields.hasOwnProperty(key)
+              ) {
+                relationFields[key] = value;
+              }
+            }
+
+            const rFieldNames = Object.keys(relationFields);
+            const rplaceholders = rFieldNames.map(() => "?").join(", ");
+            const rValues = rFieldNames.map((field) => relationFields[field]);
+
+            await this.db.execute(
+              `INSERT OR REPLACE INTO ${relationTable} (${rFieldNames.join(
+                ", "
+              )})
+              VALUES (${rplaceholders})`,
+              rValues
+            );
+          }
         }
       }
-    }
 
-    return entityId;
+      // Commit transaction
+      await this.db.execute("COMMIT");
+
+      return entityId;
+    } catch (error) {
+      // Rollback transaction on error
+      await this.db.execute("ROLLBACK");
+      console.error("[LocalStorageManager] Error storing entity:", error);
+      throw error;
+    }
   }
 
   async getEntityById(options) {
@@ -121,11 +150,11 @@ class LocalStorageManager {
       id,
       idField = `${table.slice(0, -1)}_id`,
       relations = [],
-      excludePendingDelete = true
+      excludePendingDelete = true,
     } = options;
 
     let query = `SELECT * FROM ${table} WHERE ${idField} = ?`;
-    
+
     if (excludePendingDelete) {
       query += ` AND sync_status != 'pending_delete'`;
     }
@@ -139,13 +168,13 @@ class LocalStorageManager {
       const {
         table: relationTable,
         parentIdField = idField,
-        as = relationTable
+        as = relationTable,
       } = relation;
 
       const relationQuery = `
         SELECT * FROM ${relationTable}
         WHERE ${parentIdField} = ?
-        ${excludePendingDelete ? "AND sync_status != 'pending_delete'" : ''}
+        ${excludePendingDelete ? "AND sync_status != 'pending_delete'" : ""}
         ORDER BY created_at DESC
       `;
 
@@ -161,7 +190,7 @@ class LocalStorageManager {
       table,
       id,
       idField = `${table.slice(0, -1)}_id`,
-      softDelete = true
+      softDelete = true,
     } = options;
 
     if (softDelete) {
@@ -171,12 +200,9 @@ class LocalStorageManager {
         [id]
       );
     } else {
-      await this.db.execute(
-        `DELETE FROM ${table} WHERE ${idField} = ?`,
-        [id]
-      );
+      await this.db.execute(`DELETE FROM ${table} WHERE ${idField} = ?`, [id]);
     }
   }
 }
 
-export default LocalStorageManager; 
+export default LocalStorageManager;
