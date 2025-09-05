@@ -24,7 +24,8 @@ export const createStyles = (isDark = true) => {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.s,
+    marginBottom: Spacing.xs,
+    paddingTop: Spacing.xs,
     width: '100%',
   },
   exerciseName: {
@@ -43,15 +44,24 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.sm,
     width: '100%',
   },
+  notesContainer: {
+    backgroundColor: colors.overlayWhite,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.s,
+    padding: Spacing.xs,
+    marginTop: Spacing.s,
+  },
   notesInput: {
     color: colors.textPrimary,
     fontSize: FontSize.caption,
     width: '100%',
-    minHeight: 40,
+    minHeight: 20,
   },
   deleteButton: {
-    padding: Spacing.xs,
-    marginLeft: Spacing.s,
+    
+    marginLeft: Spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   restTimerContainer: {
     flexDirection: "row",

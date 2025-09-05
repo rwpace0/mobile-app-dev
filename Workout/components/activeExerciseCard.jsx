@@ -2,6 +2,12 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SwipeListView } from "react-native-swipe-list-view";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+} from "react-native-reanimated";
 import { getColors } from "../constants/colors";
 import { FontSize } from "../constants/theme";
 import { createStyles } from "../styles/activeExercise.styles";
@@ -35,6 +41,14 @@ const ActiveExerciseComponent = ({
   const [hasPrefilledData, setHasPrefilledData] = useState(
     !!initialState?.sets
   );
+  
+  // Animation state
+  const [contentHeight, setContentHeight] = useState(0);
+  const [isContentMeasured, setIsContentMeasured] = useState(false);
+  const animatedHeight = useSharedValue(300); // Start with reasonable default height
+  const animatedOpacity = useSharedValue(1); // Start visible
+  const [needsRemeasurement, setNeedsRemeasurement] = useState(false);
+  
   const { isDark } = useTheme();
   const { showPreviousPerformance } = useSettings();
   const colors = getColors(isDark);
@@ -201,6 +215,9 @@ const ActiveExerciseComponent = ({
       return acc;
     }, 0);
     onUpdateTotals(exercise.exercise_id, totalVolume, completedSets);
+    
+    // Trigger remeasurement when sets change
+    setNeedsRemeasurement(true);
   }, [sets]);
 
   useEffect(() => {
@@ -226,6 +243,28 @@ const ActiveExerciseComponent = ({
       onStateChange({ sets, notes });
     }
   }, [sets, notes]);
+
+  // Update animation values when content height changes
+  useEffect(() => {
+    if (contentHeight > 0) {
+      // Smoothly transition to the actual measured height
+      animatedHeight.value = withTiming(contentHeight, { duration: 100 });
+    }
+  }, [contentHeight]);
+
+  // Handle drag animation
+  useEffect(() => {
+    if (isActive) {
+      // Collapse when dragging
+      animatedHeight.value = withTiming(0, { duration: 200 });
+      animatedOpacity.value = withTiming(0, { duration: 200 });
+    } else {
+      // Expand when not dragging - use measured height if available, otherwise use default
+      const targetHeight = contentHeight > 0 ? contentHeight : 300;
+      animatedHeight.value = withTiming(targetHeight, { duration: 200 });
+      animatedOpacity.value = withTiming(1, { duration: 200 });
+    }
+  }, [isActive, contentHeight]);
 
   const formatTime = (seconds) => {
     if (seconds === 0) return "Off";
@@ -346,6 +385,28 @@ const ActiveExerciseComponent = ({
     setRemainingTime(0);
   };
 
+  // Measure collapsible content height
+  const handleContentLayout = (event) => {
+    const { height } = event.nativeEvent.layout;
+    if (height > 0) {
+      // Always update height if it's different (for remeasurement)
+      if (height !== contentHeight) {
+        setContentHeight(height);
+        setIsContentMeasured(true);
+        setNeedsRemeasurement(false);
+      }
+    }
+  };
+
+  // Animated styles for collapsible content
+  const animatedContentStyle = useAnimatedStyle(() => {
+    return {
+      height: animatedHeight.value,
+      opacity: animatedOpacity.value,
+      overflow: 'hidden',
+    };
+  });
+
   // Convert sets to the format expected by SwipeListView
   const swipeListData = sets.map((set, index) => ({
     key: `${set.id}-${index}`, // Unique key for SwipeListView
@@ -448,6 +509,7 @@ const ActiveExerciseComponent = ({
       styles.container,
       isActive && { opacity: 0.8, transform: [{ scale: 1.02 }] }
     ]}>
+      {/* Always visible header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={{ flex: 1 }}
@@ -463,96 +525,103 @@ const ActiveExerciseComponent = ({
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => setShowDeleteConfirm(true)}
-        >
-          <Ionicons name="trash-outline" size={24} color={colors.accentRed} />
-        </TouchableOpacity>
+        {!isActive && (
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => setShowDeleteConfirm(true)}
+          >
+            <Ionicons name="trash-outline" size={24} color={colors.accentRed} />
+          </TouchableOpacity>
+        )}
       </View>
 
-      <View style={styles.notesContainer}>
-        <TextInput
-          style={styles.notesInput}
-          placeholder="Add notes here..."
-          placeholderTextColor={colors.textFaded}
-          value={notes}
-          onChangeText={setNotes}
-          multiline
-        />
-      </View>
+      {/* Collapsible content */}
+      <Animated.View style={animatedContentStyle}>
+        <View onLayout={handleContentLayout}>
+          <View style={styles.notesContainer}>
+            <TextInput
+              style={styles.notesInput}
+              placeholder="Add notes here..."
+              placeholderTextColor={colors.textFaded}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+            />
+          </View>
 
-      <TouchableOpacity
-        style={styles.restTimerContainer}
-        onPress={() => setShowRestTimer(true)}
-      >
-        <Ionicons
-          name="time-outline"
-          size={20}
-          color={
-            restTime === 0
-              ? colors.textFaded
-              : isTimerActive
-              ? colors.accentGreen
-              : colors.primaryBlue
-          }
-        />
-        <Text
-          style={[
-            styles.restTimerText,
-            restTime === 0 && styles.timerOffText,
-            isTimerActive && styles.activeTimerText,
-          ]}
-        >
-          {isTimerActive
-            ? `Rest Timer: ${formatTime(remainingTime)}`
-            : `Rest Timer: ${formatTime(restTime)}`}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Sets List */}
-      <View style={styles.setsContainer}>
-        {/* Header Row */}
-        <View style={styles.setHeaderRow}>
-          <Text style={[styles.setHeaderCell, styles.setNumberCell]}>SET</Text>
-          {showPreviousPerformance && (
-            <Text style={[styles.setHeaderCell, styles.previousCell]}>
-              PREVIOUS
+          <TouchableOpacity
+            style={styles.restTimerContainer}
+            onPress={() => setShowRestTimer(true)}
+          >
+            <Ionicons
+              name="time-outline"
+              size={20}
+              color={
+                restTime === 0
+                  ? colors.textFaded
+                  : isTimerActive
+                  ? colors.accentGreen
+                  : colors.primaryBlue
+              }
+            />
+            <Text
+              style={[
+                styles.restTimerText,
+                restTime === 0 && styles.timerOffText,
+                isTimerActive && styles.activeTimerText,
+              ]}
+            >
+              {isTimerActive
+                ? `Rest Timer: ${formatTime(remainingTime)}`
+                : `Rest Timer: ${formatTime(restTime)}`}
             </Text>
-          )}
-          <Text style={[styles.setHeaderCell, styles.weightHeaderCell]}>
-            {weight.unitLabel()}
-          </Text>
-          <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>
-            REPS
-          </Text>
-          {!showPreviousPerformance && (
-            <Text style={[styles.setHeaderCell, styles.totalCell]}>TOTAL</Text>
-          )}
-          <Text style={[styles.setHeaderCell, styles.completedCell]}></Text>
+          </TouchableOpacity>
+
+          {/* Sets List */}
+          <View style={styles.setsContainer}>
+            {/* Header Row */}
+            <View style={styles.setHeaderRow}>
+              <Text style={[styles.setHeaderCell, styles.setNumberCell]}>SET</Text>
+              {showPreviousPerformance && (
+                <Text style={[styles.setHeaderCell, styles.previousCell]}>
+                  PREVIOUS
+                </Text>
+              )}
+              <Text style={[styles.setHeaderCell, styles.weightHeaderCell]}>
+                {weight.unitLabel()}
+              </Text>
+              <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>
+                REPS
+              </Text>
+              {!showPreviousPerformance && (
+                <Text style={[styles.setHeaderCell, styles.totalCell]}>TOTAL</Text>
+              )}
+              <Text style={[styles.setHeaderCell, styles.completedCell]}></Text>
+            </View>
+
+            {/* Swipe List for Sets */}
+            <SwipeListView
+              data={swipeListData}
+              renderItem={renderItem}
+              renderHiddenItem={renderHiddenItem}
+              rightOpenValue={-75}
+              disableRightSwipe={true}
+              keyExtractor={(item) => item.key}
+              scrollEnabled={false}
+              closeOnRowBeginSwipe={false}
+              closeOnScroll={false}
+              closeOnRowPress={false}
+              closeOnRowOpen={false}
+            />
+          </View>
+
+          {/* Add Set Button */}
+          <TouchableOpacity style={styles.addSetButton} onPress={handleAddSet}>
+            <Ionicons name="add" size={20} color={colors.textPrimary} />
+            <Text style={styles.addSetText}>Add Set</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Swipe List for Sets */}
-        <SwipeListView
-          data={swipeListData}
-          renderItem={renderItem}
-          renderHiddenItem={renderHiddenItem}
-          rightOpenValue={-75}
-          disableRightSwipe={true}
-          keyExtractor={(item) => item.key}
-          scrollEnabled={false}
-          closeOnRowBeginSwipe={false}
-          closeOnScroll={false}
-          closeOnRowPress={false}
-          closeOnRowOpen={false}
-        />
-      </View>
-
-      {/* Add Set Button */}
-      <TouchableOpacity style={styles.addSetButton} onPress={handleAddSet}>
-        <Ionicons name="add" size={20} color={colors.textPrimary} />
-        <Text style={styles.addSetText}>Add Set</Text>
-      </TouchableOpacity>
+      </Animated.View>
 
       <RestTimerModal
         visible={showRestTimer}
