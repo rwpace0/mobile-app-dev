@@ -302,6 +302,18 @@ const EditWorkoutPage = () => {
               <Ionicons name="add" size={20} color={colors.textPrimary} />
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.settingsButton} onPress={() => {}}>
+                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+                <Text style={styles.settingsText}>Settings</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
+                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+                <Text style={styles.discardText}>Discard</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={styles.exercisesContainer}>
@@ -327,15 +339,21 @@ const EditWorkoutPage = () => {
               <Ionicons name="add" size={20} color={colors.textPrimary} />
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.settingsButton} onPress={() => {}}>
+                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+                <Text style={styles.settingsText}>Settings</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
+                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+                <Text style={styles.discardText}>Discard</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-          <Text style={styles.discardText}>Discard Changes</Text>
-        </TouchableOpacity>
-      </View>
 
       <DeleteConfirmModal
         visible={showDeleteConfirm}
