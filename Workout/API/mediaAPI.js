@@ -3,7 +3,7 @@ import { storage } from './local/tokenStorage';
 import { tokenManager } from './utils/tokenManager';
 import getBaseUrl from './utils/getBaseUrl';
 import { mediaCache } from './local/MediaCache';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const API_URL = `${getBaseUrl()}/media`;
 

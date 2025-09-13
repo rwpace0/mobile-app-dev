@@ -83,7 +83,7 @@ class ExercisesAPI extends APIBase {
               const serverExerciseId = response.data.exercise_id;
 
               if (serverExerciseId && serverExerciseId !== exercise.exercise_id) {
-                console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exercise.exercise_id}`);
+                //console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exercise.exercise_id}`);
                 // Update local database with server's ID
                 await this.db.execute(
                   `UPDATE exercises 
@@ -119,7 +119,7 @@ class ExercisesAPI extends APIBase {
               }
             }
 
-            console.log(`[ExercisesAPI] Successfully ${isUpdate ? 'updated' : 'created'} exercise ${exercise.exercise_id}`);
+            //console.log(`[ExercisesAPI] Successfully ${isUpdate ? 'updated' : 'created'} exercise ${exercise.exercise_id}`);
             
             // Clear cache to ensure fresh data with correct IDs
             this.cache.clearPattern('^exercises:');
@@ -137,7 +137,7 @@ class ExercisesAPI extends APIBase {
           try {
             // Check if exercise was ever synced to server (has last_synced_at timestamp)
             if (exercise.last_synced_at) {
-              console.log(`[ExercisesAPI] Syncing deletion of exercise ${exercise.exercise_id} (was previously synced)`);
+              //console.log(`[ExercisesAPI] Syncing deletion of exercise ${exercise.exercise_id} (was previously synced)`);
               
               const deleteUrl = `${this.baseUrl}/${exercise.exercise_id}`;
               
@@ -146,7 +146,7 @@ class ExercisesAPI extends APIBase {
                 url: deleteUrl
               });
 
-              console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from server`);
+              //console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from server`);
             } else {
               console.log(`[ExercisesAPI] Exercise ${exercise.exercise_id} was never synced to server, skipping server deletion`);
             }
@@ -161,7 +161,7 @@ class ExercisesAPI extends APIBase {
 
             await this.db.execute("COMMIT");
             
-            console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from local database`);
+            //console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from local database`);
           } catch (error) {
             if (error.response && error.response.status === 404) {
               // Exercise doesn't exist on server, just delete locally
@@ -176,7 +176,7 @@ class ExercisesAPI extends APIBase {
 
               await this.db.execute("COMMIT");
               
-              console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from local database`);
+              //console.log(`[ExercisesAPI] Successfully deleted exercise ${exercise.exercise_id} from local database`);
             } else {
               console.error(`[ExercisesAPI] Failed to delete exercise ${exercise.exercise_id} from server:`, error);
               // Leave it marked as pending_delete to retry next sync
@@ -195,11 +195,11 @@ class ExercisesAPI extends APIBase {
   }
 
   clearExerciseCache(exerciseId) {
-    console.log(`[ExercisesAPI] Clearing cache for exercise ${exerciseId}`);
-    console.log(`[ExercisesAPI] Cache size before clear:`, this.cache.getStats().size);
+    //console.log(`[ExercisesAPI] Clearing cache for exercise ${exerciseId}`);
+    //console.log(`[ExercisesAPI] Cache size before clear:`, this.cache.getStats().size);
     this.cache.clearPattern(`^exercise:${exerciseId}`);
-    console.log(`[ExercisesAPI] Cache size after clear:`, this.cache.getStats().size);
-    console.log(`[ExercisesAPI] Cleared cache pattern: ^exercise:${exerciseId}`);
+    //console.log(`[ExercisesAPI] Cache size after clear:`, this.cache.getStats().size);
+    //console.log(`[ExercisesAPI] Cleared cache pattern: ^exercise:${exerciseId}`);
   }
 
   async storeLocally(exercise, syncStatus = "synced") {
@@ -234,7 +234,7 @@ class ExercisesAPI extends APIBase {
         const exercises = await this.db.query(
           `SELECT * FROM exercises WHERE sync_status NOT IN ('pending_delete') ORDER BY name ASC`
         );
-        console.log('[ExercisesAPI] Found', exercises.length, 'exercises in database');
+        //console.log('[ExercisesAPI] Found', exercises.length, 'exercises in database');
         return exercises.length > 0 ? exercises : null;
       });
     } catch (error) {
@@ -274,19 +274,19 @@ class ExercisesAPI extends APIBase {
     try {
       await this.ensureInitialized();
       
-      console.log(`[ExercisesAPI] Getting exercise history for ${exerciseId}`);
-      console.log(`[ExercisesAPI] Cache stats:`, this.cache.getStats());
+      //console.log(`[ExercisesAPI] Getting exercise history for ${exerciseId}`);
+      //console.log(`[ExercisesAPI] Cache stats:`, this.cache.getStats());
       
       const cacheKey = `exercise:${exerciseId}:history`;
       const cachedData = this.cache.get(cacheKey);
-      console.log(`[ExercisesAPI] Cached data exists:`, !!cachedData);
+      //console.log(`[ExercisesAPI] Cached data exists:`, !!cachedData);
       
       if (cachedData) {
-        console.log(`[ExercisesAPI] Returning cached data for ${exerciseId}:`, cachedData.length, 'workouts');
+        //console.log(`[ExercisesAPI] Returning cached data for ${exerciseId}:`, cachedData.length, 'workouts');
         return cachedData;
       }
 
-      console.log(`[ExercisesAPI] No cache found, querying database for ${exerciseId}`);
+      //console.log(`[ExercisesAPI] No cache found, querying database for ${exerciseId}`);
     
     // Get all workouts containing this exercise with their sets
     const history = await this.db.query(`
@@ -314,7 +314,7 @@ class ExercisesAPI extends APIBase {
         s.set_order ASC
     `, [exerciseId]);
 
-      console.log(`[ExercisesAPI] Found ${history.length} history records for ${exerciseId}`);
+      //console.log(`[ExercisesAPI] Found ${history.length} history records for ${exerciseId}`);
 
       // Group sets by workout
       const workoutMap = new Map();
@@ -344,22 +344,12 @@ class ExercisesAPI extends APIBase {
       });
 
       const result = Array.from(workoutMap.values());
-      console.log(`[ExercisesAPI] Grouped into ${result.length} workouts for ${exerciseId}`);
-      result.forEach((workout, index) => {
-        if (index < 2) { // Log first 2 workouts
-          console.log(`[ExercisesAPI] Workout ${index}:`, {
-            workout_id: workout.workout_id,
-            name: workout.name,
-            date_performed: workout.date_performed,
-            sets_count: workout.sets.length,
-            first_set: workout.sets[0]
-          });
-        }
-      });
+      //console.log(`[ExercisesAPI] Grouped into ${result.length} workouts for ${exerciseId}`);
+      
 
       // Cache the result
       this.cache.set(cacheKey, result);
-      console.log(`[ExercisesAPI] Cached result for ${exerciseId}`);
+      //console.log(`[ExercisesAPI] Cached result for ${exerciseId}`);
 
       return result;
     } catch (error) {
@@ -389,11 +379,11 @@ class ExercisesAPI extends APIBase {
         sync_priority: syncImmediately ? 'immediate' : 'background'
       };
 
-      console.log('[ExercisesAPI] Creating exercise:', exerciseData);
+      //console.log('[ExercisesAPI] Creating exercise:', exerciseData);
 
       // Store locally first
       const stored = await this.storeLocally(exerciseData, 'pending_sync');
-      console.log('[ExercisesAPI] Stored locally, result:', stored);
+      //console.log('[ExercisesAPI] Stored locally, result:', stored);
 
       // Clear cache to ensure fresh data on next fetch
       this.clearExerciseCache(exerciseId);
@@ -404,7 +394,7 @@ class ExercisesAPI extends APIBase {
       // If syncImmediately is true, try to sync to backend immediately
       if (syncImmediately) {
         try {
-          console.log('[ExercisesAPI] Syncing exercise immediately');
+          //console.log('[ExercisesAPI] Syncing exercise immediately');
           await this.syncSpecificExercise(exerciseId);
           
           // After sync, get the updated exercise (which may have a new server-assigned ID)
@@ -415,7 +405,7 @@ class ExercisesAPI extends APIBase {
           
           if (updatedExercise) {
             finalExerciseId = updatedExercise.exercise_id;
-            console.log('[ExercisesAPI] Final exercise ID after sync:', finalExerciseId);
+            //console.log('[ExercisesAPI] Final exercise ID after sync:', finalExerciseId);
             return updatedExercise;
           }
         } catch (syncError) {
@@ -462,8 +452,8 @@ class ExercisesAPI extends APIBase {
         sync_priority: syncImmediately ? 'immediate' : 'background'
       };
 
-      console.log('[ExercisesAPI] Updating exercise:', exerciseId, updateData);
-      console.log('[ExercisesAPI] Preserving existing media_url:', existingExercise.media_url);
+      //console.log('[ExercisesAPI] Updating exercise:', exerciseId, updateData);
+      //console.log('[ExercisesAPI] Preserving existing media_url:', existingExercise.media_url);
 
       // Update locally first - preserve existing media_url
       await this.db.execute(
@@ -488,13 +478,13 @@ class ExercisesAPI extends APIBase {
 
       if (syncImmediately) {
         try {
-            console.log('[ExercisesAPI] Syncing exercise immediately');
+            //console.log('[ExercisesAPI] Syncing exercise immediately');
             await this.syncSpecificExercise(exerciseId);
         } catch (syncError) {
             console.warn('[ExercisesAPI] Immediate sync failed, will sync later:', syncError);
         }
       } else {
-        console.log('[ExercisesAPI] Exercise updated locally, will sync in background');
+        //console.log('[ExercisesAPI] Exercise updated locally, will sync in background');
       }
 
       // Return updated exercise
@@ -509,7 +499,7 @@ class ExercisesAPI extends APIBase {
     try {
       await this.ensureInitialized();
       
-      console.log('[ExercisesAPI] Deleting exercise:', exerciseId);
+      //console.log('[ExercisesAPI] Deleting exercise:', exerciseId);
 
       // Check if exercise exists and is not already marked for deletion
       const [existingExercise] = await this.db.query(
@@ -526,7 +516,7 @@ class ExercisesAPI extends APIBase {
         
         // If exercise was never synced to server (pending_sync or no last_synced_at), delete immediately
         if (existingExercise.sync_status === 'pending_sync' || !existingExercise.last_synced_at) {
-          console.log(`[ExercisesAPI] Exercise ${exerciseId} was never synced, deleting immediately`);
+          //console.log(`[ExercisesAPI] Exercise ${exerciseId} was never synced, deleting immediately`);
           
           // Delete related workout_exercises
           await this.db.execute(
@@ -547,7 +537,7 @@ class ExercisesAPI extends APIBase {
           );
         } else {
           // Exercise was synced to server, mark for deletion to be handled by sync
-          console.log(`[ExercisesAPI] Exercise ${exerciseId} was synced, marking for deletion`);
+          //console.log(`[ExercisesAPI] Exercise ${exerciseId} was synced, marking for deletion`);
           
           await this.db.execute(
             `UPDATE exercises 
@@ -578,14 +568,14 @@ class ExercisesAPI extends APIBase {
 
         await this.db.execute("COMMIT");
         
-        console.log('[ExercisesAPI] Exercise deletion complete, clearing caches');
+        //console.log('[ExercisesAPI] Exercise deletion complete, clearing caches');
         this.clearExerciseCache(exerciseId);
         this.cache.clear('exercises:all');
 
         return { success: true, message: "Exercise deleted successfully" };
       } catch (error) {
         await this.db.execute("ROLLBACK");
-        console.error('[ExercisesAPI] Error deleting exercise:', error);
+        //console.error('[ExercisesAPI] Error deleting exercise:', error);
         throw error;
       }
     } catch (error) {
@@ -602,7 +592,7 @@ class ExercisesAPI extends APIBase {
       );
 
       if (!exercise) {
-        console.log('[ExercisesAPI] Exercise not found for sync:', exerciseId);
+        //console.log('[ExercisesAPI] Exercise not found for sync:', exerciseId);
         return;
       }
 
@@ -610,12 +600,12 @@ class ExercisesAPI extends APIBase {
         try {
           // Check if exercise was ever synced to server (has last_synced_at timestamp)
           if (exercise.last_synced_at) {
-            console.log(`[ExercisesAPI] Syncing deletion of exercise ${exerciseId} (was previously synced)`);
+            //console.log(`[ExercisesAPI] Syncing deletion of exercise ${exerciseId} (was previously synced)`);
             
             const deleteUrl = `${this.baseUrl}/${exerciseId}`;
-            console.log(`[ExercisesAPI] syncSpecific DELETE URL: ${deleteUrl}`);
-            console.log(`[ExercisesAPI] syncSpecific Base URL: ${this.baseUrl}`);
-            console.log(`[ExercisesAPI] syncSpecific Exercise ID: ${exerciseId}`);
+            //console.log(`[ExercisesAPI] syncSpecific DELETE URL: ${deleteUrl}`);
+            //console.log(`[ExercisesAPI] syncSpecific Base URL: ${this.baseUrl}`);
+            //console.log(`[ExercisesAPI] syncSpecific Exercise ID: ${exerciseId}`);
             
             // Send delete request to server
             await this.makeAuthenticatedRequest({
@@ -623,7 +613,7 @@ class ExercisesAPI extends APIBase {
               url: deleteUrl
             });
             
-            console.log(`[ExercisesAPI] Successfully deleted exercise ${exerciseId} from server`);
+            //console.log(`[ExercisesAPI] Successfully deleted exercise ${exerciseId} from server`);
           } else {
             console.log(`[ExercisesAPI] Exercise ${exerciseId} was never synced to server, skipping server deletion`);
           }
@@ -664,7 +654,7 @@ class ExercisesAPI extends APIBase {
           const method = isUpdate ? 'PUT' : 'POST';
           const url = isUpdate ? `${this.baseUrl}/${exerciseId}` : `${this.baseUrl}/create`;
 
-          console.log(`[ExercisesAPI] ${isUpdate ? 'Updating' : 'Creating'} exercise ${exerciseId} via ${method} ${url}`);
+          //console.log(`[ExercisesAPI] ${isUpdate ? 'Updating' : 'Creating'} exercise ${exerciseId} via ${method} ${url}`);
 
           const response = await this.makeAuthenticatedRequest({
             method,
@@ -676,7 +666,7 @@ class ExercisesAPI extends APIBase {
 
           if (isUpdate) {
             // For updates, just mark as synced - no ID changes expected
-            console.log(`[ExercisesAPI] Exercise ${exerciseId} updated successfully`);
+            //console.log(`[ExercisesAPI] Exercise ${exerciseId} updated successfully`);
             
             await this.db.execute(
               `UPDATE exercises 
@@ -689,7 +679,7 @@ class ExercisesAPI extends APIBase {
             const serverExerciseId = response.data.exercise_id;
 
             if (serverExerciseId && serverExerciseId !== exerciseId) {
-              console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
+              //console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
               // Update local database with server's ID
               await this.db.execute(
                 `UPDATE exercises 
@@ -723,12 +713,12 @@ class ExercisesAPI extends APIBase {
             }
           }
           
-          console.log(`[ExercisesAPI] Successfully ${isUpdate ? 'updated' : 'created'} exercise ${exerciseId}`);
+          //console.log(`[ExercisesAPI] Successfully ${isUpdate ? 'updated' : 'created'} exercise ${exerciseId}`);
           
           // Clear cache to ensure fresh data with correct IDs
           this.cache.clearPattern('^exercises:');
         } catch (error) {
-          console.error(`[ExercisesAPI] Failed to sync exercise ${exerciseId}:`, error);
+          //console.error(`[ExercisesAPI] Failed to sync exercise ${exerciseId}:`, error);
           throw error;
         }
       }
@@ -739,7 +729,7 @@ class ExercisesAPI extends APIBase {
   }
 
   async _fetchFromServer() {
-    console.log('[ExercisesAPI] Fetching exercises from server for initial population');
+    //console.log('[ExercisesAPI] Fetching exercises from server for initial population');
     try {
       const response = await this.makeAuthenticatedRequest({
         method: 'GET',
@@ -747,7 +737,7 @@ class ExercisesAPI extends APIBase {
       });
       
       if (response.data && Array.isArray(response.data)) {
-        console.log(`[ExercisesAPI] Retrieved ${response.data.length} exercises from server`);
+        //console.log(`[ExercisesAPI] Retrieved ${response.data.length} exercises from server`);
         
         // Store each exercise locally
         for (const exercise of response.data) {
@@ -783,7 +773,7 @@ class ExercisesAPI extends APIBase {
 
   async syncExerciseWithMedia(exerciseId) {
     try {
-      console.log('[ExercisesAPI] Force syncing exercise with media:', exerciseId);
+      //console.log('[ExercisesAPI] Force syncing exercise with media:', exerciseId);
       
       // Get the exercise from local storage
       const [exercise] = await this.db.query(
@@ -795,11 +785,11 @@ class ExercisesAPI extends APIBase {
         throw new Error(`Exercise ${exerciseId} not found locally`);
       }
       
-      console.log('[ExercisesAPI] Exercise sync_status before sync:', exercise.sync_status);
+      //console.log('[ExercisesAPI] Exercise sync_status before sync:', exercise.sync_status);
       
       // If it's already synced, no need to sync again
       if (exercise.sync_status === 'synced') {
-        console.log('[ExercisesAPI] Exercise already synced, skipping server call');
+        //console.log('[ExercisesAPI] Exercise already synced, skipping server call');
         return exercise;
       }
       
@@ -820,7 +810,7 @@ class ExercisesAPI extends APIBase {
       const method = isUpdate ? 'PUT' : 'POST';
       const url = isUpdate ? `${this.baseUrl}/${exerciseId}` : `${this.baseUrl}/create`;
       
-      console.log(`[ExercisesAPI] Making server request to ${isUpdate ? 'update' : 'create'} exercise:`, exerciseForServer);
+      //console.log(`[ExercisesAPI] Making server request to ${isUpdate ? 'update' : 'create'} exercise:`, exerciseForServer);
       
       // Sync to server
       const response = await this.makeAuthenticatedRequest({
@@ -829,14 +819,14 @@ class ExercisesAPI extends APIBase {
         data: exerciseForServer
       });
       
-      console.log('[ExercisesAPI] Server response:', response.data);
+      //console.log('[ExercisesAPI] Server response:', response.data);
       
       // Update sync status
       const now = new Date().toISOString();
       
       if (isUpdate) {
         // For updates, just mark as synced - no ID changes expected
-        console.log(`[ExercisesAPI] Exercise ${exerciseId} updated successfully`);
+        //console.log(`[ExercisesAPI] Exercise ${exerciseId} updated successfully`);
         
         await this.db.execute(
           `UPDATE exercises 
@@ -851,7 +841,7 @@ class ExercisesAPI extends APIBase {
         const serverExerciseId = response.data.exercise_id;
         
         if (serverExerciseId && serverExerciseId !== exerciseId) {
-          console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
+          //console.log(`[ExercisesAPI] Server assigned new ID: ${serverExerciseId}, updating from ${exerciseId}`);
           await this.db.execute(
             `UPDATE exercises 
              SET exercise_id = ?,

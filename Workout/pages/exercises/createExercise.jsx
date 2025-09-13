@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { createStyles } from "../../styles/createExercise.styles";
 import exercisesAPI from "../../API/exercisesAPI";
 import { mediaAPI } from "../../API/mediaAPI";

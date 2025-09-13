@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import Cache from '../utils/Cache';
 import { dbManager } from './dbManager';
 import { syncManager } from './syncManager';

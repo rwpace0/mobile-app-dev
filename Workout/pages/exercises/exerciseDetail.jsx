@@ -14,7 +14,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import exercisesAPI from "../../API/exercisesAPI";
 import { createStyles } from "../../styles/exerciseDetail.styles";
 import { format } from "date-fns";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import Header from "../../components/static/header";
