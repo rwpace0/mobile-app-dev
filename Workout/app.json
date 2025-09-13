@@ -33,7 +33,10 @@
               "scheme": "workout"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -46,7 +49,9 @@
         {
           "pathToMainSqliteDb": "workout_app.db"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-font"
     ]
   }
 }
