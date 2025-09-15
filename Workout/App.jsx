@@ -29,7 +29,10 @@ import ViewExercises from "./pages/exercises/viewExercises";
 import Profile from "./pages/settings/profile";
 import Settings from "./pages/settings/settings";
 import SettingsPage from "./pages/settings/settingsPages";
-import AccountSettings from "./pages/settings/accountSettings";
+import AccountSettings from "./pages/settings/account/accountSettings";
+import ChangeUsername from "./pages/settings/account/changeUsername";
+import ChangeEmail from "./pages/settings/account/changeEmail";
+import ChangePassword from "./pages/settings/account/changePassword";
 import EditProfile from "./pages/settings/editProfile";
 import RoutineDetail from "./pages/templates/routineDetail";
 import ActiveMini from "./components/activeMini";
@@ -97,6 +100,9 @@ const stackScreens = {
     { name: "ProfileMain", component: Profile },
     { name: "Settings", component: Settings, options: slideFromRightOptions },
     { name: "AccountSettings", component: AccountSettings, options: slideFromRightOptions },
+    { name: "ChangeUsername", component: ChangeUsername, options: slideFromRightOptions },
+    { name: "ChangeEmail", component: ChangeEmail, options: slideFromRightOptions },
+    { name: "ChangePassword", component: ChangePassword, options: slideFromRightOptions },
     { name: "EditProfile", component: EditProfile, options: slideFromRightOptions },
     { name: "SettingsPage", component: SettingsPage, options: slideFromRightOptions },
     { name: "ViewExercises", component: ViewExercises, options: slideFromRightOptions },
