@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,14 +6,19 @@ import {
   ScrollView,
   SafeAreaView,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { createStyles } from "../../../styles/settings.styles";
 import Header from "../../../components/static/header";
 import { getColors } from "../../../constants/colors";
 import { useTheme } from "../../../state/SettingsContext";
+import { useAuth } from "../../../API/auth/authContext";
+import { authAPI } from "../../../API/auth/authAPI";
+import { useAlertModal } from "../../../utils/useAlertModal";
+import AlertModal from "../../../components/modals/AlertModal";
 
-const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextEntry = false }) => {
+const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextEntry = false, editable = true }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -22,12 +27,13 @@ const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextE
     <View style={styles.formField}>
       <Text style={styles.formFieldLabel}>{title}</Text>
       <TextInput
-        style={styles.formFieldInput}
+        style={[styles.formFieldInput, !editable && styles.formFieldInputDisabled]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textFaded}
         secureTextEntry={secureTextEntry}
+        editable={editable}
       />
     </View>
   );
@@ -38,24 +44,73 @@ const ChangeEmail = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
+  const { user } = useAuth();
+  const { alertState, showSuccess, showError, hideAlert } = useAlertModal();
 
   const [formData, setFormData] = useState({
-    currentEmail: '',
     newEmail: '',
   });
+  const [loading, setLoading] = useState(false);
+
+  // Set current email from user data
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({
+        ...prev,
+        currentEmail: user.email
+      }));
+    }
+  }, [user]);
 
   const handleFormChange = (field, value) => {
+    // Convert email to lowercase
+    const processedValue = field === 'newEmail' ? value.toLowerCase() : value;
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: processedValue
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Implement email change logic
-    console.log('Saving email change:', formData);
-    // After successful save, navigate back
-    navigation.goBack();
+  const validateEmail = (email) => {
+    if (!email.trim()) {
+      return "Email is required";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Invalid email format";
+    }
+    if (email === user?.email) {
+      return "New email must be different from current email";
+    }
+    return null;
+  };
+
+  const handleSave = async () => {
+    const validationError = validateEmail(formData.newEmail);
+    if (validationError) {
+      showError("Invalid Email", validationError);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authAPI.changeEmail(formData.newEmail);
+      showSuccess("Success", "Email updated successfully", {
+        onConfirm: () => {
+          hideAlert();
+          navigation.goBack();
+        }
+      });
+    } catch (error) {
+      // Customize error message for display
+      let errorMessage = error.error || error.message || "Failed to change email";
+      if (errorMessage.includes("already in use")) {
+        errorMessage = "Email is unavailable";
+      }
+      showError("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,21 +118,34 @@ const ChangeEmail = () => {
       <Header title="Change Email" leftComponent={{ type: "back" }} />
       <ScrollView style={styles.scrollView}>
         <AccountFormField
-          title="Current Email"
-          value={formData.currentEmail}
-          onChangeText={(value) => handleFormChange('currentEmail', value)}
-          placeholder="Enter current email"
-        />
-        <AccountFormField
           title="New Email"
           value={formData.newEmail}
           onChangeText={(value) => handleFormChange('newEmail', value)}
           placeholder="Enter new email"
         />
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Changes</Text>
+        <TouchableOpacity 
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={colors.textPrimary} />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
+      
+      <AlertModal
+        visible={alertState.visible}
+        onClose={hideAlert}
+        message={alertState.message}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        showCancel={alertState.showCancel}
+        cancelText={alertState.cancelText}
+        onCancel={alertState.onCancel}
+      />
     </SafeAreaView>
   );
 };

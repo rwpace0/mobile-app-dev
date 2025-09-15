@@ -9,3 +9,4 @@ Unverified users trying to access protected routes
 Multiple devices with same account
 Email verification link expiration
 Password reset token expiration
+

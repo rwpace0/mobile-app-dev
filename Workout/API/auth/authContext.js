@@ -360,15 +360,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateUsername = async (username) => {
+  const changeUsername = async (username) => {
     try {
       setError(null);
-      const response = await authAPI.updateUsername(username);
+      const response = await authAPI.changeUsername(username);
       setUser(prev => ({ ...prev, username }));
       return response;
     } catch (error) {
-      console.error('Username update failed:', error);
-      const errorMessage = error.message || 'Failed to update username. Please try again.';
+      console.error('Username change failed:', error);
+      const errorMessage = error.error || error.message || 'Failed to change username. Please try again.';
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -416,7 +416,7 @@ export const AuthProvider = ({ children }) => {
     requestPasswordReset,
     resetPasswordWithToken,
     verifyEmail,
-    updateUsername,
+    changeUsername,
     updateUserPassword,
   };
 

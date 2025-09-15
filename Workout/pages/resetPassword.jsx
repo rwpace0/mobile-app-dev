@@ -83,16 +83,12 @@ const ResetPassword = ({ navigation, route }) => {
   const passwordRequirements = useMemo(() => {
     const minLength = password.length >= 8;
     const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
     return [
       { met: minLength, text: "At least 8 characters" },
       { met: hasUpperCase, text: "At least one uppercase letter" },
-      { met: hasLowerCase, text: "At least one lowercase letter" },
       { met: hasNumbers, text: "At least one number" },
-      { met: hasSpecialChar, text: "At least one special character" },
     ];
   }, [password]);
 

@@ -8,9 +8,7 @@ dotenv.config();
 const validatePassword = (password) => {
   const minLength = 8;
   const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
   const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
   if (password.length < minLength) {
     return {
@@ -24,22 +22,10 @@ const validatePassword = (password) => {
       message: "Password must contain at least one uppercase letter",
     };
   }
-  if (!hasLowerCase) {
-    return {
-      valid: false,
-      message: "Password must contain at least one lowercase letter",
-    };
-  }
   if (!hasNumbers) {
     return {
       valid: false,
       message: "Password must contain at least one number",
-    };
-  }
-  if (!hasSpecialChar) {
-    return {
-      valid: false,
-      message: "Password must contain at least one special character",
     };
   }
 
@@ -102,8 +88,12 @@ export const signup = async (req, res) => {
       return res.status(400).json({ error: passwordValidation.message });
     }
 
+    // Convert username to lowercase
+    const lowercaseUsername = username.toLowerCase();
+    console.log("Converting username to lowercase:", username, "->", lowercaseUsername);
+
     // Validate username
-    const usernameValidation = validateUsername(username);
+    const usernameValidation = validateUsername(lowercaseUsername);
     if (!usernameValidation.valid) {
       console.log("Invalid username:", usernameValidation.message);
       return res.status(400).json({ error: usernameValidation.message });
@@ -143,8 +133,8 @@ export const signup = async (req, res) => {
       .insert([
         {
           user_id: data.user.id,
-          username,
-          display_name: username,
+          username: lowercaseUsername,
+          display_name: lowercaseUsername,
           is_public: false,
           user_email: email,
         },

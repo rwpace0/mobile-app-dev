@@ -53,4 +53,15 @@ export const authMeLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+});
+
+// Create a limiter for account changes (email, password, username)
+export const accountChangeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour window
+  max: 1000, // limit each IP to 5 account changes per hour
+  message: {
+    error: 'Too many account change requests. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 }); 

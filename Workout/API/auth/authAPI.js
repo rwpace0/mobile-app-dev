@@ -158,13 +158,38 @@ export const authAPI = {
     }
   },
 
-  // Update username
-  updateUsername: async (username) => {
+  // Change username
+  changeUsername: async (username) => {
     try {
-      const response = await api.post('/auth/update-username', { username });
+      const response = await api.post('/change-username', { username });
       return response.data;
     } catch (error) {
-      console.error('Update username error:', error);
+      console.error('Change username error:', error);
+      throw error;
+    }
+  },
+
+  // Change email
+  changeEmail: async (newEmail) => {
+    try {
+      const response = await api.post('/change-email', { newEmail });
+      return response.data;
+    } catch (error) {
+      console.error('Change email error:', error);
+      throw error;
+    }
+  },
+
+  // Change password
+  changePassword: async (newPassword, confirmPassword) => {
+    try {
+      const response = await api.post('/change-password', { 
+        newPassword, 
+        confirmPassword 
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Change password error:', error);
       throw error;
     }
   },

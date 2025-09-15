@@ -7,9 +7,11 @@ import { resetPassword, requestPasswordReset, updateUserPassword } from '../auth
 import { verifyEmail } from '../auth/verifyEmail.js';
 import { resendVerification } from '../auth/resendVerification.js';
 import { getMe } from '../auth/me.js';
-import { authLimiter, emailVerificationLimiter, authMeLimiter, verificationLimiter, passwordResetLimiter } from '../auth/rateLimiter.js';
-import { updateUsername} from '../auth/updateUsername.js';
+import { authLimiter, emailVerificationLimiter, authMeLimiter, verificationLimiter, passwordResetLimiter, accountChangeLimiter } from '../auth/rateLimiter.js';
+import { changeUsername} from '../auth/changeUsername.js';
 import { checkAvailability } from '../auth/signup.js';
+import { changeEmail } from '../auth/changeEmail.js';
+import { changePassword } from '../auth/changePassword.js';
 
 const router = express.Router();
 
@@ -24,7 +26,9 @@ router.post('/update-password', passwordResetLimiter, updateUserPassword);
 router.get('/verify-email', verificationLimiter, verifyEmail);
 router.post('/resend-verification', emailVerificationLimiter, resendVerification);
 router.get('/me', authMeLimiter, getMe);
-router.post('/update-username', updateUsername);
+router.post('/change-username', accountChangeLimiter, changeUsername);
+router.post('/change-email', accountChangeLimiter, changeEmail);
+router.post('/change-password', accountChangeLimiter, changePassword);
 router.post('/check-availability', checkAvailability);
 
 export default router; 

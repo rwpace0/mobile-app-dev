@@ -199,6 +199,56 @@ export const createStyles = (isDark = true) => {
   segmentedOptionTextInactive: {
     color: colors.textSecondary,
   },
+  
+  // Password requirements styles
+  passwordRequirementsContainer: {
+    marginTop: Spacing.s,
+    
+    paddingHorizontal: Spacing.m,
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  requirementText: {
+    color: colors.textSecondary,
+    fontSize: FontSize.medium,
+    marginLeft: Spacing.xs,
+  },
+  requirementMet: {
+    color: colors.accentGreen,
+  },
+  requirementUnmet: {
+    color: colors.textSecondary,
+  },
+  strengthBarContainer: {
+    height: 4,
+    backgroundColor: colors.textSecondary,
+    borderRadius: BorderRadius.small,
+    marginBottom: Spacing.l,
+  },
+  strengthBar: {
+    height: '100%',
+    borderRadius: BorderRadius.small,
+    backgroundColor: colors.accentGreen,
+  },
+  errorText: {
+    color: colors.accentRed,
+    fontSize: FontSize.small,
+    marginBottom: Spacing.s,
+    paddingHorizontal: Spacing.m,
+  },
+  formFieldInputError: {
+    borderColor: colors.accentRed,
+    borderWidth: 1,
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
+  },
+  scrollView: {
+    flex: 1,
+  },
 });
 };
 
