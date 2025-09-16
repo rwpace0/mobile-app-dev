@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -99,9 +99,15 @@ const ActiveWorkoutPage = () => {
   }, [workoutName, exercises, exerciseStates, totalVolume, totalSets, exerciseTotals]);
 
   const formatDuration = (seconds) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}min`;
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
   };
 
   const handleAddExercise = () => {
@@ -295,7 +301,7 @@ const ActiveWorkoutPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title="Log Workout"
+        title={workoutName || "Active Workout"}
         leftComponent={{
           type: 'down',
           onPress: handleMinimizeWorkout,
@@ -309,7 +315,18 @@ const ActiveWorkoutPage = () => {
 
       <View style={styles.content}>
         {exercises.length === 0 ? (
-          <ScrollView style={styles.content}>
+          <ScrollView style={styles.content} contentContainerStyle={styles.exercisesContainer}>
+            {/* Workout Name Input */}
+            <View style={styles.nameInputContainer}>
+              <TextInput
+                style={styles.nameInput}
+                value={workoutName}
+                onChangeText={setWorkoutName}
+                placeholder="Enter workout name"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>Duration</Text>
@@ -317,10 +334,12 @@ const ActiveWorkoutPage = () => {
                   {formatDuration(activeWorkout?.duration || 0)}
                 </Text>
               </View>
+              <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Volume</Text>
-                <Text style={styles.statValue}>{weight.formatVolume(totalVolume)}</Text>
+                <Text style={styles.statLabel}>Exercises</Text>
+                <Text style={styles.statValue}>{exercises.length}</Text>
               </View>
+              <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>Sets</Text>
                 <Text style={styles.statValue}>{totalSets}</Text>
@@ -366,21 +385,36 @@ const ActiveWorkoutPage = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.exercisesContainer}
             ListHeaderComponent={() => (
-              <View style={styles.statsContainer}>
+              <View>
+                {/* Workout Name Input */}
+                <View style={styles.nameInputContainer}>
+                  <TextInput
+                    style={styles.nameInput}
+                    value={workoutName}
+                    onChangeText={setWorkoutName}
+                    placeholder="Enter workout name"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                </View>
+
+                <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Duration</Text>
                   <Text style={styles.statValue}>
                     {formatDuration(activeWorkout?.duration || 0)}
                   </Text>
                 </View>
+                <View style={styles.statDivider} />
                 <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Volume</Text>
-                  <Text style={styles.statValue}>{weight.formatVolume(totalVolume)}</Text>
+                  <Text style={styles.statLabel}>Exercises</Text>
+                  <Text style={styles.statValue}>{exercises.length}</Text>
                 </View>
+                <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statLabel}>Sets</Text>
                   <Text style={styles.statValue}>{totalSets}</Text>
                 </View>
+              </View>
               </View>
             )}
             ListFooterComponent={() => (

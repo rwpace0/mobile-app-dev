@@ -992,7 +992,7 @@ class WorkoutAPI extends APIBase {
       // Cache the count with a TTL to ensure it gets refreshed
       this.cache.set('workouts:total_count', count);
       
-      console.log(`[WorkoutAPI] Total workout count: ${count}`);
+      //console.log(`[WorkoutAPI] Total workout count: ${count}`);
       return count;
     } catch (error) {
       console.error("Get total workout count error:", error);

@@ -19,6 +19,7 @@ import { createStyles } from "../../styles/settings.styles";
 import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
 import { useSettings, useTheme } from "../../state/SettingsContext";
+import BottomSheetModal from "../../components/modals/bottomModal";
 
 const SettingToggle = ({
   title,
@@ -145,6 +146,91 @@ const SettingDropdown = ({
           </View>
         </View>
       </Modal>
+    </>
+  );
+};
+
+const ThemeSelector = ({
+  title,
+  value,
+  onSelect,
+  icon,
+}) => {
+  const [showThemeModal, setShowThemeModal] = useState(false);
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const styles = createStyles(isDark);
+
+  const themeOptions = ["system", "light", "dark"];
+  
+  // Capitalize first letter for display
+  const displayValue = value.charAt(0).toUpperCase() + value.slice(1);
+
+  const getThemeIcon = (theme) => {
+    switch (theme) {
+      case "system":
+        return "phone-portrait-outline";
+      case "light":
+        return "sunny-outline";
+      case "dark":
+        return "moon-outline";
+      default:
+        return "moon-outline";
+    }
+  };
+
+  const getThemeLabel = (theme) => {
+    switch (theme) {
+      case "system":
+        return "System";
+      case "light":
+        return "Light";
+      case "dark":
+        return "Dark";
+      default:
+        return theme;
+    }
+  };
+
+  const themeActions = themeOptions.map((theme) => ({
+    title: getThemeLabel(theme),
+    icon: getThemeIcon(theme),
+    onPress: () => onSelect(theme),
+    showChevron: value === theme,
+  }));
+
+  return (
+    <>
+      <TouchableOpacity
+        style={styles.settingsItem}
+        onPress={() => setShowThemeModal(true)}
+      >
+        <View style={styles.settingsItemLeft}>
+          <Ionicons
+            name={icon}
+            size={24}
+            color={colors.textPrimary}
+            style={styles.icon}
+          />
+          <Text style={styles.settingsItemText}>{title}</Text>
+        </View>
+        <View style={styles.dropdownValue}>
+          <Text style={styles.dropdownValueText}>{displayValue}</Text>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={colors.textSecondary}
+          />
+        </View>
+      </TouchableOpacity>
+
+      <BottomSheetModal
+        visible={showThemeModal}
+        onClose={() => setShowThemeModal(false)}
+        title="Choose Theme"
+        actions={themeActions}
+        showHandle={true}
+      />
     </>
   );
 };
@@ -290,10 +376,9 @@ const SettingsPage = () => {
       case "theme":
         return (
           <>
-            <SettingDropdown
+            <ThemeSelector
               title="Theme"
               value={theme}
-              options={themeOptions}
               onSelect={(value) => changeTheme(value)}
               icon="moon-outline"
             />

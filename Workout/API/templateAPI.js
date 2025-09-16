@@ -417,7 +417,7 @@ class TemplateAPI extends APIBase {
   async getTemplates() {
     try {
       await this.ensureInitialized();
-      console.log("[TemplateAPI] Fetching all templates");
+      //console.log("[TemplateAPI] Fetching all templates");
 
       return this.handleOfflineFirst("templates:all", async () => {
         const templates = await this.db.query(

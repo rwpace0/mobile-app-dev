@@ -67,18 +67,8 @@ export const createStyles = (isDark = true) => {
   },
 
   nameInputContainer: {
-    paddingHorizontal: Spacing.m,
-    paddingTop: Spacing.m,
-    paddingBottom: Spacing.s,
-  },
-
-  nameInputLabel: {
-    color: colors.textSecondary,
-    fontSize: FontSize.small,
-    fontWeight: FontWeight.medium,
-    marginBottom: Spacing.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    marginBottom: Spacing.m,
+    paddingHorizontal: Spacing.xxxs,
   },
 
   nameInput: {
@@ -89,9 +79,7 @@ export const createStyles = (isDark = true) => {
     paddingHorizontal: Spacing.m,
     paddingVertical: Spacing.s,
     borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderColor,
-    ...Shadow.small,
+    ...Shadow.medium,
   },
 
   loadingContainer: {
@@ -141,7 +129,7 @@ export const createStyles = (isDark = true) => {
     justifyContent: "center",
     backgroundColor: colors.primaryBlue,
     paddingVertical: Spacing.s,
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: Spacing.xxxs,
     borderRadius: BorderRadius.md,
     marginTop: Spacing.m,
     alignSelf: 'center',
@@ -208,39 +196,43 @@ export const createStyles = (isDark = true) => {
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: colors.backgroundCard,
-    marginHorizontal: Spacing.m,
-    marginVertical: Spacing.m,
-    padding: Spacing.m,
-    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.m,
+    paddingVertical: Spacing.l,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    width: '100%',
     ...Shadow.medium,
   },
 
   statItem: {
     flex: 1,
     alignItems: "center",
-    paddingHorizontal: Spacing.s,
+    paddingHorizontal: Spacing.xs,
   },
 
   statLabel: {
     color: colors.textSecondary,
-    fontSize: FontSize.small,
+    fontSize: FontSize.xsmall,
     fontWeight: FontWeight.medium,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.xxs,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
 
   statValue: {
     color: colors.textPrimary,
-    fontSize: FontSize.xlarge,
+    fontSize: FontSize.large,
     fontWeight: FontWeight.bold,
+    letterSpacing: -0.5,
   },
 
   statDivider: {
     width: 1,
+    height: 32,
     backgroundColor: colors.borderColor,
-    marginHorizontal: Spacing.s,
+    opacity: 0.6,
   },
 });
 };
