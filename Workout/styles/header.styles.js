@@ -18,13 +18,15 @@ export const createStyles = (isDark = true) => {
   },
 
   leftContainer: {
-    width: 80,
+    minWidth: 80,
+    maxWidth: 120,
     alignItems: "flex-start",
     justifyContent: "center",
   },
 
   rightContainer: {
-    width: 80,
+    minWidth: 80,
+    maxWidth: 120,
     alignItems: "flex-end",
     justifyContent: "center",
   },
@@ -46,6 +48,7 @@ export const createStyles = (isDark = true) => {
     color: colors.primaryBlue,
     fontSize: FontSize.medium,
     fontWeight: FontWeight.medium,
+    flexShrink: 0,
   },
 
   buttonTextDisabled: {
@@ -61,6 +64,7 @@ export const createStyles = (isDark = true) => {
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.s,
     borderRadius: 8,
+    flexShrink: 0,
   },
 });
 };

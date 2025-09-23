@@ -132,9 +132,7 @@ const WorkoutStartPage = () => {
     navigation.navigate("RoutineCreate");
   }, [navigation]);
 
-  const handleExplore = () => {
-    console.log("Explore");
-  };
+  // Explore removed
 
   const handleTemplateOptions = useCallback((template) => {
     setSelectedTemplate(template);
@@ -229,10 +227,11 @@ const WorkoutStartPage = () => {
           })),
       }));
 
-      // Navigate to activeWorkout with the exercises
+      // Navigate to activeWorkout with the exercises and template ID
       navigation.navigate("activeWorkout", {
         selectedExercises,
         workoutName: template.name,
+        templateId: template.template_id, // Pass template ID to link workout to template
       });
     },
     [navigation]
@@ -352,39 +351,17 @@ const WorkoutStartPage = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Routines</Text>
-            <TouchableOpacity>
-              <Ionicons
-                name="grid-outline"
-                size={22}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
           </View>
 
-          {/* New Routine and Explore Buttons */}
+          {/* New Routine CTA (Explore removed) */}
           <View style={styles.routineActionButtons}>
             <TouchableOpacity
-              style={styles.routineActionButton}
+              style={styles.newRoutineButton}
               onPress={handleNewRoutine}
+              activeOpacity={0.8}
             >
-              <Ionicons
-                name="document-text-outline"
-                size={22}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.routineActionText}>New Routine</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.routineActionButton}
-              onPress={handleExplore}
-            >
-              <Ionicons
-                name="search-outline"
-                size={22}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.routineActionText}>Explore</Text>
+              <Ionicons name="add" size={20} color={colors.textPrimary} />
+              <Text style={styles.newRoutineText}>New Routine</Text>
             </TouchableOpacity>
           </View>
 

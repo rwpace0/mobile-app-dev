@@ -74,23 +74,25 @@ export const createStyles = (isDark = true) => {
   routineActionButtons: {
     flexDirection: "row",
     marginBottom: Spacing.m,
+    width: "100%",
   },
   
-  routineActionButton: {
+  // New Routine CTA
+  newRoutineButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.backgroundCard,
-    paddingVertical: Spacing.s,
+    paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
-    marginRight: Spacing.m,
-    ...Shadow.medium,
   },
-  
-  routineActionText: {
+
+  newRoutineText: {
     color: colors.textPrimary,
     fontSize: FontSize.medium,
-    marginLeft: Spacing.xs,
+    marginLeft: Spacing.s,
+    textAlign: "center",
   },
   
   emptyRoutinesContainer: {

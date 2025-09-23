@@ -72,9 +72,13 @@ const ActiveWorkoutPage = () => {
           exerciseTotals: {},
         });
 
-        // Clear the params to prevent re-processing
+        // Clear the params to prevent re-processing, but preserve templateId
         if (route.params?.selectedExercises || route.params?.workoutName) {
-          navigation.setParams({ selectedExercises: undefined, workoutName: undefined });
+          navigation.setParams({ 
+            selectedExercises: undefined, 
+            workoutName: undefined,
+            templateId: templateId // Preserve templateId
+          });
         }
       }
   }, []); // Only run on mount
@@ -316,16 +320,18 @@ const ActiveWorkoutPage = () => {
       <View style={styles.content}>
         {exercises.length === 0 ? (
           <ScrollView style={styles.content} contentContainerStyle={styles.exercisesContainer}>
-            {/* Workout Name Input */}
-            <View style={styles.nameInputContainer}>
-              <TextInput
-                style={styles.nameInput}
-                value={workoutName}
-                onChangeText={setWorkoutName}
-                placeholder="Enter workout name"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
+            {/* Workout Name Input - Only show if not using a template */}
+            {!templateId && (
+              <View style={styles.nameInputContainer}>
+                <TextInput
+                  style={styles.nameInput}
+                  value={workoutName}
+                  onChangeText={setWorkoutName}
+                  placeholder="Enter workout name"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+            )}
 
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
@@ -386,16 +392,18 @@ const ActiveWorkoutPage = () => {
             contentContainerStyle={styles.exercisesContainer}
             ListHeaderComponent={() => (
               <View>
-                {/* Workout Name Input */}
-                <View style={styles.nameInputContainer}>
-                  <TextInput
-                    style={styles.nameInput}
-                    value={workoutName}
-                    onChangeText={setWorkoutName}
-                    placeholder="Enter workout name"
-                    placeholderTextColor={colors.textSecondary}
-                  />
-                </View>
+                {/* Workout Name Input - Only show if not using a template */}
+                {!templateId && (
+                  <View style={styles.nameInputContainer}>
+                    <TextInput
+                      style={styles.nameInput}
+                      value={workoutName}
+                      onChangeText={setWorkoutName}
+                      placeholder="Enter workout name"
+                      placeholderTextColor={colors.textSecondary}
+                    />
+                  </View>
+                )}
 
                 <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
