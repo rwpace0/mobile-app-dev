@@ -62,15 +62,23 @@ const ActiveWorkoutPage = () => {
         setWorkoutName(initialWorkoutName);
         
         // Create new workout in context immediately
-        startWorkout({
-          name: initialWorkoutName,
-          exercises: initialExercises,
-          exerciseStates: {},
-          duration: 0,
-          totalVolume: 0,
-          totalSets: 0,
-          exerciseTotals: {},
-        });
+        const startNewWorkout = async () => {
+          try {
+            await startWorkout({
+              name: initialWorkoutName,
+              exercises: initialExercises,
+              exerciseStates: {},
+              duration: 0,
+              totalVolume: 0,
+              totalSets: 0,
+              exerciseTotals: {},
+            });
+          } catch (error) {
+            console.error('Failed to start new workout:', error);
+          }
+        };
+        
+        startNewWorkout();
 
         // Clear the params to prevent re-processing, but preserve templateId
         if (route.params?.selectedExercises || route.params?.workoutName) {
@@ -160,11 +168,17 @@ const ActiveWorkoutPage = () => {
     );
   };
 
-  const handleDiscard = () => {
+  const handleDiscard = async () => {
     if (showDeleteConfirm) {
-      // End workout in context
-      endWorkout();
-      navigation.goBack();
+      try {
+        // End workout in context
+        await endWorkout();
+        navigation.goBack();
+      } catch (error) {
+        console.error('Failed to discard workout:', error);
+        // Navigate back even if endWorkout fails
+        navigation.goBack();
+      }
     } else {
       setShowDeleteConfirm(true);
     }
@@ -232,7 +246,7 @@ const ActiveWorkoutPage = () => {
       console.log("Workout saved successfully!");
       
       // End workout in context
-      endWorkout();
+      await endWorkout();
       navigation.goBack();
     } catch (err) {
       console.error("Failed to save workout:", err);
