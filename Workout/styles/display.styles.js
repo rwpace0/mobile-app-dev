@@ -136,7 +136,7 @@ export const createStyles = (isDark = true) => {
   },
 
   selectedExerciseItem: {
-    backgroundColor: colors.infoOverlay,
+    // Remove background highlight - we'll use ring and text colors instead
   },
 
   exerciseRow: {
@@ -155,6 +155,14 @@ export const createStyles = (isDark = true) => {
     overflow: 'hidden',
     position: 'relative',
     ...Shadow.small,
+  },
+
+  selectedExerciseIconContainer: {
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 2,
+    borderColor: colors.primaryBlue,
   },
 
   exerciseImage: {
@@ -178,6 +186,15 @@ export const createStyles = (isDark = true) => {
   exerciseMuscleGroup: {
     color: colors.textSecondary,
     fontSize: FontSize.medium,
+  },
+
+  selectedExerciseName: {
+    color: colors.primaryBlue,
+    fontWeight: FontWeight.semiBold,
+  },
+
+  selectedExerciseMuscleGroup: {
+    color: colors.primaryLight,
   },
 
   errorText: {

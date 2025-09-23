@@ -174,6 +174,7 @@ export const createStyles = (isDark = true) => {
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.xs,
     paddingHorizontal: Spacing.s,
+    
   },
 
   setNumber: {

@@ -16,7 +16,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import exercisesAPI from "../../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../../components/static/header";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { getColors } from "../../constants/colors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
@@ -57,14 +57,11 @@ const ExerciseItem = React.memo(
         onPress={() => onPress(item)}
       >
         <View style={styles.exerciseRow}>
-          <View style={styles.exerciseIconContainer}>
-            {isSelected ? (
-              <Ionicons
-                name="checkmark-circle"
-                size={28}
-                color={colors.primaryBlue}
-              />
-            ) : imagePath && !imageError ? (
+          <View style={[
+            styles.exerciseIconContainer,
+            isSelected && styles.selectedExerciseIconContainer
+          ]}>
+            {imagePath && !imageError ? (
               <Image
                 source={{ uri: `file://${imagePath}` }}
                 style={styles.exerciseImage}
@@ -78,10 +75,16 @@ const ExerciseItem = React.memo(
             <HighlightText
               text={item.name}
               highlight={searchText}
-              style={styles.exerciseName}
+              style={[
+                styles.exerciseName,
+                isSelected && styles.selectedExerciseName
+              ]}
               highlightStyle={styles.highlightedText}
             />
-            <Text style={styles.exerciseMuscleGroup}>
+            <Text style={[
+              styles.exerciseMuscleGroup,
+              isSelected && styles.selectedExerciseMuscleGroup
+            ]}>
               {item.muscle_group.charAt(0).toUpperCase() +
                 item.muscle_group.slice(1)}
             </Text>

@@ -13,7 +13,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { createStyles } from "../../styles/display.styles";
 import exercisesAPI from "../../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { mediaCache } from "../../API/local/MediaCache";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";

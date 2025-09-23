@@ -106,10 +106,12 @@ const stackScreens = {
     { name: "EditProfile", component: EditProfile, options: slideFromRightOptions },
     { name: "SettingsPage", component: SettingsPage, options: slideFromRightOptions },
     { name: "ViewExercises", component: ViewExercises, options: slideFromRightOptions },
+    { name: "ExerciseDetail", component: ExerciseDetail, options: slideFromRightOptions },
   ],
   workoutHistory: [
     { name: "WorkoutHistoryMain", component: WorkoutHistory },
     { name: "WorkoutDetail", component: WorkoutDetail, options: slideFromRightOptions },
+    { name: "ExerciseDetail", component: ExerciseDetail, options: slideFromRightOptions },
   ],
   start: [
     { name: "StartMain", component: startPage },

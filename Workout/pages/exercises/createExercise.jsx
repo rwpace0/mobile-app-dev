@@ -80,13 +80,7 @@ const CreateExercise = () => {
   useEffect(() => {
     if (isEditing && exerciseToEdit) {
       // Check if trying to edit a public exercise
-      if (exerciseToEdit.is_public) {
-        showWarning(
-          "Warning",
-          "You are editing a public exercise. This will make it visible to all users. Are you sure you want to continue?"
-        );
-        return;
-      }
+      
       
       setFormData({
         name: exerciseToEdit.name || "",

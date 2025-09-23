@@ -240,7 +240,7 @@ const ExerciseDetailPage = () => {
               {workout.sets && workout.sets.length > 0 ? (
                 workout.sets.map((set, index) => (
                   <View key={set.set_id} style={styles.setRow}>
-                    <Text style={styles.setNumber}>Set {set.set_order}</Text>
+                    <Text style={styles.setNumber}>{set.set_order}</Text>
                     <Text style={styles.setInfo}>
                       {weight.formatSet(set.weight, set.reps)} reps
                     </Text>
