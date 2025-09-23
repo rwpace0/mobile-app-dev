@@ -134,6 +134,69 @@ export const createStyles = (isDark = true) => {
     width: '100%',
   },
   
+  // Active Workout Modal Styles
+  activeWorkoutModalContent: {
+    backgroundColor: colors.backgroundPrimary,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.l,
+    width: '100%',
+    maxWidth: 320,
+    ...Shadow.large,
+  },
+  activeWorkoutModalText: {
+    color: colors.textPrimary,
+    fontSize: FontSize.medium,
+    textAlign: 'center',
+    marginBottom: Spacing.l,
+  },
+  activeWorkoutModalButtons: {
+    width: '100%',
+  },
+  activeWorkoutResumeButton: {
+    width: '100%',
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    backgroundColor: colors.primaryBlue,
+    marginBottom: Spacing.xs,
+  },
+  activeWorkoutResumeButtonText: {
+    color: colors.textWhite,
+    fontSize: FontSize.medium,
+    textAlign: 'center',
+    paddingVertical: Spacing.xs,
+  },
+  activeWorkoutStartNewButton: {
+    width: '100%',
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    backgroundColor: colors.backgroundCard,
+    borderWidth: 1,
+    borderColor: colors.accentRed,
+    marginBottom: Spacing.xs,
+  },
+  activeWorkoutStartNewButtonText: {
+    color: colors.accentRed,
+    fontSize: FontSize.medium,
+    textAlign: 'center',
+    paddingVertical: Spacing.xs,
+  },
+  activeWorkoutCancelButton: {
+    width: '100%',
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.m,
+    borderRadius: BorderRadius.md,
+    backgroundColor: colors.backgroundCard,
+    
+  },
+  activeWorkoutCancelButtonText: {
+    color: colors.textPrimary,
+    fontSize: FontSize.medium,
+    textAlign: 'center',
+    paddingVertical: Spacing.xs,
+  },
+  
   // Alert Modal Icon Container Variants
   alertIconContainer: {
     width: 64,

@@ -14,11 +14,13 @@ import { createStyles } from "../../styles/workoutHistory.styles";
 import { getColors } from "../../constants/colors";
 import { Spacing, FontSize } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
+import { useActiveWorkout } from "../../state/ActiveWorkoutContext";
 import workoutAPI from "../../API/workoutAPI";
 import templateAPI from "../../API/templateAPI";
 import exercisesAPI from "../../API/exercisesAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
+import ActiveWorkoutModal from "../../components/modals/ActiveWorkoutModal";
 
 const formatDate = (isoString) => {
   try {
@@ -50,6 +52,7 @@ const RoutineDetail = () => {
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const weight = useWeight();
+  const { activeWorkout, isWorkoutActive, endWorkout } = useActiveWorkout();
   const { template_id } = route.params || {};
   const [workout, setWorkout] = useState(null);
   const [template, setTemplate] = useState(null);
@@ -59,6 +62,8 @@ const RoutineDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showActiveWorkoutModal, setShowActiveWorkoutModal] = useState(false);
+  const [pendingWorkoutAction, setPendingWorkoutAction] = useState(null);
 
   const fetchRoutineDetails = useCallback(
     async (showLoading = true) => {
@@ -140,35 +145,83 @@ const RoutineDetail = () => {
       return;
     }
 
-    // Transform template exercises into the format expected by activeWorkout
-    const selectedExercises = template.exercises.map((exercise) => ({
-      exercise_id: exercise.exercise_id,
-      name: exercise.name,
-      muscle_group: exercise.muscle_group,
-      sets: Array(exercise.sets || 1)
-        .fill()
-        .map((_, idx) => ({
-          id: (idx + 1).toString(),
-          weight: "",
-          reps: "",
-          rir: "",
-          completed: false,
-        })),
-    }));
+    if (isWorkoutActive) {
+      setPendingWorkoutAction(() => () => {
+        // Transform template exercises into the format expected by activeWorkout
+        const selectedExercises = template.exercises.map((exercise) => ({
+          exercise_id: exercise.exercise_id,
+          name: exercise.name,
+          muscle_group: exercise.muscle_group,
+          sets: Array(exercise.sets || 1)
+            .fill()
+            .map((_, idx) => ({
+              id: (idx + 1).toString(),
+              weight: "",
+              reps: "",
+              rir: "",
+              completed: false,
+            })),
+        }));
 
-    // Navigate to activeWorkout with the exercises and template ID
-    navigation.navigate("activeWorkout", {
-      selectedExercises,
-      workoutName: template.name,
-      templateId: template_id, // Pass template ID to link workout to template
-    });
-  }, [navigation, template]);
+        // Navigate to activeWorkout with the exercises and template ID
+        navigation.navigate("activeWorkout", {
+          selectedExercises,
+          workoutName: template.name,
+          templateId: template_id, // Pass template ID to link workout to template
+        });
+      });
+      setShowActiveWorkoutModal(true);
+    } else {
+      // Transform template exercises into the format expected by activeWorkout
+      const selectedExercises = template.exercises.map((exercise) => ({
+        exercise_id: exercise.exercise_id,
+        name: exercise.name,
+        muscle_group: exercise.muscle_group,
+        sets: Array(exercise.sets || 1)
+          .fill()
+          .map((_, idx) => ({
+            id: (idx + 1).toString(),
+            weight: "",
+            reps: "",
+            rir: "",
+            completed: false,
+          })),
+      }));
+
+      // Navigate to activeWorkout with the exercises and template ID
+      navigation.navigate("activeWorkout", {
+        selectedExercises,
+        workoutName: template.name,
+        templateId: template_id, // Pass template ID to link workout to template
+      });
+    }
+  }, [navigation, template, isWorkoutActive, template_id]);
 
   const handleEditTemplate = useCallback(() => {
     navigation.navigate("EditTemplate", {
       template_id: template_id,
     });
   }, [navigation, template_id]);
+
+  const handleResumeWorkout = useCallback(() => {
+    navigation.navigate("activeWorkout");
+  }, [navigation]);
+
+  const handleStartNewWorkout = useCallback(() => {
+    // End the current active workout first
+    endWorkout();
+    
+    // Then execute the pending workout action (start new workout)
+    if (pendingWorkoutAction) {
+      pendingWorkoutAction();
+      setPendingWorkoutAction(null);
+    }
+  }, [pendingWorkoutAction, endWorkout]);
+
+  const handleCloseActiveWorkoutModal = useCallback(() => {
+    setShowActiveWorkoutModal(false);
+    setPendingWorkoutAction(null);
+  }, []);
 
   if (loading && !refreshing) {
     return (
@@ -419,6 +472,12 @@ const RoutineDetail = () => {
               );
             })}
       </ScrollView>
+      <ActiveWorkoutModal
+        visible={showActiveWorkoutModal}
+        onClose={handleCloseActiveWorkoutModal}
+        onResumeWorkout={handleResumeWorkout}
+        onStartNew={handleStartNewWorkout}
+      />
     </SafeAreaView>
   );
 };
