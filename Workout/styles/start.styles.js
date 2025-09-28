@@ -86,6 +86,7 @@ export const createStyles = (isDark = true) => {
     paddingVertical: Spacing.m,
     paddingHorizontal: Spacing.m,
     borderRadius: BorderRadius.md,
+    ...Shadow.medium,
   },
 
   newRoutineText: {

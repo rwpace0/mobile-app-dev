@@ -190,9 +190,11 @@ const Profile = ({ navigation }) => {
       case 'Exercises':
         navigation.navigate('ViewExercises');
         break;
+      case 'Calendar':
+        navigation.navigate('Calendar');
+        break;
       case 'Statistics':
       case 'Measures':
-      case 'Calendar':
         showInfo(
           'Coming Soon',
           `The ${screen} feature will be available in a future update!`

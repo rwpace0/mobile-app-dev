@@ -218,10 +218,21 @@ const WorkoutHistoryPage = () => {
     );
   }, [loadingMore]);
 
+  const handleCalendarPress = useCallback(() => {
+    navigation.navigate("Calendar");
+  }, [navigation]);
+
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header title="History" />
+        <Header 
+          title="History" 
+          rightComponent={{
+            type: 'icon',
+            icon: 'calendar-outline',
+            onPress: handleCalendarPress
+          }}
+        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primaryLight} />
         </View>
@@ -231,7 +242,14 @@ const WorkoutHistoryPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="History" />
+      <Header 
+        title="History" 
+        rightComponent={{
+          type: 'icon',
+          icon: 'calendar-outline',
+          onPress: handleCalendarPress
+        }}
+      />
 
       <FlatList
         data={workouts}

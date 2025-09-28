@@ -35,6 +35,7 @@ import ChangeEmail from "./pages/settings/account/changeEmail";
 import ChangePassword from "./pages/settings/account/changePassword";
 import EditProfile from "./pages/settings/editProfile";
 import RoutineDetail from "./pages/templates/routineDetail";
+import CalendarView from "./pages/workouts/calendarView";
 import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
 import { mediaAPI } from "./API/mediaAPI";
@@ -171,6 +172,10 @@ const modalScreens = [
   { name: "EditTemplate", component: EditRoutine },
   { name: "CreateExercise", component: CreateExercise },
   { name: "WorkoutSettings", component: SettingsPage },
+  { name: "Calendar", component: CalendarView },
+  { name: "WorkoutDetail", component: WorkoutDetail },
+  { name: "ExerciseDetail", component: ExerciseDetail },
+  { name: "editWorkout", component: editWorkout },
 ];
 
 // Main Stack Navigator
@@ -197,13 +202,6 @@ const MainStack = () => {
             options={modalOptions}
           />
         ))}
-        
-        {/* Special case screen */}
-        <Stack.Screen 
-          name="editWorkout" 
-          component={editWorkout} 
-          options={{ headerShown: false }}
-        />
       </Stack.Navigator>
       
       {activeWorkout && (
