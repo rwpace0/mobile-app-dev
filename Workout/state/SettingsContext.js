@@ -1,13 +1,19 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Appearance } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
+import { Appearance } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SettingsContext = createContext();
 
 export const useSettings = () => {
   const context = useContext(SettingsContext);
   if (!context) {
-    throw new Error('useSettings must be used within a SettingsProvider');
+    throw new Error("useSettings must be used within a SettingsProvider");
   }
   return context;
 };
@@ -26,34 +32,34 @@ export const useTheme = () => {
 
 const DEFAULT_SETTINGS = {
   // Theme settings (migrated from ThemeContext)
-  theme: 'system', // 'system', 'light', 'dark'
-  
+  theme: "system", // 'system', 'light', 'dark'
+
   // Workout settings
-  showPreviousPerformance: false,
-  autoRestTimer: false,
+  showPreviousPerformance: true,
+  autoRestTimer: true,
+  showRir: true,
   showWeightHistory: true,
-  countdownTimer: true,
-  
+
   // Account settings
   emailNotifications: false,
   workoutReminders: false,
   achievementAlerts: false,
-  
+
   // Privacy settings
   shareWorkouts: false,
   showProfile: true,
   allowComments: false,
-  
+
   // Units settings
-  weightUnit: 'lbs', // 'kg' or 'lbs'
-  distanceUnit: 'miles', // 'kilometers' or 'miles'
-  bodyMeasurementUnit: 'in', // 'cm' or 'in'
+  weightUnit: "lbs", // 'kg' or 'lbs'
+  distanceUnit: "miles", // 'kilometers' or 'miles'
+  bodyMeasurementUnit: "in", // 'cm' or 'in'
   use24Hour: true,
 };
 
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [actualTheme, setActualTheme] = useState('dark'); // the actual theme being used
+  const [actualTheme, setActualTheme] = useState("dark"); // the actual theme being used
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load saved settings on mount
@@ -64,8 +70,8 @@ export const SettingsProvider = ({ children }) => {
   // Listen to system theme changes
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      if (settings.theme === 'system') {
-        setActualTheme(colorScheme === 'light' ? 'light' : 'dark');
+      if (settings.theme === "system") {
+        setActualTheme(colorScheme === "light" ? "light" : "dark");
       }
     });
 
@@ -74,9 +80,9 @@ export const SettingsProvider = ({ children }) => {
 
   // Update actual theme when theme setting changes
   useEffect(() => {
-    if (settings.theme === 'system') {
+    if (settings.theme === "system") {
       const systemTheme = Appearance.getColorScheme();
-      setActualTheme(systemTheme === 'light' ? 'light' : 'dark');
+      setActualTheme(systemTheme === "light" ? "light" : "dark");
     } else {
       setActualTheme(settings.theme);
     }
@@ -84,14 +90,14 @@ export const SettingsProvider = ({ children }) => {
 
   const loadSavedSettings = async () => {
     try {
-      const savedSettings = await AsyncStorage.getItem('app_settings');
+      const savedSettings = await AsyncStorage.getItem("app_settings");
       if (savedSettings) {
         const parsedSettings = JSON.parse(savedSettings);
         // Merge with defaults to handle new settings
-        setSettings(prev => ({ ...prev, ...parsedSettings }));
+        setSettings((prev) => ({ ...prev, ...parsedSettings }));
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      console.error("Error loading settings:", error);
     } finally {
       setIsLoaded(true);
     }
@@ -100,67 +106,74 @@ export const SettingsProvider = ({ children }) => {
   const updateSetting = async (key, value) => {
     try {
       const newSettings = { ...settings, [key]: value };
-      await AsyncStorage.setItem('app_settings', JSON.stringify(newSettings));
+      await AsyncStorage.setItem("app_settings", JSON.stringify(newSettings));
       setSettings(newSettings);
     } catch (error) {
-      console.error('Error saving setting:', error);
+      console.error("Error saving setting:", error);
     }
   };
 
   const updateSettings = async (newSettings) => {
     try {
       const updatedSettings = { ...settings, ...newSettings };
-      await AsyncStorage.setItem('app_settings', JSON.stringify(updatedSettings));
+      await AsyncStorage.setItem(
+        "app_settings",
+        JSON.stringify(updatedSettings)
+      );
       setSettings(updatedSettings);
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error("Error saving settings:", error);
     }
   };
 
   // Backwards compatibility for theme functions
   const changeTheme = async (newTheme) => {
-    await updateSetting('theme', newTheme);
+    await updateSetting("theme", newTheme);
   };
 
-  const value = useMemo(() => ({
-    // Settings state
-    settings,
-    isLoaded,
-    
-    // Settings update functions
-    updateSetting,
-    updateSettings,
-    
-    // Theme-specific values for backwards compatibility
-    theme: settings.theme,
-    actualTheme,
-    changeTheme,
-    isLight: actualTheme === 'light',
-    isDark: actualTheme === 'dark',
-    
-    // Convenience getters for specific settings
-    showPreviousPerformance: settings.showPreviousPerformance,
-    autoRestTimer: settings.autoRestTimer,
-    showWeightHistory: settings.showWeightHistory,
-    countdownTimer: settings.countdownTimer,
-    emailNotifications: settings.emailNotifications,
-    workoutReminders: settings.workoutReminders,
-    achievementAlerts: settings.achievementAlerts,
-    shareWorkouts: settings.shareWorkouts,
-    showProfile: settings.showProfile,
-    allowComments: settings.allowComments,
-    weightUnit: settings.weightUnit,
-    distanceUnit: settings.distanceUnit,
-    bodyMeasurementUnit: settings.bodyMeasurementUnit,
-    use24Hour: settings.use24Hour,
-  }), [
-    settings,
-    isLoaded,
-    updateSetting,
-    updateSettings,
-    actualTheme,
-    changeTheme,
-  ]);
+  const value = useMemo(
+    () => ({
+      // Settings state
+      settings,
+      isLoaded,
+
+      // Settings update functions
+      updateSetting,
+      updateSettings,
+
+      // Theme-specific values for backwards compatibility
+      theme: settings.theme,
+      actualTheme,
+      changeTheme,
+      isLight: actualTheme === "light",
+      isDark: actualTheme === "dark",
+
+      // Convenience getters for specific settings
+      showPreviousPerformance: settings.showPreviousPerformance,
+      autoRestTimer: settings.autoRestTimer,
+      showRir: settings.showRir,
+      showWeightHistory: settings.showWeightHistory,
+
+      emailNotifications: settings.emailNotifications,
+      workoutReminders: settings.workoutReminders,
+      achievementAlerts: settings.achievementAlerts,
+      shareWorkouts: settings.shareWorkouts,
+      showProfile: settings.showProfile,
+      allowComments: settings.allowComments,
+      weightUnit: settings.weightUnit,
+      distanceUnit: settings.distanceUnit,
+      bodyMeasurementUnit: settings.bodyMeasurementUnit,
+      use24Hour: settings.use24Hour,
+    }),
+    [
+      settings,
+      isLoaded,
+      updateSetting,
+      updateSettings,
+      actualTheme,
+      changeTheme,
+    ]
+  );
 
   return (
     <SettingsContext.Provider value={value}>
@@ -172,4 +185,4 @@ export const SettingsProvider = ({ children }) => {
 // Backwards compatibility export
 export const ThemeProvider = SettingsProvider;
 
-export default SettingsContext; 
+export default SettingsContext;

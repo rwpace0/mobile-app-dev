@@ -150,19 +150,14 @@ const SettingDropdown = ({
   );
 };
 
-const ThemeSelector = ({
-  title,
-  value,
-  onSelect,
-  icon,
-}) => {
+const ThemeSelector = ({ title, value, onSelect, icon }) => {
   const [showThemeModal, setShowThemeModal] = useState(false);
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
 
   const themeOptions = ["system", "light", "dark"];
-  
+
   // Capitalize first letter for display
   const displayValue = value.charAt(0).toUpperCase() + value.slice(1);
 
@@ -251,14 +246,18 @@ const SegmentedControl = ({ title, value, options, onSelect }) => {
               key={option}
               style={[
                 styles.segmentedOption,
-                isActive ? styles.segmentedOptionActive : styles.segmentedOptionInactive,
+                isActive
+                  ? styles.segmentedOptionActive
+                  : styles.segmentedOptionInactive,
               ]}
               onPress={() => onSelect(option)}
             >
               <Text
                 style={[
                   styles.segmentedOptionText,
-                  isActive ? styles.segmentedOptionTextActive : styles.segmentedOptionTextInactive,
+                  isActive
+                    ? styles.segmentedOptionTextActive
+                    : styles.segmentedOptionTextInactive,
                 ]}
               >
                 {option}
@@ -270,8 +269,6 @@ const SegmentedControl = ({ title, value, options, onSelect }) => {
     </View>
   );
 };
-
-
 
 const SettingsPage = () => {
   const navigation = useNavigation();
@@ -295,7 +292,7 @@ const SettingsPage = () => {
     if (isFromActiveWorkout) {
       return {
         type: "down",
-        onPress: () => navigation.goBack()
+        onPress: () => navigation.goBack(),
       };
     }
     return { type: "back" };
@@ -319,10 +316,10 @@ const SettingsPage = () => {
               icon="timer-outline"
             />
             <SettingToggle
-              title="Countdown Timer"
-              value={settings.countdownTimer}
-              onValueChange={() => toggleSetting("countdownTimer")}
-              icon="time-outline"
+              title="Show RIR"
+              value={settings.showRir}
+              onValueChange={() => toggleSetting("showRir")}
+              icon="fitness-outline"
             />
           </>
         );
@@ -356,20 +353,20 @@ const SettingsPage = () => {
             <SegmentedControl
               title="Weight"
               value={settings.weightUnit}
-              options={['kg', 'lbs']}
-              onSelect={(value) => updateSetting('weightUnit', value)}
+              options={["kg", "lbs"]}
+              onSelect={(value) => updateSetting("weightUnit", value)}
             />
             <SegmentedControl
               title="Distance"
               value={settings.distanceUnit}
-              options={['kilometers', 'miles']}
-              onSelect={(value) => updateSetting('distanceUnit', value)}
+              options={["kilometers", "miles"]}
+              onSelect={(value) => updateSetting("distanceUnit", value)}
             />
             <SegmentedControl
               title="Body Measurements"
               value={settings.bodyMeasurementUnit}
-              options={['cm', 'in']}
-              onSelect={(value) => updateSetting('bodyMeasurementUnit', value)}
+              options={["cm", "in"]}
+              onSelect={(value) => updateSetting("bodyMeasurementUnit", value)}
             />
           </>
         );

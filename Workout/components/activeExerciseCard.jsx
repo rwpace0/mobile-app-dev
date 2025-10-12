@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SwipeListView } from "react-native-swipe-list-view";
@@ -16,7 +16,11 @@ import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
 import exercisesAPI from "../API/exercisesAPI";
 import { useWeight } from "../utils/useWeight";
-import { hapticLight } from "../utils/hapticFeedback";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSuccess,
+} from "../utils/hapticFeedback";
 
 const ActiveExerciseComponent = ({
   exercise,
@@ -26,14 +30,13 @@ const ActiveExerciseComponent = ({
   initialState,
   drag,
   isActive,
+  onTimerStart,
 }) => {
   const [sets, setSets] = useState(initialState?.sets || exercise.sets || []);
   const [notes, setNotes] = useState(initialState?.notes || "");
   const [restTime, setRestTime] = useState(150); // 2:30 default
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [remainingTime, setRemainingTime] = useState(0);
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const [previousPerformance, setPreviousPerformance] = useState(null);
   const [previousWorkoutSets, setPreviousWorkoutSets] = useState([]); // Store all sets from previous workout
@@ -41,19 +44,20 @@ const ActiveExerciseComponent = ({
   const [hasPrefilledData, setHasPrefilledData] = useState(
     !!initialState?.sets
   );
-  
+
   // Animation state
   const [contentHeight, setContentHeight] = useState(0);
   const [isContentMeasured, setIsContentMeasured] = useState(false);
   const animatedHeight = useSharedValue(300); // Start with reasonable default height
   const animatedOpacity = useSharedValue(1); // Start visible
   const [needsRemeasurement, setNeedsRemeasurement] = useState(false);
-  
+
   const { isDark } = useTheme();
-  const { showPreviousPerformance } = useSettings();
+  const { showPreviousPerformance, showRir } = useSettings();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const weight = useWeight();
+  const inputRefs = useRef({});
 
   // Update state when initialState prop changes (for restored workouts)
   useEffect(() => {
@@ -138,6 +142,7 @@ const ActiveExerciseComponent = ({
                     ? roundedWeight.toString()
                     : "",
                   reps: showPreviousPerformance ? prevSet.reps.toString() : "",
+                  rir: "",
                   total: showPreviousPerformance
                     ? Math.round(roundedWeight * prevSet.reps).toString()
                     : "",
@@ -174,6 +179,7 @@ const ActiveExerciseComponent = ({
               id: "1",
               weight: "",
               reps: "",
+              rir: "",
               total: "",
               completed: false,
             },
@@ -189,6 +195,7 @@ const ActiveExerciseComponent = ({
               id: "1",
               weight: "",
               reps: "",
+              rir: "",
               total: "",
               completed: false,
             },
@@ -215,27 +222,10 @@ const ActiveExerciseComponent = ({
       return acc;
     }, 0);
     onUpdateTotals(exercise.exercise_id, totalVolume, completedSets);
-    
+
     // Trigger remeasurement when sets change
     setNeedsRemeasurement(true);
   }, [sets]);
-
-  useEffect(() => {
-    let interval;
-    if (isTimerActive && remainingTime > 0 && restTime !== 0) {
-      interval = setInterval(() => {
-        setRemainingTime((prev) => {
-          if (prev <= 1) {
-            setIsTimerActive(false);
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerActive, remainingTime, restTime]);
 
   // Call onStateChange whenever sets or notes change
   useEffect(() => {
@@ -309,7 +299,22 @@ const ActiveExerciseComponent = ({
     );
   };
 
+  const handleRirChange = (id, value) => {
+    setSets((prev) =>
+      prev.map((set) => {
+        if (set.id === id) {
+          return {
+            ...set,
+            rir: value,
+          };
+        }
+        return set;
+      })
+    );
+  };
+
   const handleAddSet = () => {
+    hapticLight();
     const lastSet = sets.length > 0 ? sets[sets.length - 1] : null;
     const newSetId =
       sets.length > 0 && lastSet.id !== "W"
@@ -346,6 +351,7 @@ const ActiveExerciseComponent = ({
       id: newSetId,
       weight: defaultWeight,
       reps: defaultReps,
+      rir: "",
       total:
         defaultWeight && defaultReps
           ? Math.round(
@@ -358,19 +364,48 @@ const ActiveExerciseComponent = ({
   };
 
   const handleDeleteSet = (setId) => {
+    hapticMedium();
     setSets((prev) => prev.filter((set) => set.id !== setId));
   };
 
   const toggleSetCompletion = (index) => {
-    hapticLight();
+    // Check if any input in this set has focus
+    const currentSet = sets[index];
+    const hasKeyboardOpen =
+      inputRefs.current[currentSet.id]?.weight?.isFocused() ||
+      inputRefs.current[currentSet.id]?.reps?.isFocused() ||
+      inputRefs.current[currentSet.id]?.rir?.isFocused();
+
     setSets((prev) =>
       prev.map((set, idx) => {
         if (idx === index) {
           const newSet = { ...set, completed: !set.completed };
+
+          // Use success haptic when completing, light when uncompleting
+          if (newSet.completed && !set.completed) {
+            hapticSuccess();
+          } else {
+            hapticLight();
+          }
+
+          // If completing the set and keyboard was open, focus next set
+          if (newSet.completed && !set.completed && hasKeyboardOpen) {
+            // Find next incomplete set
+            setTimeout(() => {
+              const nextIncompleteIndex = prev.findIndex(
+                (s, i) => i > index && !s.completed
+              );
+              if (nextIncompleteIndex !== -1) {
+                const nextSet = prev[nextIncompleteIndex];
+                // Focus weight input of next set
+                inputRefs.current[nextSet.id]?.weight?.focus();
+              }
+            }, 100); // Small delay to ensure state updates
+          }
+
           // Start rest timer if set was completed and timer is not off
-          if (newSet.completed && !set.completed && restTime !== 0) {
-            setRemainingTime(restTime);
-            setIsTimerActive(true);
+          if (newSet.completed && !set.completed && onTimerStart) {
+            onTimerStart(restTime);
           }
           return newSet;
         }
@@ -380,9 +415,8 @@ const ActiveExerciseComponent = ({
   };
 
   const handleRestTimeSelect = (seconds) => {
+    hapticLight();
     setRestTime(seconds);
-    setIsTimerActive(false);
-    setRemainingTime(0);
   };
 
   // Measure collapsible content height
@@ -403,7 +437,7 @@ const ActiveExerciseComponent = ({
     return {
       height: animatedHeight.value,
       opacity: animatedOpacity.value,
-      overflow: 'hidden',
+      overflow: "hidden",
     };
   });
 
@@ -442,6 +476,10 @@ const ActiveExerciseComponent = ({
         )}
         <View style={styles.weightHeaderCell}>
           <TextInput
+            ref={(ref) => {
+              if (!inputRefs.current[set.id]) inputRefs.current[set.id] = {};
+              inputRefs.current[set.id].weight = ref;
+            }}
             style={styles.weightInput}
             value={set.weight}
             onChangeText={(value) => handleWeightChange(set.id, value)}
@@ -457,6 +495,10 @@ const ActiveExerciseComponent = ({
         </View>
         <View style={styles.repsHeaderCell}>
           <TextInput
+            ref={(ref) => {
+              if (inputRefs.current[set.id])
+                inputRefs.current[set.id].reps = ref;
+            }}
             style={styles.repsInput}
             value={set.reps}
             onChangeText={(value) => handleRepsChange(set.id, value)}
@@ -470,7 +512,24 @@ const ActiveExerciseComponent = ({
             selectTextOnFocus={true}
           />
         </View>
-        {!showPreviousPerformance && (
+        {showRir && (
+          <View style={styles.rirHeaderCell}>
+            <TextInput
+              ref={(ref) => {
+                if (inputRefs.current[set.id])
+                  inputRefs.current[set.id].rir = ref;
+              }}
+              style={styles.rirInput}
+              value={set.rir}
+              onChangeText={(value) => handleRirChange(set.id, value)}
+              keyboardType="numeric"
+              placeholder="0"
+              placeholderTextColor={colors.textSecondary}
+              selectTextOnFocus={true}
+            />
+          </View>
+        )}
+        {!showPreviousPerformance && !showRir && (
           <View style={styles.totalCell}>
             <Text style={styles.setCell}>{set.total}</Text>
           </View>
@@ -505,22 +564,21 @@ const ActiveExerciseComponent = ({
   );
 
   return (
-    <View style={[
-      styles.container,
-      isActive && { opacity: 0.8, transform: [{ scale: 1.02 }] }
-    ]}>
+    <View
+      style={[
+        styles.container,
+        isActive && { opacity: 0.8, transform: [{ scale: 1.02 }] },
+      ]}
+    >
       {/* Always visible header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={{ flex: 1 }}
           onLongPress={drag}
           disabled={!drag}
           activeOpacity={0.8}
         >
-          <Text style={[
-            styles.exerciseName,
-            isActive && { opacity: 0.5 }
-          ]}>
+          <Text style={[styles.exerciseName, isActive && { opacity: 0.5 }]}>
             {exerciseDetails?.name || ""}
           </Text>
         </TouchableOpacity>
@@ -556,24 +614,15 @@ const ActiveExerciseComponent = ({
             <Ionicons
               name="time-outline"
               size={20}
-              color={
-                restTime === 0
-                  ? colors.textFaded
-                  : isTimerActive
-                  ? colors.accentGreen
-                  : colors.primaryBlue
-              }
+              color={restTime === 0 ? colors.textFaded : colors.primaryBlue}
             />
             <Text
               style={[
                 styles.restTimerText,
                 restTime === 0 && styles.timerOffText,
-                isTimerActive && styles.activeTimerText,
               ]}
             >
-              {isTimerActive
-                ? `Rest Timer: ${formatTime(remainingTime)}`
-                : `Rest Timer: ${formatTime(restTime)}`}
+              {`Rest Timer: ${formatTime(restTime)}`}
             </Text>
           </TouchableOpacity>
 
@@ -581,7 +630,9 @@ const ActiveExerciseComponent = ({
           <View style={styles.setsContainer}>
             {/* Header Row */}
             <View style={styles.setHeaderRow}>
-              <Text style={[styles.setHeaderCell, styles.setNumberCell]}>SET</Text>
+              <Text style={[styles.setHeaderCell, styles.setNumberCell]}>
+                SET
+              </Text>
               {showPreviousPerformance && (
                 <Text style={[styles.setHeaderCell, styles.previousCell]}>
                   PREVIOUS
@@ -593,8 +644,15 @@ const ActiveExerciseComponent = ({
               <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>
                 REPS
               </Text>
-              {!showPreviousPerformance && (
-                <Text style={[styles.setHeaderCell, styles.totalCell]}>TOTAL</Text>
+              {showRir && (
+                <Text style={[styles.setHeaderCell, styles.rirHeaderCell]}>
+                  RIR
+                </Text>
+              )}
+              {!showPreviousPerformance && !showRir && (
+                <Text style={[styles.setHeaderCell, styles.totalCell]}>
+                  TOTAL
+                </Text>
               )}
               <Text style={[styles.setHeaderCell, styles.completedCell]}></Text>
             </View>

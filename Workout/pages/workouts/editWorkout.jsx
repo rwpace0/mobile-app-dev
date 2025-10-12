@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   TextInput,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -249,7 +250,12 @@ const EditWorkoutPage = () => {
         }}
       />
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 300 }}
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={() => Keyboard.dismiss()}
+      >
         {/* Workout Name Input */}
         <View style={styles.nameInputContainer}>
           <Text style={styles.nameInputLabel}>Workout Name</Text>
@@ -304,13 +310,27 @@ const EditWorkoutPage = () => {
             </TouchableOpacity>
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.settingsButton} onPress={() => {}}>
-                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => {}}
+              >
+                <Ionicons
+                  name="settings-outline"
+                  size={20}
+                  color={colors.textPrimary}
+                />
                 <Text style={styles.settingsText}>Settings</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+              <TouchableOpacity
+                style={styles.discardButton}
+                onPress={handleDiscard}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color={colors.accentRed}
+                />
                 <Text style={styles.discardText}>Discard</Text>
               </TouchableOpacity>
             </View>
@@ -341,13 +361,27 @@ const EditWorkoutPage = () => {
             </TouchableOpacity>
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.settingsButton} onPress={() => {}}>
-                <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => {}}
+              >
+                <Ionicons
+                  name="settings-outline"
+                  size={20}
+                  color={colors.textPrimary}
+                />
                 <Text style={styles.settingsText}>Settings</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
-                <Ionicons name="trash-outline" size={20} color={colors.accentRed} />
+              <TouchableOpacity
+                style={styles.discardButton}
+                onPress={handleDiscard}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color={colors.accentRed}
+                />
                 <Text style={styles.discardText}>Discard</Text>
               </TouchableOpacity>
             </View>
