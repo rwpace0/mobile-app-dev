@@ -3,8 +3,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createNavigationContainerRef } from "@react-navigation/native";
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as Linking from 'expo-linking';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as Linking from "expo-linking";
 import { AuthProvider, useAuth } from "./API/auth/authContext";
 import { SettingsProvider } from "./state/SettingsContext";
 import { ActiveWorkoutProvider } from "./state/ActiveWorkoutContext";
@@ -46,35 +46,36 @@ const Stack = createNativeStackNavigator();
 // Create navigation reference for global navigation
 const navigationRef = createNavigationContainerRef();
 
+const IP = "192.168.1.85";
 // Deep linking configuration
 const linking = {
   prefixes: [
-    'workout://',
-    'exp://192.168.1.155:8081', // Development URL
-    'https://192.168.1.155:8081', // Alternative development URL
+    "workout://",
+    `exp://${IP}:8081`, // Development URL
+    `https://${IP}:8081`, // Alternative development URL
   ],
   config: {
     screens: {
       // Auth screens - accessible globally for deep links
       Auth: {
         screens: {
-          Welcome: 'auth/welcome',
-          Login: 'auth/login',
-          SignUp: 'auth/signup',
+          Welcome: "auth/welcome",
+          Login: "auth/login",
+          SignUp: "auth/signup",
         },
       },
       // Email verification screen
-      EmailVerification: 'auth/verify-email',
+      EmailVerification: "auth/verify-email",
       // Reset password as modal (accessible from any state)
-      ResetPassword: 'auth/reset-password',
+      ResetPassword: "auth/reset-password",
       // Main app screens
       Main: {
         screens: {
           Tabs: {
             screens: {
-              Start: 'start',
-              WorkoutHistory: 'history',
-              Profile: 'profile',
+              Start: "start",
+              WorkoutHistory: "history",
+              Profile: "profile",
             },
           },
         },
@@ -85,7 +86,7 @@ const linking = {
 
 // Common screen options for slide animations
 const slideFromRightOptions = {
-  animation: 'slide_from_right',
+  animation: "slide_from_right",
   headerShown: false,
 };
 
@@ -100,41 +101,94 @@ const stackScreens = {
   profile: [
     { name: "ProfileMain", component: Profile },
     { name: "Settings", component: Settings, options: slideFromRightOptions },
-    { name: "AccountSettings", component: AccountSettings, options: slideFromRightOptions },
-    { name: "ChangeUsername", component: ChangeUsername, options: slideFromRightOptions },
-    { name: "ChangeEmail", component: ChangeEmail, options: slideFromRightOptions },
-    { name: "ChangePassword", component: ChangePassword, options: slideFromRightOptions },
-    { name: "EditProfile", component: EditProfile, options: slideFromRightOptions },
-    { name: "SettingsPage", component: SettingsPage, options: slideFromRightOptions },
-    { name: "ViewExercises", component: ViewExercises, options: slideFromRightOptions },
-    { name: "ExerciseDetail", component: ExerciseDetail, options: slideFromRightOptions },
+    {
+      name: "AccountSettings",
+      component: AccountSettings,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "ChangeUsername",
+      component: ChangeUsername,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "ChangeEmail",
+      component: ChangeEmail,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "ChangePassword",
+      component: ChangePassword,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "EditProfile",
+      component: EditProfile,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "SettingsPage",
+      component: SettingsPage,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "ViewExercises",
+      component: ViewExercises,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "ExerciseDetail",
+      component: ExerciseDetail,
+      options: slideFromRightOptions,
+    },
   ],
   workoutHistory: [
     { name: "WorkoutHistoryMain", component: WorkoutHistory },
-    { name: "WorkoutDetail", component: WorkoutDetail, options: slideFromRightOptions },
-    { name: "ExerciseDetail", component: ExerciseDetail, options: slideFromRightOptions },
+    {
+      name: "WorkoutDetail",
+      component: WorkoutDetail,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "ExerciseDetail",
+      component: ExerciseDetail,
+      options: slideFromRightOptions,
+    },
   ],
   start: [
     { name: "StartMain", component: startPage },
-    { name: "ExerciseDetail", component: ExerciseDetail, options: slideFromRightOptions },
-    { name: "ViewExercises", component: ViewExercises, options: slideFromRightOptions },
-    { name: "RoutineDetail", component: RoutineDetail, options: slideFromRightOptions },
-  ]
+    {
+      name: "ExerciseDetail",
+      component: ExerciseDetail,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "ViewExercises",
+      component: ViewExercises,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "RoutineDetail",
+      component: RoutineDetail,
+      options: slideFromRightOptions,
+    },
+  ],
 };
 
 // Generic stack creator - reduces code duplication
-const createStackNavigator = (screens) => () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    {screens.map(({ name, component, options = {} }) => (
-      <Stack.Screen 
-        key={name}
-        name={name} 
-        component={component}
-        options={options}
-      />
-    ))}
-  </Stack.Navigator>
-);
+const createStackNavigator = (screens) => () =>
+  (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {screens.map(({ name, component, options = {} }) => (
+        <Stack.Screen
+          key={name}
+          name={name}
+          component={component}
+          options={options}
+        />
+      ))}
+    </Stack.Navigator>
+  );
 
 // Create stack navigators using the generic creator
 const ProfileStack = createStackNavigator(stackScreens.profile);
@@ -184,7 +238,7 @@ const MainStack = () => {
 
   const handleResumeWorkout = React.useCallback(() => {
     if (navigationRef.isReady()) {
-      navigationRef.navigate('activeWorkout');
+      navigationRef.navigate("activeWorkout");
     }
   }, []);
 
@@ -192,7 +246,7 @@ const MainStack = () => {
     <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={TabNavigator} />
-        
+
         {/* Modal screens */}
         {modalScreens.map(({ name, component }) => (
           <Stack.Screen
@@ -203,12 +257,15 @@ const MainStack = () => {
           />
         ))}
       </Stack.Navigator>
-      
+
       {activeWorkout && (
         <ActiveMini
           visible={true}
           onResume={handleResumeWorkout}
-          workoutName={activeWorkout.name || `Workout on ${new Date().toLocaleDateString()}`}
+          workoutName={
+            activeWorkout.name ||
+            `Workout on ${new Date().toLocaleDateString()}`
+          }
           duration={activeWorkout.duration || 0}
         />
       )}
@@ -238,79 +295,97 @@ const RootNavigator = React.memo(() => {
       handleURL(url);
     };
 
-    const subscription = Linking.addEventListener('url', handleDeepLink);
+    const subscription = Linking.addEventListener("url", handleDeepLink);
     return () => subscription?.remove();
   }, []);
 
   // Helper function to parse URL fragments (after #)
   const parseURLFragments = React.useCallback((url) => {
-    const fragmentIndex = url.indexOf('#');
+    const fragmentIndex = url.indexOf("#");
     if (fragmentIndex === -1) return {};
-    
+
     const fragment = url.substring(fragmentIndex + 1);
     const params = {};
-    
-    fragment.split('&').forEach(pair => {
-      const [key, value] = pair.split('=');
+
+    fragment.split("&").forEach((pair) => {
+      const [key, value] = pair.split("=");
       if (key && value) {
         params[decodeURIComponent(key)] = decodeURIComponent(value);
       }
     });
-    
+
     return params;
   }, []);
 
   // Parse and handle URL navigation
-  const handleURL = React.useCallback((url) => {
-    if (!navigationRef.isReady()) return;
+  const handleURL = React.useCallback(
+    (url) => {
+      if (!navigationRef.isReady()) return;
 
-    const parsedURL = Linking.parse(url);
+      const parsedURL = Linking.parse(url);
 
-    // Parse both query params and URL fragments
-    const queryParams = parsedURL.queryParams || {};
-    const fragmentParams = parseURLFragments(url);
-    const allParams = { ...queryParams, ...fragmentParams };
+      // Parse both query params and URL fragments
+      const queryParams = parsedURL.queryParams || {};
+      const fragmentParams = parseURLFragments(url);
+      const allParams = { ...queryParams, ...fragmentParams };
 
-    // Only handle URLs that have valid paths - avoid processing empty/invalid URLs
-    if (!parsedURL.path || parsedURL.path === '/') {
-      return;
-    }
+      // Only handle URLs that have valid paths - avoid processing empty/invalid URLs
+      if (!parsedURL.path || parsedURL.path === "/") {
+        return;
+      }
 
-    // Handle password reset links
-    if (parsedURL.path === 'auth/reset-password' || parsedURL.path === '/--/auth/reset-password') {
-      const { access_token, refresh_token, expires_in, expires_at, type, token_hash, token } = allParams;
-      
-      // Only navigate if we have the required parameters
-      if (access_token && refresh_token && type === 'recovery') {
-        const params = {
+      // Handle password reset links
+      if (
+        parsedURL.path === "auth/reset-password" ||
+        parsedURL.path === "/--/auth/reset-password"
+      ) {
+        const {
           access_token,
-          refresh_token, 
-          expires_in: expires_in || expires_at, // Supabase may use expires_at instead
+          refresh_token,
+          expires_in,
+          expires_at,
           type,
-          token_hash: token_hash || token || access_token
-        };
-        
-        navigationRef.navigate('ResetPassword', params);
-      }
-      return;
-    }
+          token_hash,
+          token,
+        } = allParams;
 
-    // Handle email verification links
-    if (parsedURL.path === 'auth/verify-email' || parsedURL.path === 'auth/welcome' || parsedURL.path === '/--/auth/welcome') {
-      const { token_hash, type, token } = allParams;
-      
-      // Only navigate if we have the required parameters
-      if ((token_hash || token) && type) {
-        const params = {
-          token_hash: token_hash || token,
-          type
-        };
-        
-        navigationRef.navigate('EmailVerification', params);
+        // Only navigate if we have the required parameters
+        if (access_token && refresh_token && type === "recovery") {
+          const params = {
+            access_token,
+            refresh_token,
+            expires_in: expires_in || expires_at, // Supabase may use expires_at instead
+            type,
+            token_hash: token_hash || token || access_token,
+          };
+
+          navigationRef.navigate("ResetPassword", params);
+        }
+        return;
       }
-      return;
-    }
-  }, [parseURLFragments]);
+
+      // Handle email verification links
+      if (
+        parsedURL.path === "auth/verify-email" ||
+        parsedURL.path === "auth/welcome" ||
+        parsedURL.path === "/--/auth/welcome"
+      ) {
+        const { token_hash, type, token } = allParams;
+
+        // Only navigate if we have the required parameters
+        if ((token_hash || token) && type) {
+          const params = {
+            token_hash: token_hash || token,
+            type,
+          };
+
+          navigationRef.navigate("EmailVerification", params);
+        }
+        return;
+      }
+    },
+    [parseURLFragments]
+  );
 
   // Handle initial URL when navigation is ready
   React.useEffect(() => {
@@ -327,7 +402,7 @@ const RootNavigator = React.memo(() => {
         try {
           await mediaAPI.cleanupOldFiles();
         } catch (error) {
-          console.error('Failed to cleanup old files:', error);
+          console.error("Failed to cleanup old files:", error);
         }
       };
 
@@ -346,18 +421,21 @@ const RootNavigator = React.memo(() => {
         user.isAuthenticated ? (
           <Stack.Screen name="Main" component={MainStack} />
         ) : (
-          <Stack.Screen name="EmailVerification" component={EmailVerification} />
+          <Stack.Screen
+            name="EmailVerification"
+            component={EmailVerification}
+          />
         )
       ) : (
         <Stack.Screen name="Auth" component={AuthStack} />
       )}
-      
+
       {/* Include ResetPassword as a modal that can be accessed from any state */}
-      <Stack.Screen 
-        name="ResetPassword" 
+      <Stack.Screen
+        name="ResetPassword"
         component={ResetPassword}
         options={{
-          presentation: 'modal',
+          presentation: "modal",
           headerShown: false,
         }}
       />
@@ -367,7 +445,7 @@ const RootNavigator = React.memo(() => {
 
 export default function App() {
   return (
-    <GestureHandlerRootView >
+    <GestureHandlerRootView>
       <SettingsProvider>
         <AuthProvider>
           <ActiveWorkoutProvider>
