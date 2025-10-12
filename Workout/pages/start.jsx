@@ -286,14 +286,23 @@ const WorkoutStartPage = () => {
     navigation.navigate("activeWorkout");
   }, [navigation]);
 
-  const handleStartNewWorkout = useCallback(() => {
-    // End the current active workout first
-    endWorkout();
-    
-    // Then execute the pending workout action (start new workout)
-    if (pendingWorkoutAction) {
-      pendingWorkoutAction();
-      setPendingWorkoutAction(null);
+  const handleStartNewWorkout = useCallback(async () => {
+    try {
+      // End the current active workout first and wait for it to complete
+      await endWorkout();
+
+      // Then execute the pending workout action (start new workout)
+      if (pendingWorkoutAction) {
+        pendingWorkoutAction();
+        setPendingWorkoutAction(null);
+      }
+    } catch (error) {
+      console.error("Failed to end workout before starting new one:", error);
+      // Still proceed with the new workout even if cleanup fails
+      if (pendingWorkoutAction) {
+        pendingWorkoutAction();
+        setPendingWorkoutAction(null);
+      }
     }
   }, [pendingWorkoutAction, endWorkout]);
 
