@@ -1,24 +1,24 @@
-import axios from 'axios';
-import { storage } from './local/tokenStorage';
-import { tokenManager } from './utils/tokenManager';
-import getBaseUrl from './utils/getBaseUrl';
-import { dbManager } from './local/dbManager';
+import axios from "axios";
+import { storage } from "./local/tokenStorage";
+import { tokenManager } from "./utils/tokenManager";
+import getBaseUrl from "./utils/getBaseUrl";
+import { dbManager } from "./local/dbManager";
 
 const API_URL = `${getBaseUrl()}/profile`;
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Add token to requests if it exists
 api.interceptors.request.use(async (config) => {
-      const accessToken = await tokenManager.getValidToken();
-      if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
+  const accessToken = await tokenManager.getValidToken();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
   return config;
 });
 
@@ -32,66 +32,88 @@ export const profileAPI = {
     try {
       // Check if we have valid cached data
       const now = Date.now();
-      if (!forceRefresh && profileCache && (now - lastFetchTime) < CACHE_DURATION) {
+      if (
+        !forceRefresh &&
+        profileCache &&
+        now - lastFetchTime < CACHE_DURATION
+      ) {
         return profileCache;
       }
 
-      // Check local database first
+      // Check local database first - OFFLINE FIRST APPROACH
+      // Only fetch from server if local DB is completely empty
       try {
         if (userId) {
           const localProfile = await dbManager.query(
-            'SELECT display_name, username, avatar_url, sync_status FROM profiles WHERE user_id = ?',
+            "SELECT display_name, username, avatar_url, sync_status FROM profiles WHERE user_id = ?",
             [userId]
           );
-          
+
           if (localProfile && localProfile.length > 0) {
             const profile = localProfile[0];
-            // If local data is synced and recent, use it
-            if (profile.sync_status === 'synced' && !forceRefresh) {
+            // ALWAYS use local data if it exists, regardless of sync_status (unless forceRefresh)
+            if (!forceRefresh) {
               profileCache = {
-                display_name: profile.display_name || '',
+                display_name: profile.display_name || "",
                 username: profile.username || null,
-                avatar_url: profile.avatar_url || null
+                avatar_url: profile.avatar_url || null,
               };
               lastFetchTime = now;
+              console.log("[ProfileAPI] Using local database (offline-first)");
               return profileCache;
             }
           }
         }
       } catch (localError) {
-        // Local profile check failed, will fetch from server
+        console.log(
+          "[ProfileAPI] Local profile check failed, will fetch from server:",
+          localError
+        );
       }
 
-      // Fetch from server
-      const response = await api.get('/');
+      // Only fetch from server if:
+      // 1. No local data exists, OR
+      // 2. forceRefresh is explicitly true
+      console.log(
+        "[ProfileAPI] Fetching from server (no local data or forceRefresh)"
+      );
+      const response = await api.get("/");
       const profileData = response.data;
-      
+
       // Cache the result
       profileCache = profileData;
       lastFetchTime = now;
-      
+
       // Update local database
       try {
         if (userId) {
           await dbManager.execute(
             `INSERT OR REPLACE INTO profiles (user_id, display_name, username, avatar_url, sync_status, updated_at) 
              VALUES (?, ?, ?, ?, 'synced', datetime('now'))`,
-            [userId, profileData.display_name || '', profileData.username || null, profileData.avatar_url || null]
+            [
+              userId,
+              profileData.display_name || "",
+              profileData.username || null,
+              profileData.avatar_url || null,
+            ]
           );
         }
       } catch (updateError) {
         // Failed to update local profile
       }
-      
+
       return profileData;
     } catch (error) {
-      console.error('Get profile error:', error.response?.data || error.message);
-      
+      console.error(
+        "Get profile error:",
+        error.response?.data || error.message
+      );
+
       // If server request fails, try to return cached data
       if (profileCache) {
         return profileCache;
       }
-      
+
       throw error.response?.data || error;
     }
   },
@@ -100,30 +122,38 @@ export const profileAPI = {
     try {
       // Only send display_name field
       const data = {
-        display_name: profileData.display_name || ''
+        display_name: profileData.display_name || "",
       };
-      const response = await api.put('/', data);
-      
+      const response = await api.put("/", data);
+
       // Update local cache and database
       if (profileCache) {
         profileCache = { ...profileCache, ...data };
       }
-      
+
       try {
         if (userId) {
           await dbManager.execute(
             `INSERT OR REPLACE INTO profiles (user_id, display_name, username, avatar_url, sync_status, updated_at) 
              VALUES (?, ?, ?, ?, 'synced', datetime('now'))`,
-            [userId, data.display_name, profileCache?.username || null, profileCache?.avatar_url || null]
+            [
+              userId,
+              data.display_name,
+              profileCache?.username || null,
+              profileCache?.avatar_url || null,
+            ]
           );
         }
       } catch (updateError) {
         // Failed to update local profile
       }
-      
+
       return response.data;
     } catch (error) {
-      console.error('Update profile error:', error.response?.data || error.message);
+      console.error(
+        "Update profile error:",
+        error.response?.data || error.message
+      );
       throw error.response?.data || error;
     }
   },
@@ -137,5 +167,5 @@ export const profileAPI = {
   // Get cached profile data without making API calls
   getCachedProfile: () => {
     return profileCache;
-  }
-}; 
+  },
+};

@@ -1,8 +1,8 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authAPI } from './authAPI';
-import getBaseUrl from '../utils/getBaseUrl';
-import { storage } from '../local/tokenStorage';
-import { tokenManager } from '../utils/tokenManager';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { authAPI } from "./authAPI";
+import getBaseUrl from "../utils/getBaseUrl";
+import { storage } from "../local/tokenStorage";
+import { tokenManager } from "../utils/tokenManager";
 
 const AuthContext = createContext(null);
 
@@ -14,26 +14,37 @@ const downloadUserAvatarOnce = async (userId) => {
   if (avatarDownloadInProgress) {
     return;
   }
-  
+
   avatarDownloadInProgress = true;
-  
+
   try {
-    const { profileAPI } = await import('../profileAPI');
-    const { mediaCache } = await import('../local/MediaCache');
-    
-    // Try to get cached profile data first
-    let profileData = profileAPI.getCachedProfile();
-    
-    // If no cached data, fetch it once and cache it
-    if (!profileData) {
-      profileData = await profileAPI.getProfile(false, userId);
+    const { mediaCache } = await import("../local/MediaCache");
+
+    // Check if avatar already exists locally first
+    const existingAvatar = await mediaCache.getProfileAvatar(userId);
+    if (existingAvatar) {
+      console.log(
+        "[AuthContext] Avatar already cached locally, skipping download"
+      );
+      return;
     }
-    
-    if (profileData?.avatar_url) {
-      await mediaCache.downloadUserAvatarIfNeeded(userId, profileData.avatar_url);
+
+    // Check local database for profile data (avoid API call)
+    const localProfile = await mediaCache.getLocalProfile(userId);
+
+    if (localProfile?.avatar_url) {
+      console.log("[AuthContext] Downloading avatar from URL in local DB");
+      await mediaCache.downloadUserAvatarIfNeeded(
+        userId,
+        localProfile.avatar_url
+      );
+    } else {
+      console.log(
+        "[AuthContext] No avatar URL found in local DB, skipping download"
+      );
     }
   } catch (error) {
-    console.error('[AuthContext] Failed to download user avatar:', error);
+    console.error("[AuthContext] Failed to download user avatar:", error);
     // Don't throw error - avatar download is not critical
   } finally {
     // Reset the flag after a short delay to allow for proper completion
@@ -57,165 +68,179 @@ export const AuthProvider = ({ children }) => {
     try {
       // First, check if we have any tokens at all
       const { accessToken, refreshToken } = await storage.getTokens();
-      
+
       if (!accessToken && !refreshToken) {
-        console.log('No tokens found, user is not authenticated');
+        console.log("[AuthContext] No tokens found, user is not authenticated");
         setUser(null);
         setLoading(false);
         return;
       }
 
-      // Check if current token is expired
-      const isExpired = await storage.isTokenExpired();
-      
-      if (isExpired && !refreshToken) {
-        console.log('Token expired and no refresh token available');
-        await tokenManager.clearTokens();
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      // Get valid token (this will refresh if needed using local refresh token)
-      const validToken = await tokenManager.getValidToken();
-      if (!validToken) {
-        console.log('No valid token available after refresh attempt');
-        // Try to validate refresh token on server and get fresh tokens
-        if (refreshToken) {
-          try {
-            console.log('Attempting server-side refresh token validation');
-            const response = await fetch(`${getBaseUrl()}/auth/refresh`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ refresh_token: refreshToken })
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              if (data.session?.access_token) {
-                // Store new tokens
-                await storage.setTokens(
-                  data.session.access_token,
-                  data.session.refresh_token,
-                  data.session.expires_in
-                );
-                
-                // Get user data with new token
-                const userResponse = await fetch(`${getBaseUrl()}/auth/me`, {
-                  headers: {
-                    'Authorization': `Bearer ${data.session.access_token}`
-                  }
-                });
-                
-                if (userResponse.ok) {
-                  const userData = await userResponse.json();
-                  await storage.setItem('cached_user_data', JSON.stringify(userData));
-                  
-                  if (userData.email_confirmed_at) {
-                    setUser({
-                      ...userData,
-                      isAuthenticated: true
-                    });
-                    
-                    // Download user's avatar in the background after authentication
-                    setTimeout(() => downloadUserAvatarOnce(userData.id), 2000);
-                  } else {
-                    setUser({
-                      ...userData,
-                      isAuthenticated: false
-                    });
-                  }
-                  setLoading(false);
-                  return;
-                }
-              }
-            }
-          } catch (serverError) {
-            console.error('Server-side refresh validation failed:', serverError);
-          }
-        }
-        
-        // If we get here, refresh token is invalid or server validation failed
-        await tokenManager.clearTokens();
-        await storage.removeItem('cached_user_data');
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      // Check if we have cached user data
-      const cachedUserData = await storage.getItem('cached_user_data');
-      if (cachedUserData) {
+      // Check if we have cached user data - OFFLINE FIRST
+      // Use cached data immediately if available and token exists
+      const cachedUserData = await storage.getItem("cached_user_data");
+      if (cachedUserData && accessToken) {
         try {
           const userData = JSON.parse(cachedUserData);
-          console.log('Using cached user data - no server call needed');
-          setUser({
-            ...userData,
-            isAuthenticated: !!userData.email_confirmed_at
-          });
-          
-          // Download user's avatar in the background if authenticated
-          if (userData.email_confirmed_at) {
-            setTimeout(() => downloadUserAvatarOnce(userData.id), 1500);
+
+          // Check if token is expired
+          const isExpired = await storage.isTokenExpired();
+
+          if (!isExpired) {
+            // Token is still valid, use cached data immediately
+            console.log(
+              "[AuthContext] Using cached user data with valid token (offline-first)"
+            );
+            setUser({
+              ...userData,
+              isAuthenticated: !!userData.email_confirmed_at,
+            });
+
+            // Check if avatar download is needed (but don't fetch profile from server)
+            if (userData.email_confirmed_at) {
+              setTimeout(() => downloadUserAvatarOnce(userData.id), 1500);
+            }
+
+            setLoading(false);
+            return;
+          } else if (refreshToken) {
+            // Token expired but we have refresh token - refresh silently
+            console.log(
+              "[AuthContext] Token expired, refreshing with refresh token"
+            );
+            try {
+              const newAccessToken = await tokenManager.refreshAccessToken(
+                refreshToken
+              );
+              if (newAccessToken) {
+                // Successfully refreshed, use cached user data
+                console.log(
+                  "[AuthContext] Token refreshed successfully, using cached user data"
+                );
+                setUser({
+                  ...userData,
+                  isAuthenticated: !!userData.email_confirmed_at,
+                });
+
+                if (userData.email_confirmed_at) {
+                  setTimeout(() => downloadUserAvatarOnce(userData.id), 1500);
+                }
+
+                setLoading(false);
+                return;
+              }
+            } catch (refreshError) {
+              console.log(
+                "[AuthContext] Token refresh failed, will clear cache"
+              );
+              // Continue to clear tokens below
+            }
           }
-          
+
+          // If we get here, token refresh failed
+          console.log(
+            "[AuthContext] Token refresh failed or no refresh token, clearing cache"
+          );
+          await tokenManager.clearTokens();
+          await storage.removeItem("cached_user_data");
+          setUser(null);
           setLoading(false);
           return;
         } catch (error) {
-          console.log('Failed to parse cached user data, will fetch fresh data');
+          console.log("[AuthContext] Failed to parse cached user data:", error);
+          // Continue to fetch from server
         }
       }
 
-      // Only make server call if we don't have cached user data
+      // No cached user data - need to authenticate with server
       // This should only happen on first login or after cache is cleared
-      // console.log('No cached user data, making server call to get user info');
+      console.log(
+        "[AuthContext] No cached user data, authenticating with server"
+      );
+
+      // Check if token is expired
+      const isExpired = await storage.isTokenExpired();
+
+      if (isExpired && !refreshToken) {
+        console.log(
+          "[AuthContext] Token expired and no refresh token available"
+        );
+        await tokenManager.clearTokens();
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Get valid token (this will refresh if needed)
+      let validToken = accessToken;
+      if (isExpired && refreshToken) {
+        try {
+          validToken = await tokenManager.refreshAccessToken(refreshToken);
+        } catch (error) {
+          console.log("[AuthContext] Failed to refresh token");
+          await tokenManager.clearTokens();
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (!validToken) {
+        console.log("[AuthContext] No valid token available");
+        await tokenManager.clearTokens();
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch user data from server (only when no cached data exists)
       try {
         const response = await fetch(`${getBaseUrl()}/auth/me`, {
           headers: {
-            'Authorization': `Bearer ${validToken}`
-          }
+            Authorization: `Bearer ${validToken}`,
+          },
         });
-        
+
         if (response.ok) {
           const userData = await response.json();
-          
+
           // Cache the user data permanently (until logout or token invalidation)
-          await storage.setItem('cached_user_data', JSON.stringify(userData));
-          
+          await storage.setItem("cached_user_data", JSON.stringify(userData));
+
           // Only set user as authenticated if email is verified
           if (userData.email_confirmed_at) {
             setUser({
               ...userData,
-              isAuthenticated: true
+              isAuthenticated: true,
             });
-            
+
             // Download user's avatar in the background after server auth
             setTimeout(() => downloadUserAvatarOnce(userData.id), 2000);
           } else {
             setUser({
               ...userData,
-              isAuthenticated: false
+              isAuthenticated: false,
             });
           }
         } else {
           // Token is invalid on server, clear local tokens and cache
-          console.log('Token invalid on server, clearing local tokens');
+          console.log(
+            "[AuthContext] Token invalid on server, clearing local tokens"
+          );
           await tokenManager.clearTokens();
-          await storage.removeItem('cached_user_data');
+          await storage.removeItem("cached_user_data");
           setUser(null);
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error("[AuthContext] Auth check failed:", error);
         await tokenManager.clearTokens();
-        await storage.removeItem('cached_user_data');
+        await storage.removeItem("cached_user_data");
         setUser(null);
       }
-      
+
       setLoading(false);
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error("[AuthContext] Auth check failed:", error);
       setUser(null);
       setLoading(false);
     }
@@ -224,45 +249,53 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setError(null);
-      
+
       const data = await authAPI.login(email, password);
-      console.log('Login successful');
-      
+      console.log("[AuthContext] Login successful");
+
       // Check email verification status
       const response = await fetch(`${getBaseUrl()}/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${data.session.access_token}`
-        }
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to get user data');
+        throw new Error("Failed to get user data");
       }
 
       const userData = await response.json();
-      
+
       if (!userData.email_confirmed_at) {
         setUser({ ...userData, isAuthenticated: false });
-        throw new Error('Please verify your email before logging in');
+        throw new Error("Please verify your email before logging in");
       }
-      
+
       setUser({ ...userData, isAuthenticated: true });
-      
-      // Pre-fetch and cache profile data for avatar download
+
+      // Cache user data for offline use
+      await storage.setItem("cached_user_data", JSON.stringify(userData));
+
+      // Fetch profile data and cache it in local database (for avatar URL and display name)
       try {
-        const { profileAPI } = await import('../profileAPI');
+        const { profileAPI } = await import("../profileAPI");
         await profileAPI.getProfile(false, userData.id);
+        console.log("[AuthContext] Profile data cached successfully");
       } catch (profileError) {
-        console.log('[AuthContext] Failed to pre-fetch profile data:', profileError.message);
+        console.log(
+          "[AuthContext] Failed to pre-fetch profile data:",
+          profileError.message
+        );
       }
-      
+
       // Download user's avatar in the background after successful login
       setTimeout(() => downloadUserAvatarOnce(userData.id), 1000);
-      
+
       return data;
     } catch (error) {
-      console.error('Login failed:', error);
-      const errorMessage = error.message || 'Failed to login. Please try again.';
+      console.error("[AuthContext] Login failed:", error);
+      const errorMessage =
+        error.message || "Failed to login. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -271,16 +304,17 @@ export const AuthProvider = ({ children }) => {
   const signup = async (email, password, username) => {
     try {
       setError(null);
-      
+
       const data = await authAPI.signup(email, password, username);
-      console.log('Signup successful:');
-      
+      console.log("Signup successful:");
+
       // Set user as unverified after signup
       setUser({ ...data.user, isAuthenticated: false });
       return data;
     } catch (error) {
-      console.error('Signup failed:', error);
-      const errorMessage = error.message || 'Failed to sign up. Please try again.';
+      console.error("Signup failed:", error);
+      const errorMessage =
+        error.message || "Failed to sign up. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -292,20 +326,21 @@ export const AuthProvider = ({ children }) => {
       await authAPI.logout();
       await tokenManager.clearTokens();
       // Clear cached user data
-      await storage.removeItem('cached_user_data');
-      
+      await storage.removeItem("cached_user_data");
+
       // Clear profile cache
-      const { profileAPI } = await import('../profileAPI');
+      const { profileAPI } = await import("../profileAPI");
       profileAPI.clearCache();
-      
+
       // Clear local database
-      const { dbManager } = await import('../local/dbManager');
+      const { dbManager } = await import("../local/dbManager");
       console.log("Clearing local database");
       await dbManager.clearAllData();
       setUser(null);
     } catch (error) {
-      console.error('Logout failed:', error);
-      const errorMessage = error.message || 'Failed to logout. Please try again.';
+      console.error("Logout failed:", error);
+      const errorMessage =
+        error.message || "Failed to logout. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -316,8 +351,9 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       return await authAPI.requestPasswordReset(email);
     } catch (error) {
-      console.error('Password reset request failed:', error);
-      const errorMessage = error.message || 'Failed to request password reset. Please try again.';
+      console.error("Password reset request failed:", error);
+      const errorMessage =
+        error.message || "Failed to request password reset. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -326,7 +362,11 @@ export const AuthProvider = ({ children }) => {
   const resetPasswordWithToken = async (token_hash, type, password) => {
     try {
       setError(null);
-      const response = await authAPI.resetPasswordWithToken(token_hash, type, password);
+      const response = await authAPI.resetPasswordWithToken(
+        token_hash,
+        type,
+        password
+      );
       // If password reset is successful, store the session tokens
       if (response.session?.access_token) {
         await storage.setTokens(
@@ -339,8 +379,9 @@ export const AuthProvider = ({ children }) => {
       }
       return response;
     } catch (error) {
-      console.error('Password reset with token failed:', error);
-      const errorMessage = error.message || 'Failed to reset password. Please try again.';
+      console.error("Password reset with token failed:", error);
+      const errorMessage =
+        error.message || "Failed to reset password. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -353,8 +394,9 @@ export const AuthProvider = ({ children }) => {
       await checkAuth(); // Refresh user data after verification
       return response;
     } catch (error) {
-      console.error('Email verification failed:', error);
-      const errorMessage = error.message || 'Failed to verify email. Please try again.';
+      console.error("Email verification failed:", error);
+      const errorMessage =
+        error.message || "Failed to verify email. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -364,11 +406,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authAPI.changeUsername(username);
-      setUser(prev => ({ ...prev, username }));
+      setUser((prev) => ({ ...prev, username }));
       return response;
     } catch (error) {
-      console.error('Username change failed:', error);
-      const errorMessage = error.error || error.message || 'Failed to change username. Please try again.';
+      console.error("Username change failed:", error);
+      const errorMessage =
+        error.error ||
+        error.message ||
+        "Failed to change username. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -378,10 +423,14 @@ export const AuthProvider = ({ children }) => {
   const updateUserPassword = async (password, access_token, refresh_token) => {
     try {
       setError(null);
-      
+
       // Use Supabase's updateUser method for password reset with recovery tokens
-      const response = await authAPI.updateUserPassword(password, access_token, refresh_token);
-      
+      const response = await authAPI.updateUserPassword(
+        password,
+        access_token,
+        refresh_token
+      );
+
       // If password update is successful, the user is now logged in
       if (response.session?.access_token) {
         await storage.setTokens(
@@ -389,18 +438,22 @@ export const AuthProvider = ({ children }) => {
           response.session.refresh_token,
           response.session.expires_in
         );
-        
+
         // Update user state with new session
         setUser({ ...response.user, isAuthenticated: true });
-        
+
         // Cache the updated user data
-        await storage.setItem('cached_user_data', JSON.stringify(response.user));
+        await storage.setItem(
+          "cached_user_data",
+          JSON.stringify(response.user)
+        );
       }
-      
+
       return response;
     } catch (error) {
-      console.error('Password update failed:', error);
-      const errorMessage = error.message || 'Failed to update password. Please try again.';
+      console.error("Password update failed:", error);
+      const errorMessage =
+        error.message || "Failed to update password. Please try again.";
       setError(errorMessage);
       throw new Error(errorMessage);
     }
@@ -426,7 +479,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}; 
+};
