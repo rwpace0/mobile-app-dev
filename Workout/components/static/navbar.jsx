@@ -9,29 +9,40 @@ import { useNavigationState } from "@react-navigation/native";
 // Configuration object to reduce code duplication
 const ROUTE_CONFIG = {
   Profile: {
-    nestedScreens: ['ProfileMain', 'Settings', 'AccountSettings', 'EditProfile', 'SettingsPage'],
-    icon: { focused: 'person', unfocused: 'person-outline' },
-    displayName: 'Profile'
+    nestedScreens: [
+      "ProfileMain",
+      "Settings",
+      "AccountSettings",
+      "EditProfile",
+      "SettingsPage",
+    ],
+    icon: { focused: "person", unfocused: "person-outline" },
+    displayName: "Profile",
   },
   WorkoutHistory: {
-    nestedScreens: ['WorkoutHistoryMain', 'WorkoutDetail'],
-    icon: { focused: 'stats-chart', unfocused: 'stats-chart-outline' },
-    displayName: 'History'
+    nestedScreens: ["WorkoutHistoryMain", "WorkoutDetail"],
+    icon: { focused: "time", unfocused: "time-outline" },
+    displayName: "History",
   },
   Start: {
-    nestedScreens: ['StartMain', 'ExerciseDetail', 'ViewExercises', 'RoutineDetail'],
-    icon: { focused: 'barbell', unfocused: 'barbell-outline' },
-    displayName: 'Workout'
-  }
+    nestedScreens: [
+      "StartMain",
+      "ExerciseDetail",
+      "ViewExercises",
+      "RoutineDetail",
+    ],
+    icon: { focused: "barbell", unfocused: "barbell-outline" },
+    displayName: "Workout",
+  },
 };
 
-const VISIBLE_TABS = ['WorkoutHistory', 'Start', 'Profile'];
+const VISIBLE_TABS = ["WorkoutHistory", "Start", "Profile"];
 
 const Navbar = ({ state, navigation }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
-  
+
   // Memoize current nested route calculation
   const currentNestedRoute = useMemo(() => {
     const currentTab = state.routes[state.index];
@@ -41,7 +52,7 @@ const Navbar = ({ state, navigation }) => {
     }
     return currentTab?.name;
   }, [state]);
-  
+
   // Memoize parent tab calculation
   const getParentTab = useMemo(() => {
     return (routeName) => {
@@ -66,7 +77,9 @@ const Navbar = ({ state, navigation }) => {
 
         const config = ROUTE_CONFIG[route.name];
         const isFocused = route.name === parentTab;
-        const iconName = isFocused ? config.icon.focused : config.icon.unfocused;
+        const iconName = isFocused
+          ? config.icon.focused
+          : config.icon.unfocused;
 
         const onPress = () => {
           const event = navigation.emit({
@@ -94,7 +107,6 @@ const Navbar = ({ state, navigation }) => {
               name={iconName}
               size={24}
               color={isFocused ? colors.primaryLight : colors.textFaded}
-              
             />
             <Text style={isFocused ? styles.tabTextActive : styles.tabText}>
               {config.displayName}

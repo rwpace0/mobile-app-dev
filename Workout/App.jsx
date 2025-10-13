@@ -36,6 +36,7 @@ import ChangePassword from "./pages/settings/account/changePassword";
 import EditProfile from "./pages/settings/editProfile";
 import RoutineDetail from "./pages/templates/routineDetail";
 import CalendarView from "./pages/workouts/calendarView";
+import Statistics from "./pages/statistics/statistics";
 import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
 import { mediaAPI } from "./API/mediaAPI";
@@ -139,6 +140,11 @@ const stackScreens = {
     {
       name: "ExerciseDetail",
       component: ExerciseDetail,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "StatisticsMain",
+      component: Statistics,
       options: slideFromRightOptions,
     },
   ],
