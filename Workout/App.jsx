@@ -451,7 +451,7 @@ const RootNavigator = React.memo(() => {
 
 export default function App() {
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SettingsProvider>
         <AuthProvider>
           <ActiveWorkoutProvider>

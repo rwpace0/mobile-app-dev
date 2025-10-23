@@ -10,265 +10,298 @@ import {
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
-  
+
   return StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: colors.overlayMedium,
-  },
-  centerModalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.overlayMedium,
-    padding: Spacing.l,
-  },
-  modalContent: {
-    backgroundColor: colors.backgroundPrimary,
-    borderTopLeftRadius: BorderRadius.lg,
-    borderTopRightRadius: BorderRadius.lg,
-    paddingVertical: Spacing.l,
-    ...Shadow.large,
-  },
-  deleteModalContent: {
-    backgroundColor: colors.backgroundPrimary,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.l,
-    width: '100%',
-    maxWidth: 320,
-    ...Shadow.large,
-  },
-  deleteModalText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    marginBottom: Spacing.l,
-  },
-  deleteModalButtons: {
-    width: '100%',
-  },
-  deleteModalCancelButton: {
-    width: '100%',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
-    backgroundColor: colors.backgroundCard,
-    marginTop: Spacing.xs,
-    
-  },
-  deleteModalConfirmButton: {
-    width: '100%',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
-    backgroundColor: colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: colors.accentRed,
-    marginBottom: Spacing.xs,
-  },
-  deleteModalCancelText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    paddingVertical: Spacing.xs,
-  },  
-  deleteModalConfirmText: {
-    color: colors.accentRed,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    paddingVertical: Spacing.xs,
-  },
-  
-  // Alert Modal Styles
-  alertModalContent: {
-    backgroundColor: colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.l,
-    width: '100%',
-    maxWidth: 320,
-    ...Shadow.large,
-  },
-  alertIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: BorderRadius.xxxl,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: Spacing.m,
-  },
-  alertModalTitle: {
-    color: colors.textPrimary,
-    fontSize: FontSize.large,
-    fontWeight: FontWeight.semiBold,
-    textAlign: 'center',
-    marginBottom: Spacing.s,
-  },
-  alertModalText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    marginBottom: Spacing.l,
-    lineHeight: 20,
-  },
-  alertModalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    gap: Spacing.m,
-  },
-  alertModalButton: {
-    backgroundColor: colors.primaryBlue,
-    flex: 1,
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-  },
-  alertModalButtonText: {
-    color: colors.textWhite,
-    fontSize: FontSize.medium,
-    fontWeight: FontWeight.semiBold,
-    textAlign: 'center',
-    width: '100%',
-  },
-  
-  // Active Workout Modal Styles
-  activeWorkoutModalContent: {
-    backgroundColor: colors.backgroundPrimary,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.l,
-    width: '100%',
-    maxWidth: 320,
-    ...Shadow.large,
-  },
-  activeWorkoutModalText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    marginBottom: Spacing.l,
-  },
-  activeWorkoutModalButtons: {
-    width: '100%',
-  },
-  activeWorkoutResumeButton: {
-    width: '100%',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
-    backgroundColor: colors.primaryBlue,
-    marginBottom: Spacing.xs,
-  },
-  activeWorkoutResumeButtonText: {
-    color: colors.textWhite,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    paddingVertical: Spacing.xs,
-  },
-  activeWorkoutStartNewButton: {
-    width: '100%',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
-    backgroundColor: colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: colors.accentRed,
-    marginBottom: Spacing.xs,
-  },
-  activeWorkoutStartNewButtonText: {
-    color: colors.accentRed,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    paddingVertical: Spacing.xs,
-  },
-  activeWorkoutCancelButton: {
-    width: '100%',
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
-    backgroundColor: colors.backgroundCard,
-    
-  },
-  activeWorkoutCancelButtonText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-    paddingVertical: Spacing.xs,
-  },
-  
-  // Alert Modal Icon Container Variants
-  alertIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: BorderRadius.xxxl,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: Spacing.m,
-  },
-  modalTitle: {
-    color: colors.textPrimary,
-    fontSize: FontSize.large,
-    fontWeight: FontWeight.semiBold,
-    textAlign: 'center',
-    marginBottom: Spacing.m,
-  },
-  presetTimesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.m,
-  },
-  presetTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.backgroundCard,
-    paddingVertical: Spacing.s,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
-    margin: Spacing.xs,
-    minWidth: 80,
-    justifyContent: 'center',
-  },
-  selectedPresetButton: {
-    backgroundColor: colors.primaryLight,
-  },
-  offButton: {
-    backgroundColor: colors.textFaded,
-  },
-  presetTimeText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.medium,
-    textAlign: 'center',
-  },
-  selectedPresetText: {
-    fontWeight: FontWeight.bold,
-  },
-  offIcon: {
-    marginRight: Spacing.xs,
-  },
-  modalCloseButton: {
-    marginTop: Spacing.l,
-    paddingVertical: Spacing.s,
-    alignItems: 'center',
-  },
-  modalCloseText: {
-    color: colors.textSecondary,
-    fontSize: FontSize.medium,
-  },
-});
+    modalContainer: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: colors.overlayMedium,
+    },
+    centerModalContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.overlayMedium,
+      padding: Spacing.l,
+    },
+    modalContent: {
+      backgroundColor: colors.backgroundPrimary,
+      borderTopLeftRadius: BorderRadius.lg,
+      borderTopRightRadius: BorderRadius.lg,
+      paddingVertical: Spacing.l,
+      ...Shadow.large,
+    },
+    deleteModalContent: {
+      backgroundColor: colors.backgroundPrimary,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.l,
+      width: "100%",
+      maxWidth: 320,
+      ...Shadow.large,
+    },
+    deleteModalText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      marginBottom: Spacing.l,
+    },
+    deleteModalSubtext: {
+      color: colors.textSecondary,
+      fontSize: FontSize.base,
+      textAlign: "center",
+      marginBottom: Spacing.m,
+    },
+    deleteModalButtons: {
+      width: "100%",
+    },
+    folderDeleteButtons: {
+      width: "100%",
+    },
+    deleteModalCancelButton: {
+      width: "100%",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.backgroundCard,
+      marginTop: Spacing.xs,
+    },
+    deleteModalConfirmButton: {
+      width: "100%",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.backgroundCard,
+      borderWidth: 1,
+      borderColor: colors.accentRed,
+      marginBottom: Spacing.xs,
+    },
+    deleteModalCancelText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      paddingVertical: Spacing.xs,
+    },
+    deleteModalConfirmText: {
+      color: colors.accentRed,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      paddingVertical: Spacing.xs,
+    },
+    folderDeleteOnlyButton: {
+      width: "100%",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.backgroundCard,
+      borderWidth: 1,
+      borderColor: colors.textSecondary,
+      marginBottom: Spacing.xs,
+    },
+    folderDeleteOnlyText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      paddingVertical: Spacing.xs,
+    },
+    folderInput: {
+      backgroundColor: colors.backgroundCard,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.m,
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      marginBottom: Spacing.l,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+    },
+
+    // Alert Modal Styles
+    alertModalContent: {
+      backgroundColor: colors.backgroundCard,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.l,
+      width: "100%",
+      maxWidth: 320,
+      ...Shadow.large,
+    },
+    alertIconContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: BorderRadius.xxxl,
+      justifyContent: "center",
+      alignItems: "center",
+      alignSelf: "center",
+      marginBottom: Spacing.m,
+    },
+    alertModalTitle: {
+      color: colors.textPrimary,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+      textAlign: "center",
+      marginBottom: Spacing.s,
+    },
+    alertModalText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      marginBottom: Spacing.l,
+      lineHeight: 20,
+    },
+    alertModalButtons: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      width: "100%",
+      gap: Spacing.m,
+    },
+    alertModalButton: {
+      backgroundColor: colors.primaryBlue,
+      flex: 1,
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      alignItems: "center",
+    },
+    alertModalButtonText: {
+      color: colors.textWhite,
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.semiBold,
+      textAlign: "center",
+      width: "100%",
+    },
+
+    // Active Workout Modal Styles
+    activeWorkoutModalContent: {
+      backgroundColor: colors.backgroundPrimary,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.l,
+      width: "100%",
+      maxWidth: 320,
+      ...Shadow.large,
+    },
+    activeWorkoutModalText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      marginBottom: Spacing.l,
+    },
+    activeWorkoutModalButtons: {
+      width: "100%",
+    },
+    activeWorkoutResumeButton: {
+      width: "100%",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.primaryBlue,
+      marginBottom: Spacing.xs,
+    },
+    activeWorkoutResumeButtonText: {
+      color: colors.textWhite,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      paddingVertical: Spacing.xs,
+    },
+    activeWorkoutStartNewButton: {
+      width: "100%",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.backgroundCard,
+      borderWidth: 1,
+      borderColor: colors.accentRed,
+      marginBottom: Spacing.xs,
+    },
+    activeWorkoutStartNewButtonText: {
+      color: colors.accentRed,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      paddingVertical: Spacing.xs,
+    },
+    activeWorkoutCancelButton: {
+      width: "100%",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.backgroundCard,
+    },
+    activeWorkoutCancelButtonText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      paddingVertical: Spacing.xs,
+    },
+
+    // Alert Modal Icon Container Variants
+    alertIconContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: BorderRadius.xxxl,
+      justifyContent: "center",
+      alignItems: "center",
+      alignSelf: "center",
+      marginBottom: Spacing.m,
+    },
+    modalTitle: {
+      color: colors.textPrimary,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+      textAlign: "center",
+      marginBottom: Spacing.m,
+    },
+    presetTimesContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
+      paddingHorizontal: Spacing.m,
+    },
+    presetTimeButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.backgroundCard,
+      paddingVertical: Spacing.s,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      margin: Spacing.xs,
+      minWidth: 80,
+      justifyContent: "center",
+    },
+    selectedPresetButton: {
+      backgroundColor: colors.primaryLight,
+    },
+    offButton: {
+      backgroundColor: colors.textFaded,
+    },
+    presetTimeText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+    },
+    selectedPresetText: {
+      fontWeight: FontWeight.bold,
+    },
+    offIcon: {
+      marginRight: Spacing.xs,
+    },
+    modalCloseButton: {
+      marginTop: Spacing.l,
+      paddingVertical: Spacing.s,
+      alignItems: "center",
+    },
+    modalCloseText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.medium,
+    },
+  });
 };
 
 // Bottom Sheet Modal Styles
 export const createBottomSheetStyles = (isDark = true) => {
   const colors = getColors(isDark);
-  
+
   return StyleSheet.create({
     backdrop: {
       flex: 1,
       backgroundColor: colors.overlayMedium,
-      justifyContent: 'flex-end',
+      justifyContent: "flex-end",
     },
     backdropTouchable: {
       flex: 1,
@@ -278,11 +311,11 @@ export const createBottomSheetStyles = (isDark = true) => {
       borderTopLeftRadius: BorderRadius.xl,
       borderTopRightRadius: BorderRadius.xl,
       paddingTop: Spacing.s,
-      maxHeight: '80%',
+      maxHeight: "80%",
       ...Shadow.large,
     },
     handleContainer: {
-      alignItems: 'center',
+      alignItems: "center",
       paddingVertical: Spacing.s,
     },
     handle: {
@@ -301,16 +334,16 @@ export const createBottomSheetStyles = (isDark = true) => {
       color: colors.textPrimary,
       fontSize: FontSize.large,
       fontWeight: FontWeight.semiBold,
-      textAlign: 'center',
+      textAlign: "center",
     },
     actionsContainer: {
       paddingHorizontal: Spacing.l,
       paddingTop: Spacing.m,
     },
     actionItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.m,
       backgroundColor: colors.backgroundCard,
@@ -327,8 +360,8 @@ export const createBottomSheetStyles = (isDark = true) => {
       marginBottom: Spacing.none,
     },
     actionContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       flex: 1,
     },
     actionText: {
@@ -356,4 +389,4 @@ export const createBottomSheetStyles = (isDark = true) => {
 };
 
 // Default export for backward compatibility
-export default createStyles(true); 
+export default createStyles(true);

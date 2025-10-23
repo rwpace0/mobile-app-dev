@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -8,10 +8,13 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LongPressGestureHandler, State } from "react-native-gesture-handler";
 import templateAPI from "../API/templateAPI";
 import exercisesAPI from "../API/exercisesAPI";
+import folderStorage from "../API/local/folderStorage";
 import Header from "../components/static/header";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/start.styles";
@@ -19,6 +22,9 @@ import { useTheme } from "../state/SettingsContext";
 import { useActiveWorkout } from "../state/ActiveWorkoutContext";
 import BottomSheetModal from "../components/modals/bottomModal";
 import ActiveWorkoutModal from "../components/modals/ActiveWorkoutModal";
+import FolderCard from "../components/folderCard";
+import FolderModal from "../components/modals/FolderModal";
+import FolderDeleteModal from "../components/modals/FolderDeleteModal";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
@@ -34,6 +40,27 @@ const WorkoutStartPage = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showActiveWorkoutModal, setShowActiveWorkoutModal] = useState(false);
   const [pendingWorkoutAction, setPendingWorkoutAction] = useState(null);
+
+  // Folder state
+  const [folders, setFolders] = useState([]);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [folderModalMode, setFolderModalMode] = useState("create");
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [showFolderOptions, setShowFolderOptions] = useState(false);
+  const [showFolderDeleteModal, setShowFolderDeleteModal] = useState(false);
+  const [showFolderSelectionModal, setShowFolderSelectionModal] =
+    useState(false);
+  const [routineToMove, setRoutineToMove] = useState(null);
+  const [currentFolderOfRoutine, setCurrentFolderOfRoutine] = useState(null);
+
+  const fetchFolders = useCallback(async () => {
+    try {
+      const loadedFolders = await folderStorage.getFolders();
+      setFolders(loadedFolders);
+    } catch (err) {
+      console.error("Failed to fetch folders:", err);
+    }
+  }, []);
 
   const fetchTemplates = useCallback(async (showLoading = true) => {
     try {
@@ -111,21 +138,23 @@ const WorkoutStartPage = () => {
     }
   }, []);
 
-  // Load templates when the screen comes into focus
+  // Load templates and folders when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchTemplates();
+      fetchFolders();
       return () => {
         // Clear template cache when leaving the screen
         templateAPI.cache.clearPattern("^templates:");
       };
-    }, [fetchTemplates])
+    }, [fetchTemplates, fetchFolders])
   );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     fetchTemplates(false);
-  }, [fetchTemplates]);
+    fetchFolders();
+  }, [fetchTemplates, fetchFolders]);
 
   const handleStartEmptyWorkout = useCallback(() => {
     if (isWorkoutActive) {
@@ -186,8 +215,14 @@ const WorkoutStartPage = () => {
       setLoading(true);
       await templateAPI.deleteTemplate(selectedTemplate.template_id);
 
-      // Refresh the templates list
+      // Also remove from any folders
+      await folderStorage.removeRoutineFromAllFolders(
+        selectedTemplate.template_id
+      );
+
+      // Refresh the templates list and folders
       await fetchTemplates(false);
+      await fetchFolders();
     } catch (error) {
       console.error("Failed to delete template:", error);
       setError("Failed to delete template");
@@ -196,7 +231,7 @@ const WorkoutStartPage = () => {
       setShowTemplateOptions(false);
       setSelectedTemplate(null);
     }
-  }, [selectedTemplate, fetchTemplates]);
+  }, [selectedTemplate, fetchTemplates, fetchFolders]);
 
   const routineActions = [
     {
@@ -311,6 +346,178 @@ const WorkoutStartPage = () => {
     setPendingWorkoutAction(null);
   }, []);
 
+  // Folder handlers
+  const handleNewFolder = useCallback(() => {
+    setFolderModalMode("create");
+    setSelectedFolder(null);
+    setShowFolderModal(true);
+  }, []);
+
+  const handleCreateFolder = useCallback(
+    async (folderName) => {
+      try {
+        await folderStorage.createFolder(folderName);
+        await fetchFolders();
+      } catch (error) {
+        console.error("Failed to create folder:", error);
+        setError("Failed to create folder");
+      }
+    },
+    [fetchFolders]
+  );
+
+  const handleFolderOptions = useCallback((folder) => {
+    setSelectedFolder(folder);
+    setShowFolderOptions(true);
+  }, []);
+
+  const handleRenameFolder = useCallback(() => {
+    setFolderModalMode("rename");
+    setShowFolderOptions(false);
+    setShowFolderModal(true);
+  }, []);
+
+  const handleRenameFolderSave = useCallback(
+    async (newName) => {
+      if (!selectedFolder) return;
+
+      try {
+        await folderStorage.updateFolder(selectedFolder.id, { name: newName });
+        await fetchFolders();
+      } catch (error) {
+        console.error("Failed to rename folder:", error);
+        setError("Failed to rename folder");
+      }
+    },
+    [selectedFolder, fetchFolders]
+  );
+
+  const handleDeleteFolderClick = useCallback(() => {
+    setShowFolderOptions(false);
+    setShowFolderDeleteModal(true);
+  }, []);
+
+  const handleDeleteFolderOnly = useCallback(async () => {
+    if (!selectedFolder) return;
+
+    try {
+      await folderStorage.deleteFolder(selectedFolder.id);
+      await fetchFolders();
+      setSelectedFolder(null);
+    } catch (error) {
+      console.error("Failed to delete folder:", error);
+      setError("Failed to delete folder");
+    }
+  }, [selectedFolder, fetchFolders]);
+
+  const handleDeleteFolderAndRoutines = useCallback(async () => {
+    if (!selectedFolder) return;
+
+    try {
+      setLoading(true);
+
+      // Delete all routines in the folder
+      for (const routineId of selectedFolder.routineIds) {
+        await templateAPI.deleteTemplate(routineId);
+      }
+
+      // Delete the folder
+      await folderStorage.deleteFolder(selectedFolder.id);
+
+      // Refresh templates and folders
+      await fetchTemplates(false);
+      await fetchFolders();
+      setSelectedFolder(null);
+    } catch (error) {
+      console.error("Failed to delete folder and routines:", error);
+      setError("Failed to delete folder and routines");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedFolder, fetchTemplates, fetchFolders]);
+
+  const handleSaveFolder = useCallback(
+    (folderName) => {
+      if (folderModalMode === "create") {
+        handleCreateFolder(folderName);
+      } else {
+        handleRenameFolderSave(folderName);
+      }
+    },
+    [folderModalMode, handleCreateFolder, handleRenameFolderSave]
+  );
+
+  const folderActions = [
+    {
+      title: "Rename Folder",
+      icon: "create-outline",
+      onPress: handleRenameFolder,
+    },
+    {
+      title: "Delete Folder",
+      icon: "trash-outline",
+      destructive: true,
+      onPress: handleDeleteFolderClick,
+    },
+  ];
+
+  // Drag and drop handlers
+  const handleRoutineLongPress = useCallback(
+    (event, routine) => {
+      const { state } = event.nativeEvent;
+
+      if (state === State.ACTIVE) {
+        // Find if routine is currently in a folder
+        const currentFolder = folders.find((folder) =>
+          folder.routineIds.includes(routine.template_id)
+        );
+
+        setRoutineToMove(routine);
+        setCurrentFolderOfRoutine(currentFolder || null);
+        setShowFolderSelectionModal(true);
+      }
+    },
+    [folders]
+  );
+
+  const handleMoveToFolder = useCallback(
+    async (folderId) => {
+      if (!routineToMove) return;
+
+      try {
+        await folderStorage.addRoutineToFolder(
+          folderId,
+          routineToMove.template_id
+        );
+        await fetchFolders();
+        setShowFolderSelectionModal(false);
+        setRoutineToMove(null);
+      } catch (error) {
+        console.error("Failed to add routine to folder:", error);
+        setError("Failed to add routine to folder");
+      }
+    },
+    [routineToMove, fetchFolders]
+  );
+
+  const handleRemoveFromFolder = useCallback(async () => {
+    if (!routineToMove || !currentFolderOfRoutine) return;
+
+    try {
+      await folderStorage.removeRoutineFromFolder(
+        currentFolderOfRoutine.id,
+        routineToMove.template_id
+      );
+      await fetchFolders();
+      setShowFolderSelectionModal(false);
+      setRoutineToMove(null);
+      setCurrentFolderOfRoutine(null);
+    } catch (error) {
+      console.error("Failed to remove routine from folder:", error);
+      setError("Failed to remove routine from folder");
+    }
+  }, [routineToMove, currentFolderOfRoutine, fetchFolders]);
+
   const renderTemplateList = useCallback(() => {
     if (loading && !refreshing) {
       return (
@@ -334,6 +541,14 @@ const WorkoutStartPage = () => {
       );
     }
 
+    // Filter out routines that are in folders
+    const allRoutineIdsInFolders = folders.flatMap(
+      (folder) => folder.routineIds
+    );
+    const availableTemplates = templates.filter(
+      (template) => !allRoutineIdsInFolders.includes(template.template_id)
+    );
+
     if (!templates || templates.length === 0) {
       return (
         <View style={styles.emptyRoutinesContainer}>
@@ -344,48 +559,104 @@ const WorkoutStartPage = () => {
       );
     }
 
-    return templates.map((template) => (
-      <TouchableOpacity
-        key={template.template_id}
-        style={styles.templateContainer}
-        onPress={() => handleTemplatePress(template)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.templateHeader}>
-          <Text style={styles.templateName}>{template.name}</Text>
-          <TouchableOpacity onPress={() => handleTemplateOptions(template)}>
-            <Ionicons
-              name="ellipsis-horizontal"
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+    if (availableTemplates.length === 0 && folders.length > 0) {
+      return (
+        <View style={styles.emptyRoutinesContainer}>
+          <Text style={styles.emptyRoutinesText}>
+            All routines are in folders. Long press a routine in a folder to
+            move it.
+          </Text>
         </View>
-        <Text style={styles.templateExercises}>
-          {template.exercises.map((ex) => ex.name).join(" • ")}
-        </Text>
-        <TouchableOpacity
-          style={styles.startRoutineButton}
-          onPress={(e) => {
-            e.stopPropagation();
-            handleStartRoutine(template);
-          }}
+      );
+    }
+
+    return availableTemplates.map((template) => {
+      return (
+        <LongPressGestureHandler
+          key={template.template_id}
+          onHandlerStateChange={(event) =>
+            handleRoutineLongPress(event, template)
+          }
+          minDurationMs={500}
         >
-          <Text style={styles.startRoutineText}>Start Routine</Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    ));
+          <Animated.View style={styles.templateContainer}>
+            <TouchableOpacity
+              onPress={() => handleTemplatePress(template)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.templateHeader}>
+                <Text style={styles.templateName}>{template.name}</Text>
+                <TouchableOpacity
+                  onPress={() => handleTemplateOptions(template)}
+                >
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={24}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.templateExercises}>
+                {template.exercises.map((ex) => ex.name).join(" • ")}
+              </Text>
+              <TouchableOpacity
+                style={styles.startRoutineButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleStartRoutine(template);
+                }}
+              >
+                <Text style={styles.startRoutineText}>Start Routine</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Animated.View>
+        </LongPressGestureHandler>
+      );
+    });
   }, [
     loading,
     refreshing,
     error,
     templates,
+    folders,
     handleStartRoutine,
     handleTemplateOptions,
     handleTemplatePress,
+    handleRoutineLongPress,
     fetchTemplates,
     colors.textSecondary,
+    colors.primaryBlue,
     styles,
+  ]);
+
+  const renderFolders = useCallback(() => {
+    if (folders.length === 0) {
+      return null;
+    }
+
+    return folders.map((folder) => {
+      return (
+        <FolderCard
+          key={folder.id}
+          folder={folder}
+          routines={templates}
+          onPress={(routine) => handleTemplatePress(routine)}
+          onOptionsPress={handleFolderOptions}
+          onRoutinePress={handleTemplatePress}
+          onRoutineOptions={handleTemplateOptions}
+          onStartRoutine={handleStartRoutine}
+          onRoutineLongPress={handleRoutineLongPress}
+        />
+      );
+    });
+  }, [
+    folders,
+    templates,
+    handleFolderOptions,
+    handleTemplatePress,
+    handleTemplateOptions,
+    handleStartRoutine,
+    handleRoutineLongPress,
   ]);
 
   return (
@@ -418,7 +689,7 @@ const WorkoutStartPage = () => {
             <Text style={styles.sectionTitle}>Routines</Text>
           </View>
 
-          {/* New Routine CTA (Explore removed) */}
+          {/* New Routine and New Folder buttons */}
           <View style={styles.routineActionButtons}>
             <TouchableOpacity
               style={styles.newRoutineButton}
@@ -428,7 +699,22 @@ const WorkoutStartPage = () => {
               <Ionicons name="add" size={20} color={colors.textPrimary} />
               <Text style={styles.newRoutineText}>New Routine</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.newFolderButton}
+              onPress={handleNewFolder}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="folder-outline"
+                size={20}
+                color={colors.textPrimary}
+              />
+              <Text style={styles.newFolderText}>New Folder</Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Folders List */}
+          {renderFolders()}
 
           {/* Templates List */}
           {renderTemplateList()}
@@ -449,6 +735,64 @@ const WorkoutStartPage = () => {
         onClose={handleCloseActiveWorkoutModal}
         onResumeWorkout={handleResumeWorkout}
         onStartNew={handleStartNewWorkout}
+      />
+      <BottomSheetModal
+        visible={showFolderOptions}
+        onClose={() => {
+          setShowFolderOptions(false);
+          setSelectedFolder(null);
+        }}
+        title={selectedFolder?.name || "Folder Options"}
+        actions={folderActions}
+        showHandle={true}
+      />
+      <FolderModal
+        visible={showFolderModal}
+        onClose={() => {
+          setShowFolderModal(false);
+          setSelectedFolder(null);
+        }}
+        onSave={handleSaveFolder}
+        initialName={selectedFolder?.name || ""}
+        mode={folderModalMode}
+      />
+      <FolderDeleteModal
+        visible={showFolderDeleteModal}
+        onClose={() => {
+          setShowFolderDeleteModal(false);
+        }}
+        onDeleteFolder={handleDeleteFolderOnly}
+        onDeleteRoutines={handleDeleteFolderAndRoutines}
+        folderName={selectedFolder?.name || ""}
+      />
+      <BottomSheetModal
+        visible={showFolderSelectionModal}
+        onClose={() => {
+          setShowFolderSelectionModal(false);
+          setRoutineToMove(null);
+          setCurrentFolderOfRoutine(null);
+        }}
+        title={currentFolderOfRoutine ? "Move Routine" : "Add to Folder"}
+        actions={[
+          ...(currentFolderOfRoutine
+            ? [
+                {
+                  title: "Remove from Folder",
+                  icon: "remove-circle-outline",
+                  destructive: true,
+                  onPress: handleRemoveFromFolder,
+                },
+              ]
+            : []),
+          ...folders
+            .filter((folder) => folder.id !== currentFolderOfRoutine?.id)
+            .map((folder) => ({
+              title: folder.name,
+              icon: "folder",
+              onPress: () => handleMoveToFolder(folder.id),
+            })),
+        ]}
+        showHandle={true}
       />
     </SafeAreaView>
   );
