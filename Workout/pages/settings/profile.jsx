@@ -24,6 +24,7 @@ const Profile = ({ navigation }) => {
   const [workoutCount, setWorkoutCount] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const { user } = useAuth();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -128,9 +129,13 @@ const Profile = ({ navigation }) => {
         const finalDisplayName =
           profileData.display_name || profileData.username || "User";
         setDisplayName(finalDisplayName);
+
+        // Set username for display (fallback to email if no username)
+        setUsername(profileData.username || user.email || "");
       } catch (error) {
         console.error("Error fetching display name:", error);
         setDisplayName("User");
+        setUsername(user?.email || "");
       }
     }
   };
@@ -167,7 +172,7 @@ const Profile = ({ navigation }) => {
   );
 
   const renderProfile = () => (
-    <View style={styles.profileSection}>
+    <View style={styles.profileCard}>
       <View style={styles.avatarContainer}>
         <TouchableOpacity
           style={styles.avatar}
@@ -188,12 +193,21 @@ const Profile = ({ navigation }) => {
             />
           )}
         </TouchableOpacity>
-        <Text style={styles.username}>{displayName}</Text>
+        <Text style={styles.displayName}>{displayName}</Text>
+        <Text style={styles.username}>{username}</Text>
       </View>
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{workoutCount}</Text>
           <Text style={styles.statLabel}>Workouts</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>0</Text>
+          <Text style={styles.statLabel}>This Week</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>0</Text>
+          <Text style={styles.statLabel}>Streak</Text>
         </View>
       </View>
     </View>
@@ -219,46 +233,41 @@ const Profile = ({ navigation }) => {
     }
   };
 
+  const DashboardItem = ({ icon, title, onPress, showBorder }) => (
+    <TouchableOpacity
+      style={[styles.dashboardItem, showBorder && styles.dashboardItemBorder]}
+      onPress={onPress}
+    >
+      <View style={styles.dashboardItemLeft}>
+        <Ionicons name={icon} size={24} color={colors.primaryBlue} />
+        <Text style={styles.dashboardItemText}>{title}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
+    </TouchableOpacity>
+  );
+
   const renderDashboard = () => (
     <View style={styles.dashboardSection}>
       <Text style={styles.dashboardTitle}>Dashboard</Text>
-      <View style={styles.dashboardGrid}>
-        <TouchableOpacity
-          style={styles.dashboardItem}
+      <View style={styles.dashboardList}>
+        <DashboardItem
+          icon="stats-chart"
+          title="Statistics"
           onPress={() => handleDashboardPress("Statistics")}
-        >
-          <Ionicons name="stats-chart" size={24} color={colors.primaryBlue} />
-          <Text style={styles.dashboardItemText}>Statistics</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.dashboardItem}
+          showBorder={true}
+        />
+        <DashboardItem
+          icon="barbell-outline"
+          title="Exercises"
           onPress={() => handleDashboardPress("Exercises")}
-        >
-          <Ionicons
-            name="barbell-outline"
-            size={24}
-            color={colors.primaryBlue}
-          />
-          <Text style={styles.dashboardItemText}>Exercises</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.dashboardItem}
+          showBorder={true}
+        />
+        <DashboardItem
+          icon="body-outline"
+          title="Measurements"
           onPress={() => handleDashboardPress("Measures")}
-        >
-          <Ionicons name="body-outline" size={24} color={colors.primaryBlue} />
-          <Text style={styles.dashboardItemText}>Measures</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.dashboardItem}
-          onPress={() => handleDashboardPress("Calendar")}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={24}
-            color={colors.primaryBlue}
-          />
-          <Text style={styles.dashboardItemText}>Calendar</Text>
-        </TouchableOpacity>
+          showBorder={false}
+        />
       </View>
     </View>
   );

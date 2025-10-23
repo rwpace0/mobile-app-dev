@@ -21,16 +21,36 @@ import { useAuth } from "../../API/auth/authContext";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 
-const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {
+const SettingsItem = ({
+  icon,
+  title,
+  IconComponent = Ionicons,
+  onPress,
+  iconColor,
+  textColor,
+  showBorder = true,
+}) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
-  
+
   return (
-    <TouchableOpacity style={styles.settingsItem} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.settingsItem, showBorder && styles.settingsItemBorder]}
+      onPress={onPress}
+    >
       <View style={styles.settingsItemLeft}>
-        <IconComponent name={icon} size={24} color={colors.textPrimary} style={styles.icon} />
-        <Text style={styles.settingsItemText}>{title}</Text>
+        <IconComponent
+          name={icon}
+          size={24}
+          color={iconColor || colors.primaryBlue}
+          style={styles.icon}
+        />
+        <Text
+          style={[styles.settingsItemText, textColor && { color: textColor }]}
+        >
+          {title}
+        </Text>
       </View>
       <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
     </TouchableOpacity>
@@ -40,10 +60,8 @@ const SettingsItem = ({ icon, title, IconComponent = Ionicons, onPress }) => {
 const SectionHeader = ({ title }) => {
   const { isDark } = useTheme();
   const styles = createStyles(isDark);
-  
-  return (
-    <Text style={styles.sectionHeader}>{title}</Text>
-  );
+
+  return <Text style={styles.sectionHeader}>{title.toUpperCase()}</Text>;
 };
 
 const Settings = () => {
@@ -64,7 +82,7 @@ const Settings = () => {
   };
 
   const navigateToSettings = (type) => {
-    navigation.navigate('SettingsPage', { type });
+    navigation.navigate("SettingsPage", { type });
   };
 
   return (
@@ -72,62 +90,81 @@ const Settings = () => {
       <Header title="Settings" leftComponent={{ type: "back" }} />
       <ScrollView>
         <SectionHeader title="Account" />
-        <SettingsItem 
-          icon="person-outline" 
-          title="Profile" 
-          onPress={() => navigation.navigate('EditProfile')}
-        />
-        <SettingsItem 
-          icon="lock-closed-outline" 
-          title="Account" 
-          onPress={() => navigation.navigate('AccountSettings')}
-        />
-        <SettingsItem 
-          icon="star-outline" 
-          title="Manage Subscription" 
-          onPress={() => navigateToSettings('account')}
-        />
-        <SettingsItem 
-          icon="notifications-outline" 
-          title="Notifications" 
-          onPress={() => navigateToSettings('account')}
-        />
-        <SettingsItem
-          icon="log-out-outline"
-          title="Logout"
-          onPress={handleLogout}
-        />
+        <View style={styles.settingsGroup}>
+          <SettingsItem
+            icon="person-outline"
+            title="Profile"
+            onPress={() => navigation.navigate("EditProfile")}
+            showBorder={true}
+          />
+          <SettingsItem
+            icon="lock-closed-outline"
+            title="Account"
+            onPress={() => navigation.navigate("AccountSettings")}
+            showBorder={true}
+          />
+          <SettingsItem
+            icon="star-outline"
+            title="Manage Subscription"
+            onPress={() => navigateToSettings("account")}
+            showBorder={true}
+          />
+          <SettingsItem
+            icon="notifications-outline"
+            title="Notifications"
+            onPress={() => navigateToSettings("account")}
+            showBorder={false}
+          />
+        </View>
+
+        <View style={styles.settingsGroup}>
+          <SettingsItem
+            icon="log-out-outline"
+            title="Sign Out"
+            onPress={handleLogout}
+            iconColor={colors.accentRed}
+            textColor={colors.accentRed}
+            showBorder={false}
+          />
+        </View>
 
         <SectionHeader title="Preferences" />
-        <SettingsItem 
-          icon="barbell-outline" 
-          title="Workouts" 
-          onPress={() => navigateToSettings('workouts')}
-        />
-        <SettingsItem
-          IconComponent={Feather}
-          icon="shield"
-          title="Privacy & Social"
-          onPress={() => navigateToSettings('privacy')}
-        />
-        <SettingsItem
-          IconComponent={MaterialIcons}
-          icon="straighten"
-          title="Units"
-          onPress={() => navigateToSettings('units')}
-        />
-        <SettingsItem
-          IconComponent={FontAwesome5}
-          icon="flag"
-          title="Language"
-          onPress={() => navigateToSettings('account')}
-        />
-        <SettingsItem
-          IconComponent={Ionicons}
-          icon="moon-outline"
-          title="Theme"
-          onPress={() => navigateToSettings('theme')}
-        />
+        <View style={styles.settingsGroup}>
+          <SettingsItem
+            icon="barbell-outline"
+            title="Workouts"
+            onPress={() => navigateToSettings("workouts")}
+            showBorder={true}
+          />
+          <SettingsItem
+            IconComponent={Feather}
+            icon="shield"
+            title="Privacy & Social"
+            onPress={() => navigateToSettings("privacy")}
+            showBorder={true}
+          />
+          <SettingsItem
+            IconComponent={MaterialIcons}
+            icon="straighten"
+            title="Units"
+            onPress={() => navigateToSettings("units")}
+            showBorder={true}
+          />
+          <SettingsItem
+            IconComponent={FontAwesome5}
+            icon="flag"
+            title="Language"
+            onPress={() => navigateToSettings("account")}
+            showBorder={true}
+          />
+          <SettingsItem
+            IconComponent={Ionicons}
+            icon="moon-outline"
+            title="Theme"
+            onPress={() => navigateToSettings("theme")}
+            showBorder={false}
+          />
+        </View>
       </ScrollView>
 
       <AlertModal

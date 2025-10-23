@@ -10,184 +10,210 @@ import {
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
-  
+
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundPrimary,
-  },
-  
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.l,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundPrimary,
+    },
 
-  headerTitle: {
-    color: colors.textPrimary,
-    fontSize: FontSize.large,
-    fontWeight: FontWeight.semiBold,
-    flex: 1,
-  },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: Spacing.m,
+      paddingVertical: Spacing.l,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
 
-  headerButton: {
-    padding: Spacing.xs,
-  },
+    headerTitle: {
+      color: colors.textPrimary,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+      flex: 1,
+    },
 
-  profileSection: {
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.l,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
-  },
+    headerButton: {
+      padding: Spacing.xs,
+    },
 
-  avatarContainer: {
-    alignItems: "center",
-    marginBottom: Spacing.l,
-  },
+    profileCard: {
+      backgroundColor: colors.backgroundSecondary,
+      paddingHorizontal: Spacing.m,
+      paddingTop: Spacing.l,
+      paddingBottom: Spacing.l,
+      marginHorizontal: Spacing.m,
+      marginTop: Spacing.m,
+      borderRadius: BorderRadius.lg,
+    },
 
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: BorderRadius.round,
-    backgroundColor: colors.backgroundCard,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.m,
-    ...Shadow.medium,
-  },
+    avatarContainer: {
+      alignItems: "center",
+      marginBottom: Spacing.m,
+    },
 
-  avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: BorderRadius.round,
-  },
+    avatar: {
+      width: 100,
+      height: 100,
+      borderRadius: BorderRadius.round,
+      backgroundColor: colors.backgroundCard,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: Spacing.m,
+      ...Shadow.medium,
+    },
 
-  username: {
-    color: colors.textPrimary,
-    fontSize: FontSize.xlarge,
-    fontWeight: FontWeight.bold,
-    marginBottom: Spacing.s,
-  },
+    avatarImage: {
+      width: 100,
+      height: 100,
+      borderRadius: BorderRadius.round,
+    },
 
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: Spacing.xl,
-  },
+    displayName: {
+      color: colors.textPrimary,
+      fontSize: FontSize.xlarge,
+      fontWeight: FontWeight.bold,
+      marginBottom: Spacing.xxs,
+    },
 
-  statItem: {
-    alignItems: "center",
-  },
+    username: {
+      color: colors.textSecondary,
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.regular,
+    },
 
-  statValue: {
-    color: colors.textPrimary,
-    fontSize: FontSize.large,
-    fontWeight: FontWeight.bold,
-    marginBottom: Spacing.xxs,
-  },
+    statsContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: Spacing.xl,
+    },
 
-  statLabel: {
-    color: colors.textSecondary,
-    fontSize: FontSize.base,
-  },
+    statItem: {
+      alignItems: "center",
+    },
 
-  graphSection: {
-    paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.l,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
-  },
+    statValue: {
+      color: colors.textPrimary,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.bold,
+      marginBottom: Spacing.xxs,
+    },
 
-  graphHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.m,
-  },
+    statLabel: {
+      color: colors.textSecondary,
+      fontSize: FontSize.base,
+    },
 
-  timeText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.large,
-    fontWeight: FontWeight.semiBold,
-  },
+    graphSection: {
+      paddingHorizontal: Spacing.m,
+      paddingVertical: Spacing.l,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
 
-  periodText: {
-    color: colors.textSecondary,
-    fontSize: FontSize.base,
-  },
+    graphHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: Spacing.m,
+    },
 
-  graphplaceholder: {
-    height: 150,
-    backgroundColor: colors.backgroundCard,
-    borderRadius: BorderRadius.md,
-    justifyContent: "center",
-    alignItems: "center",
-    ...Shadow.medium,
-  },
+    timeText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+    },
 
-  toggleContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: Spacing.s,
-    marginTop: Spacing.m,
-  },
+    periodText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.base,
+    },
 
-  toggleButton: {
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.full,
-    backgroundColor: colors.backgroundCard,
-  },
+    graphplaceholder: {
+      height: 150,
+      backgroundColor: colors.backgroundCard,
+      borderRadius: BorderRadius.md,
+      justifyContent: "center",
+      alignItems: "center",
+      ...Shadow.medium,
+    },
 
-  toggleButtonActive: {
-    backgroundColor: colors.primaryBlue,
-  },
+    toggleContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: Spacing.s,
+      marginTop: Spacing.m,
+    },
 
-  toggleText: {
-    color: colors.textSecondary,
-    fontSize: FontSize.base,
-  },
+    toggleButton: {
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.full,
+      backgroundColor: colors.backgroundCard,
+    },
 
-  toggleTextActive: {
-    color: colors.textPrimary,
-  },
+    toggleButtonActive: {
+      backgroundColor: colors.primaryBlue,
+    },
 
-  dashboardSection: {
-    padding: Spacing.m,
-  },
+    toggleText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.base,
+    },
 
-  dashboardTitle: {
-    color: colors.textSecondary,
-    fontSize: FontSize.large,
-    marginBottom: Spacing.m,
-  },
+    toggleTextActive: {
+      color: colors.textPrimary,
+    },
 
-  dashboardGrid: {
-    gap: Spacing.m,
-  },
+    dashboardSection: {
+      marginTop: Spacing.m,
+    },
 
-  dashboardItem: {
-    backgroundColor: colors.backgroundCard,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.m,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.s,
-    ...Shadow.medium,
-  },
+    dashboardTitle: {
+      color: colors.textFaded,
+      fontSize: FontSize.base,
+      paddingHorizontal: Spacing.m,
+      paddingTop: Spacing.l,
+      paddingBottom: Spacing.xs,
+      fontWeight: FontWeight.semiBold,
+      textTransform: "uppercase",
+    },
 
-  dashboardItemText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.large,
-    fontWeight: FontWeight.medium,
-  },
-});
+    dashboardList: {
+      backgroundColor: colors.backgroundSecondary,
+      marginHorizontal: Spacing.m,
+      borderRadius: BorderRadius.lg,
+      overflow: "hidden",
+    },
+
+    dashboardItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundSecondary,
+    },
+
+    dashboardItemBorder: {
+      borderBottomWidth: 0.5,
+      borderBottomColor: colors.borderColor,
+    },
+
+    dashboardItemLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.m,
+    },
+
+    dashboardItemText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.regular,
+    },
+  });
 };
 
 // Default export for backward compatibility
-export default createStyles(true); 
+export default createStyles(true);
