@@ -134,7 +134,9 @@ const WorkoutHistoryPage = () => {
   const renderWorkoutCard = useCallback(
     ({ item: workout }) => {
       const duration = Math.round((workout.duration || 0) / 60);
-      const volume = workout.totalVolume || 0;
+      const totalSets = (workout.exercises || []).reduce((total, exercise) => {
+        return total + (exercise.sets?.length || 0);
+      }, 0);
 
       return (
         <TouchableOpacity
@@ -162,12 +164,12 @@ const WorkoutHistoryPage = () => {
             </View>
             <View style={styles.statItemWithIcon}>
               <Ionicons
-                name="barbell-outline"
+                name="list-outline"
                 size={20}
                 color={colors.textSecondary}
                 style={styles.statIcon}
               />
-              <Text style={styles.statText}>{weight.formatVolume(volume)}</Text>
+              <Text style={styles.statText}>{totalSets} sets</Text>
             </View>
           </View>
 
@@ -206,7 +208,7 @@ const WorkoutHistoryPage = () => {
         </TouchableOpacity>
       );
     },
-    [navigation, formatDate, weight]
+    [navigation, formatDate, styles, colors, weight]
   );
 
   const renderFooter = useCallback(() => {
@@ -225,12 +227,12 @@ const WorkoutHistoryPage = () => {
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header 
-          title="History" 
+        <Header
+          title="History"
           rightComponent={{
-            type: 'icon',
-            icon: 'calendar-outline',
-            onPress: handleCalendarPress
+            type: "icon",
+            icon: "calendar-outline",
+            onPress: handleCalendarPress,
           }}
         />
         <View style={styles.loadingContainer}>
@@ -242,12 +244,12 @@ const WorkoutHistoryPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header 
-        title="History" 
+      <Header
+        title="History"
         rightComponent={{
-          type: 'icon',
-          icon: 'calendar-outline',
-          onPress: handleCalendarPress
+          type: "icon",
+          icon: "calendar-outline",
+          onPress: handleCalendarPress,
         }}
       />
 

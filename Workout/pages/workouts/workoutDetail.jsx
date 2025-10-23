@@ -7,15 +7,39 @@ import {
   ActivityIndicator,
   SafeAreaView,
   RefreshControl,
+  Image,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
 import { createStyles } from "../../styles/workoutHistory.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
+
+const ExerciseImage = ({ exercise, colors, styles }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const imagePath = exercise.local_media_path
+    ? `${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}`
+    : null;
+
+  return (
+    <View style={styles.exerciseIconContainer}>
+      {imagePath && !imageError ? (
+        <Image
+          source={{ uri: `file://${imagePath}` }}
+          style={styles.exerciseImage}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <Ionicons name="barbell" size={32} color={colors.textPrimary} />
+      )}
+    </View>
+  );
+};
 
 const formatDate = (isoString) => {
   try {
@@ -196,7 +220,13 @@ const WorkoutDetail = () => {
             >
               <TouchableOpacity
                 onPress={() => handleExercisePress(exerciseData)}
+                style={styles.exerciseTitleRow}
               >
+                <ExerciseImage
+                  exercise={exerciseData}
+                  colors={colors}
+                  styles={styles}
+                />
                 <Text style={styles.exerciseCardTitle}>
                   {exerciseData.name || "Unknown Exercise"}
                 </Text>
@@ -206,9 +236,17 @@ const WorkoutDetail = () => {
                 <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
               )}
               <View style={styles.setHeader}>
-                <Text style={styles.setHeaderText}>SET</Text>
-                <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
-                <Text style={styles.setHeaderText}>RIR</Text>
+                <Text style={[styles.setHeaderText, styles.setHeaderSet]}>
+                  SET
+                </Text>
+                <Text
+                  style={[styles.setHeaderText, styles.setHeaderWeightReps]}
+                >
+                  WEIGHT & REPS
+                </Text>
+                <Text style={[styles.setHeaderText, styles.setHeaderRir]}>
+                  RIR
+                </Text>
               </View>
               {(exerciseData.sets || []).map((set, setIdx) => (
                 <View key={set.set_id || setIdx} style={styles.setRow}>
@@ -218,7 +256,7 @@ const WorkoutDetail = () => {
                   <Text style={styles.setValue}>
                     {weight.formatSet(set.weight, set.reps)} reps
                   </Text>
-                  <Text style={styles.setValue}>
+                  <Text style={styles.setValueRir}>
                     {set.rir !== null && set.rir !== undefined
                       ? `${set.rir}`
                       : "-"}
