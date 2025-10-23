@@ -18,7 +18,17 @@ import { useAlertModal } from "../../../utils/useAlertModal";
 import AlertModal from "../../../components/modals/AlertModal";
 import { Ionicons } from "@expo/vector-icons";
 
-const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextEntry = false, editable = true, error = false }) => {
+const AccountFormField = ({
+  title,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry = false,
+  editable = true,
+  error = false,
+  showPassword,
+  onTogglePassword,
+}) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -26,15 +36,40 @@ const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextE
   return (
     <View style={styles.formField}>
       <Text style={styles.formFieldLabel}>{title}</Text>
-      <TextInput
-        style={[styles.formFieldInput, error && styles.formFieldInputError]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textFaded}
-        secureTextEntry={secureTextEntry}
-        editable={editable}
-      />
+      {secureTextEntry ? (
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={[
+              styles.formFieldInput,
+              styles.passwordInput,
+              error && styles.formFieldInputError,
+            ]}
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textFaded}
+            secureTextEntry={!showPassword}
+            editable={editable}
+          />
+          <TouchableOpacity style={styles.eyeIcon} onPress={onTogglePassword}>
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TextInput
+          style={[styles.formFieldInput, error && styles.formFieldInputError]}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textFaded}
+          secureTextEntry={secureTextEntry}
+          editable={editable}
+        />
+      )}
     </View>
   );
 };
@@ -47,21 +82,23 @@ const ChangePassword = () => {
   const { alertState, showSuccess, showError, hideAlert } = useAlertModal();
 
   const [formData, setFormData] = useState({
-    newPassword: '',
-    confirmPassword: '',
+    newPassword: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
   const [confirmPasswordError, setConfirmPasswordError] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleFormChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Check password matching in real-time
-    if (field === 'newPassword') {
+    if (field === "newPassword") {
       // When new password changes, check if it matches confirm password
       if (value && formData.confirmPassword) {
         const match = value === formData.confirmPassword;
@@ -71,7 +108,7 @@ const ChangePassword = () => {
         setPasswordsMatch(true);
         setConfirmPasswordError(false);
       }
-    } else if (field === 'confirmPassword') {
+    } else if (field === "confirmPassword") {
       // When confirm password changes, check if it matches new password
       if (value && formData.newPassword) {
         const match = value === formData.newPassword;
@@ -146,11 +183,12 @@ const ChangePassword = () => {
         onConfirm: () => {
           hideAlert();
           navigation.goBack();
-        }
+        },
       });
     } catch (error) {
       // Customize error message for display
-      let errorMessage = error.error || error.message || "Failed to change password";
+      let errorMessage =
+        error.error || error.message || "Failed to change password";
       showError("Error", errorMessage);
     } finally {
       setLoading(false);
@@ -164,9 +202,11 @@ const ChangePassword = () => {
         <AccountFormField
           title="New Password"
           value={formData.newPassword}
-          onChangeText={(value) => handleFormChange('newPassword', value)}
+          onChangeText={(value) => handleFormChange("newPassword", value)}
           placeholder="Enter new password"
           secureTextEntry={true}
+          showPassword={showNewPassword}
+          onTogglePassword={() => setShowNewPassword(!showNewPassword)}
         />
 
         <View style={styles.passwordRequirementsContainer}>
@@ -202,17 +242,19 @@ const ChangePassword = () => {
         <AccountFormField
           title="Confirm New Password"
           value={formData.confirmPassword}
-          onChangeText={(value) => handleFormChange('confirmPassword', value)}
+          onChangeText={(value) => handleFormChange("confirmPassword", value)}
           placeholder="Confirm new password"
           secureTextEntry={true}
           error={confirmPasswordError}
+          showPassword={showConfirmPassword}
+          onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)}
         />
         {confirmPasswordError && formData.confirmPassword && (
           <Text style={styles.errorText}>Passwords do not match</Text>
         )}
 
-        <TouchableOpacity 
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
+        <TouchableOpacity
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={loading}
         >
@@ -223,7 +265,7 @@ const ChangePassword = () => {
           )}
         </TouchableOpacity>
       </ScrollView>
-      
+
       <AlertModal
         visible={alertState.visible}
         onClose={hideAlert}

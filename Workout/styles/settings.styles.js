@@ -154,6 +154,22 @@ export const createStyles = (isDark = true) => {
       borderWidth: 1,
       borderColor: colors.borderColor,
     },
+    passwordInputContainer: {
+      position: "relative",
+      width: "100%",
+      justifyContent: "center",
+    },
+    passwordInput: {
+      paddingRight: 50,
+    },
+    eyeIcon: {
+      position: "absolute",
+      right: 12,
+      height: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 8,
+    },
     saveButton: {
       backgroundColor: colors.primaryBlue,
       marginHorizontal: Spacing.m,

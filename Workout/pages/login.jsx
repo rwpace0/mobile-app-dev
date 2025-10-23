@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../API/auth/authContext";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
@@ -14,6 +15,7 @@ const LoginPage = ({ navigation }) => {
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { login, error } = useAuth();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -119,18 +121,32 @@ const LoginPage = ({ navigation }) => {
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Password</Text>
-        <TextInput
-          style={[
-            styles.textInput,
-            passwordError ? styles.textInputError : null,
-          ]}
-          placeholder="Enter your password"
-          placeholderTextColor={colors.placeholder}
-          secureTextEntry
-          value={password}
-          onChangeText={handlePasswordChange}
-          editable={!loading}
-        />
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={[
+              styles.textInput,
+              styles.passwordInput,
+              passwordError ? styles.textInputError : null,
+            ]}
+            placeholder="Enter your password"
+            placeholderTextColor={colors.placeholder}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={handlePasswordChange}
+            editable={!loading}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+            disabled={loading}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
         {passwordError && (
           <Text style={styles.errorText}>
             {!password ? "Password is required" : "Invalid password"}

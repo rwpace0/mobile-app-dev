@@ -15,6 +15,7 @@ const SignUpPage = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -235,15 +236,28 @@ const SignUpPage = ({ navigation }) => {
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Password</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter your password"
-          placeholderTextColor={colors.placeholder}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          editable={!loading}
-        />
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={[styles.textInput, styles.passwordInput]}
+            placeholder="Enter your password"
+            placeholderTextColor={colors.placeholder}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            editable={!loading}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+            disabled={loading}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.passwordRequirementsContainer}>
           <View style={styles.strengthBarContainer}>

@@ -1,5 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { createStyles } from "../styles/login.styles";
 import { getColors } from "../constants/colors";
@@ -17,13 +23,19 @@ const ResetPassword = ({ navigation, route }) => {
   const [step, setStep] = useState("request"); // "request" or "reset"
   const [token_hash, setToken_hash] = useState("");
   const [type, setType] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-
-  
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
-  const { requestPasswordReset, resetPasswordWithToken, setUser, updateUserPassword, user } = useAuth();
+  const {
+    requestPasswordReset,
+    resetPasswordWithToken,
+    setUser,
+    updateUserPassword,
+    user,
+  } = useAuth();
   const { alertState, showError, showSuccess, hideAlert } = useAlertModal();
 
   // Auto-close modal when user becomes authenticated (after successful password reset)
@@ -43,32 +55,39 @@ const ResetPassword = ({ navigation, route }) => {
     const refreshToken = route?.params?.refresh_token;
     const expiresIn = route?.params?.expires_in;
     const type = route?.params?.type;
-    
+
     // If we have access_token, the user has a recovery session
-    if (accessToken && refreshToken && type === 'recovery') {
+    if (accessToken && refreshToken && type === "recovery") {
       // Store the recovery session tokens temporarily
       const setupRecoverySession = async () => {
         try {
-          await storage.setTokens(accessToken, refreshToken, parseInt(expiresIn));
-          
+          await storage.setTokens(
+            accessToken,
+            refreshToken,
+            parseInt(expiresIn)
+          );
+
           // Set up the component state for password reset
           setToken_hash(accessToken); // Use access_token as the token
           setType(type);
           setStep("reset");
         } catch (error) {
-          console.error('Recovery session setup failed:', error);
-          showError("Error", "Failed to set up recovery session. Please try again.");
+          console.error("Recovery session setup failed:", error);
+          showError(
+            "Error",
+            "Failed to set up recovery session. Please try again."
+          );
         }
       };
-      
+
       setupRecoverySession();
       return;
     }
-    
+
     // Otherwise, check for regular reset tokens
     const token = route.params?.token || route.params?.token_hash;
-    
-    if (token && type === 'recovery') {
+
+    if (token && type === "recovery") {
       setToken_hash(token);
       setType(type);
       setStep("reset");
@@ -130,7 +149,10 @@ const ResetPassword = ({ navigation, route }) => {
         }
       );
     } catch (error) {
-      showError("Error", error.message || "Failed to send password reset email");
+      showError(
+        "Error",
+        error.message || "Failed to send password reset email"
+      );
     } finally {
       setLoading(false);
     }
@@ -149,15 +171,15 @@ const ResetPassword = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      
+
       // If we have a recovery session (access_token), use updateUser
-      if (type === 'recovery' && route.params?.access_token) {
+      if (type === "recovery" && route.params?.access_token) {
         await updateUserPassword(
-          password, 
-          route.params.access_token, 
+          password,
+          route.params.access_token,
           route.params.refresh_token
         );
-        
+
         showSuccess(
           "Success",
           "Password updated successfully! You are now logged in. Redirecting to app..."
@@ -181,7 +203,8 @@ const ResetPassword = ({ navigation, route }) => {
     <>
       <Text style={styles.title}>Reset Password</Text>
       <Text style={styles.subtitle}>
-        Enter your email address and we'll send you a link to reset your password.
+        Enter your email address and we'll send you a link to reset your
+        password.
       </Text>
 
       <View style={styles.inputContainer}>
@@ -199,7 +222,10 @@ const ResetPassword = ({ navigation, route }) => {
       </View>
 
       <TouchableOpacity
-        style={[styles.button, (!canSubmitRequest || loading) && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          (!canSubmitRequest || loading) && styles.buttonDisabled,
+        ]}
         activeOpacity={0.8}
         onPress={handleRequestReset}
         disabled={!canSubmitRequest || loading}
@@ -214,23 +240,32 @@ const ResetPassword = ({ navigation, route }) => {
   const renderResetStep = () => (
     <>
       <Text style={styles.title}>Set New Password</Text>
-      <Text style={styles.subtitle}>
-        Enter your new password below.
-      </Text>
-      
-
+      <Text style={styles.subtitle}>Enter your new password below.</Text>
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>New Password</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Enter your new password"
-          placeholderTextColor={colors.placeholder}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          editable={!loading}
-        />
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={[styles.textInput, styles.passwordInput]}
+            placeholder="Enter your new password"
+            placeholderTextColor={colors.placeholder}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            editable={!loading}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+            disabled={loading}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.passwordRequirementsContainer}>
           <View style={styles.strengthBarContainer}>
@@ -265,25 +300,42 @@ const ResetPassword = ({ navigation, route }) => {
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Confirm Password</Text>
-        <TextInput
-          style={[
-            styles.textInput,
-            confirmPassword && !passwordsMatch ? styles.textInputError : null,
-          ]}
-          placeholder="Confirm your new password"
-          placeholderTextColor={colors.placeholder}
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          editable={!loading}
-        />
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={[
+              styles.textInput,
+              styles.passwordInput,
+              confirmPassword && !passwordsMatch ? styles.textInputError : null,
+            ]}
+            placeholder="Confirm your new password"
+            placeholderTextColor={colors.placeholder}
+            secureTextEntry={!showConfirmPassword}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            editable={!loading}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            disabled={loading}
+          >
+            <Ionicons
+              name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
         {confirmPassword && !passwordsMatch && (
           <Text style={styles.errorText}>Passwords do not match</Text>
         )}
       </View>
 
       <TouchableOpacity
-        style={[styles.button, (!canSubmitReset || loading) && styles.buttonDisabled]}
+        style={[
+          styles.button,
+          (!canSubmitReset || loading) && styles.buttonDisabled,
+        ]}
         activeOpacity={0.8}
         onPress={handleResetPassword}
         disabled={!canSubmitReset || loading}
@@ -296,13 +348,11 @@ const ResetPassword = ({ navigation, route }) => {
   );
 
   return (
-    <ScrollView 
+    <ScrollView
       style={{ backgroundColor: colors.backgroundPrimary }}
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-
-      
       {step === "request" ? renderRequestStep() : renderResetStep()}
 
       <TouchableOpacity
