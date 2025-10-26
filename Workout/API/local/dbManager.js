@@ -20,9 +20,13 @@ class DatabaseManager {
       `);
 
       // Check current version
-      const [versionRow] = await this.db.getAllAsync('SELECT version FROM db_version ORDER BY version DESC LIMIT 1');
+      const [versionRow] = await this.db.getAllAsync(
+        "SELECT version FROM db_version ORDER BY version DESC LIMIT 1"
+      );
       const currentVersion = versionRow ? versionRow.version : 0;
-      console.log(`[DatabaseManager] Current database version: ${currentVersion}`);
+      console.log(
+        `[DatabaseManager] Current database version: ${currentVersion}`
+      );
 
       if (currentVersion < 1) {
         // Initial schema
@@ -182,80 +186,176 @@ class DatabaseManager {
             `);
 
         // Update version - check if version 1 exists first
-        const [version1Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 1');
-        if (!version1Exists) {
-          await this.db.execAsync('INSERT INTO db_version (version) VALUES (1)');
+        const version1Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 1"
+        );
+        if (version1Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (1)"
+          );
         }
       }
 
       if (currentVersion < 2) {
         // Add local_media_path if it doesn't exist
         try {
-          await this.db.execAsync('ALTER TABLE exercises ADD COLUMN local_media_path TEXT;');
+          await this.db.execAsync(
+            "ALTER TABLE exercises ADD COLUMN local_media_path TEXT;"
+          );
         } catch (e) {
           // Column might already exist, that's fine
         }
 
         // Add template_id to workouts table if it doesn't exist
         try {
-          await this.db.execAsync('ALTER TABLE workouts ADD COLUMN template_id TEXT;');
-          console.log('[DatabaseManager] Added template_id column to workouts table');
+          await this.db.execAsync(
+            "ALTER TABLE workouts ADD COLUMN template_id TEXT;"
+          );
+          console.log(
+            "[DatabaseManager] Added template_id column to workouts table"
+          );
         } catch (e) {
           // Column might already exist, that's fine
-          console.log('[DatabaseManager] template_id column already exists or failed to add:', e.message);
+          console.log(
+            "[DatabaseManager] template_id column already exists or failed to add:",
+            e.message
+          );
         }
 
         // Update version - check if version 2 exists first
-        const [version2Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 2');
-        if (!version2Exists) {
-          await this.db.execAsync('INSERT INTO db_version (version) VALUES (2)');
+        const version2Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 2"
+        );
+        if (version2Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (2)"
+          );
         }
       }
 
       // Force check for sync_priority column and add if missing (regardless of version)
       // This handles cases where cache was reset but migration state is inconsistent
       try {
-        const tableInfo = await this.db.getAllAsync('PRAGMA table_info(exercises)');
-        const hasSyncPriority = tableInfo.some(col => col.name === 'sync_priority');
-        
-        
+        const tableInfo = await this.db.getAllAsync(
+          "PRAGMA table_info(exercises)"
+        );
+        const hasSyncPriority = tableInfo.some(
+          (col) => col.name === "sync_priority"
+        );
+
         if (!hasSyncPriority) {
-          console.log('Adding missing sync_priority column to exercises table');
-          await this.db.execAsync('ALTER TABLE exercises ADD COLUMN sync_priority TEXT;');
-          console.log('Successfully added sync_priority column');
+          console.log("Adding missing sync_priority column to exercises table");
+          await this.db.execAsync(
+            "ALTER TABLE exercises ADD COLUMN sync_priority TEXT;"
+          );
+          console.log("Successfully added sync_priority column");
         }
       } catch (error) {
-        console.error('Error checking/adding sync_priority column:', error);
+        console.error("Error checking/adding sync_priority column:", error);
         throw error;
       }
 
       // Force check for template_id column and add if missing (regardless of version)
       // This handles cases where the column is missing from existing databases
       try {
-        const workoutsTableInfo = await this.db.getAllAsync('PRAGMA table_info(workouts)');
-        const hasTemplateId = workoutsTableInfo.some(col => col.name === 'template_id');
-        
+        const workoutsTableInfo = await this.db.getAllAsync(
+          "PRAGMA table_info(workouts)"
+        );
+        const hasTemplateId = workoutsTableInfo.some(
+          (col) => col.name === "template_id"
+        );
+
         if (!hasTemplateId) {
-          console.log('[DatabaseManager] Adding missing template_id column to workouts table');
-          await this.db.execAsync('ALTER TABLE workouts ADD COLUMN template_id TEXT;');
-          console.log('[DatabaseManager] Successfully added template_id column');
+          console.log(
+            "[DatabaseManager] Adding missing template_id column to workouts table"
+          );
+          await this.db.execAsync(
+            "ALTER TABLE workouts ADD COLUMN template_id TEXT;"
+          );
+          console.log(
+            "[DatabaseManager] Successfully added template_id column"
+          );
         } else {
-          
         }
       } catch (error) {
-        console.error('[DatabaseManager] Error checking/adding template_id column:', error);
+        console.error(
+          "[DatabaseManager] Error checking/adding template_id column:",
+          error
+        );
         throw error;
       }
 
       if (currentVersion < 3) {
-        console.log('Updating to database version 3');
-        
+        console.log("Updating to database version 3");
+
         // Update version
-        const [version3Exists] = await this.db.getAllAsync('SELECT 1 FROM db_version WHERE version = 3');
-        if (!version3Exists) {
-          await this.db.execAsync('INSERT INTO db_version (version) VALUES (3)');
-          console.log('Database version updated to 3');
+        const version3Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 3"
+        );
+        if (version3Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (3)"
+          );
+          console.log("Database version updated to 3");
         }
+      }
+
+      if (currentVersion < 4) {
+        console.log("[DatabaseManager] Updating to database version 4");
+
+        // Add secondary_muscle_groups column to exercises table
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE exercises ADD COLUMN secondary_muscle_groups TEXT;"
+          );
+          console.log(
+            "[DatabaseManager] Added secondary_muscle_groups column to exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] secondary_muscle_groups column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        // Update version
+        const version4Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 4"
+        );
+        if (version4Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (4)"
+          );
+          console.log("[DatabaseManager] Database version updated to 4");
+        }
+      }
+
+      // Force check for secondary_muscle_groups column and add if missing (regardless of version)
+      try {
+        const tableInfo = await this.db.getAllAsync(
+          "PRAGMA table_info(exercises)"
+        );
+        const hasSecondaryMuscleGroups = tableInfo.some(
+          (col) => col.name === "secondary_muscle_groups"
+        );
+
+        if (!hasSecondaryMuscleGroups) {
+          console.log(
+            "[DatabaseManager] Adding missing secondary_muscle_groups column to exercises table"
+          );
+          await this.db.execAsync(
+            "ALTER TABLE exercises ADD COLUMN secondary_muscle_groups TEXT;"
+          );
+          console.log(
+            "[DatabaseManager] Successfully added secondary_muscle_groups column"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[DatabaseManager] Error checking/adding secondary_muscle_groups column:",
+          error
+        );
+        throw error;
       }
 
       console.log("Database initialized successfully");
@@ -292,22 +392,22 @@ class DatabaseManager {
       params.forEach((param, index) => {
         let value = param;
         if (param === undefined || param === null) {
-          value = 'NULL';
-        } else if (typeof param === 'string') {
+          value = "NULL";
+        } else if (typeof param === "string") {
           value = `'${param.replace(/'/g, "''")}'`; // Escape single quotes
-        } else if (typeof param === 'boolean') {
+        } else if (typeof param === "boolean") {
           value = param ? 1 : 0;
         }
-        finalSql = finalSql.replace('?', value);
+        finalSql = finalSql.replace("?", value);
       });
 
       //console.log('[DatabaseManager] Final SQL:', finalSql);
-      
+
       // Execute the query directly
       const result = await this.db.execAsync(finalSql);
       return {
         rowsAffected: result ? 1 : 0,
-        insertId: null
+        insertId: null,
       };
     } catch (error) {
       console.error("Execute failed:", error);
@@ -319,14 +419,14 @@ class DatabaseManager {
     await this.initializationPromise;
     if (!this.db) throw new Error("Database not initialized");
     // Order matters due to foreign key constraints
-    await this.db.execAsync('DELETE FROM sets');
-    await this.db.execAsync('DELETE FROM workout_exercises');
-    await this.db.execAsync('DELETE FROM workouts');
-    await this.db.execAsync('DELETE FROM template_exercises');
-    await this.db.execAsync('DELETE FROM workout_templates');
-    await this.db.execAsync('DELETE FROM exercises');
-    await this.db.execAsync('DELETE FROM profiles');
-    await this.db.execAsync('DELETE FROM workout_summaries');
+    await this.db.execAsync("DELETE FROM sets");
+    await this.db.execAsync("DELETE FROM workout_exercises");
+    await this.db.execAsync("DELETE FROM workouts");
+    await this.db.execAsync("DELETE FROM template_exercises");
+    await this.db.execAsync("DELETE FROM workout_templates");
+    await this.db.execAsync("DELETE FROM exercises");
+    await this.db.execAsync("DELETE FROM profiles");
+    await this.db.execAsync("DELETE FROM workout_summaries");
   }
 
   async close() {

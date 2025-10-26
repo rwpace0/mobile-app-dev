@@ -110,25 +110,37 @@ const ViewExercisesPage = () => {
       );
       setExercises(sortedData);
       setFilteredExercises(sortedData);
-      
+
       // Download media for exercises that have media_url but no local_media_path
       if (exercisesData && exercisesData.length > 0) {
-        const exercisesNeedingMedia = exercisesData.filter(ex => ex.media_url && !ex.local_media_path);
-        
+        const exercisesNeedingMedia = exercisesData.filter(
+          (ex) => ex.media_url && !ex.local_media_path
+        );
+
         if (exercisesNeedingMedia.length > 0) {
-          console.log(`[ViewExercises] Found ${exercisesNeedingMedia.length} exercises needing media download`);
-          
+          console.log(
+            `[ViewExercises] Found ${exercisesNeedingMedia.length} exercises needing media download`
+          );
+
           // Download media in the background for better performance
           setTimeout(async () => {
             for (const exercise of exercisesNeedingMedia) {
               try {
-                await exercisesAPI.downloadExerciseMedia(exercise.exercise_id, exercise.media_url);
-                console.log(`[ViewExercises] Downloaded media for exercise ${exercise.exercise_id}`);
+                await exercisesAPI.downloadExerciseMedia(
+                  exercise.exercise_id,
+                  exercise.media_url
+                );
+                console.log(
+                  `[ViewExercises] Downloaded media for exercise ${exercise.exercise_id}`
+                );
               } catch (mediaError) {
-                console.warn(`[ViewExercises] Failed to download media for exercise ${exercise.exercise_id}:`, mediaError);
+                console.warn(
+                  `[ViewExercises] Failed to download media for exercise ${exercise.exercise_id}:`,
+                  mediaError
+                );
               }
             }
-            
+
             // Refresh the exercises list to show the updated local_media_path
             const updatedExercises = await exercisesAPI.getExercises();
             if (updatedExercises) {
@@ -141,7 +153,6 @@ const ViewExercisesPage = () => {
           }, 1000); // Delay to avoid blocking the UI
         }
       }
-      
     } catch (err) {
       console.error("Error loading exercises:", err);
       setError(err.message || "Failed to load exercises");
@@ -201,7 +212,20 @@ const ViewExercisesPage = () => {
           ?.toLowerCase()
           .includes(searchTermLower);
 
-        return nameMatch || muscleGroupMatch || instructionMatch;
+        // Check if any secondary muscle group matches
+        const secondaryMuscleMatch =
+          exercise.secondary_muscle_groups &&
+          Array.isArray(exercise.secondary_muscle_groups) &&
+          exercise.secondary_muscle_groups.some((muscle) =>
+            muscle?.toLowerCase().includes(searchTermLower)
+          );
+
+        return (
+          nameMatch ||
+          muscleGroupMatch ||
+          instructionMatch ||
+          secondaryMuscleMatch
+        );
       });
       setFilteredExercises(
         filtered.sort((a, b) => a.name.localeCompare(b.name))

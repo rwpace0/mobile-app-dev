@@ -11,12 +11,15 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { createStyles } from "../../styles/createExercise.styles";
 import exercisesAPI from "../../API/exercisesAPI";
 import { mediaAPI } from "../../API/mediaAPI";
-import { requestMediaLibraryPermission, validateImageFile } from "../../utils/permissions";
+import {
+  requestMediaLibraryPermission,
+  validateImageFile,
+} from "../../utils/permissions";
 import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
 import { Spacing } from "../../constants/theme";
@@ -55,16 +58,17 @@ const CreateExercise = () => {
   const styles = createStyles(isDark);
   const navigation = useNavigation();
   const route = useRoute();
-  
+
   // Check if we're in editing mode
   const isEditing = route.params?.isEditing || false;
   const exerciseToEdit = route.params?.exercise || null;
   const exerciseId = route.params?.exerciseId || null;
-  
+
   const [formData, setFormData] = useState({
     name: "",
     equipment: "",
     muscle_group: "",
+    secondary_muscle_groups: [],
     instruction: "",
   });
   const [formErrors, setFormErrors] = useState({});
@@ -75,23 +79,29 @@ const CreateExercise = () => {
   const [imageError, setImageError] = useState(null);
   const [newImageSelected, setNewImageSelected] = useState(false);
   const { alertState, showError, showWarning, hideAlert } = useAlertModal();
-  
+
   // Load exercise data for editing
   useEffect(() => {
     if (isEditing && exerciseToEdit) {
       // Check if trying to edit a public exercise
-      
-      
+
       setFormData({
         name: exerciseToEdit.name || "",
         equipment: exerciseToEdit.equipment || "",
         muscle_group: exerciseToEdit.muscle_group || "",
+        secondary_muscle_groups: Array.isArray(
+          exerciseToEdit.secondary_muscle_groups
+        )
+          ? exerciseToEdit.secondary_muscle_groups
+          : [],
         instruction: exerciseToEdit.instruction || "",
       });
-      
+
       // Set existing image if available
       if (exerciseToEdit.local_media_path) {
-        setSelectedImage(`file://${FileSystem.cacheDirectory}app_media/exercises/${exerciseToEdit.local_media_path}`);
+        setSelectedImage(
+          `file://${FileSystem.cacheDirectory}app_media/exercises/${exerciseToEdit.local_media_path}`
+        );
       }
     }
   }, [isEditing, exerciseToEdit, navigation]);
@@ -119,16 +129,26 @@ const CreateExercise = () => {
 
     try {
       setLoading(true);
-      console.log(`[CreateExercise] ${isEditing ? 'Updating' : 'Creating'} exercise:`, formData);
-      
+      console.log(
+        `[CreateExercise] ${isEditing ? "Updating" : "Creating"} exercise:`,
+        formData
+      );
+
       let exercise;
       if (isEditing && exerciseId) {
         // Update existing exercise, syncing immediately if there's a new image
-        exercise = await exercisesAPI.updateExercise(exerciseId, formData, newImageSelected);
+        exercise = await exercisesAPI.updateExercise(
+          exerciseId,
+          formData,
+          newImageSelected
+        );
         console.log("[CreateExercise] Exercise updated:", exercise);
       } else {
         // Create new exercise, syncing immediately if there's a new image
-        exercise = await exercisesAPI.createExercise(formData, newImageSelected);
+        exercise = await exercisesAPI.createExercise(
+          formData,
+          newImageSelected
+        );
         console.log("[CreateExercise] Exercise created locally:", exercise);
       }
 
@@ -136,21 +156,29 @@ const CreateExercise = () => {
       if (newImageSelected) {
         try {
           setUploadingMedia(true);
-          
+
           // The exercise is now synced (or pending immediate sync), we can use its ID to upload media
           const targetExerciseId = exercise.exercise_id;
-          console.log("[CreateExercise] Uploading media for exercise ID:", targetExerciseId);
-          
+          console.log(
+            "[CreateExercise] Uploading media for exercise ID:",
+            targetExerciseId
+          );
+
           const { mediaUrl, localPath } = await mediaAPI.uploadExerciseMedia(
             targetExerciseId,
             selectedImage
           );
-          console.log("[CreateExercise] Media uploaded:", { mediaUrl, localPath });
+          console.log("[CreateExercise] Media uploaded:", {
+            mediaUrl,
+            localPath,
+          });
         } catch (mediaError) {
           console.error("Failed to upload media:", mediaError);
           showWarning(
             "Warning",
-            `Exercise ${isEditing ? 'updated' : 'created'} but failed to upload image. You can try adding the image later.`
+            `Exercise ${
+              isEditing ? "updated" : "created"
+            } but failed to upload image. You can try adding the image later.`
           );
         } finally {
           setUploadingMedia(false);
@@ -159,10 +187,14 @@ const CreateExercise = () => {
 
       navigation.goBack();
     } catch (error) {
-      console.error(`Failed to ${isEditing ? 'update' : 'create'} exercise:`, error);
+      console.error(
+        `Failed to ${isEditing ? "update" : "create"} exercise:`,
+        error
+      );
       showError(
         "Error",
-        error.response?.data?.error || `Failed to ${isEditing ? 'update' : 'create'} exercise`
+        error.response?.data?.error ||
+          `Failed to ${isEditing ? "update" : "create"} exercise`
       );
     } finally {
       setLoading(false);
@@ -182,7 +214,7 @@ const CreateExercise = () => {
 
       if (!result.canceled) {
         const imageUri = result.assets[0].uri;
-        
+
         try {
           validateImageFile(imageUri, result.assets[0].fileSize);
           setSelectedImage(imageUri);
@@ -208,26 +240,36 @@ const CreateExercise = () => {
           <Ionicons name="arrow-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text
-          style={[
-            styles.headerActionText,
-            { flex: 1, textAlign: "center" },
-          ]}
+          style={[styles.headerActionText, { flex: 1, textAlign: "center" }]}
         >
-          {isEditing ? 'Edit Exercise' : 'Create Exercise'}
+          {isEditing ? "Edit Exercise" : "Create Exercise"}
         </Text>
-        <TouchableOpacity onPress={handleSubmit} disabled={loading || uploadingMedia}>
-          <Text style={[
-            styles.headerActionTextActive,
-            (loading || uploadingMedia) && { opacity: 0.5 }
-          ]}>
-            {loading ? (isEditing ? 'Updating...' : 'Creating...') : uploadingMedia ? 'Uploading...' : (isEditing ? 'Update' : 'Create')}
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={loading || uploadingMedia}
+        >
+          <Text
+            style={[
+              styles.headerActionTextActive,
+              (loading || uploadingMedia) && { opacity: 0.5 },
+            ]}
+          >
+            {loading
+              ? isEditing
+                ? "Updating..."
+                : "Creating..."
+              : uploadingMedia
+              ? "Uploading..."
+              : isEditing
+              ? "Update"
+              : "Create"}
           </Text>
         </TouchableOpacity>
       </View>
 
-              <ScrollView contentContainerStyle={{ paddingBottom: Spacing.xxxl }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: Spacing.xxxl }}>
         {/* Image Section */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.imageSection}
           onPress={handleImagePick}
           disabled={loading || uploadingMedia}
@@ -244,11 +286,9 @@ const CreateExercise = () => {
             </View>
           )}
           <Text style={styles.addImageText}>
-            {selectedImage ? 'Change Image' : 'Add Image'}
+            {selectedImage ? "Change Image" : "Add Image"}
           </Text>
-          {imageError && (
-            <Text style={styles.errorText}>{imageError}</Text>
-          )}
+          {imageError && <Text style={styles.errorText}>{imageError}</Text>}
         </TouchableOpacity>
 
         {/* Form Fields */}
@@ -256,32 +296,38 @@ const CreateExercise = () => {
           {/* Exercise Name */}
           <Text style={styles.label}>Exercise Name</Text>
           <TextInput
-            style={[
-              styles.input,
-              formErrors.name && styles.inputError
-            ]}
+            style={[styles.input, formErrors.name && styles.inputError]}
             placeholder="Enter exercise name"
             placeholderTextColor="#999"
             value={formData.name}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, name: text }))
+            }
           />
           {formErrors.name && (
             <Text style={styles.errorText}>{formErrors.name}</Text>
           )}
 
           {/* Equipment Dropdown */}
-          <Text style={[styles.label, { marginTop: Spacing.m }]}>Equipment</Text>
+          <Text style={[styles.label, { marginTop: Spacing.m }]}>
+            Equipment
+          </Text>
           <TouchableOpacity
             style={[
               styles.input,
               styles.dropdown,
-              formErrors.equipment && styles.inputError
+              formErrors.equipment && styles.inputError,
             ]}
             onPress={() =>
               setOpenDropdown(openDropdown === "equipment" ? null : "equipment")
             }
           >
-            <Text style={{ color: formData.equipment ? colors.textWhite : colors.textFaded, flex: 1 }}>
+            <Text
+              style={{
+                color: formData.equipment ? colors.textWhite : colors.textFaded,
+                flex: 1,
+              }}
+            >
               {formData.equipment || "Select equipment"}
             </Text>
             <Ionicons
@@ -300,10 +346,11 @@ const CreateExercise = () => {
                     key={option}
                     style={[
                       styles.dropdownItem,
-                      formData.equipment === option && styles.dropdownItemSelected,
+                      formData.equipment === option &&
+                        styles.dropdownItemSelected,
                     ]}
                     onPress={() => {
-                      setFormData(prev => ({ ...prev, equipment: option }));
+                      setFormData((prev) => ({ ...prev, equipment: option }));
                       setOpenDropdown(null);
                     }}
                   >
@@ -325,13 +372,20 @@ const CreateExercise = () => {
             style={[
               styles.input,
               styles.dropdown,
-              formErrors.muscle_group && styles.inputError
+              formErrors.muscle_group && styles.inputError,
             ]}
             onPress={() =>
               setOpenDropdown(openDropdown === "muscle" ? null : "muscle")
             }
           >
-            <Text style={{ color: formData.muscle_group ? colors.textWhite : colors.textFaded, flex: 1 }}>
+            <Text
+              style={{
+                color: formData.muscle_group
+                  ? colors.textWhite
+                  : colors.textFaded,
+                flex: 1,
+              }}
+            >
               {formData.muscle_group || "Select muscle group"}
             </Text>
             <Ionicons
@@ -352,7 +406,10 @@ const CreateExercise = () => {
                         styles.dropdownItemSelected,
                     ]}
                     onPress={() => {
-                      setFormData(prev => ({ ...prev, muscle_group: option }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        muscle_group: option,
+                      }));
                       setOpenDropdown(null);
                     }}
                   >
@@ -366,17 +423,103 @@ const CreateExercise = () => {
             <Text style={styles.errorText}>{formErrors.muscle_group}</Text>
           )}
 
+          {/* Secondary Muscle Groups - Multi-select */}
+          <Text style={[styles.label, { marginTop: Spacing.m }]}>
+            Secondary Muscle Groups (Optional)
+          </Text>
+          <TouchableOpacity
+            style={[styles.input, styles.dropdown]}
+            onPress={() =>
+              setOpenDropdown(openDropdown === "secondary" ? null : "secondary")
+            }
+          >
+            <Text
+              style={{
+                color:
+                  formData.secondary_muscle_groups.length > 0
+                    ? colors.textWhite
+                    : colors.textFaded,
+                flex: 1,
+              }}
+            >
+              {formData.secondary_muscle_groups.length > 0
+                ? formData.secondary_muscle_groups.join(", ")
+                : "Select secondary muscle groups"}
+            </Text>
+            <Ionicons
+              name={
+                openDropdown === "secondary" ? "chevron-up" : "chevron-down"
+              }
+              size={20}
+              color="#999"
+            />
+          </TouchableOpacity>
+          {openDropdown === "secondary" && (
+            <View style={styles.dropdownMenu}>
+              <ScrollView style={{ maxHeight: 200 }}>
+                {muscleOptions.map((option) => {
+                  const isSelected =
+                    formData.secondary_muscle_groups.includes(option);
+                  return (
+                    <TouchableOpacity
+                      key={option}
+                      style={[
+                        styles.dropdownItem,
+                        isSelected && styles.dropdownItemSelected,
+                      ]}
+                      onPress={() => {
+                        setFormData((prev) => {
+                          const currentSelection = [
+                            ...prev.secondary_muscle_groups,
+                          ];
+                          if (isSelected) {
+                            // Remove from selection
+                            return {
+                              ...prev,
+                              secondary_muscle_groups: currentSelection.filter(
+                                (m) => m !== option
+                              ),
+                            };
+                          } else {
+                            // Add to selection
+                            return {
+                              ...prev,
+                              secondary_muscle_groups: [
+                                ...currentSelection,
+                                option,
+                              ],
+                            };
+                          }
+                        });
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{option}</Text>
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={colors.primaryBlue}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Instruction */}
-          <Text style={[styles.label, { marginTop: Spacing.m }]}>Instruction</Text>
+          <Text style={[styles.label, { marginTop: Spacing.m }]}>
+            Instruction
+          </Text>
           <TextInput
-            style={[
-              styles.input,
-              formErrors.instruction && styles.inputError
-            ]}
+            style={[styles.input, formErrors.instruction && styles.inputError]}
             placeholder="Enter exercise instruction"
             placeholderTextColor="#999"
             value={formData.instruction}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, instruction: text }))}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, instruction: text }))
+            }
           />
           {formErrors.instruction && (
             <Text style={styles.errorText}>{formErrors.instruction}</Text>
@@ -387,7 +530,7 @@ const CreateExercise = () => {
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color={colors.textPrimary} />
             <Text style={styles.loadingText}>
-              {uploadingMedia ? 'Uploading image...' : 'Creating exercise...'}
+              {uploadingMedia ? "Uploading image..." : "Creating exercise..."}
             </Text>
           </View>
         )}

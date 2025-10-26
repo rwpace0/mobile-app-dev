@@ -248,6 +248,26 @@ const ExerciseDetailPage = () => {
         </View>
       </View>
 
+      {exercise?.secondary_muscle_groups &&
+        exercise.secondary_muscle_groups.length > 0 && (
+          <View style={styles.infoCard}>
+            <Ionicons
+              name="body-outline"
+              size={24}
+              color={colors.textSecondary}
+              style={styles.infoIcon}
+            />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Secondary Muscle Groups</Text>
+              <Text style={styles.infoText}>
+                {exercise.secondary_muscle_groups
+                  .map((m) => m.charAt(0).toUpperCase() + m.slice(1))
+                  .join(", ")}
+              </Text>
+            </View>
+          </View>
+        )}
+
       <View style={styles.instructionContainer}>
         <Text style={styles.instructionLabel}>Instructions</Text>
         <Text style={styles.instructionText}>

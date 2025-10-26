@@ -21,6 +21,7 @@ This mobile workout tracking app provides users with a complete fitness manageme
 ## 🏗️ Technical Architecture
 
 ### Frontend (React Native)
+
 - **Framework**: React Native with Expo
 - **Navigation**: React Navigation v7 with deep linking support
 - **State Management**: React Context API for global state
@@ -30,6 +31,7 @@ This mobile workout tracking app provides users with a complete fitness manageme
 - **UI Components**: Custom components with theme support (light/dark mode)
 
 ### Backend (Node.js/Express)
+
 - **Runtime**: Node.js with Express.js framework
 - **Database**: Supabase (PostgreSQL) with real-time capabilities
 - **Authentication**: Supabase Auth with JWT tokens
@@ -75,6 +77,7 @@ mobile-app-dev/
 ## 🔧 Key Features
 
 ### Authentication & Security
+
 - Email/password registration with verification
 - Secure JWT token management with refresh tokens
 - Password reset functionality
@@ -82,19 +85,22 @@ mobile-app-dev/
 - Account management (username/email changes)
 
 ### Workout Management
+
 - **Active Workout Tracking**: Real-time exercise tracking with pause/resume
-- **Exercise Library**: Custom exercise creation with media support
+- **Exercise Library**: Custom exercise creation with media support and secondary muscle group targeting
 - **Template System**: Reusable workout routines
 - **Progress Analytics**: Volume, sets, and performance tracking
 - **Workout History**: Detailed historical data with filtering
 
 ### Data Management
+
 - **Offline Support**: Local SQLite database for offline functionality
 - **Sync Management**: Automatic data synchronization when online
 - **Media Caching**: Local storage for exercise images/videos
 - **Background Processing**: Efficient data handling and cleanup
 
 ### User Experience
+
 - **Deep Linking**: Email verification and password reset links
 - **Haptic Feedback**: Enhanced user interaction
 - **Theme Support**: Light/dark mode switching
@@ -130,4 +136,4 @@ This is a personal project currently in active development. Contributions will n
 
 ---
 
-*Last updated: September 2025*
+_Last updated: September 2025_
