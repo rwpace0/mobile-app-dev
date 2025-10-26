@@ -311,7 +311,9 @@ const ExerciseDetailPage = () => {
               </View>
               <View style={styles.prStatItem}>
                 <Text style={styles.prDate}>
-                  {format(parseISO(personalRecord.date), "MMM d, yyyy")}
+                  {personalRecord.date
+                    ? format(parseISO(personalRecord.date), "MMM d, yyyy")
+                    : "N/A"}
                 </Text>
                 <Text style={styles.prLabel}>Date</Text>
               </View>
