@@ -34,8 +34,6 @@ const RoutineCreate = () => {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const { alertState, showError, hideAlert } = useAlertModal();
 
-
-
   const handleAddExercise = () => {
     navigation.navigate("AddExercise", {
       onExercisesSelected: (selectedExercises) => {
@@ -149,30 +147,36 @@ const RoutineCreate = () => {
       <Header
         title="Create Routine"
         leftComponent={{
-          type: 'button',
-          text: 'Cancel',
-          onPress: handleCancel
+          type: "button",
+          text: "Cancel",
+          onPress: handleCancel,
         }}
         rightComponent={{
-          type: 'button',
+          type: "button",
           text: isSaving ? "Saving..." : "Save",
-          onPress: handleSave
+          onPress: handleSave,
         }}
       />
 
-      <ScrollView style={styles.content}>
-        <TextInput
-          style={styles.routineNameInput}
-          placeholder="Routine Name"
-          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-          value={routineName}
-          onChangeText={setRoutineName}
-        />
-
-        {exercises.length === 0 ? (
+      {exercises.length === 0 ? (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        >
+          <TextInput
+            style={styles.routineNameInput}
+            placeholder="Routine Name"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+            value={routineName}
+            onChangeText={setRoutineName}
+          />
           <View style={styles.emptyWorkoutContainer}>
             <View style={styles.iconContainer}>
-              <Ionicons name="barbell-outline" size={42} color={colors.textSecondary} />
+              <Ionicons
+                name="barbell-outline"
+                size={42}
+                color={colors.textSecondary}
+              />
             </View>
             <Text style={styles.getStartedText}>Get started</Text>
             <Text style={styles.instructionText}>
@@ -187,26 +191,35 @@ const RoutineCreate = () => {
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <DraggableFlatList
-            data={exercises}
-            renderItem={renderExerciseItem}
-            keyExtractor={(item) => item.exercise_id.toString()}
-            onDragEnd={handleDragEnd}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.exercisesContainer}
-            ListFooterComponent={() => (
-              <TouchableOpacity
-                style={styles.addExerciseButton}
-                onPress={handleAddExercise}
-              >
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-                <Text style={styles.addExerciseText}>Add Exercise</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-      </ScrollView>
+        </ScrollView>
+      ) : (
+        <DraggableFlatList
+          data={exercises}
+          renderItem={renderExerciseItem}
+          keyExtractor={(item) => item.exercise_id.toString()}
+          onDragEnd={handleDragEnd}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          ListHeaderComponent={() => (
+            <TextInput
+              style={styles.routineNameInput}
+              placeholder="Routine Name"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={routineName}
+              onChangeText={setRoutineName}
+            />
+          )}
+          ListFooterComponent={() => (
+            <TouchableOpacity
+              style={styles.addExerciseButton}
+              onPress={handleAddExercise}
+            >
+              <Ionicons name="add" size={20} color={colors.textPrimary} />
+              <Text style={styles.addExerciseText}>Add Exercise</Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
 
       <DeleteConfirmModal
         visible={showCancelConfirm}

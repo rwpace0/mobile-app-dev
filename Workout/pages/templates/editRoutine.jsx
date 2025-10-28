@@ -30,7 +30,7 @@ const EditRoutine = () => {
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const { template_id } = route.params || {};
- 
+
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
   const [totalSets, setTotalSets] = useState(0);
@@ -50,7 +50,7 @@ const EditRoutine = () => {
     try {
       setLoading(true);
       const template = await templateAPI.getTemplateById(template_id);
-      
+
       if (!template) {
         showError("Error", "Template not found");
         return;
@@ -63,7 +63,9 @@ const EditRoutine = () => {
       if (template.exercises && template.exercises.length > 0) {
         const exercisesWithDetails = await Promise.all(
           template.exercises.map(async (templateExercise) => {
-            const exerciseDetails = await exercisesAPI.getExerciseById(templateExercise.exercise_id);
+            const exerciseDetails = await exercisesAPI.getExerciseById(
+              templateExercise.exercise_id
+            );
             return {
               exercise_id: templateExercise.exercise_id,
               name: exerciseDetails?.name || "Unknown Exercise",
@@ -73,9 +75,12 @@ const EditRoutine = () => {
           })
         );
         setExercises(exercisesWithDetails);
-        
+
         // Calculate total sets
-        const total = exercisesWithDetails.reduce((sum, ex) => sum + (ex.sets || 1), 0);
+        const total = exercisesWithDetails.reduce(
+          (sum, ex) => sum + (ex.sets || 1),
+          0
+        );
         setTotalSets(total);
       }
     } catch (error) {
@@ -101,11 +106,18 @@ const EditRoutine = () => {
 
   const handleCancel = () => {
     // Check if any changes were made
-    const hasChanges = 
+    const hasChanges =
       routineName !== (originalTemplate?.name || "") ||
       exercises.length !== (originalTemplate?.exercises?.length || 0) ||
-      JSON.stringify(exercises.map(ex => ({ exercise_id: ex.exercise_id, sets: ex.sets }))) !== 
-      JSON.stringify((originalTemplate?.exercises || []).map(ex => ({ exercise_id: ex.exercise_id, sets: ex.sets })));
+      JSON.stringify(
+        exercises.map((ex) => ({ exercise_id: ex.exercise_id, sets: ex.sets }))
+      ) !==
+        JSON.stringify(
+          (originalTemplate?.exercises || []).map((ex) => ({
+            exercise_id: ex.exercise_id,
+            sets: ex.sets,
+          }))
+        );
 
     if (hasChanges) {
       setShowCancelConfirm(true);
@@ -175,11 +187,14 @@ const EditRoutine = () => {
       };
 
       console.log("Updating template data:", templateData);
-      const response = await templateAPI.updateTemplate(template_id, templateData);
+      const response = await templateAPI.updateTemplate(
+        template_id,
+        templateData
+      );
       console.log("Template update response:", response);
-      
+
       showSuccess("Success", "Routine updated successfully", {
-        onConfirm: () => navigation.goBack()
+        onConfirm: () => navigation.goBack(),
       });
     } catch (error) {
       console.error("Failed to update template:", error);
@@ -208,11 +223,13 @@ const EditRoutine = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header 
-          title="Edit Routine" 
-          leftComponent={{ type: "back" }} 
-        />
-        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Header title="Edit Routine" leftComponent={{ type: "back" }} />
+        <View
+          style={[
+            styles.content,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+        >
           <ActivityIndicator size="large" color={colors.primaryBlue} />
         </View>
       </SafeAreaView>
@@ -224,30 +241,36 @@ const EditRoutine = () => {
       <Header
         title="Edit Routine"
         leftComponent={{
-          type: 'button',
-          text: 'Cancel',
-          onPress: handleCancel
+          type: "button",
+          text: "Cancel",
+          onPress: handleCancel,
         }}
         rightComponent={{
-          type: 'button',
+          type: "button",
           text: isSaving ? "Saving..." : "Save",
-          onPress: handleSave
+          onPress: handleSave,
         }}
       />
 
-      <ScrollView style={styles.content}>
-        <TextInput
-          style={styles.routineNameInput}
-          placeholder="Routine Name"
-          placeholderTextColor="rgba(255, 255, 255, 0.5)"
-          value={routineName}
-          onChangeText={setRoutineName}
-        />
-
-        {exercises.length === 0 ? (
+      {exercises.length === 0 ? (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        >
+          <TextInput
+            style={styles.routineNameInput}
+            placeholder="Routine Name"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+            value={routineName}
+            onChangeText={setRoutineName}
+          />
           <View style={styles.emptyWorkoutContainer}>
             <View style={styles.iconContainer}>
-              <Ionicons name="barbell-outline" size={42} color={colors.textSecondary} />
+              <Ionicons
+                name="barbell-outline"
+                size={42}
+                color={colors.textSecondary}
+              />
             </View>
             <Text style={styles.getStartedText}>Get started</Text>
             <Text style={styles.instructionText}>
@@ -262,26 +285,35 @@ const EditRoutine = () => {
               <Text style={styles.addExerciseText}>Add Exercise</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <DraggableFlatList
-            data={exercises}
-            renderItem={renderExerciseItem}
-            keyExtractor={(item) => item.exercise_id.toString()}
-            onDragEnd={handleDragEnd}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.exercisesContainer}
-            ListFooterComponent={() => (
-              <TouchableOpacity
-                style={styles.addExerciseButton}
-                onPress={handleAddExercise}
-              >
-                <Ionicons name="add" size={20} color={colors.textPrimary} />
-                <Text style={styles.addExerciseText}>Add Exercise</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-      </ScrollView>
+        </ScrollView>
+      ) : (
+        <DraggableFlatList
+          data={exercises}
+          renderItem={renderExerciseItem}
+          keyExtractor={(item) => item.exercise_id.toString()}
+          onDragEnd={handleDragEnd}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          ListHeaderComponent={() => (
+            <TextInput
+              style={styles.routineNameInput}
+              placeholder="Routine Name"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={routineName}
+              onChangeText={setRoutineName}
+            />
+          )}
+          ListFooterComponent={() => (
+            <TouchableOpacity
+              style={styles.addExerciseButton}
+              onPress={handleAddExercise}
+            >
+              <Ionicons name="add" size={20} color={colors.textPrimary} />
+              <Text style={styles.addExerciseText}>Add Exercise</Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
 
       <DeleteConfirmModal
         visible={showCancelConfirm}
