@@ -25,6 +25,7 @@ import ActiveWorkoutModal from "../components/modals/ActiveWorkoutModal";
 import FolderCard from "../components/folderCard";
 import FolderModal from "../components/modals/FolderModal";
 import FolderDeleteModal from "../components/modals/FolderDeleteModal";
+import RoutineDeleteModal from "../components/modals/RoutineDeleteModal";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
@@ -40,6 +41,7 @@ const WorkoutStartPage = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showActiveWorkoutModal, setShowActiveWorkoutModal] = useState(false);
   const [pendingWorkoutAction, setPendingWorkoutAction] = useState(null);
+  const [showRoutineDeleteModal, setShowRoutineDeleteModal] = useState(false);
 
   // Folder state
   const [folders, setFolders] = useState([]);
@@ -208,7 +210,12 @@ const WorkoutStartPage = () => {
     }
   }, [selectedTemplate, fetchTemplates]);
 
-  const handleDeleteTemplate = useCallback(async () => {
+  const handleDeleteTemplateClick = useCallback(() => {
+    setShowTemplateOptions(false);
+    setShowRoutineDeleteModal(true);
+  }, []);
+
+  const handleConfirmDeleteTemplate = useCallback(async () => {
     if (!selectedTemplate) return;
 
     try {
@@ -223,13 +230,12 @@ const WorkoutStartPage = () => {
       // Refresh the templates list and folders
       await fetchTemplates(false);
       await fetchFolders();
+      setSelectedTemplate(null);
     } catch (error) {
       console.error("Failed to delete template:", error);
       setError("Failed to delete template");
     } finally {
       setLoading(false);
-      setShowTemplateOptions(false);
-      setSelectedTemplate(null);
     }
   }, [selectedTemplate, fetchTemplates, fetchFolders]);
 
@@ -248,7 +254,7 @@ const WorkoutStartPage = () => {
       title: "Delete Routine",
       icon: "trash-outline",
       destructive: true,
-      onPress: handleDeleteTemplate,
+      onPress: handleDeleteTemplateClick,
     },
   ];
 
@@ -409,32 +415,6 @@ const WorkoutStartPage = () => {
       setError("Failed to delete folder");
     }
   }, [selectedFolder, fetchFolders]);
-
-  const handleDeleteFolderAndRoutines = useCallback(async () => {
-    if (!selectedFolder) return;
-
-    try {
-      setLoading(true);
-
-      // Delete all routines in the folder
-      for (const routineId of selectedFolder.routineIds) {
-        await templateAPI.deleteTemplate(routineId);
-      }
-
-      // Delete the folder
-      await folderStorage.deleteFolder(selectedFolder.id);
-
-      // Refresh templates and folders
-      await fetchTemplates(false);
-      await fetchFolders();
-      setSelectedFolder(null);
-    } catch (error) {
-      console.error("Failed to delete folder and routines:", error);
-      setError("Failed to delete folder and routines");
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedFolder, fetchTemplates, fetchFolders]);
 
   const handleSaveFolder = useCallback(
     (folderName) => {
@@ -724,7 +704,7 @@ const WorkoutStartPage = () => {
         visible={showTemplateOptions}
         onClose={() => {
           setShowTemplateOptions(false);
-          setSelectedTemplate(null);
+          // Don't clear selectedTemplate here - it's needed for delete/duplicate modals
         }}
         title={selectedTemplate?.name || "Template Options"}
         actions={routineActions}
@@ -740,7 +720,6 @@ const WorkoutStartPage = () => {
         visible={showFolderOptions}
         onClose={() => {
           setShowFolderOptions(false);
-          setSelectedFolder(null);
         }}
         title={selectedFolder?.name || "Folder Options"}
         actions={folderActions}
@@ -760,10 +739,19 @@ const WorkoutStartPage = () => {
         visible={showFolderDeleteModal}
         onClose={() => {
           setShowFolderDeleteModal(false);
+          setSelectedFolder(null);
         }}
         onDeleteFolder={handleDeleteFolderOnly}
-        onDeleteRoutines={handleDeleteFolderAndRoutines}
         folderName={selectedFolder?.name || ""}
+      />
+      <RoutineDeleteModal
+        visible={showRoutineDeleteModal}
+        onClose={() => {
+          setShowRoutineDeleteModal(false);
+          setSelectedTemplate(null);
+        }}
+        onDeleteRoutine={handleConfirmDeleteTemplate}
+        routineName={selectedTemplate?.name || ""}
       />
       <BottomSheetModal
         visible={showFolderSelectionModal}

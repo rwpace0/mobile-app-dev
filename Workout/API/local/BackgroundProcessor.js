@@ -6,7 +6,7 @@ class PriorityQueue {
     this.processing = false;
   }
 
-  enqueue(task, priority = 'medium') {
+  enqueue(task, priority = "medium") {
     const queue = this[priority];
     if (!queue) throw new Error(`Invalid priority: ${priority}`);
     queue.push(task);
@@ -19,12 +19,13 @@ class PriorityQueue {
 
     try {
       while (this.high.length || this.medium.length || this.low.length) {
-        const task = this.high.shift() || this.medium.shift() || this.low.shift();
+        const task =
+          this.high.shift() || this.medium.shift() || this.low.shift();
         if (task) {
           try {
             await task();
           } catch (error) {
-            console.error('Task execution failed:', error);
+            console.error("Task execution failed:", error);
           }
         }
       }
@@ -44,15 +45,12 @@ class BackgroundProcessor {
   constructor() {
     this.taskQueue = new PriorityQueue();
     this.isProcessing = false;
-    this.processingInterval = setInterval(() => this.processQueue(), 2000); // Increased from 1000ms to 2000ms
-    
-    // This class is now truly generic and handles only task queue management
-    // All specific business logic should be implemented in the appropriate API classes
+    this.processingInterval = setInterval(() => this.processQueue(), 2000);
   }
 
   // Task Queue Management
-  addTask(task, priority = 'normal') {
-    if (priority === 'high') {
+  addTask(task, priority = "normal") {
+    if (priority === "high") {
       this.taskQueue.high.unshift(task);
     } else {
       this.taskQueue.enqueue(task, priority);
@@ -72,7 +70,7 @@ class BackgroundProcessor {
       const task = this.taskQueue.high.shift();
       await task();
     } catch (error) {
-      console.error('Background task failed:', error);
+      console.error("Background task failed:", error);
     } finally {
       this.isProcessing = false;
     }
@@ -80,14 +78,16 @@ class BackgroundProcessor {
 
   scheduleSync(resource, data) {
     // Import syncManager lazily to avoid circular dependencies
-    import('./syncManager').then(({ syncManager }) => {
-      // Add to sync queue with a delay
-      setTimeout(() => {
-        syncManager.syncIfNeeded(resource, true);
-      }, 5 * 60 * 1000); // 5 minute delay for local-first approach
-    }).catch(error => {
-      console.error('[BackgroundProcessor] Failed to schedule sync:', error);
-    });
+    import("./syncManager")
+      .then(({ syncManager }) => {
+        // Add to sync queue with a delay
+        setTimeout(() => {
+          syncManager.syncIfNeeded(resource, true);
+        }, 5 * 60 * 1000); // 5 minute delay for local-first approach
+      })
+      .catch((error) => {
+        console.error("[BackgroundProcessor] Failed to schedule sync:", error);
+      });
   }
 
   destroy() {
@@ -103,7 +103,7 @@ class BackgroundProcessor {
     // Reset processing state
     this.isProcessing = false;
 
-    console.log('[BackgroundProcessor] Destroyed and cleaned up');
+    console.log("[BackgroundProcessor] Destroyed and cleaned up");
   }
 }
 

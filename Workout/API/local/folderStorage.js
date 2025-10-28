@@ -1,145 +1,318 @@
-import { storage } from "./tokenStorage.js";
+import { dbManager } from "./dbManager.js";
 import { v4 as uuid } from "uuid";
 
-const FOLDERS_KEY = "workout_folders";
-
 class FolderStorage {
+  constructor() {
+    this.db = dbManager;
+  }
+
+  async ensureInitialized() {
+    await this.db.initializationPromise;
+  }
+
   async getFolders() {
     try {
-      const foldersJson = await storage.getItem(FOLDERS_KEY);
-      if (!foldersJson) {
-        return [];
-      }
-      return JSON.parse(foldersJson);
+      await this.ensureInitialized();
+
+      // Query folders with their associated routines
+      const folders = await this.db.query(
+        `SELECT f.folder_id, f.name, f.created_at, f.updated_at, f.sync_status, f.version, f.last_synced_at,
+          GROUP_CONCAT(wt.template_id) as routineIds
+         FROM folders f
+         LEFT JOIN workout_templates wt ON f.folder_id = wt.folder_id AND wt.sync_status != 'pending_delete'
+         WHERE f.sync_status != 'pending_delete'
+         GROUP BY f.folder_id
+         ORDER BY f.created_at DESC`
+      );
+
+      // Parse the routineIds from GROUP_CONCAT
+      return folders.map((folder) => ({
+        id: folder.folder_id,
+        name: folder.name,
+        routineIds: folder.routineIds
+          ? folder.routineIds.split(",").filter((id) => id)
+          : [],
+        createdAt: folder.created_at,
+        updatedAt: folder.updated_at,
+        sync_status: folder.sync_status,
+        last_synced_at: folder.last_synced_at,
+      }));
     } catch (error) {
-      console.error("Error getting folders:", error);
+      console.error("[FolderStorage] Error getting folders:", error);
       return [];
     }
   }
 
   async createFolder(name) {
     try {
-      const folders = await this.getFolders();
-      const newFolder = {
-        id: uuid(),
+      await this.ensureInitialized();
+
+      const folderId = uuid();
+      const now = new Date().toISOString();
+
+      await this.db.execute(
+        `INSERT INTO folders (folder_id, name, created_at, updated_at, sync_status, version) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [folderId, name.trim(), now, now, "pending_sync", 1]
+      );
+
+      console.log(`[FolderStorage] Created folder: ${name} (${folderId})`);
+
+      return {
+        id: folderId,
         name: name.trim(),
         routineIds: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       };
-
-      folders.push(newFolder);
-      await storage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-      return newFolder;
     } catch (error) {
-      console.error("Error creating folder:", error);
+      console.error("[FolderStorage] Error creating folder:", error);
       throw error;
     }
   }
 
   async updateFolder(id, data) {
     try {
-      const folders = await this.getFolders();
-      const folderIndex = folders.findIndex((f) => f.id === id);
+      await this.ensureInitialized();
 
-      if (folderIndex === -1) {
+      // Check if folder exists
+      const [existingFolder] = await this.db.query(
+        "SELECT * FROM folders WHERE folder_id = ? AND sync_status != 'pending_delete'",
+        [id]
+      );
+
+      if (!existingFolder) {
         throw new Error("Folder not found");
       }
 
-      folders[folderIndex] = {
-        ...folders[folderIndex],
-        ...data,
-        updatedAt: new Date().toISOString(),
-      };
+      const now = new Date().toISOString();
+      const updates = [];
+      const params = [];
 
-      await storage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-      return folders[folderIndex];
+      // Only update name if provided
+      if (data.name !== undefined) {
+        updates.push("name = ?");
+        params.push(data.name.trim());
+      }
+
+      // Always update sync status and timestamp
+      updates.push("sync_status = ?", "updated_at = ?");
+      params.push("pending_sync", now);
+
+      // Add folder_id as last parameter
+      params.push(id);
+
+      await this.db.execute(
+        `UPDATE folders SET ${updates.join(", ")} WHERE folder_id = ?`,
+        params
+      );
+
+      console.log(`[FolderStorage] Updated folder: ${id}`);
+
+      // Fetch and return updated folder
+      const folders = await this.getFolders();
+      return folders.find((f) => f.id === id);
     } catch (error) {
-      console.error("Error updating folder:", error);
+      console.error("[FolderStorage] Error updating folder:", error);
       throw error;
     }
   }
 
   async deleteFolder(id) {
     try {
-      const folders = await this.getFolders();
-      const filteredFolders = folders.filter((f) => f.id !== id);
-      await storage.setItem(FOLDERS_KEY, JSON.stringify(filteredFolders));
+      await this.ensureInitialized();
+
+      // Check if folder exists
+      const [existingFolder] = await this.db.query(
+        "SELECT * FROM folders WHERE folder_id = ? AND sync_status != 'pending_delete'",
+        [id]
+      );
+
+      if (!existingFolder) {
+        throw new Error("Folder not found");
+      }
+
+      await this.db.execute("BEGIN TRANSACTION");
+
+      try {
+        // Set folder_id to NULL for all templates in this folder
+        await this.db.execute(
+          "UPDATE workout_templates SET folder_id = NULL WHERE folder_id = ?",
+          [id]
+        );
+
+        // If folder was never synced, delete immediately
+        if (
+          !existingFolder.last_synced_at ||
+          existingFolder.sync_status === "pending_sync"
+        ) {
+          console.log(
+            `[FolderStorage] Folder ${id} was never synced, deleting immediately`
+          );
+          await this.db.execute("DELETE FROM folders WHERE folder_id = ?", [
+            id,
+          ]);
+        } else {
+          // Folder was synced, mark for deletion
+          console.log(
+            `[FolderStorage] Folder ${id} was synced, marking for deletion`
+          );
+          await this.db.execute(
+            `UPDATE folders SET sync_status = 'pending_delete', updated_at = ? WHERE folder_id = ?`,
+            [new Date().toISOString(), id]
+          );
+        }
+
+        await this.db.execute("COMMIT");
+        console.log(`[FolderStorage] Deleted folder: ${id}`);
+      } catch (error) {
+        await this.db.execute("ROLLBACK");
+        throw error;
+      }
     } catch (error) {
-      console.error("Error deleting folder:", error);
+      console.error("[FolderStorage] Error deleting folder:", error);
       throw error;
     }
   }
 
   async addRoutineToFolder(folderId, routineId) {
     try {
-      const folders = await this.getFolders();
+      await this.ensureInitialized();
 
-      // First, remove the routine from any existing folder
-      folders.forEach((folder) => {
-        folder.routineIds = folder.routineIds.filter((id) => id !== routineId);
-      });
+      // Check if folder exists
+      const [folder] = await this.db.query(
+        "SELECT * FROM folders WHERE folder_id = ? AND sync_status != 'pending_delete'",
+        [folderId]
+      );
 
-      // Then add it to the target folder
-      const folderIndex = folders.findIndex((f) => f.id === folderId);
-      if (folderIndex === -1) {
+      if (!folder) {
         throw new Error("Folder not found");
       }
 
-      if (!folders[folderIndex].routineIds.includes(routineId)) {
-        folders[folderIndex].routineIds.push(routineId);
-        folders[folderIndex].updatedAt = new Date().toISOString();
+      // Check if template exists
+      const [template] = await this.db.query(
+        "SELECT * FROM workout_templates WHERE template_id = ? AND sync_status != 'pending_delete'",
+        [routineId]
+      );
+
+      if (!template) {
+        throw new Error("Template not found");
       }
 
-      await storage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-      return folders[folderIndex];
+      await this.db.execute("BEGIN TRANSACTION");
+
+      try {
+        const now = new Date().toISOString();
+
+        // Remove routine from any existing folder (set folder_id to NULL for all templates with this ID)
+        // Then update the specific template to be in the new folder
+        await this.db.execute(
+          "UPDATE workout_templates SET folder_id = NULL WHERE template_id = ? AND folder_id IS NOT NULL",
+          [routineId]
+        );
+
+        // Add routine to target folder and mark template as needing sync
+        await this.db.execute(
+          "UPDATE workout_templates SET folder_id = ?, sync_status = 'pending_sync', updated_at = ? WHERE template_id = ?",
+          [folderId, now, routineId]
+        );
+
+        // Update folder's updated_at timestamp and sync status
+        await this.db.execute(
+          "UPDATE folders SET updated_at = ?, sync_status = 'pending_sync' WHERE folder_id = ?",
+          [now, folderId]
+        );
+
+        await this.db.execute("COMMIT");
+        console.log(
+          `[FolderStorage] Added routine ${routineId} to folder ${folderId}`
+        );
+
+        // Fetch and return updated folder
+        const folders = await this.getFolders();
+        return folders.find((f) => f.id === folderId);
+      } catch (error) {
+        await this.db.execute("ROLLBACK");
+        throw error;
+      }
     } catch (error) {
-      console.error("Error adding routine to folder:", error);
+      console.error("[FolderStorage] Error adding routine to folder:", error);
       throw error;
     }
   }
 
   async removeRoutineFromFolder(folderId, routineId) {
     try {
-      const folders = await this.getFolders();
-      const folderIndex = folders.findIndex((f) => f.id === folderId);
+      await this.ensureInitialized();
 
-      if (folderIndex === -1) {
+      // Check if folder exists
+      const [folder] = await this.db.query(
+        "SELECT * FROM folders WHERE folder_id = ? AND sync_status != 'pending_delete'",
+        [folderId]
+      );
+
+      if (!folder) {
         throw new Error("Folder not found");
       }
 
-      folders[folderIndex].routineIds = folders[folderIndex].routineIds.filter(
-        (id) => id !== routineId
-      );
-      folders[folderIndex].updatedAt = new Date().toISOString();
+      await this.db.execute("BEGIN TRANSACTION");
 
-      await storage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-      return folders[folderIndex];
+      try {
+        const now = new Date().toISOString();
+
+        // Remove routine from folder by setting folder_id to NULL
+        await this.db.execute(
+          "UPDATE workout_templates SET folder_id = NULL, sync_status = 'pending_sync', updated_at = ? WHERE template_id = ? AND folder_id = ?",
+          [now, routineId, folderId]
+        );
+
+        // Update folder's updated_at timestamp
+        await this.db.execute(
+          "UPDATE folders SET updated_at = ? WHERE folder_id = ?",
+          [now, folderId]
+        );
+
+        await this.db.execute("COMMIT");
+        console.log(
+          `[FolderStorage] Removed routine ${routineId} from folder ${folderId}`
+        );
+
+        // Fetch and return updated folder
+        const folders = await this.getFolders();
+        return folders.find((f) => f.id === folderId);
+      } catch (error) {
+        await this.db.execute("ROLLBACK");
+        throw error;
+      }
     } catch (error) {
-      console.error("Error removing routine from folder:", error);
+      console.error(
+        "[FolderStorage] Error removing routine from folder:",
+        error
+      );
       throw error;
     }
   }
 
   async removeRoutineFromAllFolders(routineId) {
     try {
-      const folders = await this.getFolders();
-      let updated = false;
+      await this.ensureInitialized();
 
-      folders.forEach((folder) => {
-        const originalLength = folder.routineIds.length;
-        folder.routineIds = folder.routineIds.filter((id) => id !== routineId);
-        if (folder.routineIds.length !== originalLength) {
-          folder.updatedAt = new Date().toISOString();
-          updated = true;
-        }
-      });
+      const now = new Date().toISOString();
 
-      if (updated) {
-        await storage.setItem(FOLDERS_KEY, JSON.stringify(folders));
-      }
+      // Remove routine from all folders by setting folder_id to NULL
+      await this.db.execute(
+        "UPDATE workout_templates SET folder_id = NULL, updated_at = ? WHERE template_id = ? AND folder_id IS NOT NULL",
+        [now, routineId]
+      );
+
+      console.log(
+        `[FolderStorage] Removed routine ${routineId} from all folders`
+      );
     } catch (error) {
-      console.error("Error removing routine from all folders:", error);
+      console.error(
+        "[FolderStorage] Error removing routine from all folders:",
+        error
+      );
       throw error;
     }
   }

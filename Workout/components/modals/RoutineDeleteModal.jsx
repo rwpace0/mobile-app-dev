@@ -4,11 +4,11 @@ import { createStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 
-const FolderDeleteModal = ({
+const RoutineDeleteModal = ({
   visible,
   onClose,
-  onDeleteFolder,
-  folderName,
+  onDeleteRoutine,
+  routineName,
 }) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
@@ -23,19 +23,19 @@ const FolderDeleteModal = ({
     >
       <View style={styles.centerModalContainer}>
         <View style={styles.deleteModalContent}>
-          <Text style={styles.deleteModalText}>Delete "{folderName}"?</Text>
+          <Text style={styles.deleteModalText}>Delete "{routineName}"?</Text>
           <Text style={styles.deleteModalSubtext}>
-            Templates in this folder will be moved to the main list.
+            This routine and all its exercises will be permanently deleted.
           </Text>
           <View style={styles.deleteModalButtons}>
             <TouchableOpacity
               style={styles.deleteModalConfirmButton}
               onPress={() => {
-                onDeleteFolder();
+                onDeleteRoutine();
                 onClose();
               }}
             >
-              <Text style={styles.deleteModalConfirmText}>Delete Folder</Text>
+              <Text style={styles.deleteModalConfirmText}>Delete Routine</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.deleteModalCancelButton}
@@ -50,4 +50,4 @@ const FolderDeleteModal = ({
   );
 };
 
-export default FolderDeleteModal;
+export default RoutineDeleteModal;

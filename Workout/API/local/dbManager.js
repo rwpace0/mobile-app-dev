@@ -358,6 +358,131 @@ class DatabaseManager {
         throw error;
       }
 
+      if (currentVersion < 5) {
+        console.log("[DatabaseManager] Updating to database version 5");
+
+        // Create folders table
+        try {
+          await this.db.execAsync(`
+            CREATE TABLE IF NOT EXISTS folders (
+              folder_id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              created_at DATETIME NOT NULL,
+              updated_at DATETIME NOT NULL,
+              sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+              version INTEGER DEFAULT 1,
+              last_synced_at DATETIME
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_folders_sync_status ON folders(sync_status);
+          `);
+          console.log(
+            "[DatabaseManager] Created folders table with sync support"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] folders table already exists or failed to create:",
+            e.message
+          );
+        }
+
+        // Add folder_id column to workout_templates table
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE workout_templates ADD COLUMN folder_id TEXT;"
+          );
+          console.log(
+            "[DatabaseManager] Added folder_id column to workout_templates table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] folder_id column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        // Create index for folder_id in workout_templates
+        try {
+          await this.db.execAsync(
+            "CREATE INDEX IF NOT EXISTS idx_templates_folder ON workout_templates(folder_id);"
+          );
+          console.log(
+            "[DatabaseManager] Created index on workout_templates.folder_id"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] Index idx_templates_folder already exists or failed to create:",
+            e.message
+          );
+        }
+
+        // Update version
+        const version5Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 5"
+        );
+        if (version5Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (5)"
+          );
+          console.log("[DatabaseManager] Database version updated to 5");
+        }
+      }
+
+      // Force check for folders table and folder_id column (regardless of version)
+      try {
+        // Check if folders table exists
+        const tables = await this.db.getAllAsync(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='folders'"
+        );
+
+        if (tables.length === 0) {
+          console.log("[DatabaseManager] Creating missing folders table");
+          await this.db.execAsync(`
+            CREATE TABLE IF NOT EXISTS folders (
+              folder_id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              created_at DATETIME NOT NULL,
+              updated_at DATETIME NOT NULL,
+              sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+              version INTEGER DEFAULT 1,
+              last_synced_at DATETIME
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_folders_sync_status ON folders(sync_status);
+          `);
+          console.log("[DatabaseManager] Successfully created folders table");
+        }
+
+        // Check if folder_id column exists in workout_templates
+        const workoutTemplatesTableInfo = await this.db.getAllAsync(
+          "PRAGMA table_info(workout_templates)"
+        );
+        const hasFolderId = workoutTemplatesTableInfo.some(
+          (col) => col.name === "folder_id"
+        );
+
+        if (!hasFolderId) {
+          console.log(
+            "[DatabaseManager] Adding missing folder_id column to workout_templates table"
+          );
+          await this.db.execAsync(
+            "ALTER TABLE workout_templates ADD COLUMN folder_id TEXT;"
+          );
+          await this.db.execAsync(
+            "CREATE INDEX IF NOT EXISTS idx_templates_folder ON workout_templates(folder_id);"
+          );
+          console.log(
+            "[DatabaseManager] Successfully added folder_id column and index"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[DatabaseManager] Error checking/adding folders table or folder_id column:",
+          error
+        );
+        throw error;
+      }
+
       console.log("Database initialized successfully");
     } catch (error) {
       console.error("Database initialization failed:", error);
@@ -427,6 +552,7 @@ class DatabaseManager {
     await this.db.execAsync("DELETE FROM exercises");
     await this.db.execAsync("DELETE FROM profiles");
     await this.db.execAsync("DELETE FROM workout_summaries");
+    await this.db.execAsync("DELETE FROM folders");
   }
 
   async close() {

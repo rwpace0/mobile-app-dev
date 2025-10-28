@@ -70,10 +70,10 @@ const FolderModal = ({
           />
           <View style={styles.deleteModalButtons}>
             <TouchableOpacity
-              style={styles.deleteModalConfirmButton}
+              style={styles.primaryModalButton}
               onPress={handleSave}
             >
-              <Text style={styles.deleteModalConfirmText}>
+              <Text style={styles.primaryModalButtonText}>
                 {mode === "create" ? "Create" : "Save"}
               </Text>
             </TouchableOpacity>

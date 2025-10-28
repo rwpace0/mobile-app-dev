@@ -103,6 +103,21 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
       paddingVertical: Spacing.xs,
     },
+    primaryModalButton: {
+      width: "100%",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.primaryBlue,
+      marginBottom: Spacing.xs,
+    },
+    primaryModalButtonText: {
+      color: colors.textWhite,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+      paddingVertical: Spacing.xs,
+      fontWeight: FontWeight.semibold,
+    },
     folderInput: {
       backgroundColor: colors.backgroundCard,
       borderRadius: BorderRadius.md,
