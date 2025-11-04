@@ -402,7 +402,7 @@ class TemplateAPI extends APIBase {
     return this.storage.storeEntity(template, {
       table: "workout_templates",
       idField: "template_id",
-      fields: ["name", "created_by", "is_public", "folder_id"],
+      fields: ["name", "created_by", "is_public"],
       syncStatus,
       relations: [
         {
@@ -422,7 +422,7 @@ class TemplateAPI extends APIBase {
       return this.handleOfflineFirst("templates:all", async () => {
         const templates = await this.db.query(
           `SELECT t.template_id, t.name, t.created_by, t.is_public, t.created_at, t.updated_at, 
-            t.sync_status, t.version, t.last_synced_at, t.folder_id,
+            t.sync_status, t.version, t.last_synced_at,
             CASE 
               WHEN COUNT(te.template_exercise_id) = 0 THEN '[]'
               ELSE json_group_array(
@@ -595,7 +595,6 @@ class TemplateAPI extends APIBase {
         exercises: templateData.exercises || [],
         created_at: existingTemplate.created_at,
         updated_at: now,
-        folder_id: existingTemplate.folder_id, // Preserve folder association
       };
 
       try {
@@ -825,17 +824,6 @@ class TemplateAPI extends APIBase {
         // Store each template locally
         for (const template of response.data) {
           try {
-            // Check if template already exists locally and preserve its folder_id
-            const [existingTemplate] = await this.db.query(
-              "SELECT folder_id FROM workout_templates WHERE template_id = ?",
-              [template.template_id]
-            );
-
-            // Preserve folder_id if template exists locally
-            if (existingTemplate && existingTemplate.folder_id) {
-              template.folder_id = existingTemplate.folder_id;
-            }
-
             await this.storeLocally(template, "synced");
             console.log(
               `[TemplateAPI] Stored template ${template.template_id} locally`

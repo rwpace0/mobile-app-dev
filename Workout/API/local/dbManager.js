@@ -53,9 +53,6 @@ class DatabaseManager {
                     last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
                 );
 
-                -- Add local_media_path column if it doesn't exist
-                ALTER TABLE exercises ADD COLUMN IF NOT EXISTS local_media_path TEXT;
-
                 CREATE TABLE IF NOT EXISTS profiles (
                     user_id TEXT PRIMARY KEY,
                     username TEXT UNIQUE,
@@ -358,129 +355,196 @@ class DatabaseManager {
         throw error;
       }
 
-      if (currentVersion < 5) {
-        console.log("[DatabaseManager] Updating to database version 5");
-
-        // Create folders table
-        try {
-          await this.db.execAsync(`
-            CREATE TABLE IF NOT EXISTS folders (
-              folder_id TEXT PRIMARY KEY,
-              name TEXT NOT NULL,
-              created_at DATETIME NOT NULL,
-              updated_at DATETIME NOT NULL,
-              sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
-              version INTEGER DEFAULT 1,
-              last_synced_at DATETIME
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_folders_sync_status ON folders(sync_status);
-          `);
-          console.log(
-            "[DatabaseManager] Created folders table with sync support"
-          );
-        } catch (e) {
-          console.log(
-            "[DatabaseManager] folders table already exists or failed to create:",
-            e.message
-          );
-        }
-
-        // Add folder_id column to workout_templates table
-        try {
-          await this.db.execAsync(
-            "ALTER TABLE workout_templates ADD COLUMN folder_id TEXT;"
-          );
-          console.log(
-            "[DatabaseManager] Added folder_id column to workout_templates table"
-          );
-        } catch (e) {
-          console.log(
-            "[DatabaseManager] folder_id column already exists or failed to add:",
-            e.message
-          );
-        }
-
-        // Create index for folder_id in workout_templates
-        try {
-          await this.db.execAsync(
-            "CREATE INDEX IF NOT EXISTS idx_templates_folder ON workout_templates(folder_id);"
-          );
-          console.log(
-            "[DatabaseManager] Created index on workout_templates.folder_id"
-          );
-        } catch (e) {
-          console.log(
-            "[DatabaseManager] Index idx_templates_folder already exists or failed to create:",
-            e.message
-          );
-        }
-
-        // Update version
-        const version5Results = await this.db.getAllAsync(
-          "SELECT 1 FROM db_version WHERE version = 5"
-        );
-        if (version5Results.length === 0) {
-          await this.db.execAsync(
-            "INSERT INTO db_version (version) VALUES (5)"
-          );
-          console.log("[DatabaseManager] Database version updated to 5");
-        }
-      }
-
-      // Force check for folders table and folder_id column (regardless of version)
+      // Defensive check: Ensure all core tables exist even if version check failed
+      // This handles cases where version is set but tables don't exist
       try {
-        // Check if folders table exists
         const tables = await this.db.getAllAsync(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name='folders'"
+          "SELECT name FROM sqlite_master WHERE type='table'"
+        );
+        const tableNames = tables.map((t) => t.name);
+        const requiredTables = [
+          "exercises",
+          "profiles",
+          "workouts",
+          "workout_exercises",
+          "sets",
+          "workout_templates",
+          "template_exercises",
+          "workout_summaries",
+        ];
+
+        const missingTables = requiredTables.filter(
+          (table) => !tableNames.includes(table)
         );
 
-        if (tables.length === 0) {
-          console.log("[DatabaseManager] Creating missing folders table");
+        if (missingTables.length > 0) {
+          console.log(
+            `[DatabaseManager] Missing tables detected: ${missingTables.join(
+              ", "
+            )}. Recreating...`
+          );
+          // Re-run version 1 migration to create missing tables
           await this.db.execAsync(`
-            CREATE TABLE IF NOT EXISTS folders (
-              folder_id TEXT PRIMARY KEY,
-              name TEXT NOT NULL,
-              created_at DATETIME NOT NULL,
-              updated_at DATETIME NOT NULL,
-              sync_status TEXT DEFAULT 'synced' CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
-              version INTEGER DEFAULT 1,
-              last_synced_at DATETIME
-            );
+                -- All DATETIME fields store ISO8601 strings with timezone information
+                -- Format: YYYY-MM-DDTHH:mm:ss.sssZ
+                -- Example: 2024-03-14T12:00:00.000Z
 
-            CREATE INDEX IF NOT EXISTS idx_folders_sync_status ON folders(sync_status);
-          `);
-          console.log("[DatabaseManager] Successfully created folders table");
-        }
+                CREATE TABLE IF NOT EXISTS exercises (
+                    exercise_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    instruction TEXT,
+                    muscle_group TEXT,
+                    equipment TEXT,
+                    media_url TEXT,
+                    local_media_path TEXT,
+                    is_public INTEGER DEFAULT 0,
+                    created_by TEXT,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                );
 
-        // Check if folder_id column exists in workout_templates
-        const workoutTemplatesTableInfo = await this.db.getAllAsync(
-          "PRAGMA table_info(workout_templates)"
-        );
-        const hasFolderId = workoutTemplatesTableInfo.some(
-          (col) => col.name === "folder_id"
-        );
+                CREATE TABLE IF NOT EXISTS profiles (
+                    user_id TEXT PRIMARY KEY,
+                    username TEXT UNIQUE,
+                    display_name TEXT,
+                    avatar_url TEXT,
+                    local_avatar_path TEXT,
+                    is_public INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    user_email TEXT UNIQUE,
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                );
 
-        if (!hasFolderId) {
+                CREATE TABLE IF NOT EXISTS workouts (
+                    workout_id TEXT PRIMARY KEY,
+                    user_id TEXT,
+                    name TEXT,
+                    date_performed DATETIME,
+                    duration INTEGER,
+                    template_id TEXT,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    FOREIGN KEY (template_id) REFERENCES workout_templates (template_id) ON DELETE SET NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS workout_exercises (
+                    workout_exercises_id TEXT PRIMARY KEY,
+                    workout_id TEXT NOT NULL,
+                    exercise_id TEXT NOT NULL,
+                    exercise_order INTEGER,
+                    notes TEXT,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    FOREIGN KEY (workout_id) REFERENCES workouts (workout_id) ON DELETE CASCADE,
+                    FOREIGN KEY (exercise_id) REFERENCES exercises (exercise_id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS sets (
+                    set_id TEXT PRIMARY KEY,
+                    workout_id TEXT NOT NULL,
+                    workout_exercises_id TEXT,
+                    weight REAL,
+                    reps INTEGER,
+                    rir INTEGER,
+                    set_order INTEGER,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    FOREIGN KEY (workout_id) REFERENCES workouts (workout_id) ON DELETE CASCADE,
+                    FOREIGN KEY (workout_exercises_id) REFERENCES workout_exercises (workout_exercises_id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS workout_templates (
+                    template_id TEXT PRIMARY KEY,
+                    name TEXT,
+                    created_by TEXT,
+                    is_public INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+                );
+
+                CREATE TABLE IF NOT EXISTS template_exercises (
+                    template_exercise_id TEXT PRIMARY KEY,
+                    template_id TEXT NOT NULL,
+                    exercise_id TEXT NOT NULL,
+                    exercise_order INTEGER,
+                    sets INTEGER,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    sync_status TEXT DEFAULT 'synced'
+                        CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                    version INTEGER DEFAULT 1,
+                    last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    FOREIGN KEY (template_id) REFERENCES workout_templates (template_id) ON DELETE CASCADE,
+                    FOREIGN KEY (exercise_id) REFERENCES exercises (exercise_id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE IF NOT EXISTS workout_summaries (
+                    workout_id TEXT PRIMARY KEY,
+                    summary_data TEXT,
+                    total_volume REAL,
+                    exercise_count INTEGER,
+                    last_calculated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                    FOREIGN KEY (workout_id) REFERENCES workouts (workout_id) ON DELETE CASCADE
+                );
+
+                -- Create indexes for sync operations and common queries
+                CREATE INDEX IF NOT EXISTS idx_workouts_sync_status ON workouts(sync_status);
+                CREATE INDEX IF NOT EXISTS idx_exercises_sync_status ON exercises(sync_status);
+                CREATE INDEX IF NOT EXISTS idx_workout_exercises_sync_status ON workout_exercises(sync_status);
+                CREATE INDEX IF NOT EXISTS idx_sets_sync_status ON sets(sync_status);
+                CREATE INDEX IF NOT EXISTS idx_templates_sync_status ON workout_templates(sync_status);
+                CREATE INDEX IF NOT EXISTS idx_template_exercises_sync_status ON template_exercises(sync_status);
+
+                -- Enhanced indexes for performance optimization
+                CREATE INDEX IF NOT EXISTS idx_workouts_date_user ON workouts(date_performed DESC, user_id, sync_status);
+                CREATE INDEX IF NOT EXISTS idx_workout_exercises_order ON workout_exercises(workout_id, exercise_order);
+                CREATE INDEX IF NOT EXISTS idx_sets_order ON sets(workout_exercises_id, set_order);
+                CREATE INDEX IF NOT EXISTS idx_summaries_calc ON workout_summaries(workout_id, last_calculated_at);
+
+                -- Create indexes for date-based queries
+                CREATE INDEX IF NOT EXISTS idx_workouts_date_performed ON workouts(date_performed);
+                CREATE INDEX IF NOT EXISTS idx_workouts_created_at ON workouts(created_at);
+                CREATE INDEX IF NOT EXISTS idx_exercises_created_at ON exercises(created_at);
+
+                -- For user-specific queries
+                CREATE INDEX IF NOT EXISTS idx_workouts_user_date ON workouts(user_id, date_performed DESC);
+                -- For exercise statistics
+                CREATE INDEX IF NOT EXISTS idx_sets_exercise ON sets(workout_exercises_id, weight, reps);
+            `);
           console.log(
-            "[DatabaseManager] Adding missing folder_id column to workout_templates table"
-          );
-          await this.db.execAsync(
-            "ALTER TABLE workout_templates ADD COLUMN folder_id TEXT;"
-          );
-          await this.db.execAsync(
-            "CREATE INDEX IF NOT EXISTS idx_templates_folder ON workout_templates(folder_id);"
-          );
-          console.log(
-            "[DatabaseManager] Successfully added folder_id column and index"
+            "[DatabaseManager] Successfully recreated missing tables"
           );
         }
       } catch (error) {
         console.error(
-          "[DatabaseManager] Error checking/adding folders table or folder_id column:",
+          "[DatabaseManager] Error checking/creating core tables:",
           error
         );
-        throw error;
+        // Don't throw - continue with initialization
       }
 
       console.log("Database initialized successfully");
@@ -552,7 +616,6 @@ class DatabaseManager {
     await this.db.execAsync("DELETE FROM exercises");
     await this.db.execAsync("DELETE FROM profiles");
     await this.db.execAsync("DELETE FROM workout_summaries");
-    await this.db.execAsync("DELETE FROM folders");
   }
 
   async close() {
