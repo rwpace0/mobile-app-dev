@@ -224,11 +224,8 @@ const Profile = ({ navigation }) => {
       case "Statistics":
         navigation.navigate("StatisticsMain");
         break;
-      case "Measures":
-        showInfo(
-          "Coming Soon",
-          `The ${screen} feature will be available in a future update!`
-        );
+      case "Plan":
+        navigation.navigate("PlanPage");
         break;
     }
   };
@@ -251,6 +248,12 @@ const Profile = ({ navigation }) => {
       <Text style={styles.dashboardTitle}>Dashboard</Text>
       <View style={styles.dashboardList}>
         <DashboardItem
+          icon="calendar-outline"
+          title="Plan"
+          onPress={() => handleDashboardPress("Plan")}
+          showBorder={true}
+        />
+        <DashboardItem
           icon="stats-chart"
           title="Statistics"
           onPress={() => handleDashboardPress("Statistics")}
@@ -260,12 +263,6 @@ const Profile = ({ navigation }) => {
           icon="barbell-outline"
           title="Exercises"
           onPress={() => handleDashboardPress("Exercises")}
-          showBorder={true}
-        />
-        <DashboardItem
-          icon="body-outline"
-          title="Measurements"
-          onPress={() => handleDashboardPress("Measures")}
           showBorder={false}
         />
       </View>

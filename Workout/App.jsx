@@ -37,6 +37,7 @@ import EditProfile from "./pages/settings/editProfile";
 import RoutineDetail from "./pages/templates/routineDetail";
 import CalendarView from "./pages/workouts/calendarView";
 import Statistics from "./pages/statistics/statistics";
+import PlanPage from "./pages/plan/planPage";
 import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
 import { mediaAPI } from "./API/mediaAPI";
@@ -145,6 +146,16 @@ const stackScreens = {
     {
       name: "StatisticsMain",
       component: Statistics,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "PlanPage",
+      component: PlanPage,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "RoutineDetail",
+      component: RoutineDetail,
       options: slideFromRightOptions,
     },
   ],

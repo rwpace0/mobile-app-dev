@@ -490,7 +490,7 @@ class TemplateAPI extends APIBase {
       return this.handleOfflineFirst(`template:${templateId}`, async () => {
         const [template] = await this.db.query(
           `SELECT t.template_id, t.name, t.created_by, t.is_public, t.created_at, t.updated_at,
-            t.sync_status, t.version, t.last_synced_at, t.folder_id,
+            t.sync_status, t.version, t.last_synced_at,
             CASE 
               WHEN COUNT(te.template_exercise_id) = 0 THEN '[]'
               ELSE json_group_array(

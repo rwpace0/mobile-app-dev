@@ -327,6 +327,66 @@ class DatabaseManager {
         }
       }
 
+      if (currentVersion < 5) {
+        console.log("[DatabaseManager] Updating to database version 5");
+
+        // Create workout_plans table
+        try {
+          await this.db.execAsync(`
+            CREATE TABLE IF NOT EXISTS workout_plans (
+              plan_id TEXT PRIMARY KEY,
+              user_id TEXT,
+              name TEXT,
+              is_active INTEGER DEFAULT 0,
+              created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+              updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+              sync_status TEXT DEFAULT 'synced'
+                CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+              version INTEGER DEFAULT 1,
+              last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS plan_schedule (
+              schedule_id TEXT PRIMARY KEY,
+              plan_id TEXT NOT NULL,
+              day_of_week INTEGER NOT NULL,
+              template_id TEXT,
+              created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+              updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+              sync_status TEXT DEFAULT 'synced'
+                CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+              version INTEGER DEFAULT 1,
+              last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+              FOREIGN KEY (plan_id) REFERENCES workout_plans (plan_id) ON DELETE CASCADE,
+              FOREIGN KEY (template_id) REFERENCES workout_templates (template_id) ON DELETE SET NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_workout_plans_user_active ON workout_plans(user_id, is_active);
+            CREATE INDEX IF NOT EXISTS idx_plan_schedule_plan ON plan_schedule(plan_id);
+            CREATE INDEX IF NOT EXISTS idx_plan_schedule_day ON plan_schedule(day_of_week);
+          `);
+          console.log(
+            "[DatabaseManager] Added workout_plans and plan_schedule tables"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] workout_plans tables already exist or failed to add:",
+            e.message
+          );
+        }
+
+        // Update version
+        const version5Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 5"
+        );
+        if (version5Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (5)"
+          );
+          console.log("[DatabaseManager] Database version updated to 5");
+        }
+      }
+
       // Force check for secondary_muscle_groups column and add if missing (regardless of version)
       try {
         const tableInfo = await this.db.getAllAsync(
@@ -371,6 +431,8 @@ class DatabaseManager {
           "workout_templates",
           "template_exercises",
           "workout_summaries",
+          "workout_plans",
+          "plan_schedule",
         ];
 
         const missingTables = requiredTables.filter(
@@ -383,7 +445,51 @@ class DatabaseManager {
               ", "
             )}. Recreating...`
           );
-          // Re-run version 1 migration to create missing tables
+
+          // Check if missing tables include workout_plans or plan_schedule
+          const needsPlanTables =
+            missingTables.includes("workout_plans") ||
+            missingTables.includes("plan_schedule");
+
+          if (needsPlanTables) {
+            console.log("[DatabaseManager] Creating missing plan tables...");
+            await this.db.execAsync(`
+              CREATE TABLE IF NOT EXISTS workout_plans (
+                plan_id TEXT PRIMARY KEY,
+                user_id TEXT,
+                name TEXT,
+                is_active INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+                updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                sync_status TEXT DEFAULT 'synced'
+                  CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                version INTEGER DEFAULT 1,
+                last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+              );
+
+              CREATE TABLE IF NOT EXISTS plan_schedule (
+                schedule_id TEXT PRIMARY KEY,
+                plan_id TEXT NOT NULL,
+                day_of_week INTEGER NOT NULL,
+                template_id TEXT,
+                created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
+                updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                sync_status TEXT DEFAULT 'synced'
+                  CHECK (sync_status IN ('synced', 'pending_sync', 'pending_delete')),
+                version INTEGER DEFAULT 1,
+                last_synced_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                FOREIGN KEY (plan_id) REFERENCES workout_plans (plan_id) ON DELETE CASCADE,
+                FOREIGN KEY (template_id) REFERENCES workout_templates (template_id) ON DELETE SET NULL
+              );
+
+              CREATE INDEX IF NOT EXISTS idx_workout_plans_user_active ON workout_plans(user_id, is_active);
+              CREATE INDEX IF NOT EXISTS idx_plan_schedule_plan ON plan_schedule(plan_id);
+              CREATE INDEX IF NOT EXISTS idx_plan_schedule_day ON plan_schedule(day_of_week);
+            `);
+            console.log("[DatabaseManager] Plan tables created successfully");
+          }
+
+          // Re-run version 1 migration to create missing core tables
           await this.db.execAsync(`
                 -- All DATETIME fields store ISO8601 strings with timezone information
                 -- Format: YYYY-MM-DDTHH:mm:ss.sssZ
@@ -616,6 +722,8 @@ class DatabaseManager {
     await this.db.execAsync("DELETE FROM exercises");
     await this.db.execAsync("DELETE FROM profiles");
     await this.db.execAsync("DELETE FROM workout_summaries");
+    await this.db.execAsync("DELETE FROM plan_schedule");
+    await this.db.execAsync("DELETE FROM workout_plans");
   }
 
   async close() {

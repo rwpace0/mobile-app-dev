@@ -138,7 +138,7 @@ const StatisticsPage = () => {
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header title="Statistics" />
+        <Header title="Statistics" leftComponent={{ type: "back" }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primaryBlue} />
         </View>
@@ -179,7 +179,7 @@ const StatisticsPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Statistics" />
+      <Header title="Statistics" leftComponent={{ type: "back" }} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import templateAPI from "../API/templateAPI";
 import exercisesAPI from "../API/exercisesAPI";
+import planAPI from "../API/planAPI";
 import Header from "../components/static/header";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/start.styles";
@@ -29,6 +30,7 @@ const WorkoutStartPage = () => {
   const styles = createStyles(isDark);
   const { activeWorkout, isWorkoutActive, endWorkout } = useActiveWorkout();
   const [templates, setTemplates] = useState([]);
+  const [todaysWorkout, setTodaysWorkout] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,6 +44,36 @@ const WorkoutStartPage = () => {
     try {
       if (showLoading) setLoading(true);
       setError(null);
+
+      // Check for today's workout from plan
+      try {
+        const todayTemplate = await planAPI.getTodaysWorkout();
+        if (todayTemplate) {
+          // Fetch exercise details for today's workout
+          const exercisesWithDetails = await Promise.all(
+            (todayTemplate.exercises || []).map(async (ex) => {
+              try {
+                const exercise = await exercisesAPI.getExerciseById(
+                  ex.exercise_id
+                );
+                return { ...ex, ...exercise };
+              } catch (err) {
+                console.error(`Failed to get exercise ${ex.exercise_id}:`, err);
+                return ex;
+              }
+            })
+          );
+          setTodaysWorkout({
+            ...todayTemplate,
+            exercises: exercisesWithDetails,
+          });
+        } else {
+          setTodaysWorkout(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch today's workout:", err);
+        setTodaysWorkout(null);
+      }
 
       const data = await templateAPI.getTemplates();
 
@@ -318,6 +350,42 @@ const WorkoutStartPage = () => {
     setPendingWorkoutAction(null);
   }, []);
 
+  const renderTodaysWorkout = useCallback(() => {
+    if (!todaysWorkout) return null;
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Today's Workout</Text>
+        <Animated.View style={styles.todayWorkoutContainer}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("RoutineDetail", {
+                template_id: todaysWorkout.template_id,
+              })
+            }
+            activeOpacity={0.7}
+          >
+            <View style={styles.templateHeader}>
+              <Text style={styles.templateName}>{todaysWorkout.name}</Text>
+            </View>
+            <Text style={styles.templateExercises}>
+              {todaysWorkout.exercises.map((ex) => ex.name).join(" • ")}
+            </Text>
+            <TouchableOpacity
+              style={styles.startRoutineButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleStartRoutine(todaysWorkout);
+              }}
+            >
+              <Text style={styles.startRoutineText}>Start Today's Workout</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  }, [todaysWorkout, navigation, handleStartRoutine, styles, colors]);
+
   const renderTemplateList = useCallback(() => {
     if (loading && !refreshing) {
       return (
@@ -411,6 +479,9 @@ const WorkoutStartPage = () => {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
+        {/* Today's Workout Section - shows if plan is active and today has a workout */}
+        {renderTodaysWorkout()}
+
         {/* Quick Start Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Start</Text>

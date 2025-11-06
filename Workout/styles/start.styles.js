@@ -164,6 +164,16 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.medium,
       fontWeight: FontWeight.semiBold,
     },
+
+    todayWorkoutContainer: {
+      backgroundColor: colors.backgroundCard,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.m,
+      marginBottom: Spacing.m,
+      ...Shadow.medium,
+      borderColor: colors.primaryBlue,
+      borderWidth: 1,
+    },
   });
 };
 
