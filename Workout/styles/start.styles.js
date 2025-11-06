@@ -51,7 +51,6 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
       fontSize: FontSize.large,
       fontWeight: FontWeight.semiBold,
-      marginBottom: Spacing.s,
     },
 
     startEmptyWorkoutButton: {
@@ -173,6 +172,39 @@ export const createStyles = (isDark = true) => {
       ...Shadow.medium,
       borderColor: colors.primaryBlue,
       borderWidth: 1,
+    },
+
+    restDayContainer: {
+      backgroundColor: colors.backgroundCard,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.xl,
+      alignItems: "center",
+      justifyContent: "center",
+      ...Shadow.medium,
+    },
+
+    restDayIcon: {
+      marginBottom: Spacing.m,
+    },
+
+    restDayTitle: {
+      color: colors.textPrimary,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+      marginBottom: Spacing.xs,
+    },
+
+    restDayText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.medium,
+      textAlign: "center",
+    },
+
+    calendarContainer: {
+      backgroundColor: colors.backgroundCard,
+      borderRadius: BorderRadius.lg,
+      padding: Spacing.m,
+      ...Shadow.medium,
     },
   });
 };

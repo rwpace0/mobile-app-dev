@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -15,6 +15,7 @@ import templateAPI from "../API/templateAPI";
 import exercisesAPI from "../API/exercisesAPI";
 import planAPI from "../API/planAPI";
 import Header from "../components/static/header";
+import WeeklyCalendar from "../components/WeeklyCalendar";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/start.styles";
 import { useTheme } from "../state/SettingsContext";
@@ -31,6 +32,7 @@ const WorkoutStartPage = () => {
   const { activeWorkout, isWorkoutActive, endWorkout } = useActiveWorkout();
   const [templates, setTemplates] = useState([]);
   const [todaysWorkout, setTodaysWorkout] = useState(null);
+  const [activePlan, setActivePlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,39 +41,57 @@ const WorkoutStartPage = () => {
   const [showActiveWorkoutModal, setShowActiveWorkoutModal] = useState(false);
   const [pendingWorkoutAction, setPendingWorkoutAction] = useState(null);
   const [showRoutineDeleteModal, setShowRoutineDeleteModal] = useState(false);
+  const [isRoutinesExpanded, setIsRoutinesExpanded] = useState(false);
+  const routinesExpandedInitialized = useRef(false);
+  const [isTodaysWorkoutExpanded, setIsTodaysWorkoutExpanded] = useState(true);
+  const [isWeeklyCalendarExpanded, setIsWeeklyCalendarExpanded] =
+    useState(true);
+  const [isQuickStartExpanded, setIsQuickStartExpanded] = useState(true);
 
   const fetchTemplates = useCallback(async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true);
       setError(null);
 
-      // Check for today's workout from plan
+      // Check for active plan and today's workout
       try {
-        const todayTemplate = await planAPI.getTodaysWorkout();
-        if (todayTemplate) {
-          // Fetch exercise details for today's workout
-          const exercisesWithDetails = await Promise.all(
-            (todayTemplate.exercises || []).map(async (ex) => {
-              try {
-                const exercise = await exercisesAPI.getExerciseById(
-                  ex.exercise_id
-                );
-                return { ...ex, ...exercise };
-              } catch (err) {
-                console.error(`Failed to get exercise ${ex.exercise_id}:`, err);
-                return ex;
-              }
-            })
-          );
-          setTodaysWorkout({
-            ...todayTemplate,
-            exercises: exercisesWithDetails,
-          });
+        const plan = await planAPI.getActivePlan();
+        setActivePlan(plan);
+
+        if (plan) {
+          const todayTemplate = await planAPI.getTodaysWorkout();
+          if (todayTemplate) {
+            // Fetch exercise details for today's workout
+            const exercisesWithDetails = await Promise.all(
+              (todayTemplate.exercises || []).map(async (ex) => {
+                try {
+                  const exercise = await exercisesAPI.getExerciseById(
+                    ex.exercise_id
+                  );
+                  return { ...ex, ...exercise };
+                } catch (err) {
+                  console.error(
+                    `Failed to get exercise ${ex.exercise_id}:`,
+                    err
+                  );
+                  return ex;
+                }
+              })
+            );
+            setTodaysWorkout({
+              ...todayTemplate,
+              exercises: exercisesWithDetails,
+            });
+          } else {
+            setTodaysWorkout(null);
+          }
         } else {
+          setActivePlan(null);
           setTodaysWorkout(null);
         }
       } catch (err) {
-        console.error("Failed to fetch today's workout:", err);
+        console.error("Failed to fetch plan data:", err);
+        setActivePlan(null);
         setTodaysWorkout(null);
       }
 
@@ -146,9 +166,21 @@ const WorkoutStartPage = () => {
     }
   }, []);
 
+  // Set initial collapsed state based on whether there's an active plan
+  // Only set it once when activePlan first becomes known
+  useEffect(() => {
+    if (activePlan !== null && !routinesExpandedInitialized.current) {
+      // If plan is active, collapse routines by default
+      // If no plan, expand routines by default
+      setIsRoutinesExpanded(!activePlan);
+      routinesExpandedInitialized.current = true;
+    }
+  }, [activePlan]);
+
   // Load templates when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      routinesExpandedInitialized.current = false; // Reset to allow re-initialization
       fetchTemplates();
       return () => {
         // Clear template cache when leaving the screen
@@ -350,41 +382,152 @@ const WorkoutStartPage = () => {
     setPendingWorkoutAction(null);
   }, []);
 
+  const handleCalendarDayPress = useCallback(
+    async (dayIndex) => {
+      if (!activePlan || !activePlan.schedule) return;
+
+      // Find the template for this day
+      const daySchedule = activePlan.schedule.find(
+        (s) => s.day_of_week === dayIndex
+      );
+
+      if (daySchedule && daySchedule.template_id) {
+        // Navigate to the routine detail page
+        navigation.navigate("RoutineDetail", {
+          template_id: daySchedule.template_id,
+        });
+      }
+    },
+    [activePlan, navigation]
+  );
+
   const renderTodaysWorkout = useCallback(() => {
-    if (!todaysWorkout) return null;
+    // Don't show anything if user doesn't have a plan
+    if (!activePlan) return null;
+
+    // If user has a plan but today is a rest day
+    if (!todaysWorkout) {
+      return (
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.sectionHeader}
+            onPress={() => setIsTodaysWorkoutExpanded(!isTodaysWorkoutExpanded)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.sectionTitle}>Today's Workout</Text>
+            <Ionicons
+              name={isTodaysWorkoutExpanded ? "chevron-up" : "chevron-down"}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+          {isTodaysWorkoutExpanded && (
+            <View style={styles.restDayContainer}>
+              <Ionicons
+                name="bed-outline"
+                size={48}
+                color={colors.textSecondary}
+                style={styles.restDayIcon}
+              />
+              <Text style={styles.restDayTitle}>Rest Day</Text>
+              <Text style={styles.restDayText}>No workout scheduled today</Text>
+            </View>
+          )}
+        </View>
+      );
+    }
+
+    // User has a plan and today has a workout
+    return (
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={styles.sectionHeader}
+          onPress={() => setIsTodaysWorkoutExpanded(!isTodaysWorkoutExpanded)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.sectionTitle}>Today's Workout</Text>
+          <Ionicons
+            name={isTodaysWorkoutExpanded ? "chevron-up" : "chevron-down"}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+        {isTodaysWorkoutExpanded && (
+          <Animated.View style={styles.todayWorkoutContainer}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("RoutineDetail", {
+                  template_id: todaysWorkout.template_id,
+                })
+              }
+              activeOpacity={0.7}
+            >
+              <View style={styles.templateHeader}>
+                <Text style={styles.templateName}>{todaysWorkout.name}</Text>
+              </View>
+              <Text style={styles.templateExercises}>
+                {todaysWorkout.exercises.map((ex) => ex.name).join(" • ")}
+              </Text>
+              <TouchableOpacity
+                style={styles.startRoutineButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleStartRoutine(todaysWorkout);
+                }}
+              >
+                <Text style={styles.startRoutineText}>
+                  Start Today's Workout
+                </Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+      </View>
+    );
+  }, [
+    activePlan,
+    todaysWorkout,
+    navigation,
+    handleStartRoutine,
+    styles,
+    colors,
+    isTodaysWorkoutExpanded,
+  ]);
+
+  const renderWeeklyCalendar = useCallback(() => {
+    if (!activePlan) return null;
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Today's Workout</Text>
-        <Animated.View style={styles.todayWorkoutContainer}>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("RoutineDetail", {
-                template_id: todaysWorkout.template_id,
-              })
-            }
-            activeOpacity={0.7}
-          >
-            <View style={styles.templateHeader}>
-              <Text style={styles.templateName}>{todaysWorkout.name}</Text>
-            </View>
-            <Text style={styles.templateExercises}>
-              {todaysWorkout.exercises.map((ex) => ex.name).join(" • ")}
-            </Text>
-            <TouchableOpacity
-              style={styles.startRoutineButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleStartRoutine(todaysWorkout);
-              }}
-            >
-              <Text style={styles.startRoutineText}>Start Today's Workout</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Animated.View>
+        <TouchableOpacity
+          style={styles.sectionHeader}
+          onPress={() => setIsWeeklyCalendarExpanded(!isWeeklyCalendarExpanded)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.sectionTitle}>This Week</Text>
+          <Ionicons
+            name={isWeeklyCalendarExpanded ? "chevron-up" : "chevron-down"}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+        {isWeeklyCalendarExpanded && (
+          <View style={styles.calendarContainer}>
+            <WeeklyCalendar
+              schedule={activePlan.schedule}
+              onDayPress={handleCalendarDayPress}
+            />
+          </View>
+        )}
       </View>
     );
-  }, [todaysWorkout, navigation, handleStartRoutine, styles, colors]);
+  }, [
+    activePlan,
+    handleCalendarDayPress,
+    styles,
+    colors,
+    isWeeklyCalendarExpanded,
+  ]);
 
   const renderTemplateList = useCallback(() => {
     if (loading && !refreshing) {
@@ -482,40 +625,70 @@ const WorkoutStartPage = () => {
         {/* Today's Workout Section - shows if plan is active and today has a workout */}
         {renderTodaysWorkout()}
 
+        {/* Weekly Calendar - shows if user has an active plan */}
+        {renderWeeklyCalendar()}
+
         {/* Quick Start Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Start</Text>
           <TouchableOpacity
-            style={styles.startEmptyWorkoutButton}
-            onPress={handleStartEmptyWorkout}
+            style={styles.sectionHeader}
+            onPress={() => setIsQuickStartExpanded(!isQuickStartExpanded)}
+            activeOpacity={0.7}
           >
-            <Ionicons name="add" size={20} color={colors.textWhite} />
-            <Text style={styles.startEmptyWorkoutText}>
-              Start Empty Workout
-            </Text>
+            <Text style={styles.sectionTitle}>Quick Start</Text>
+            <Ionicons
+              name={isQuickStartExpanded ? "chevron-up" : "chevron-down"}
+              size={24}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
+          {isQuickStartExpanded && (
+            <TouchableOpacity
+              style={styles.startEmptyWorkoutButton}
+              onPress={handleStartEmptyWorkout}
+            >
+              <Ionicons name="add" size={20} color={colors.textWhite} />
+              <Text style={styles.startEmptyWorkoutText}>
+                Start Empty Workout
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Routines Section */}
+        {/* Routines Section - always show, but collapse when plan is active */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <TouchableOpacity
+            style={styles.sectionHeader}
+            onPress={() => setIsRoutinesExpanded(!isRoutinesExpanded)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.sectionTitle}>Routines</Text>
-          </View>
+            <Ionicons
+              name={isRoutinesExpanded ? "chevron-up" : "chevron-down"}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
-          {/* New Routine button */}
-          <View style={styles.routineActionButtons}>
-            <TouchableOpacity
-              style={styles.newRoutineButton}
-              onPress={handleNewRoutine}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={20} color={colors.textPrimary} />
-              <Text style={styles.newRoutineText}>New Routine</Text>
-            </TouchableOpacity>
-          </View>
+          {/* New Routine button and Templates List - only show when expanded */}
+          {isRoutinesExpanded && (
+            <>
+              {/* New Routine button */}
+              <View style={styles.routineActionButtons}>
+                <TouchableOpacity
+                  style={styles.newRoutineButton}
+                  onPress={handleNewRoutine}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="add" size={20} color={colors.textPrimary} />
+                  <Text style={styles.newRoutineText}>New Routine</Text>
+                </TouchableOpacity>
+              </View>
 
-          {/* Templates List */}
-          {renderTemplateList()}
+              {/* Templates List */}
+              {renderTemplateList()}
+            </>
+          )}
         </View>
       </ScrollView>
       <BottomSheetModal

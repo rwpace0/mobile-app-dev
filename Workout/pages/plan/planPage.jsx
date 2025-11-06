@@ -33,6 +33,7 @@ const PlanPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [showPlanOptions, setShowPlanOptions] = useState(false);
 
   const fetchPlanData = useCallback(async (showLoading = true) => {
     try {
@@ -116,6 +117,18 @@ const PlanPage = () => {
       console.error("Failed to create plan:", error);
     }
   }, [fetchPlanData]);
+
+  const handleDeletePlan = useCallback(async () => {
+    if (!activePlan) return;
+
+    try {
+      await planAPI.deletePlan(activePlan.plan_id);
+      setShowPlanOptions(false);
+      fetchPlanData(false);
+    } catch (error) {
+      console.error("Failed to delete plan:", error);
+    }
+  }, [activePlan, fetchPlanData]);
 
   const handleDayPress = useCallback((dayIndex) => {
     setSelectedDay(dayIndex);
@@ -201,6 +214,27 @@ const PlanPage = () => {
     );
   };
 
+  const renderPlanOptionsModal = () => {
+    const planActions = [
+      {
+        title: "Delete Plan",
+        icon: "trash-outline",
+        onPress: handleDeletePlan,
+        destructive: true,
+      },
+    ];
+
+    return (
+      <BottomSheetModal
+        visible={showPlanOptions}
+        onClose={() => setShowPlanOptions(false)}
+        title="Plan Options"
+        actions={planActions}
+        showHandle={true}
+      />
+    );
+  };
+
   const renderTemplates = () => {
     if (templates.length === 0) {
       return (
@@ -268,7 +302,15 @@ const PlanPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Plan" leftComponent={{ type: "back" }} />
+      <Header
+        title="Plan"
+        leftComponent={{ type: "back" }}
+        rightComponent={{
+          type: "icon",
+          icon: "ellipsis-horizontal",
+          onPress: () => setShowPlanOptions(true),
+        }}
+      />
       <ScrollView
         style={styles.content}
         refreshControl={
@@ -306,6 +348,7 @@ const PlanPage = () => {
       </ScrollView>
 
       {renderTemplateModal()}
+      {renderPlanOptionsModal()}
     </SafeAreaView>
   );
 };
