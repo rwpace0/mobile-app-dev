@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import DraggableFlatList from "react-native-draggable-flatlist";
 import Header from "../../components/static/header";
-import WeeklyCalendar from "../../components/WeeklyCalendar";
+import ScrollableCalendar from "../../components/ScrollableCalendar";
 import VolumeStats from "../../components/VolumeStats";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import { getColors } from "../../constants/colors";
@@ -31,8 +32,6 @@ const PlanPage = () => {
   const [volumeData, setVolumeData] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(null);
   const [showPlanOptions, setShowPlanOptions] = useState(false);
 
   const fetchPlanData = useCallback(async (showLoading = true) => {
@@ -109,14 +108,14 @@ const PlanPage = () => {
     fetchPlanData(false);
   }, [fetchPlanData]);
 
-  const handleCreatePlan = useCallback(async () => {
-    try {
-      await planAPI.createPlan({ name: "My Workout Plan" });
-      fetchPlanData(false);
-    } catch (error) {
-      console.error("Failed to create plan:", error);
-    }
-  }, [fetchPlanData]);
+  const handleCreatePlan = useCallback(() => {
+    navigation.navigate("PlanSetup");
+  }, [navigation]);
+
+  const handleEditPlan = useCallback(() => {
+    if (!activePlan) return;
+    navigation.navigate("PlanSetup", { plan: activePlan });
+  }, [activePlan, navigation]);
 
   const handleDeletePlan = useCallback(async () => {
     if (!activePlan) return;
@@ -130,29 +129,15 @@ const PlanPage = () => {
     }
   }, [activePlan, fetchPlanData]);
 
-  const handleDayPress = useCallback((dayIndex) => {
-    setSelectedDay(dayIndex);
-    setShowTemplateModal(true);
-  }, []);
-
-  const handleAssignTemplate = useCallback(
-    async (templateId) => {
-      if (!activePlan || selectedDay === null) return;
-
-      try {
-        await planAPI.updatePlanSchedule(
-          activePlan.plan_id,
-          selectedDay,
-          templateId
-        );
-        setShowTemplateModal(false);
-        setSelectedDay(null);
-        fetchPlanData(false);
-      } catch (error) {
-        console.error("Failed to assign template:", error);
+  const handleDayPress = useCallback(
+    (date, routine) => {
+      if (routine && routine.template_id) {
+        navigation.navigate("RoutineDetail", {
+          template_id: routine.template_id,
+        });
       }
     },
-    [activePlan, selectedDay, fetchPlanData]
+    [navigation]
   );
 
   const handleNewRoutine = useCallback(() => {
@@ -174,48 +159,16 @@ const PlanPage = () => {
     </View>
   );
 
-  const renderTemplateModal = () => {
-    const daysOfWeek = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-
-    const modalActions = [
-      {
-        title: "Rest Day",
-        icon: "bed-outline",
-        onPress: () => handleAssignTemplate(null),
-      },
-      ...templates.map((template) => ({
-        title: template.name,
-        icon: "barbell-outline",
-        onPress: () => handleAssignTemplate(template.template_id),
-      })),
-    ];
-
-    return (
-      <BottomSheetModal
-        visible={showTemplateModal}
-        onClose={() => {
-          setShowTemplateModal(false);
-          setSelectedDay(null);
-        }}
-        title={`Select Workout for ${
-          selectedDay !== null ? daysOfWeek[selectedDay] : ""
-        }`}
-        actions={modalActions}
-        showHandle={true}
-      />
-    );
-  };
-
   const renderPlanOptionsModal = () => {
     const planActions = [
+      {
+        title: "Edit Plan",
+        icon: "create-outline",
+        onPress: () => {
+          setShowPlanOptions(false);
+          handleEditPlan();
+        },
+      },
       {
         title: "Delete Plan",
         icon: "trash-outline",
@@ -235,6 +188,53 @@ const PlanPage = () => {
     );
   };
 
+  const handleReorderTemplates = useCallback((data) => {
+    setTemplates(data);
+    // Optionally, persist the order to the database here
+  }, []);
+
+  const renderTemplateItem = ({ item: template, drag, isActive }) => (
+    <TouchableOpacity
+      style={[styles.templateContainer, isActive && styles.templateDragging]}
+      onLongPress={drag}
+      delayLongPress={500}
+      activeOpacity={0.7}
+      onPress={() =>
+        navigation.navigate("RoutineDetail", {
+          template_id: template.template_id,
+        })
+      }
+    >
+      {/* Routine Header */}
+      <View style={styles.routineHeader}>
+        <Text
+          style={[styles.routineTitle, isActive && { opacity: 0.5 }]}
+          numberOfLines={1}
+        >
+          {template.name}
+        </Text>
+      </View>
+
+      {/* Exercise List - Compact */}
+      <View style={styles.exerciseList}>
+        {template.exercises?.slice(0, 4).map((ex, index) => (
+          <View key={index} style={styles.exerciseRow}>
+            <Text style={styles.exerciseNumber}>{index + 1}</Text>
+            <Text style={styles.exerciseName} numberOfLines={1}>
+              {ex.name}
+            </Text>
+            <Text style={styles.exerciseSets}>{ex.sets || 0}</Text>
+          </View>
+        ))}
+        {template.exercises?.length > 4 && (
+          <Text style={styles.moreExercisesText}>
+            +{template.exercises.length - 4} more
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
   const renderTemplates = () => {
     if (templates.length === 0) {
       return (
@@ -246,38 +246,16 @@ const PlanPage = () => {
       );
     }
 
-    return templates.map((template) => (
-      <TouchableOpacity
-        key={template.template_id}
-        style={styles.templateContainer}
-        onPress={() =>
-          navigation.navigate("RoutineDetail", {
-            template_id: template.template_id,
-          })
-        }
-        activeOpacity={0.7}
-      >
-        <View style={styles.templateHeader}>
-          <Text style={styles.templateName}>{template.name}</Text>
-          <Text style={styles.templateCount}>
-            {template.exercises.length}{" "}
-            {template.exercises.length === 1 ? "exercise" : "exercises"}
-          </Text>
-        </View>
-        <View style={styles.exerciseList}>
-          {template.exercises.map((ex, index) => (
-            <View key={index} style={styles.exerciseItem}>
-              <Text style={styles.exerciseName} numberOfLines={1}>
-                {ex.name}
-              </Text>
-              <Text style={styles.exerciseSets}>
-                {ex.sets || 0} {ex.sets === 1 ? "set" : "sets"}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </TouchableOpacity>
-    ));
+    return (
+      <DraggableFlatList
+        data={templates}
+        renderItem={renderTemplateItem}
+        keyExtractor={(item) => item.template_id}
+        onDragEnd={({ data }) => handleReorderTemplates(data)}
+        scrollEnabled={false}
+        activationDistance={10}
+      />
+    );
   };
 
   if (loading) {
@@ -317,10 +295,13 @@ const PlanPage = () => {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Weekly Calendar */}
+        {/* Scrollable Calendar */}
         <View style={styles.calendarSection}>
-          <Text style={styles.calendarTitle}>Weekly Schedule</Text>
-          <WeeklyCalendar
+          <Text style={styles.calendarTitle}>Schedule</Text>
+          <ScrollableCalendar
+            plan={activePlan}
+            startDate={activePlan.start_date}
+            patternLength={activePlan.pattern_length}
             schedule={activePlan.schedule}
             onDayPress={handleDayPress}
           />
@@ -342,12 +323,14 @@ const PlanPage = () => {
         </View>
 
         {/* Volume Stats */}
-        <View style={styles.volumeSection}>
-          <VolumeStats volumeData={volumeData} />
-        </View>
+        {volumeData && Object.keys(volumeData).length > 0 && (
+          <View style={styles.volumeSection}>
+            <Text style={styles.sectionTitle}>Weekly Volume</Text>
+            <VolumeStats volumeData={volumeData} />
+          </View>
+        )}
       </ScrollView>
 
-      {renderTemplateModal()}
       {renderPlanOptionsModal()}
     </SafeAreaView>
   );

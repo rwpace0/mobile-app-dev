@@ -387,6 +387,79 @@ class DatabaseManager {
         }
       }
 
+      if (currentVersion < 6) {
+        console.log("[DatabaseManager] Updating to database version 6");
+
+        // Add pattern fields to workout_plans table
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE workout_plans ADD COLUMN start_date DATETIME;"
+          );
+          console.log(
+            "[DatabaseManager] Added start_date column to workout_plans table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] start_date column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE workout_plans ADD COLUMN pattern_length INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added pattern_length column to workout_plans table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] pattern_length column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        // Add pattern_position to plan_schedule table
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE plan_schedule ADD COLUMN pattern_position INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added pattern_position column to plan_schedule table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] pattern_position column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        // Create indexes for new pattern fields
+        try {
+          await this.db.execAsync(`
+            CREATE INDEX IF NOT EXISTS idx_plan_schedule_pattern ON plan_schedule(plan_id, pattern_position);
+            CREATE INDEX IF NOT EXISTS idx_workout_plans_pattern ON workout_plans(pattern_length, start_date);
+          `);
+          console.log("[DatabaseManager] Created indexes for pattern fields");
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] Pattern indexes already exist or failed to create:",
+            e.message
+          );
+        }
+
+        // Update version
+        const version6Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 6"
+        );
+        if (version6Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (6)"
+          );
+          console.log("[DatabaseManager] Database version updated to 6");
+        }
+      }
+
       // Force check for secondary_muscle_groups column and add if missing (regardless of version)
       try {
         const tableInfo = await this.db.getAllAsync(

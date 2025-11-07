@@ -44,10 +44,10 @@ export const createStyles = (isDark = true) => {
     // Calendar Section
     calendarSection: {
       marginTop: Spacing.m,
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      padding: Spacing.m,
-      ...Shadow.medium,
+      backgroundColor: "transparent",
+      paddingHorizontal: 0,
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.m,
     },
 
     calendarTitle: {
@@ -88,12 +88,20 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.semiBold,
     },
 
-    // Template Cards (reuse from start screen style)
+    // Template Cards - Minimal iOS-like design
     templateContainer: {
       backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.md,
-      padding: Spacing.m,
-      marginBottom: Spacing.m,
+      borderRadius: BorderRadius.lg,
+      paddingVertical: Spacing.s,
+      paddingHorizontal: Spacing.m,
+      marginBottom: Spacing.s,
+      ...Shadow.small,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+    },
+
+    templateDragging: {
+      opacity: 0.7,
       ...Shadow.medium,
     },
 
@@ -105,7 +113,7 @@ export const createStyles = (isDark = true) => {
     },
 
     templateName: {
-      color: colors.textPrimary,
+      color: colors.primaryBlue,
       fontSize: FontSize.large,
       fontWeight: FontWeight.bold,
       flex: 1,
@@ -117,8 +125,36 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.normal,
     },
 
+    routineHeader: {
+      marginBottom: Spacing.xs,
+      paddingBottom: Spacing.xs,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor + "30",
+    },
+
+    routineTitle: {
+      color: colors.primaryBlue,
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.semiBold,
+    },
+
+    routineNameSpacer: {
+      width: 30,
+    },
+
+    routineNameItem: {
+      // Additional styling for routine name item if needed
+    },
+
     exerciseList: {
-      gap: Spacing.s,
+      paddingTop: Spacing.xs,
+    },
+
+    exerciseRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: Spacing.xxs,
+      paddingHorizontal: 0,
     },
 
     exerciseItem: {
@@ -126,25 +162,55 @@ export const createStyles = (isDark = true) => {
       justifyContent: "space-between",
       alignItems: "center",
       paddingVertical: Spacing.s,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.sm,
+    },
+
+    exerciseItemEven: {
+      backgroundColor: colors.backgroundCard,
+    },
+
+    exerciseItemOdd: {
+      backgroundColor: colors.backgroundPrimary,
+    },
+
+    exerciseNumber: {
+      color: colors.textSecondary,
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.medium,
+      width: 20,
+      textAlign: "left",
+      marginRight: Spacing.xs,
     },
 
     exerciseName: {
       color: colors.textPrimary,
-      fontSize: FontSize.medium,
+      fontSize: FontSize.base,
       flex: 1,
-      marginRight: Spacing.s,
+      marginRight: Spacing.xs,
     },
 
     exerciseSets: {
       color: colors.textSecondary,
-      fontSize: FontSize.medium,
+      fontSize: FontSize.base,
       fontWeight: FontWeight.medium,
+      minWidth: 24,
+      textAlign: "right",
+    },
+
+    moreExercisesText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.small,
+      fontStyle: "italic",
+      marginTop: Spacing.xxs,
+      paddingLeft: 28,
     },
 
     templateExercises: {
       color: colors.textSecondary,
-      fontSize: FontSize.small,
+      fontSize: FontSize.base,
       marginBottom: Spacing.m,
+      lineHeight: 22,
     },
 
     assignButton: {
@@ -165,23 +231,24 @@ export const createStyles = (isDark = true) => {
     newRoutineButton: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.backgroundCard,
+      justifyContent: "center",
+      backgroundColor: colors.primaryBlue,
       paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
+      paddingHorizontal: Spacing.l,
       borderRadius: BorderRadius.md,
-      marginBottom: Spacing.m,
-      ...Shadow.medium,
+      marginBottom: Spacing.l,
+      ...Shadow.small,
     },
 
     newRoutineText: {
-      color: colors.textPrimary,
+      color: colors.textWhite,
       fontSize: FontSize.medium,
       marginLeft: Spacing.s,
     },
 
     // Volume Stats Section
     volumeSection: {
-      marginTop: Spacing.m,
+      marginTop: Spacing.l,
     },
 
     // Loading State

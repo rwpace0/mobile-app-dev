@@ -15,7 +15,7 @@ import templateAPI from "../API/templateAPI";
 import exercisesAPI from "../API/exercisesAPI";
 import planAPI from "../API/planAPI";
 import Header from "../components/static/header";
-import WeeklyCalendar from "../components/WeeklyCalendar";
+import ScrollableCalendar from "../components/ScrollableCalendar";
 import { getColors } from "../constants/colors";
 import { createStyles } from "../styles/start.styles";
 import { useTheme } from "../state/SettingsContext";
@@ -383,22 +383,14 @@ const WorkoutStartPage = () => {
   }, []);
 
   const handleCalendarDayPress = useCallback(
-    async (dayIndex) => {
-      if (!activePlan || !activePlan.schedule) return;
-
-      // Find the template for this day
-      const daySchedule = activePlan.schedule.find(
-        (s) => s.day_of_week === dayIndex
-      );
-
-      if (daySchedule && daySchedule.template_id) {
-        // Navigate to the routine detail page
+    (date, routine) => {
+      if (routine && routine.template_id) {
         navigation.navigate("RoutineDetail", {
-          template_id: daySchedule.template_id,
+          template_id: routine.template_id,
         });
       }
     },
-    [activePlan, navigation]
+    [navigation]
   );
 
   const renderTodaysWorkout = useCallback(() => {
@@ -513,7 +505,10 @@ const WorkoutStartPage = () => {
         </TouchableOpacity>
         {isWeeklyCalendarExpanded && (
           <View style={styles.calendarContainer}>
-            <WeeklyCalendar
+            <ScrollableCalendar
+              plan={activePlan}
+              startDate={activePlan.start_date}
+              patternLength={activePlan.pattern_length}
               schedule={activePlan.schedule}
               onDayPress={handleCalendarDayPress}
             />
@@ -541,7 +536,7 @@ const WorkoutStartPage = () => {
     if (error) {
       return (
         <View style={styles.emptyRoutinesContainer}>
-          <Text style={styles.emptyRoutinesText}>{error}</Text>
+          <Text style={styles.emptyRoutinesText}>"Error loading routines"</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => fetchTemplates()}
@@ -622,11 +617,11 @@ const WorkoutStartPage = () => {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Today's Workout Section - shows if plan is active and today has a workout */}
-        {renderTodaysWorkout()}
-
         {/* Weekly Calendar - shows if user has an active plan */}
         {renderWeeklyCalendar()}
+
+        {/* Today's Workout Section - shows if plan is active and today has a workout */}
+        {renderTodaysWorkout()}
 
         {/* Quick Start Section */}
         <View style={styles.section}>

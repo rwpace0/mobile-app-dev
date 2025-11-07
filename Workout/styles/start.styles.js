@@ -201,9 +201,9 @@ export const createStyles = (isDark = true) => {
     },
 
     calendarContainer: {
-      backgroundColor: colors.backgroundCard,
+      backgroundColor: colors.backgroundPrimary,
       borderRadius: BorderRadius.lg,
-      padding: Spacing.m,
+
       ...Shadow.medium,
     },
   });

@@ -38,6 +38,7 @@ import RoutineDetail from "./pages/templates/routineDetail";
 import CalendarView from "./pages/workouts/calendarView";
 import Statistics from "./pages/statistics/statistics";
 import PlanPage from "./pages/plan/planPage";
+import PlanSetupPage from "./pages/plan/planSetupPage";
 import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
 import { mediaAPI } from "./API/mediaAPI";
@@ -247,6 +248,7 @@ const modalScreens = [
   { name: "WorkoutDetail", component: WorkoutDetail },
   { name: "ExerciseDetail", component: ExerciseDetail },
   { name: "editWorkout", component: editWorkout },
+  { name: "PlanSetup", component: PlanSetupPage },
 ];
 
 // Main Stack Navigator

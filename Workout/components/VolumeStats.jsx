@@ -79,7 +79,6 @@ const VolumeStats = ({ volumeData }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Weekly Volume</Text>
       {["Torso", "Limbs", "Legs", "Other"].map((category) =>
         renderCategory(category, organizedMuscles[category])
       )}
@@ -94,13 +93,6 @@ const createStyles = (colors, isDark) =>
       paddingHorizontal: 20,
       backgroundColor: colors.backgroundCard,
       borderRadius: 16,
-      marginTop: 16,
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "700",
-      color: colors.textPrimary,
-      marginBottom: 20,
     },
     categorySection: {
       marginBottom: 20,

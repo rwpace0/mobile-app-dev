@@ -35,16 +35,57 @@ class PlanAPI {
         [userId]
       );
 
-      // Create the new plan
+      // Create the new plan with pattern support
       await this.db.execute(
         `INSERT INTO workout_plans 
-        (plan_id, user_id, name, is_active, created_at, updated_at, sync_status, version)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [plan_id, userId, planData.name, 1, now, now, "synced", 1]
+        (plan_id, user_id, name, is_active, start_date, pattern_length, created_at, updated_at, sync_status, version)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          plan_id,
+          userId,
+          planData.name,
+          1,
+          planData.startDate || new Date().toISOString(),
+          planData.patternLength || 7,
+          now,
+          now,
+          "synced",
+          1,
+        ]
       );
 
+      // Create schedule entries if provided
+      if (planData.schedule && Array.isArray(planData.schedule)) {
+        for (const scheduleItem of planData.schedule) {
+          const schedule_id = uuid();
+          await this.db.execute(
+            `INSERT INTO plan_schedule 
+            (schedule_id, plan_id, day_of_week, pattern_position, template_id, created_at, updated_at, sync_status, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              schedule_id,
+              plan_id,
+              scheduleItem.pattern_position, // Use pattern_position as day_of_week for backward compatibility
+              scheduleItem.pattern_position,
+              scheduleItem.template_id,
+              now,
+              now,
+              "synced",
+              1,
+            ]
+          );
+        }
+      }
+
       console.log("[PlanAPI] Plan created successfully");
-      return { plan_id, name: planData.name, is_active: 1, created_at: now };
+      return {
+        plan_id,
+        name: planData.name,
+        is_active: 1,
+        start_date: planData.startDate || new Date().toISOString(),
+        pattern_length: planData.patternLength || 7,
+        created_at: now,
+      };
     } catch (error) {
       console.error("[PlanAPI] Create plan error:", error);
       throw error;
@@ -69,13 +110,13 @@ class PlanAPI {
         return null;
       }
 
-      // Get schedule for this plan
+      // Get schedule for this plan - prioritize pattern_position, fallback to day_of_week
       const schedule = await this.db.query(
         `SELECT ps.*, wt.name as template_name
          FROM plan_schedule ps
          LEFT JOIN workout_templates wt ON ps.template_id = wt.template_id
          WHERE ps.plan_id = ?
-         ORDER BY ps.day_of_week`,
+         ORDER BY COALESCE(ps.pattern_position, ps.day_of_week)`,
         [plan.plan_id]
       );
 
@@ -89,20 +130,20 @@ class PlanAPI {
     }
   }
 
-  // Update plan schedule - assign or remove templates from days
-  async updatePlanSchedule(planId, dayOfWeek, templateId) {
+  // Update plan schedule - assign or remove templates from pattern positions
+  async updatePlanSchedule(planId, patternPosition, templateId) {
     try {
       console.log(
-        `[PlanAPI] Updating schedule for plan ${planId}, day ${dayOfWeek}`
+        `[PlanAPI] Updating schedule for plan ${planId}, position ${patternPosition}`
       );
       await this.ensureInitialized();
 
       const now = new Date().toISOString();
 
-      // Check if a schedule entry already exists for this day
+      // Check if a schedule entry already exists for this pattern position
       const [existingSchedule] = await this.db.query(
-        `SELECT * FROM plan_schedule WHERE plan_id = ? AND day_of_week = ?`,
-        [planId, dayOfWeek]
+        `SELECT * FROM plan_schedule WHERE plan_id = ? AND pattern_position = ?`,
+        [planId, patternPosition]
       );
 
       if (existingSchedule) {
@@ -129,9 +170,19 @@ class PlanAPI {
         const schedule_id = uuid();
         await this.db.execute(
           `INSERT INTO plan_schedule 
-          (schedule_id, plan_id, day_of_week, template_id, created_at, updated_at, sync_status, version)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [schedule_id, planId, dayOfWeek, templateId, now, now, "synced", 1]
+          (schedule_id, plan_id, day_of_week, pattern_position, template_id, created_at, updated_at, sync_status, version)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            schedule_id,
+            planId,
+            patternPosition, // Use pattern_position as day_of_week for backward compatibility
+            patternPosition,
+            templateId,
+            now,
+            now,
+            "synced",
+            1,
+          ]
         );
       }
 
@@ -216,12 +267,15 @@ class PlanAPI {
         return null;
       }
 
-      // Get current day of week (0 = Sunday, 6 = Saturday)
-      const today = new Date().getDay();
+      // Calculate pattern position for today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      // Find schedule entry for today
-      const todaySchedule = activePlan.schedule.find(
-        (s) => s.day_of_week === today
+      const todaySchedule = this.getRoutineForDate(
+        today,
+        activePlan.start_date,
+        activePlan.pattern_length,
+        activePlan.schedule
       );
 
       if (!todaySchedule || !todaySchedule.template_id) {
@@ -284,6 +338,36 @@ class PlanAPI {
       console.error("[PlanAPI] Get today's workout error:", error);
       throw error;
     }
+  }
+
+  // Helper method to calculate which routine applies to a given date
+  getRoutineForDate(targetDate, startDate, patternLength, schedule) {
+    if (!startDate || !patternLength || !schedule) {
+      return null;
+    }
+
+    // Ensure dates are Date objects and normalized to midnight
+    const target = new Date(targetDate);
+    target.setHours(0, 0, 0, 0);
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    // Calculate days since start
+    const daysSinceStart = Math.floor((target - start) / (1000 * 60 * 60 * 24));
+
+    // Handle dates before start date
+    if (daysSinceStart < 0) {
+      return null;
+    }
+
+    // Calculate pattern position
+    const position = daysSinceStart % patternLength;
+
+    // Find schedule entry for this position
+    const scheduleEntry = schedule.find((s) => s.pattern_position === position);
+
+    return scheduleEntry || null;
   }
 
   // Calculate weekly volume (sets per muscle group)
@@ -361,6 +445,51 @@ class PlanAPI {
     }
   }
 
+  // Update plan configuration (name, pattern settings)
+  async updatePlan(planId, planData) {
+    try {
+      console.log(`[PlanAPI] Updating plan ${planId}`);
+      await this.ensureInitialized();
+
+      const now = new Date().toISOString();
+
+      // Build update query dynamically based on provided fields
+      const updates = [];
+      const values = [];
+
+      if (planData.name !== undefined) {
+        updates.push("name = ?");
+        values.push(planData.name);
+      }
+
+      if (planData.startDate !== undefined) {
+        updates.push("start_date = ?");
+        values.push(planData.startDate);
+      }
+
+      if (planData.patternLength !== undefined) {
+        updates.push("pattern_length = ?");
+        values.push(planData.patternLength);
+      }
+
+      updates.push("updated_at = ?");
+      values.push(now);
+
+      values.push(planId);
+
+      await this.db.execute(
+        `UPDATE workout_plans SET ${updates.join(", ")} WHERE plan_id = ?`,
+        values
+      );
+
+      console.log("[PlanAPI] Plan updated successfully");
+      return { success: true };
+    } catch (error) {
+      console.error("[PlanAPI] Update plan error:", error);
+      throw error;
+    }
+  }
+
   // Get all templates for display in plan page
   async getAllTemplates() {
     try {
@@ -419,4 +548,3 @@ class PlanAPI {
 }
 
 export default new PlanAPI();
-
