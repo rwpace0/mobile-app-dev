@@ -41,8 +41,7 @@ const WorkoutStartPage = () => {
   const [showActiveWorkoutModal, setShowActiveWorkoutModal] = useState(false);
   const [pendingWorkoutAction, setPendingWorkoutAction] = useState(null);
   const [showRoutineDeleteModal, setShowRoutineDeleteModal] = useState(false);
-  const [isRoutinesExpanded, setIsRoutinesExpanded] = useState(false);
-  const routinesExpandedInitialized = useRef(false);
+  const [isRoutinesExpanded, setIsRoutinesExpanded] = useState(true);
   const [isTodaysWorkoutExpanded, setIsTodaysWorkoutExpanded] = useState(true);
   const [isWeeklyCalendarExpanded, setIsWeeklyCalendarExpanded] =
     useState(true);
@@ -166,21 +165,9 @@ const WorkoutStartPage = () => {
     }
   }, []);
 
-  // Set initial collapsed state based on whether there's an active plan
-  // Only set it once when activePlan first becomes known
-  useEffect(() => {
-    if (activePlan !== null && !routinesExpandedInitialized.current) {
-      // If plan is active, collapse routines by default
-      // If no plan, expand routines by default
-      setIsRoutinesExpanded(!activePlan);
-      routinesExpandedInitialized.current = true;
-    }
-  }, [activePlan]);
-
   // Load templates when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      routinesExpandedInitialized.current = false; // Reset to allow re-initialization
       fetchTemplates();
       return () => {
         // Clear template cache when leaving the screen
