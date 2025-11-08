@@ -1,6 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { AppState } from 'react-native';
-import { activeWorkoutStorage } from '../API/local/activeWorkoutStorage';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { AppState } from "react-native";
+import { activeWorkoutStorage } from "../API/local/activeWorkoutStorage";
 
 const ActiveWorkoutContext = createContext();
 
@@ -15,13 +23,18 @@ export const ActiveWorkoutProvider = ({ children }) => {
       try {
         await activeWorkoutStorage.initialize();
         const restoredWorkout = await activeWorkoutStorage.loadActiveWorkout();
-        
+
         if (restoredWorkout) {
-          console.log('[ActiveWorkoutContext] Restored active workout from storage');
+          console.log(
+            "[ActiveWorkoutContext] Restored active workout from storage"
+          );
           setActiveWorkout(restoredWorkout);
         }
       } catch (error) {
-        console.error('[ActiveWorkoutContext] Failed to initialize workout:', error);
+        console.error(
+          "[ActiveWorkoutContext] Failed to initialize workout:",
+          error
+        );
       } finally {
         setIsInitialized(true);
       }
@@ -30,25 +43,46 @@ export const ActiveWorkoutProvider = ({ children }) => {
     initializeWorkout();
   }, []);
 
-  // Timer for the active workout - uses real timestamps instead of incremental counting
+  // Timer for the active workout - optimized to reduce memory pressure
+  // Use ref to track duration and only update state every 5 seconds
+  const durationRef = useRef(0);
+  const startTimeRef = useRef(null);
+
+  useEffect(() => {
+    // Capture startTime when workout becomes active
+    if (activeWorkout && activeWorkout.startTime) {
+      startTimeRef.current = activeWorkout.startTime;
+    } else {
+      startTimeRef.current = null;
+    }
+  }, [activeWorkout?.startTime]);
+
   useEffect(() => {
     let interval;
-    if (activeWorkout && activeWorkout.startTime) {
+    if (activeWorkout && startTimeRef.current) {
       interval = setInterval(() => {
-        setActiveWorkout(prev => {
-          if (prev && prev.startTime) {
-            const currentTime = Date.now();
-            const elapsedSeconds = Math.floor((currentTime - prev.startTime) / 1000);
-            return {
-              ...prev,
-              duration: elapsedSeconds
-            };
-          }
-          return prev;
-        });
+        const currentTime = Date.now();
+        const elapsedSeconds = Math.floor(
+          (currentTime - startTimeRef.current) / 1000
+        );
+        durationRef.current = elapsedSeconds;
+
+        // Only update state every 5 seconds to reduce re-renders and memory pressure
+        // This still provides reasonable accuracy for display purposes
+        if (elapsedSeconds % 5 === 0 || elapsedSeconds === 0) {
+          setActiveWorkout((prev) => {
+            if (prev && prev.startTime) {
+              return {
+                ...prev,
+                duration: elapsedSeconds,
+              };
+            }
+            return prev;
+          });
+        }
       }, 1000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -57,16 +91,20 @@ export const ActiveWorkoutProvider = ({ children }) => {
   // App state change handler for automatic saving
   useEffect(() => {
     const handleAppStateChange = async (nextAppState) => {
-      if (appState.match(/inactive|background/) && nextAppState === 'active') {
+      if (appState.match(/inactive|background/) && nextAppState === "active") {
         // App came to foreground - refresh duration from storage
         if (activeWorkout) {
           try {
-            const refreshedWorkout = await activeWorkoutStorage.loadActiveWorkout();
+            const refreshedWorkout =
+              await activeWorkoutStorage.loadActiveWorkout();
             if (refreshedWorkout) {
               setActiveWorkout(refreshedWorkout);
             }
           } catch (error) {
-            console.error('[ActiveWorkoutContext] Failed to refresh workout on foreground:', error);
+            console.error(
+              "[ActiveWorkoutContext] Failed to refresh workout on foreground:",
+              error
+            );
           }
         }
       } else if (nextAppState.match(/inactive|background/)) {
@@ -75,14 +113,20 @@ export const ActiveWorkoutProvider = ({ children }) => {
           try {
             await activeWorkoutStorage.saveActiveWorkout(activeWorkout);
           } catch (error) {
-            console.error('[ActiveWorkoutContext] Failed to save workout on background:', error);
+            console.error(
+              "[ActiveWorkoutContext] Failed to save workout on background:",
+              error
+            );
           }
         }
       }
       setAppState(nextAppState);
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
     return () => subscription?.remove();
   }, [activeWorkout, appState]);
 
@@ -99,33 +143,39 @@ export const ActiveWorkoutProvider = ({ children }) => {
       startTime: now, // Real timestamp when workout started
       ...workoutData,
     };
-    
+
     try {
       await activeWorkoutStorage.saveActiveWorkout(newWorkout);
       setActiveWorkout(newWorkout);
-      console.log('[ActiveWorkoutContext] New workout started and saved');
+      console.log("[ActiveWorkoutContext] New workout started and saved");
     } catch (error) {
-      console.error('[ActiveWorkoutContext] Failed to save new workout:', error);
+      console.error(
+        "[ActiveWorkoutContext] Failed to save new workout:",
+        error
+      );
       // Still set the workout in memory even if save fails
       setActiveWorkout(newWorkout);
     }
   }, []);
 
   const updateWorkout = useCallback(async (updates) => {
-    setActiveWorkout(prev => {
+    setActiveWorkout((prev) => {
       if (prev) {
-        const updated = { 
-          ...prev, 
+        const updated = {
+          ...prev,
           ...updates,
           // Don't override startTime from updates
-          startTime: prev.startTime 
+          startTime: prev.startTime,
         };
-        
+
         // Save to storage asynchronously - don't block UI updates
-        activeWorkoutStorage.saveActiveWorkout(updated).catch(error => {
-          console.error('[ActiveWorkoutContext] Failed to save workout update:', error);
+        activeWorkoutStorage.saveActiveWorkout(updated).catch((error) => {
+          console.error(
+            "[ActiveWorkoutContext] Failed to save workout update:",
+            error
+          );
         });
-        
+
         return updated;
       }
       return null;
@@ -136,23 +186,31 @@ export const ActiveWorkoutProvider = ({ children }) => {
     try {
       await activeWorkoutStorage.clearActiveWorkout();
       setActiveWorkout(null);
-      console.log('[ActiveWorkoutContext] Workout ended and cleared from storage');
+      console.log(
+        "[ActiveWorkoutContext] Workout ended and cleared from storage"
+      );
     } catch (error) {
-      console.error('[ActiveWorkoutContext] Failed to clear workout from storage:', error);
+      console.error(
+        "[ActiveWorkoutContext] Failed to clear workout from storage:",
+        error
+      );
       // Still clear from memory even if storage clear fails
       setActiveWorkout(null);
     }
   }, []);
 
   // Memoize the context value to prevent unnecessary re-renders
-  const value = useMemo(() => ({
-    activeWorkout,
-    startWorkout,
-    updateWorkout,
-    endWorkout,
-    isWorkoutActive: !!activeWorkout,
-    isInitialized, // Expose initialization state
-  }), [activeWorkout, startWorkout, updateWorkout, endWorkout, isInitialized]);
+  const value = useMemo(
+    () => ({
+      activeWorkout,
+      startWorkout,
+      updateWorkout,
+      endWorkout,
+      isWorkoutActive: !!activeWorkout,
+      isInitialized, // Expose initialization state
+    }),
+    [activeWorkout, startWorkout, updateWorkout, endWorkout, isInitialized]
+  );
 
   return (
     <ActiveWorkoutContext.Provider value={value}>
@@ -164,7 +222,9 @@ export const ActiveWorkoutProvider = ({ children }) => {
 export const useActiveWorkout = () => {
   const context = useContext(ActiveWorkoutContext);
   if (!context) {
-    throw new Error('useActiveWorkout must be used within an ActiveWorkoutProvider');
+    throw new Error(
+      "useActiveWorkout must be used within an ActiveWorkoutProvider"
+    );
   }
   return context;
-}; 
+};

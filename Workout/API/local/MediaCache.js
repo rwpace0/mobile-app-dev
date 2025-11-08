@@ -608,19 +608,39 @@ class MediaCache {
         ...(profiles || []).map(p => p.local_avatar_path)
       ]);
 
-      // Delete unreferenced exercise files
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
+
+      // Delete unreferenced exercise files and files older than 7 days
       for (const file of exerciseFiles) {
-        if (!referencedFiles.has(file)) {
-          await this.deleteFile(`${this.baseDir}exercises/${file}`);
-          console.log('Cleaned up orphaned exercise file:', file);
+        const filePath = `${this.baseDir}exercises/${file}`;
+        const fileInfo = await FileSystem.getInfoAsync(filePath);
+        
+        if (!fileInfo.exists) continue;
+        
+        const shouldDelete = 
+          !referencedFiles.has(file) || // Orphaned file
+          (fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo); // File older than 7 days
+        
+        if (shouldDelete) {
+          await this.deleteFile(filePath);
+          console.log(`Cleaned up exercise file: ${file} (orphaned: ${!referencedFiles.has(file)}, old: ${fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo})`);
         }
       }
 
-      // Delete unreferenced avatar files
+      // Delete unreferenced avatar files and files older than 7 days
       for (const file of avatarFiles) {
-        if (!referencedFiles.has(file)) {
-          await this.deleteFile(`${this.baseDir}avatars/${file}`);
-          console.log('Cleaned up orphaned avatar file:', file);
+        const filePath = `${this.baseDir}avatars/${file}`;
+        const fileInfo = await FileSystem.getInfoAsync(filePath);
+        
+        if (!fileInfo.exists) continue;
+        
+        const shouldDelete = 
+          !referencedFiles.has(file) || // Orphaned file
+          (fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo); // File older than 7 days
+        
+        if (shouldDelete) {
+          await this.deleteFile(filePath);
+          console.log(`Cleaned up avatar file: ${file} (orphaned: ${!referencedFiles.has(file)}, old: ${fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo})`);
         }
       }
     } catch (error) {

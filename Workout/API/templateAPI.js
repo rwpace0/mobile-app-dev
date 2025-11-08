@@ -10,8 +10,8 @@ class TemplateAPI extends APIBase {
   constructor() {
     super(`${getBaseUrl()}/templates`, dbManager, {
       cacheConfig: {
-        maxSize: 500,
-        ttl: 15 * 60 * 1000, // 15 minutes for template cache
+        maxSize: 50, // Reduced from 500 to save memory
+        ttl: 5 * 60 * 1000, // 5 minutes instead of 15 to reduce memory usage
       },
     });
 

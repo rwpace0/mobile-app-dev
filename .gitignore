@@ -4,6 +4,7 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
 .env
+MEMORY_OPTIMIZATION_REPORT.md
 
 # User-specific files
 *.rsuser
@@ -400,3 +401,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+

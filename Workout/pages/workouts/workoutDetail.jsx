@@ -32,6 +32,7 @@ const ExerciseImage = ({ exercise, colors, styles }) => {
         <Image
           source={{ uri: `file://${imagePath}` }}
           style={styles.exerciseImage}
+          resizeMode="cover"
           onError={() => setImageError(true)}
         />
       ) : (

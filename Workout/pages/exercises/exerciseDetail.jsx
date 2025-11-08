@@ -211,6 +211,7 @@ const ExerciseDetailPage = () => {
               uri: `file://${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}`,
             }}
             style={styles.exerciseImage}
+            resizeMode="cover"
           />
         </View>
       )}

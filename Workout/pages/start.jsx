@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  FlatList,
   ActivityIndicator,
   RefreshControl,
   Animated,
@@ -96,8 +97,9 @@ const WorkoutStartPage = () => {
 
       const data = await templateAPI.getTemplates();
 
-      // Fetch exercise details for each template
-      const templatesWithExercises = await Promise.all(
+      // Only fetch minimal exercise data (name, muscle_group) for list view
+      // Full details will be loaded when user navigates to detail or starts workout
+      const templatesWithMinimalExercises = await Promise.all(
         data.map(async (template) => {
           try {
             // Filter out null exercises and ensure no duplicates by exercise_id
@@ -111,20 +113,24 @@ const WorkoutStartPage = () => {
               }
             });
 
-            const exercisesWithDetails = await Promise.all(
+            // Fetch only name and muscle_group from database directly (lighter query)
+            const exercisesWithMinimalDetails = await Promise.all(
               Array.from(exerciseMap.values()).map(async (exercise) => {
                 try {
-                  const details = await exercisesAPI.getExerciseById(
-                    exercise.exercise_id
+                  // Query database directly for just name and muscle_group
+                  const { dbManager } = await import("../API/local/dbManager");
+                  const [exerciseData] = await dbManager.query(
+                    'SELECT name, muscle_group FROM exercises WHERE exercise_id = ? AND sync_status NOT IN ("pending_delete")',
+                    [exercise.exercise_id]
                   );
                   return {
                     ...exercise,
-                    name: details.name || "Unknown Exercise",
-                    muscle_group: details.muscle_group || "",
+                    name: exerciseData?.name || "Unknown Exercise",
+                    muscle_group: exerciseData?.muscle_group || "",
                   };
                 } catch (err) {
                   console.error(
-                    `Failed to fetch exercise ${exercise.exercise_id}:`,
+                    `Failed to fetch minimal exercise data ${exercise.exercise_id}:`,
                     err
                   );
                   return {
@@ -137,13 +143,13 @@ const WorkoutStartPage = () => {
             );
 
             // Sort exercises by their original order
-            exercisesWithDetails.sort(
+            exercisesWithMinimalDetails.sort(
               (a, b) => a.exercise_order - b.exercise_order
             );
 
             return {
               ...template,
-              exercises: exercisesWithDetails,
+              exercises: exercisesWithMinimalDetails,
             };
           } catch (err) {
             console.error(
@@ -155,7 +161,7 @@ const WorkoutStartPage = () => {
         })
       );
 
-      setTemplates(templatesWithExercises);
+      setTemplates(templatesWithMinimalExercises);
     } catch (err) {
       console.error("Failed to fetch templates:", err);
       setError(err.message || "Failed to load templates");
@@ -276,11 +282,67 @@ const WorkoutStartPage = () => {
   ];
 
   const handleStartRoutine = useCallback(
-    (template) => {
+    async (template) => {
+      // Fetch full exercise details only when starting workout
+      const exercisesWithFullDetails = await Promise.all(
+        template.exercises.map(async (exercise) => {
+          try {
+            const fullDetails = await exercisesAPI.getExerciseById(
+              exercise.exercise_id
+            );
+            return {
+              ...exercise,
+              name: fullDetails?.name || exercise.name || "Unknown Exercise",
+              muscle_group:
+                fullDetails?.muscle_group || exercise.muscle_group || "",
+            };
+          } catch (err) {
+            console.error(
+              `Failed to fetch full exercise details ${exercise.exercise_id}:`,
+              err
+            );
+            return exercise;
+          }
+        })
+      );
+
+      const templateWithFullDetails = {
+        ...template,
+        exercises: exercisesWithFullDetails,
+      };
+
       if (isWorkoutActive) {
         setPendingWorkoutAction(() => () => {
           // Transform template exercises into the format expected by activeWorkout
-          const selectedExercises = template.exercises.map((exercise) => ({
+          const selectedExercises = templateWithFullDetails.exercises.map(
+            (exercise) => ({
+              exercise_id: exercise.exercise_id,
+              name: exercise.name,
+              muscle_group: exercise.muscle_group,
+              sets: Array(exercise.sets || 1)
+                .fill()
+                .map((_, idx) => ({
+                  id: (idx + 1).toString(),
+                  weight: "",
+                  reps: "",
+                  rir: "",
+                  completed: false,
+                })),
+            })
+          );
+
+          // Navigate to activeWorkout with the exercises and template ID
+          navigation.navigate("activeWorkout", {
+            selectedExercises,
+            workoutName: templateWithFullDetails.name,
+            templateId: templateWithFullDetails.template_id, // Pass template ID to link workout to template
+          });
+        });
+        setShowActiveWorkoutModal(true);
+      } else {
+        // Transform template exercises into the format expected by activeWorkout
+        const selectedExercises = templateWithFullDetails.exercises.map(
+          (exercise) => ({
             exercise_id: exercise.exercise_id,
             name: exercise.name,
             muscle_group: exercise.muscle_group,
@@ -293,38 +355,14 @@ const WorkoutStartPage = () => {
                 rir: "",
                 completed: false,
               })),
-          }));
-
-          // Navigate to activeWorkout with the exercises and template ID
-          navigation.navigate("activeWorkout", {
-            selectedExercises,
-            workoutName: template.name,
-            templateId: template.template_id, // Pass template ID to link workout to template
-          });
-        });
-        setShowActiveWorkoutModal(true);
-      } else {
-        // Transform template exercises into the format expected by activeWorkout
-        const selectedExercises = template.exercises.map((exercise) => ({
-          exercise_id: exercise.exercise_id,
-          name: exercise.name,
-          muscle_group: exercise.muscle_group,
-          sets: Array(exercise.sets || 1)
-            .fill()
-            .map((_, idx) => ({
-              id: (idx + 1).toString(),
-              weight: "",
-              reps: "",
-              rir: "",
-              completed: false,
-            })),
-        }));
+          })
+        );
 
         // Navigate to activeWorkout with the exercises and template ID
         navigation.navigate("activeWorkout", {
           selectedExercises,
-          workoutName: template.name,
-          templateId: template.template_id, // Pass template ID to link workout to template
+          workoutName: templateWithFullDetails.name,
+          templateId: templateWithFullDetails.template_id, // Pass template ID to link workout to template
         });
       }
     },
@@ -511,6 +549,68 @@ const WorkoutStartPage = () => {
     isWeeklyCalendarExpanded,
   ]);
 
+  // Memoized template item component for FlatList
+  const TemplateItem = React.memo(
+    ({ template, onPress, onOptions, onStart, itemStyles, itemColors }) => {
+      return (
+        <Animated.View style={itemStyles.templateContainer}>
+          <TouchableOpacity
+            onPress={() => onPress(template)}
+            activeOpacity={0.7}
+          >
+            <View style={itemStyles.templateHeader}>
+              <Text style={itemStyles.templateName}>{template.name}</Text>
+              <TouchableOpacity onPress={() => onOptions(template)}>
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={24}
+                  color={itemColors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={itemStyles.templateExercises}>
+              {template.exercises.map((ex) => ex.name).join(" • ")}
+            </Text>
+            <TouchableOpacity
+              style={itemStyles.startRoutineButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                onStart(template);
+              }}
+            >
+              <Text style={itemStyles.startRoutineText}>Start Routine</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Animated.View>
+      );
+    },
+    (prevProps, nextProps) => {
+      return prevProps.template.template_id === nextProps.template.template_id;
+    }
+  );
+
+  const renderTemplateItem = useCallback(
+    ({ item }) => {
+      return (
+        <TemplateItem
+          template={item}
+          onPress={handleTemplatePress}
+          onOptions={handleTemplateOptions}
+          onStart={handleStartRoutine}
+          itemStyles={styles}
+          itemColors={colors}
+        />
+      );
+    },
+    [
+      handleTemplatePress,
+      handleTemplateOptions,
+      handleStartRoutine,
+      styles,
+      colors,
+    ]
+  );
+
   const renderTemplateList = useCallback(() => {
     if (loading && !refreshing) {
       return (
@@ -544,52 +644,32 @@ const WorkoutStartPage = () => {
       );
     }
 
-    return templates.map((template) => {
-      return (
-        <Animated.View
-          key={template.template_id}
-          style={styles.templateContainer}
-        >
-          <TouchableOpacity
-            onPress={() => handleTemplatePress(template)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.templateHeader}>
-              <Text style={styles.templateName}>{template.name}</Text>
-              <TouchableOpacity onPress={() => handleTemplateOptions(template)}>
-                <Ionicons
-                  name="ellipsis-horizontal"
-                  size={24}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.templateExercises}>
-              {template.exercises.map((ex) => ex.name).join(" • ")}
+    return (
+      <FlatList
+        data={templates}
+        renderItem={renderTemplateItem}
+        keyExtractor={(item) => item.template_id}
+        scrollEnabled={false}
+        removeClippedSubviews={true}
+        initialNumToRender={5}
+        maxToRenderPerBatch={3}
+        windowSize={5}
+        ListEmptyComponent={
+          <View style={styles.emptyRoutinesContainer}>
+            <Text style={styles.emptyRoutinesText}>
+              No routines created yet. Create a new routine to get started.
             </Text>
-            <TouchableOpacity
-              style={styles.startRoutineButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleStartRoutine(template);
-              }}
-            >
-              <Text style={styles.startRoutineText}>Start Routine</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Animated.View>
-      );
-    });
+          </View>
+        }
+      />
+    );
   }, [
     loading,
     refreshing,
     error,
     templates,
-    handleStartRoutine,
-    handleTemplateOptions,
-    handleTemplatePress,
+    renderTemplateItem,
     fetchTemplates,
-    colors.textSecondary,
     colors.primaryBlue,
     styles,
   ]);
