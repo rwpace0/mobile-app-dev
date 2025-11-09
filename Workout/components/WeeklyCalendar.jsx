@@ -1,3 +1,5 @@
+// not in use do not use this component
+
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { getColors } from "../constants/colors";

@@ -186,8 +186,6 @@ const createStyles = (colors) =>
       marginHorizontal: 4,
       borderRadius: BorderRadius.md,
       backgroundColor: colors.backgroundCard,
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     todayContainer: {
       backgroundColor: colors.primaryBlue,

@@ -203,8 +203,6 @@ export const createStyles = (isDark = true) => {
     calendarContainer: {
       backgroundColor: colors.backgroundPrimary,
       borderRadius: BorderRadius.lg,
-
-      ...Shadow.medium,
     },
   });
 };

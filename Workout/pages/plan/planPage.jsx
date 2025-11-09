@@ -315,7 +315,7 @@ const PlanPage = () => {
             style={styles.newRoutineButton}
             onPress={handleNewRoutine}
           >
-            <Ionicons name="add" size={20} color={colors.textPrimary} />
+            <Ionicons name="add" size={20} color={colors.textWhite} />
             <Text style={styles.newRoutineText}>New Routine</Text>
           </TouchableOpacity>
 
