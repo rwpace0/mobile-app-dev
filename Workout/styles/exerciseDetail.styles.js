@@ -75,6 +75,10 @@ export const createStyles = (isDark = true) => {
       padding: Spacing.m,
     },
 
+    historyContent: {
+      flex: 1,
+    },
+
     // Exercise image styles
     imageContainer: {
       width: "100%",
@@ -145,12 +149,9 @@ export const createStyles = (isDark = true) => {
     },
 
     // History tab styles
-    workoutCard: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      padding: Spacing.m,
-      marginBottom: Spacing.m,
-      ...Shadow.medium,
+    workoutContainer: {
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.m,
     },
 
     workoutTitle: {
@@ -158,22 +159,29 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
       fontWeight: FontWeight.semiBold,
       marginBottom: Spacing.xxs,
+      paddingHorizontal: Spacing.m,
     },
 
     workoutDate: {
       fontSize: FontSize.small,
       color: colors.textSecondary,
       marginBottom: Spacing.m,
+      paddingHorizontal: Spacing.m,
     },
 
     setRow: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: Spacing.xs,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+    },
+
+    setRowEven: {
       backgroundColor: colors.backgroundPrimary,
-      borderRadius: BorderRadius.sm,
-      marginBottom: Spacing.xs,
-      paddingHorizontal: Spacing.s,
+    },
+
+    setRowOdd: {
+      backgroundColor: colors.backgroundCard,
     },
 
     setNumber: {
@@ -181,6 +189,7 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.base,
       color: colors.textSecondary,
       fontWeight: FontWeight.medium,
+      textAlign: "center",
     },
 
     setInfo: {
@@ -188,6 +197,7 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.base,
       color: colors.textPrimary,
       fontWeight: FontWeight.medium,
+      marginLeft: Spacing.m,
     },
 
     setsContainer: {
@@ -196,17 +206,25 @@ export const createStyles = (isDark = true) => {
 
     setsHeader: {
       flexDirection: "row",
-      paddingHorizontal: Spacing.s,
+      paddingHorizontal: Spacing.m,
       paddingBottom: Spacing.xs,
-      marginBottom: Spacing.s,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor,
+      marginBottom: Spacing.xs,
     },
 
     setsHeaderText: {
       fontSize: FontSize.small,
       color: colors.textSecondary,
       fontWeight: FontWeight.medium,
+    },
+
+    setHeaderColumn: {
+      width: 50,
+      textAlign: "center",
+    },
+
+    rirHeaderColumn: {
+      width: 70,
+      textAlign: "center",
     },
 
     notes: {
@@ -230,10 +248,10 @@ export const createStyles = (isDark = true) => {
     },
 
     setRir: {
-      width: 60,
+      width: 70,
       fontSize: FontSize.base,
       color: colors.textSecondary,
-      textAlign: "right",
+      textAlign: "center",
     },
 
     // Progress tab styles

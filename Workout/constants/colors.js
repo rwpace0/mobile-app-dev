@@ -52,7 +52,7 @@ const lightTheme = {
   backgroundPrimary: "#FFFFFF", // main background
   backgroundSecondary: "#F2F2F7", // secondary background
   backgroundInput: "#FFFFFF", // input background
-  backgroundCard: "#FFFFFF", // card background
+  backgroundCard: "#F2F2F7", // card background
   borderColor: "#E5E5EA", // divider lines
 
   // primary colors (same as dark)

@@ -15,6 +15,7 @@ import exercisesAPI from "../../API/exercisesAPI";
 import { createStyles } from "../../styles/exerciseDetail.styles";
 import * as FileSystem from "expo-file-system/legacy";
 import { getColors } from "../../constants/colors";
+import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import Header from "../../components/static/header";
 import BottomSheetModal from "../../components/modals/bottomModal";
@@ -357,14 +358,17 @@ const ExerciseDetailPage = () => {
 
   const renderHistoryTab = () => (
     <ScrollView
-      style={styles.content}
+      style={styles.historyContent}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
     >
       {history && history.length > 0 ? (
-        history.map((workout) => (
-          <View key={workout.workout_exercises_id} style={styles.workoutCard}>
+        history.map((workout, workoutIndex) => (
+          <View
+            key={workout.workout_exercises_id}
+            style={styles.workoutContainer}
+          >
             <Text style={styles.workoutTitle}>
               {workout.name || "Unnamed Workout"}
             </Text>
@@ -372,24 +376,39 @@ const ExerciseDetailPage = () => {
               {workout.date_performed
                 ? format(
                     new Date(workout.date_performed),
-                    "MMM d, yyyy • h:mm a"
+                    "MMM d, yyyy, h:mm a"
                   )
-                : format(new Date(workout.created_at), "MMM d, yyyy • h:mm a")}
+                : format(new Date(workout.created_at), "MMM d, yyyy, h:mm a")}
             </Text>
 
             <View style={styles.setsContainer}>
               <View style={styles.setsHeader}>
-                <Text style={[styles.setsHeaderText, { width: 50 }]}>SET</Text>
-                <Text style={[styles.setsHeaderText, { flex: 1 }]}>
+                <Text style={[styles.setsHeaderText, styles.setHeaderColumn]}>
+                  SET
+                </Text>
+                <Text
+                  style={[
+                    styles.setsHeaderText,
+                    { flex: 1, marginLeft: Spacing.m },
+                  ]}
+                >
                   WEIGHT × REPS
                 </Text>
                 {/* Add RIR column if available */}
-                <Text style={[styles.setsHeaderText, { width: 60 }]}>RIR</Text>
+                <Text style={[styles.setsHeaderText, styles.rirHeaderColumn]}>
+                  RIR
+                </Text>
               </View>
 
               {workout.sets && workout.sets.length > 0 ? (
-                workout.sets.map((set, index) => (
-                  <View key={set.set_id} style={styles.setRow}>
+                workout.sets.map((set, setIndex) => (
+                  <View
+                    key={set.set_id}
+                    style={[
+                      styles.setRow,
+                      setIndex % 2 === 0 ? styles.setRowEven : styles.setRowOdd,
+                    ]}
+                  >
                     <Text style={styles.setNumber}>{set.set_order}</Text>
                     <Text style={styles.setInfo}>
                       {weight.formatSet(set.weight, set.reps)} reps
