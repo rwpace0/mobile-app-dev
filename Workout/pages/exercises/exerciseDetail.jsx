@@ -314,7 +314,7 @@ const ExerciseDetailPage = () => {
               <View style={styles.prStatItem}>
                 <Text style={styles.prDate}>
                   {personalRecord.date
-                    ? format(parseISO(personalRecord.date), "MMM d, yyyy")
+                    ? format(parseISO(personalRecord.date), "EEEE, MMM d, yyyy")
                     : "N/A"}
                 </Text>
                 <Text style={styles.prLabel}>Date</Text>
@@ -376,9 +376,12 @@ const ExerciseDetailPage = () => {
               {workout.date_performed
                 ? format(
                     new Date(workout.date_performed),
-                    "MMM d, yyyy, h:mm a"
+                    "h:mm a, EEEE, MMM d, yyyy"
                   )
-                : format(new Date(workout.created_at), "MMM d, yyyy, h:mm a")}
+                : format(
+                    new Date(workout.created_at),
+                    "h:mm a, EEEE, MMM d, yyyy"
+                  )}
             </Text>
 
             <View style={styles.setsContainer}>

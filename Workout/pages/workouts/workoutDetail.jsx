@@ -14,10 +14,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { createStyles } from "../../styles/workoutHistory.styles";
 import { getColors } from "../../constants/colors";
+import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
+import { format, parseISO } from "date-fns";
 
 const ExerciseImage = ({ exercise, colors, styles }) => {
   const [imageError, setImageError] = useState(false);
@@ -36,7 +38,7 @@ const ExerciseImage = ({ exercise, colors, styles }) => {
           onError={() => setImageError(true)}
         />
       ) : (
-        <Ionicons name="barbell" size={32} color={colors.textPrimary} />
+        <Ionicons name="barbell" size={24} color={colors.textPrimary} />
       )}
     </View>
   );
@@ -44,25 +46,12 @@ const ExerciseImage = ({ exercise, colors, styles }) => {
 
 const formatDate = (isoString) => {
   try {
-    const date = new Date(isoString);
-    const day = date.toLocaleDateString(undefined, { weekday: "long" });
-    const month = date.toLocaleDateString(undefined, { month: "long" });
-    const dateNum = date.getDate();
-    return `${day}, ${month} ${dateNum}`;
+    const date = parseISO(isoString);
+    return format(date, "h:mm a, EEEE, MMM d, yyyy");
   } catch (err) {
     console.error("Date formatting error:", err);
     return "Invalid Date";
   }
-};
-
-const calculateVolume = (sets, weightUtils) => {
-  return sets.reduce((total, set) => {
-    // Convert weight from storage to user's preferred unit before calculating volume
-    const convertedWeight = weightUtils.fromStorage(set.weight);
-    // Round to avoid floating point precision issues
-    const roundedWeight = Math.round(convertedWeight * 100) / 100;
-    return total + (roundedWeight * set.reps || 0);
-  }, 0);
 };
 
 const WorkoutDetail = () => {
@@ -146,13 +135,11 @@ const WorkoutDetail = () => {
     );
   }
 
-  const totalVolume = workout.exercises?.reduce((total, ex) => {
-    return total + calculateVolume(ex.sets || [], weight);
-  }, 0);
-
   const totalSets = workout.exercises?.reduce((total, ex) => {
     return total + (ex.sets?.length || 0);
   }, 0);
+
+  const totalExercises = workout.exercises?.length || 0;
 
   return (
     <SafeAreaView style={styles.detailContainer}>
@@ -180,34 +167,34 @@ const WorkoutDetail = () => {
           </Text>
           <View style={styles.statsRow}>
             <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="time-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
+              <View style={styles.statIconContainer}>
+                <Ionicons
+                  name="time-outline"
+                  size={20}
+                  color={colors.textPrimary}
+                />
+              </View>
               <Text style={styles.statText}>
                 {Math.round(workout.duration / 60)}m
               </Text>
             </View>
             <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="barbell-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
+              <View style={styles.statIconContainer}>
+                <Ionicons name="barbell" size={20} color={colors.textPrimary} />
+              </View>
               <Text style={styles.statText}>
-                {weight.formatVolume(Math.round(totalVolume))}
+                {totalExercises}{" "}
+                {totalExercises === 1 ? "exercise" : "exercises"}
               </Text>
             </View>
             <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="list-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
+              <View style={styles.statIconContainer}>
+                <Ionicons
+                  name="list-outline"
+                  size={20}
+                  color={colors.textPrimary}
+                />
+              </View>
               <Text style={styles.statText}>{totalSets} sets</Text>
             </View>
           </View>
@@ -217,7 +204,7 @@ const WorkoutDetail = () => {
           return (
             <View
               key={exerciseData.workout_exercises_id}
-              style={styles.exerciseCard}
+              style={styles.exerciseContainer}
             >
               <TouchableOpacity
                 onPress={() => handleExercisePress(exerciseData)}
@@ -236,34 +223,45 @@ const WorkoutDetail = () => {
               {exerciseData.notes && (
                 <Text style={styles.exerciseNotes}>{exerciseData.notes}</Text>
               )}
-              <View style={styles.setHeader}>
-                <Text style={[styles.setHeaderText, styles.setHeaderSet]}>
-                  SET
-                </Text>
-                <Text
-                  style={[styles.setHeaderText, styles.setHeaderWeightReps]}
-                >
-                  WEIGHT & REPS
-                </Text>
-                <Text style={[styles.setHeaderText, styles.setHeaderRir]}>
-                  RIR
-                </Text>
-              </View>
-              {(exerciseData.sets || []).map((set, setIdx) => (
-                <View key={set.set_id || setIdx} style={styles.setRow}>
-                  <Text style={styles.setNumber}>
-                    {set.set_order || setIdx + 1}
+              <View style={styles.setsContainer}>
+                <View style={styles.setsHeader}>
+                  <Text style={[styles.setsHeaderText, styles.setHeaderColumn]}>
+                    SET
                   </Text>
-                  <Text style={styles.setValue}>
-                    {weight.formatSet(set.weight, set.reps)} reps
+                  <Text
+                    style={[
+                      styles.setsHeaderText,
+                      { flex: 1, marginLeft: Spacing.m },
+                    ]}
+                  >
+                    WEIGHT × REPS
                   </Text>
-                  <Text style={styles.setValueRir}>
-                    {set.rir !== null && set.rir !== undefined
-                      ? `${set.rir}`
-                      : "-"}
+                  <Text style={[styles.setsHeaderText, styles.rirHeaderColumn]}>
+                    RIR
                   </Text>
                 </View>
-              ))}
+                {(exerciseData.sets || []).map((set, setIdx) => (
+                  <View
+                    key={set.set_id || setIdx}
+                    style={[
+                      styles.setRow,
+                      setIdx % 2 === 0 ? styles.setRowEven : styles.setRowOdd,
+                    ]}
+                  >
+                    <Text style={styles.setNumber}>
+                      {set.set_order || setIdx + 1}
+                    </Text>
+                    <Text style={styles.setInfo}>
+                      {weight.formatSet(set.weight, set.reps)} reps
+                    </Text>
+                    <Text style={styles.setRir}>
+                      {set.rir !== null && set.rir !== undefined
+                        ? `${set.rir} RIR`
+                        : "-"}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
           );
         })}

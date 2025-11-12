@@ -16,6 +16,17 @@ import { getColors } from "../../constants/colors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { useWeight } from "../../utils/useWeight";
+import { format, parseISO } from "date-fns";
+
+const formatDate = (isoString) => {
+  try {
+    const date = parseISO(isoString);
+    return format(date, "h:mm a, EEEE, MMM d, yyyy");
+  } catch (err) {
+    console.error("Date formatting error:", err);
+    return "Invalid Date";
+  }
+};
 
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();
@@ -118,25 +129,13 @@ const WorkoutHistoryPage = () => {
     minimumViewTime: 500,
   };
 
-  const formatDate = useCallback((dateString) => {
-    try {
-      const date = new Date(dateString);
-      const day = date.toLocaleDateString(undefined, { weekday: "long" });
-      const month = date.toLocaleDateString(undefined, { month: "long" });
-      const dateNum = date.getDate();
-      return `${day}, ${month} ${dateNum}`;
-    } catch (err) {
-      console.error("Date formatting error:", err);
-      return "Invalid Date";
-    }
-  }, []);
-
   const renderWorkoutCard = useCallback(
     ({ item: workout }) => {
       const duration = Math.round((workout.duration || 0) / 60);
       const totalSets = (workout.exercises || []).reduce((total, exercise) => {
         return total + (exercise.sets?.length || 0);
       }, 0);
+      const totalExercises = workout.exercises?.length || 0;
 
       return (
         <TouchableOpacity
@@ -147,35 +146,66 @@ const WorkoutHistoryPage = () => {
             })
           }
         >
-          <Text style={styles.workoutTitle}>{workout.name || "Workout"}</Text>
-          <Text style={styles.workoutDate}>
-            {formatDate(workout.date_performed)}
-          </Text>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="time-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
-              <Text style={styles.statText}>{duration}m</Text>
-            </View>
-            <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="list-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
-              <Text style={styles.statText}>{totalSets} sets</Text>
+          <View style={styles.workoutHeader}>
+            <Text style={styles.workoutTitle}>{workout.name || "Workout"}</Text>
+            <Text style={styles.workoutDate}>
+              {formatDate(workout.date_performed)}
+            </Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statItemWithIcon}>
+                <View style={styles.statIconContainer}>
+                  <Ionicons
+                    name="time-outline"
+                    size={20}
+                    color={colors.textPrimary}
+                  />
+                </View>
+                <Text style={styles.statText}>{duration}m</Text>
+              </View>
+              <View style={styles.statItemWithIcon}>
+                <View style={styles.statIconContainer}>
+                  <Ionicons
+                    name="barbell"
+                    size={20}
+                    color={colors.textPrimary}
+                  />
+                </View>
+                <Text style={styles.statText}>
+                  {totalExercises}{" "}
+                  {totalExercises === 1 ? "exercise" : "exercises"}
+                </Text>
+              </View>
+              <View style={styles.statItemWithIcon}>
+                <View style={styles.statIconContainer}>
+                  <Ionicons
+                    name="list-outline"
+                    size={20}
+                    color={colors.textPrimary}
+                  />
+                </View>
+                <Text style={styles.statText}>{totalSets} sets</Text>
+              </View>
             </View>
           </View>
 
-          <View style={styles.exerciseList}>
+          <View style={styles.exerciseListContainer}>
+            <View style={styles.setsHeader}>
+              <Text style={[styles.setsHeaderText, styles.setHeaderColumn]}>
+                #
+              </Text>
+              <Text
+                style={[
+                  styles.setsHeaderText,
+                  { flex: 1, marginLeft: Spacing.m },
+                ]}
+              >
+                EXERCISE
+              </Text>
+              <Text style={[styles.setsHeaderText, styles.bestSetColumn]}>
+                BEST SET
+              </Text>
+            </View>
             {(workout.exercises || []).map((exercise, index) => {
-              // Find the heaviest set for this exercise
               const sets = exercise.sets || [];
               const bestSet =
                 sets.length > 0
@@ -187,28 +217,35 @@ const WorkoutHistoryPage = () => {
                   : null;
 
               return (
-                <View
+                <TouchableOpacity
                   key={exercise.workout_exercises_id || index}
-                  style={styles.exerciseRow}
+                  style={[
+                    styles.exerciseRow,
+                    index % 2 === 0 ? styles.setRowEven : styles.setRowOdd,
+                  ]}
+                  onPress={() =>
+                    navigation.navigate("ExerciseDetail", {
+                      exerciseId: exercise.exercise_id,
+                    })
+                  }
                 >
-                  <View style={styles.exerciseInfo}>
-                    <Text style={styles.exerciseTitle}>
-                      {sets.length} × {exercise.name || "Unknown Exercise"}
-                    </Text>
-                  </View>
+                  <Text style={styles.setNumber}>{index + 1}</Text>
+                  <Text style={styles.exerciseName}>
+                    {exercise.name || "Unknown Exercise"}
+                  </Text>
                   <Text style={styles.bestSet}>
                     {bestSet
                       ? weight.formatSet(bestSet.weight, bestSet.reps)
-                      : ""}
+                      : "-"}
                   </Text>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
         </TouchableOpacity>
       );
     },
-    [navigation, formatDate, styles, colors, weight]
+    [navigation, styles, colors, weight]
   );
 
   const renderFooter = useCallback(() => {

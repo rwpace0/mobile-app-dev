@@ -52,107 +52,81 @@ export const createStyles = (isDark = true) => {
       backgroundColor: colors.backgroundSecondary,
     },
 
-    // Workout History Card styles
+    // Workout History Card styles (flat design matching workout/exercise detail)
     workoutCard: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      marginHorizontal: Spacing.m,
-      marginBottom: Spacing.m,
-      padding: Spacing.m,
-      ...Shadow.medium,
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.m,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
+    workoutHeader: {
+      paddingBottom: Spacing.s,
     },
     workoutTitle: {
       fontSize: FontSize.large,
       fontWeight: FontWeight.semiBold,
       color: colors.textPrimary,
-      marginBottom: Spacing.xxs,
+      marginBottom: Spacing.xs,
+      paddingHorizontal: Spacing.m,
     },
     workoutDate: {
-      fontSize: FontSize.small,
+      fontSize: FontSize.base,
       color: colors.textSecondary,
-      marginBottom: Spacing.m,
+      marginBottom: Spacing.s,
+      paddingHorizontal: Spacing.m,
     },
     statsRow: {
       flexDirection: "row",
       alignItems: "center",
-      paddingBottom: Spacing.m,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor,
+      paddingHorizontal: Spacing.m,
+      marginTop: Spacing.s,
     },
     statItemWithIcon: {
       flexDirection: "row",
       alignItems: "center",
       marginRight: Spacing.xl,
     },
-    statIcon: {
-      marginRight: Spacing.xxs,
+    statIconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: BorderRadius.round,
+      backgroundColor: colors.backgroundSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: Spacing.s,
     },
     statText: {
-      fontSize: FontSize.medium,
-      color: colors.textSecondary,
-      fontWeight: FontWeight.medium,
+      fontSize: FontSize.base,
+      color: colors.textPrimary,
     },
-    exerciseList: {
-      marginTop: Spacing.m,
+
+    // Exercise List styles (summary format)
+    exerciseListContainer: {
+      marginTop: Spacing.s,
     },
     exerciseRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      paddingVertical: Spacing.xs,
-    },
-    exerciseInfo: {
-      flex: 1,
-    },
-    exerciseTitle: {
-      fontSize: FontSize.medium,
-      color: colors.textSecondary,
-    },
-    bestSet: {
-      fontSize: FontSize.medium,
-      color: colors.textSecondary,
-      fontWeight: FontWeight.medium,
-    },
-    recordBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: Spacing.xxs,
-    },
-    recordText: {
-      fontSize: FontSize.caption,
-      color: colors.primaryLight,
-      marginLeft: Spacing.xxs,
-    },
-
-    // Exercise Preview styles
-    exercisePreview: {
-      marginTop: Spacing.xs,
-    },
-    exercisePreviewItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: Spacing.xxs,
-    },
-    exerciseIcon: {
-      width: 24,
-      height: 24,
-      borderRadius: BorderRadius.sm,
-      marginRight: Spacing.xs,
-      backgroundColor: colors.backgroundSecondary,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
     },
     exerciseName: {
+      flex: 1,
       fontSize: FontSize.base,
       color: colors.textPrimary,
-      flex: 1,
+      fontWeight: FontWeight.medium,
+      marginLeft: Spacing.m,
     },
-    exerciseStats: {
-      fontSize: FontSize.caption,
+    bestSet: {
+      fontSize: FontSize.base,
       color: colors.textSecondary,
+      fontWeight: FontWeight.medium,
+      width: 140,
+      textAlign: "right",
     },
-    seeMoreText: {
-      fontSize: FontSize.caption,
-      color: colors.primaryLight,
-      marginTop: Spacing.xs,
+    bestSetColumn: {
+      width: 140,
+      textAlign: "right",
     },
 
     // Workout Detail styles
@@ -167,36 +141,33 @@ export const createStyles = (isDark = true) => {
       marginBottom: Spacing.l,
     },
     detailTitle: {
-      fontSize: FontSize.xlarge,
-      fontWeight: FontWeight.bold,
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
       color: colors.textPrimary,
       marginBottom: Spacing.xs,
     },
     detailDate: {
-      fontSize: FontSize.medium,
+      fontSize: FontSize.base,
       color: colors.textSecondary,
       marginBottom: Spacing.s,
     },
 
-    // Exercise Card styles
-    exerciseCard: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      marginHorizontal: Spacing.m,
-      marginBottom: Spacing.l,
-      padding: Spacing.l,
-      ...Shadow.medium,
+    // Exercise Container styles (flat, continuous feed design)
+    exerciseContainer: {
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.m,
     },
     exerciseTitleRow: {
       flexDirection: "row",
       alignItems: "center",
       marginBottom: Spacing.m,
       marginLeft: -Spacing.xs,
+      paddingHorizontal: Spacing.m,
     },
     exerciseIconContainer: {
-      width: 60,
-      height: 60,
-      borderRadius: BorderRadius.lg,
+      width: 40,
+      height: 40,
+      borderRadius: BorderRadius.md,
       backgroundColor: colors.backgroundSecondary,
       justifyContent: "center",
       alignItems: "center",
@@ -209,9 +180,9 @@ export const createStyles = (isDark = true) => {
       resizeMode: "cover",
     },
     exerciseCardTitle: {
-      fontSize: FontSize.xlarge,
+      fontSize: FontSize.large,
       fontWeight: FontWeight.semiBold,
-      color: colors.primaryLight,
+      color: colors.primaryBlue,
       flex: 1,
     },
     exerciseNotes: {
@@ -219,59 +190,63 @@ export const createStyles = (isDark = true) => {
       color: colors.textSecondary,
       marginBottom: Spacing.m,
       fontStyle: "italic",
+      paddingHorizontal: Spacing.m,
     },
 
-    // Set styles
-    setHeader: {
-      flexDirection: "row",
-      marginBottom: Spacing.s,
-      alignItems: "center",
+    // Set styles (flat, continuous feed design)
+    setsContainer: {
+      marginTop: Spacing.s,
     },
-    setHeaderText: {
+    setsHeader: {
+      flexDirection: "row",
+      paddingHorizontal: Spacing.m,
+      paddingBottom: Spacing.xs,
+      marginBottom: Spacing.xs,
+    },
+    setsHeaderText: {
       fontSize: FontSize.small,
       color: colors.textSecondary,
-      fontWeight: FontWeight.semiBold,
-      letterSpacing: 0.5,
+      fontWeight: FontWeight.medium,
     },
-    setHeaderSet: {
-      width: 45,
+    setHeaderColumn: {
+      width: 50,
       textAlign: "center",
     },
-    setHeaderWeightReps: {
-      flex: 1,
-      paddingLeft: Spacing.xs,
-    },
-    setHeaderRir: {
-      width: 50,
+    rirHeaderColumn: {
+      width: 70,
       textAlign: "center",
     },
     setRow: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: Spacing.s,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor + "20",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+    },
+    setRowEven: {
+      backgroundColor: colors.backgroundPrimary,
+    },
+    setRowOdd: {
+      backgroundColor: colors.backgroundCard,
     },
     setNumber: {
-      width: 45,
-      fontSize: FontSize.medium,
+      width: 50,
+      fontSize: FontSize.base,
       color: colors.textSecondary,
       fontWeight: FontWeight.medium,
       textAlign: "center",
     },
-    setValue: {
-      fontSize: FontSize.medium,
-      color: colors.textPrimary,
+    setInfo: {
       flex: 1,
-      fontWeight: FontWeight.medium,
-      paddingLeft: Spacing.xs,
-    },
-    setValueRir: {
-      width: 50,
-      fontSize: FontSize.medium,
+      fontSize: FontSize.base,
       color: colors.textPrimary,
-      textAlign: "center",
       fontWeight: FontWeight.medium,
+      marginLeft: Spacing.m,
+    },
+    setRir: {
+      width: 70,
+      fontSize: FontSize.base,
+      color: colors.textSecondary,
+      textAlign: "center",
     },
 
     // Loading and Error states
