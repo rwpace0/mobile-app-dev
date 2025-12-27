@@ -535,11 +535,6 @@ const ActiveExerciseComponent = ({
             />
           </View>
         )}
-        {!showPreviousPerformance && !showRir && (
-          <View style={styles.totalCell}>
-            <Text style={styles.setCell}>{set.total}</Text>
-          </View>
-        )}
         <View style={styles.completedCell}>
           <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
             <View
@@ -667,11 +662,6 @@ const ActiveExerciseComponent = ({
               {showRir && (
                 <Text style={[styles.setHeaderCell, styles.rirHeaderCell]}>
                   RIR
-                </Text>
-              )}
-              {!showPreviousPerformance && !showRir && (
-                <Text style={[styles.setHeaderCell, styles.totalCell]}>
-                  TOTAL
                 </Text>
               )}
               <Text style={[styles.setHeaderCell, styles.completedCell]}></Text>

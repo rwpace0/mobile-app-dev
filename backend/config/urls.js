@@ -1,7 +1,7 @@
 // URL configuration for backend - easily switch between dev/production
 // This file centralizes all URL configuration for email redirects
 // change in supabase
-const IP = "192.168.1.63";
+const IP = "192.168.1.212";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 

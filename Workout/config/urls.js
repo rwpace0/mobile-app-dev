@@ -1,6 +1,6 @@
 // URL configuration for deep linking
 // This handles both development (Expo Go) and production URLs
-const IP = "192.168.1.63";
+const IP = "192.168.1.212";
 
 const isDevelopment = __DEV__;
 

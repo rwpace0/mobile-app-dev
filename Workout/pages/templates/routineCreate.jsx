@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -80,6 +80,20 @@ const RoutineCreate = () => {
       />
     );
   };
+
+  const RoutineNameHeader = useMemo(
+    () => (
+      <TextInput
+        style={styles.routineNameInput}
+        placeholder="Routine Name"
+        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+        value={routineName}
+        onChangeText={setRoutineName}
+      />
+    ),
+    [routineName]
+  );
+
 
   const handleSave = async () => {
     console.log("Save button pressed");
@@ -200,15 +214,7 @@ const RoutineCreate = () => {
           onDragEnd={handleDragEnd}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
-          ListHeaderComponent={() => (
-            <TextInput
-              style={styles.routineNameInput}
-              placeholder="Routine Name"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
-              value={routineName}
-              onChangeText={setRoutineName}
-            />
-          )}
+          ListHeaderComponent={RoutineNameHeader}
           ListFooterComponent={() => (
             <TouchableOpacity
               style={styles.addExerciseButton}

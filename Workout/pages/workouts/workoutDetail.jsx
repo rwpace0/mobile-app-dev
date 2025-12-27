@@ -165,7 +165,7 @@ const WorkoutDetail = () => {
           <Text style={styles.detailDate}>
             {formatDate(workout.date_performed)}
           </Text>
-          <View style={styles.statsRow}>
+          <View style={styles.detailStatsRow}>
             <View style={styles.statItemWithIcon}>
               <View style={styles.statIconContainer}>
                 <Ionicons

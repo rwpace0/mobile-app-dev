@@ -81,6 +81,11 @@ export const createStyles = (isDark = true) => {
       paddingHorizontal: Spacing.m,
       marginTop: Spacing.s,
     },
+    detailStatsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: Spacing.s,
+    },
     statItemWithIcon: {
       flexDirection: "row",
       alignItems: "center",
@@ -138,7 +143,7 @@ export const createStyles = (isDark = true) => {
     detailHeader: {
       paddingHorizontal: Spacing.m,
       marginTop: Spacing.m,
-      marginBottom: Spacing.l,
+      marginBottom: Spacing.s,
     },
     detailTitle: {
       fontSize: FontSize.large,
@@ -324,8 +329,7 @@ export const createStyles = (isDark = true) => {
       paddingHorizontal: Spacing.m,
       borderRadius: BorderRadius.md,
       alignItems: "center",
-      marginHorizontal: Spacing.m,
-      marginBottom: Spacing.l,
+      marginTop: Spacing.m,
     },
     startRoutineText: {
       color: colors.textWhite,

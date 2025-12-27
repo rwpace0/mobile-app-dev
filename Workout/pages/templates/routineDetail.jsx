@@ -7,12 +7,14 @@ import {
   ActivityIndicator,
   SafeAreaView,
   RefreshControl,
+  Image,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
 import { createStyles } from "../../styles/workoutHistory.styles";
 import { getColors } from "../../constants/colors";
-import { Spacing, FontSize } from "../../constants/theme";
+import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { useActiveWorkout } from "../../state/ActiveWorkoutContext";
 import workoutAPI from "../../API/workoutAPI";
@@ -21,28 +23,39 @@ import exercisesAPI from "../../API/exercisesAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
 import ActiveWorkoutModal from "../../components/modals/ActiveWorkoutModal";
+import { format, parseISO } from "date-fns";
+
+const ExerciseImage = ({ exercise, colors, styles }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const imagePath = exercise.local_media_path
+    ? `${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}`
+    : null;
+
+  return (
+    <View style={styles.exerciseIconContainer}>
+      {imagePath && !imageError ? (
+        <Image
+          source={{ uri: `file://${imagePath}` }}
+          style={styles.exerciseImage}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <Ionicons name="barbell" size={24} color={colors.textPrimary} />
+      )}
+    </View>
+  );
+};
 
 const formatDate = (isoString) => {
   try {
-    const date = new Date(isoString);
-    const day = date.toLocaleDateString(undefined, { weekday: "long" });
-    const month = date.toLocaleDateString(undefined, { month: "long" });
-    const dateNum = date.getDate();
-    return `${day}, ${month} ${dateNum}`;
+    const date = parseISO(isoString);
+    return format(date, "h:mm a, EEEE, MMM d, yyyy");
   } catch (err) {
     console.error("Date formatting error:", err);
     return "Invalid Date";
   }
-};
-
-const calculateVolume = (sets, weightUtils) => {
-  return sets.reduce((total, set) => {
-    // Convert weight from storage to user's preferred unit before calculating volume
-    const convertedWeight = weightUtils.fromStorage(set.weight);
-    // Round to avoid floating point precision issues
-    const roundedWeight = Math.round(convertedWeight * 100) / 100;
-    return total + (roundedWeight * set.reps || 0);
-  }, 0);
 };
 
 const RoutineDetail = () => {
@@ -266,12 +279,6 @@ const RoutineDetail = () => {
   const displayData = workout || template;
   const hasWorkoutHistory = !!workout;
 
-  const totalVolume = hasWorkoutHistory
-    ? workout.exercises?.reduce((total, ex) => {
-        return total + calculateVolume(ex.sets || [], weight);
-      }, 0)
-    : 0;
-
   const totalSets = hasWorkoutHistory
     ? workout.exercises?.reduce((total, ex) => {
         return total + (ex.sets?.length || 0);
@@ -279,6 +286,10 @@ const RoutineDetail = () => {
     : template.exercises?.reduce((total, ex) => {
         return total + (ex.sets || 1);
       }, 0);
+
+  const totalExercises = hasWorkoutHistory
+    ? workout.exercises?.length || 0
+    : template.exercises?.length || 0;
 
   return (
     <SafeAreaView style={styles.detailContainer}>
@@ -300,79 +311,56 @@ const RoutineDetail = () => {
       >
         <View style={styles.detailHeader}>
           <Text style={styles.detailTitle}>{displayData.name}</Text>
+
           {hasWorkoutHistory ? (
-            <Text
-              style={[
-                styles.detailDate,
-                {
-                  opacity: 0.8,
-                  fontSize: FontSize.caption,
-                  marginTop: Spacing.xxs,
-                },
-              ]}
-            >
-              Last performed: {formatDate(workout.date_performed)}
+            <Text style={styles.detailDate}>
+              {formatDate(workout.date_performed)}
             </Text>
           ) : (
-            <Text
-              style={[
-                styles.detailDate,
-                {
-                  opacity: 0.8,
-                  fontSize: FontSize.caption,
-                  marginTop: Spacing.xxs,
-                },
-              ]}
-            >
-              Last performed: Never
-            </Text>
+            <Text style={styles.detailDate}>Never performed</Text>
           )}
-
-          <View style={styles.statsRow}>
+          <View style={styles.detailStatsRow}>
             {hasWorkoutHistory && (
               <View style={styles.statItemWithIcon}>
-                <Ionicons
-                  name="time-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.statIcon}
-                />
+                <View style={styles.statIconContainer}>
+                  <Ionicons
+                    name="time-outline"
+                    size={20}
+                    color={colors.textPrimary}
+                  />
+                </View>
                 <Text style={styles.statText}>
                   {Math.round(workout.duration / 60)}m
                 </Text>
               </View>
             )}
-            {hasWorkoutHistory && (
-              <View style={styles.statItemWithIcon}>
-                <Ionicons
-                  name="barbell-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.statIcon}
-                />
-                <Text style={styles.statText}>
-                  {weight.formatVolume(Math.round(totalVolume))}
-                </Text>
-              </View>
-            )}
             <View style={styles.statItemWithIcon}>
-              <Ionicons
-                name="list-outline"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.statIcon}
-              />
+              <View style={styles.statIconContainer}>
+                <Ionicons name="barbell" size={20} color={colors.textPrimary} />
+              </View>
+              <Text style={styles.statText}>
+                {totalExercises}{" "}
+                {totalExercises === 1 ? "exercise" : "exercises"}
+              </Text>
+            </View>
+            <View style={styles.statItemWithIcon}>
+              <View style={styles.statIconContainer}>
+                <Ionicons
+                  name="list-outline"
+                  size={20}
+                  color={colors.textPrimary}
+                />
+              </View>
               <Text style={styles.statText}>{totalSets} sets</Text>
             </View>
           </View>
+          <TouchableOpacity
+            style={styles.startRoutineButton}
+            onPress={handleStartWorkout}
+          >
+            <Text style={styles.startRoutineText}>Start Routine</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={styles.startRoutineButton}
-          onPress={handleStartWorkout}
-        >
-          <Text style={styles.startRoutineText}>Start Routine</Text>
-        </TouchableOpacity>
 
         {/* Display exercises from workout history or template */}
         {hasWorkoutHistory
@@ -383,11 +371,17 @@ const RoutineDetail = () => {
               return (
                 <View
                   key={exerciseData.workout_exercises_id}
-                  style={styles.exerciseCard}
+                  style={styles.exerciseContainer}
                 >
                   <TouchableOpacity
                     onPress={() => handleExercisePress(exerciseData)}
+                    style={styles.exerciseTitleRow}
                   >
+                    <ExerciseImage
+                      exercise={exerciseData}
+                      colors={colors}
+                      styles={styles}
+                    />
                     <Text style={styles.exerciseCardTitle}>
                       {exerciseData.name || "Unknown Exercise"}
                     </Text>
@@ -398,26 +392,51 @@ const RoutineDetail = () => {
                       {exerciseData.notes}
                     </Text>
                   )}
-                  <View style={styles.setHeader}>
-                    <Text style={styles.setHeaderText}>SET</Text>
-                    <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
-                    <Text style={styles.setHeaderText}>RIR</Text>
-                  </View>
-                  {(exerciseData.sets || []).map((set, setIdx) => (
-                    <View key={set.set_id || setIdx} style={styles.setRow}>
-                      <Text style={styles.setNumber}>
-                        {set.set_order || setIdx + 1}
+                  <View style={styles.setsContainer}>
+                    <View style={styles.setsHeader}>
+                      <Text
+                        style={[styles.setsHeaderText, styles.setHeaderColumn]}
+                      >
+                        SET
                       </Text>
-                      <Text style={styles.setValue}>
-                        {weight.formatSet(set.weight, set.reps)} reps
+                      <Text
+                        style={[
+                          styles.setsHeaderText,
+                          { flex: 1, marginLeft: Spacing.m },
+                        ]}
+                      >
+                        WEIGHT × REPS
                       </Text>
-                      <Text style={styles.setValue}>
-                        {set.rir !== null && set.rir !== undefined
-                          ? `${set.rir}`
-                          : "-"}
+                      <Text
+                        style={[styles.setsHeaderText, styles.rirHeaderColumn]}
+                      >
+                        RIR
                       </Text>
                     </View>
-                  ))}
+                    {(exerciseData.sets || []).map((set, setIdx) => (
+                      <View
+                        key={set.set_id || setIdx}
+                        style={[
+                          styles.setRow,
+                          setIdx % 2 === 0
+                            ? styles.setRowEven
+                            : styles.setRowOdd,
+                        ]}
+                      >
+                        <Text style={styles.setNumber}>
+                          {set.set_order || setIdx + 1}
+                        </Text>
+                        <Text style={styles.setInfo}>
+                          {weight.formatSet(set.weight, set.reps)} reps
+                        </Text>
+                        <Text style={styles.setRir}>
+                          {set.rir !== null && set.rir !== undefined
+                            ? `${set.rir} RIR`
+                            : "-"}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               );
             })
@@ -426,57 +445,88 @@ const RoutineDetail = () => {
               return (
                 <View
                   key={exerciseData.exercise_id || idx}
-                  style={styles.exerciseCard}
+                  style={styles.exerciseContainer}
                 >
                   <TouchableOpacity
                     onPress={() => handleExercisePress(exerciseData)}
+                    style={styles.exerciseTitleRow}
                   >
+                    <ExerciseImage
+                      exercise={exerciseData}
+                      colors={colors}
+                      styles={styles}
+                    />
                     <Text style={styles.exerciseCardTitle}>
                       {exerciseData.name || "Unknown Exercise"}
                     </Text>
                   </TouchableOpacity>
 
-                  <View style={styles.setHeader}>
-                    <Text style={styles.setHeaderText}>SET</Text>
-                    <Text style={styles.setHeaderText}>WEIGHT & REPS</Text>
-                    <Text style={styles.setHeaderText}>RIR</Text>
+                  <View style={styles.setsContainer}>
+                    <View style={styles.setsHeader}>
+                      <Text
+                        style={[styles.setsHeaderText, styles.setHeaderColumn]}
+                      >
+                        SET
+                      </Text>
+                      <Text
+                        style={[
+                          styles.setsHeaderText,
+                          { flex: 1, marginLeft: Spacing.m },
+                        ]}
+                      >
+                        WEIGHT × REPS
+                      </Text>
+                      <Text
+                        style={[styles.setsHeaderText, styles.rirHeaderColumn]}
+                      >
+                        RIR
+                      </Text>
+                    </View>
+                    {Array(exerciseData.sets || 1)
+                      .fill()
+                      .map((_, setIdx) => {
+                        // Use recent data if available, otherwise show placeholders
+                        const recentSet = exerciseData.recentSets?.[setIdx];
+                        return (
+                          <View
+                            key={setIdx}
+                            style={[
+                              styles.setRow,
+                              setIdx % 2 === 0
+                                ? styles.setRowEven
+                                : styles.setRowOdd,
+                            ]}
+                          >
+                            <Text style={styles.setNumber}>{setIdx + 1}</Text>
+                            <Text
+                              style={[
+                                styles.setInfo,
+                                { opacity: recentSet ? 1 : 0.5 },
+                              ]}
+                            >
+                              {recentSet
+                                ? `${weight.formatSet(
+                                    recentSet.weight,
+                                    recentSet.reps
+                                  )} reps`
+                                : "- reps"}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.setRir,
+                                { opacity: recentSet ? 1 : 0.5 },
+                              ]}
+                            >
+                              {recentSet &&
+                              recentSet.rir !== null &&
+                              recentSet.rir !== undefined
+                                ? `${recentSet.rir} RIR`
+                                : "-"}
+                            </Text>
+                          </View>
+                        );
+                      })}
                   </View>
-                  {Array(exerciseData.sets || 1)
-                    .fill()
-                    .map((_, setIdx) => {
-                      // Use recent data if available, otherwise show placeholders
-                      const recentSet = exerciseData.recentSets?.[setIdx];
-                      return (
-                        <View key={setIdx} style={styles.setRow}>
-                          <Text style={styles.setNumber}>{setIdx + 1}</Text>
-                          <Text
-                            style={[
-                              styles.setValue,
-                              { opacity: recentSet ? 1 : 0.5 },
-                            ]}
-                          >
-                            {recentSet
-                              ? `${weight.formatSet(
-                                  recentSet.weight,
-                                  recentSet.reps
-                                )} reps`
-                              : "- reps"}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.setValue,
-                              { opacity: recentSet ? 1 : 0.5 },
-                            ]}
-                          >
-                            {recentSet &&
-                            recentSet.rir !== null &&
-                            recentSet.rir !== undefined
-                              ? `${recentSet.rir}`
-                              : "-"}
-                          </Text>
-                        </View>
-                      );
-                    })}
                 </View>
               );
             })}
