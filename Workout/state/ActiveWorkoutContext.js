@@ -43,8 +43,7 @@ export const ActiveWorkoutProvider = ({ children }) => {
     initializeWorkout();
   }, []);
 
-  // Timer for the active workout - optimized to reduce memory pressure
-  // Use ref to track duration and only update state every 5 seconds
+  // Timer for the active workout - updates every second for smooth display
   const durationRef = useRef(0);
   const startTimeRef = useRef(null);
 
@@ -67,19 +66,16 @@ export const ActiveWorkoutProvider = ({ children }) => {
         );
         durationRef.current = elapsedSeconds;
 
-        // Only update state every 5 seconds to reduce re-renders and memory pressure
-        // This still provides reasonable accuracy for display purposes
-        if (elapsedSeconds % 5 === 0 || elapsedSeconds === 0) {
-          setActiveWorkout((prev) => {
-            if (prev && prev.startTime) {
-              return {
-                ...prev,
-                duration: elapsedSeconds,
-              };
-            }
-            return prev;
-          });
-        }
+        // Update state every second for smooth duration display
+        setActiveWorkout((prev) => {
+          if (prev && prev.startTime) {
+            return {
+              ...prev,
+              duration: elapsedSeconds,
+            };
+          }
+          return prev;
+        });
       }, 1000);
     }
 

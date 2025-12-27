@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
 import { SwipeListView } from "react-native-swipe-list-view";
 import Animated, {
   useSharedValue,
@@ -58,6 +59,7 @@ const ActiveExerciseComponent = ({
   const styles = createStyles(isDark);
   const weight = useWeight();
   const inputRefs = useRef({});
+  const [imageError, setImageError] = useState(false);
 
   // Update state when initialState prop changes (for restored workouts)
   useEffect(() => {
@@ -454,7 +456,11 @@ const ActiveExerciseComponent = ({
     const correspondingPreviousSet = previousWorkoutSets[index];
 
     return (
-      <View style={[styles.setRow, set.completed && styles.completedSetRow]}>
+      <View style={[
+        styles.setRow,
+        index % 2 === 0 ? styles.setRowEven : styles.setRowOdd,
+        set.completed && styles.completedSetRow
+      ]}>
         <View style={styles.setNumberCell}>
           <Text style={styles.setCell}>{set.id}</Text>
         </View>
@@ -573,11 +579,25 @@ const ActiveExerciseComponent = ({
       {/* Always visible header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={{ flex: 1 }}
+          style={styles.exerciseTitleRow}
           onLongPress={drag}
           disabled={!drag}
           activeOpacity={0.8}
         >
+          <View style={styles.exerciseIconContainer}>
+            {exerciseDetails?.local_media_path && !imageError ? (
+              <Image
+                source={{
+                  uri: `file://${FileSystem.cacheDirectory}app_media/exercises/${exerciseDetails.local_media_path}`,
+                }}
+                style={styles.exerciseImage}
+                resizeMode="cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <Ionicons name="barbell" size={24} color={colors.textPrimary} />
+            )}
+          </View>
           <Text style={[styles.exerciseName, isActive && { opacity: 0.5 }]}>
             {exerciseDetails?.name || ""}
           </Text>

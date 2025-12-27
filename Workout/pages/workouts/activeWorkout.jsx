@@ -420,7 +420,7 @@ const ActiveWorkoutPage = () => {
             onScrollBeginDrag={() => Keyboard.dismiss()}
           >
             {/* Workout Name Input - Only show if not using a template */}
-            {!templateId && (
+            {/* {!templateId && (
               <View style={styles.nameInputContainer}>
                 <TextInput
                   style={styles.nameInput}
@@ -430,7 +430,7 @@ const ActiveWorkoutPage = () => {
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
-            )}
+            )} */}
 
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
@@ -515,7 +515,7 @@ const ActiveWorkoutPage = () => {
             ListHeaderComponent={() => (
               <View>
                 {/* Workout Name Input - Only show if not using a template */}
-                {!templateId && (
+                {/* {!templateId && (
                   <View style={styles.nameInputContainer}>
                     <TextInput
                       style={styles.nameInput}
@@ -525,7 +525,7 @@ const ActiveWorkoutPage = () => {
                       placeholderTextColor={colors.textSecondary}
                     />
                   </View>
-                )}
+                )} */}
 
                 <View style={styles.statsContainer}>
                   <View style={styles.statItem}>

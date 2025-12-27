@@ -67,19 +67,17 @@ export const createStyles = (isDark = true) => {
   },
 
   nameInputContainer: {
-    marginBottom: Spacing.m,
-    paddingHorizontal: Spacing.xxxs,
+    marginBottom: 0,
+    paddingHorizontal: Spacing.m,
+    paddingTop: Spacing.s,
   },
 
   nameInput: {
     color: colors.textPrimary,
     fontSize: FontSize.large,
     fontWeight: FontWeight.medium,
-    backgroundColor: colors.backgroundCard,
     paddingHorizontal: Spacing.m,
-    paddingVertical: Spacing.s,
-    borderRadius: BorderRadius.md,
-    ...Shadow.medium,
+    paddingVertical: Spacing.xs,
   },
 
   loadingContainer: {
@@ -120,7 +118,7 @@ export const createStyles = (isDark = true) => {
   },
 
   exercisesContainer: {
-    padding: Spacing.m,
+    paddingVertical: Spacing.m,
   },
   
   addExerciseButton: {
@@ -197,13 +195,10 @@ export const createStyles = (isDark = true) => {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: colors.backgroundCard,
-    marginBottom: Spacing.m,
-    paddingVertical: Spacing.l,
+    marginBottom: Spacing.s,
+    paddingVertical: Spacing.s,
     paddingHorizontal: Spacing.m,
-    borderRadius: BorderRadius.md,
     width: '100%',
-    ...Shadow.medium,
   },
 
   statItem: {
