@@ -433,7 +433,7 @@ const WorkoutStartPage = () => {
           >
             <Text style={styles.sectionTitle}>Today's Workout</Text>
             <Ionicons
-              name={isTodaysWorkoutExpanded ? "chevron-up" : "chevron-down"}
+              name={isTodaysWorkoutExpanded ? "chevron-down" : "chevron-up"}
               size={24}
               color={colors.textSecondary}
             />
@@ -523,7 +523,7 @@ const WorkoutStartPage = () => {
         >
           <Text style={styles.sectionTitle}>This Week</Text>
           <Ionicons
-            name={isWeeklyCalendarExpanded ? "chevron-up" : "chevron-down"}
+            name={isWeeklyCalendarExpanded ? "chevron-down" : "chevron-up"}
             size={24}
             color={colors.textSecondary}
           />
@@ -699,7 +699,7 @@ const WorkoutStartPage = () => {
           >
             <Text style={styles.sectionTitle}>Quick Start</Text>
             <Ionicons
-              name={isQuickStartExpanded ? "chevron-up" : "chevron-down"}
+              name={isQuickStartExpanded ? "chevron-down" : "chevron-up"}
               size={24}
               color={colors.textSecondary}
             />
@@ -726,7 +726,7 @@ const WorkoutStartPage = () => {
           >
             <Text style={styles.sectionTitle}>Routines</Text>
             <Ionicons
-              name={isRoutinesExpanded ? "chevron-up" : "chevron-down"}
+              name={isRoutinesExpanded ? "chevron-down" : "chevron-up"}
               size={24}
               color={colors.textSecondary}
             />

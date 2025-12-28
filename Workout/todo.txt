@@ -1,12 +1,37 @@
+Active workout page/components:
+go to exercise's page when pressed on exercise name on active exercise card
+make the set row turn green when completed. watch for red delete in background showing when lower opacity. needs a way around.
+make a rest timer option in settings to be underneath each set with delete functionality.
+notes toggle setting
+add a completed workout page/modal to show up after pressing finish and confirm workout finished with a modal when pressing finfish button. 
+if the workout is from a routine and the user adds a set or exercise and presses finish, have a modal that asks if the user wants to update the routine with x new sets and x new exercises or keep the routine the same. if the routine is chosen to be kept the same still update the exercise weight, reps, and rir values.
+positive feedback on a new best set for the exercise
 
-Implement Deep Link Handling - Most critical for email verification flow
-Add Account Deletion - Important for user privacy
-Implement Password Change - Basic security feature
-Add Session Timeout - Security best practice
-Improve Error Messages - Better user experience
+Plan Page:
+Make the routine cards scrollable
+the ui needs to match that of the workout history page Better
+add a create routine option on the edit/create plan page below everything currently. 
+On the edit/ create page change the ui to match the rest of the app better. the plan name field should be altered to match the app. 
+add confirm modal for deleting a plan
 
-Unverified users trying to access protected routes
-Multiple devices with same account
-Email verification link expiration
-Password reset token expiration
+Exercises Pages:
+Make the muscle group and machine/category filterable. 
+update the filter buttons to match the app. 
+On the edit/create exercise page update the ui to that of the app's consistency. update the dropdown menus to highlight consistently. update the header to use the right title color.
 
+Routine Page:
+Make the edit/create routine page use a rep range feature. the rep range feautre will show under the reps column in active workout like for example 5-10 and the default if the set is completed without rep value is the low end of the rep range.
+Update backend db and frontend db to use this feature and correctly update the backend. 
+
+Statistics Page:
+Full UI overhaul to match the app.
+Fix graph UI.
+
+Modals:
+Make modals consistent button sizing and spacing
+
+Buttons:
+Get rid of icons in most buttons like workout settings and discard workout icons
+
+All:
+add haptic feedback to more button presses.

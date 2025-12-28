@@ -54,6 +54,17 @@ const formatDate = (isoString) => {
   }
 };
 
+const formatDuration = (seconds) => {
+  const totalMinutes = Math.round(seconds / 60);
+  if (totalMinutes >= 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  } else {
+    return `${totalMinutes}m`;
+  }
+};
+
 const WorkoutDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -175,7 +186,7 @@ const WorkoutDetail = () => {
                 />
               </View>
               <Text style={styles.statText}>
-                {Math.round(workout.duration / 60)}m
+                {formatDuration(workout.duration || 0)}
               </Text>
             </View>
             <View style={styles.statItemWithIcon}>

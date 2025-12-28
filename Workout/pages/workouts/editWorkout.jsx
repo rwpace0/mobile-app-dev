@@ -120,9 +120,19 @@ const EditWorkoutPage = () => {
   };
 
   const formatDuration = (seconds) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}min`;
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    } else {
+      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+        .toString()
+        .padStart(2, "0")}`;
+    }
   };
 
   const handleAddExercise = () => {
@@ -258,7 +268,6 @@ const EditWorkoutPage = () => {
       >
         {/* Workout Name Input */}
         <View style={styles.nameInputContainer}>
-          <Text style={styles.nameInputLabel}>Workout Name</Text>
           <TextInput
             style={styles.nameInput}
             value={workoutName}
@@ -276,10 +285,8 @@ const EditWorkoutPage = () => {
             </Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Volume</Text>
-            <Text style={styles.statValue}>
-              {weight.formatVolume(Math.round(totalVolume))}
-            </Text>
+            <Text style={styles.statLabel}>Exercises</Text>
+            <Text style={styles.statValue}>{exercises.length}</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Sets</Text>

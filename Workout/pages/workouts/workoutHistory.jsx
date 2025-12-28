@@ -28,6 +28,17 @@ const formatDate = (isoString) => {
   }
 };
 
+const formatDuration = (seconds) => {
+  const totalMinutes = Math.round(seconds / 60);
+  if (totalMinutes >= 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  } else {
+    return `${totalMinutes}m`;
+  }
+};
+
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
@@ -131,7 +142,6 @@ const WorkoutHistoryPage = () => {
 
   const renderWorkoutCard = useCallback(
     ({ item: workout }) => {
-      const duration = Math.round((workout.duration || 0) / 60);
       const totalSets = (workout.exercises || []).reduce((total, exercise) => {
         return total + (exercise.sets?.length || 0);
       }, 0);
@@ -160,7 +170,9 @@ const WorkoutHistoryPage = () => {
                     color={colors.textPrimary}
                   />
                 </View>
-                <Text style={styles.statText}>{duration}m</Text>
+                <Text style={styles.statText}>
+                  {formatDuration(workout.duration || 0)}
+                </Text>
               </View>
               <View style={styles.statItemWithIcon}>
                 <View style={styles.statIconContainer}>
