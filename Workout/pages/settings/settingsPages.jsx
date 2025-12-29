@@ -316,10 +316,30 @@ const SettingsPage = () => {
               icon="timer-outline"
             />
             <SettingToggle
+              title="Rest Timer Enabled"
+              value={settings.restTimerEnabled}
+              onValueChange={() => toggleSetting("restTimerEnabled")}
+              icon="time-outline"
+            />
+            {settings.restTimerEnabled && (
+              <SegmentedControl
+                title="Timer Type"
+                value={settings.timerType}
+                options={["exercise", "set"]}
+                onSelect={(value) => updateSetting("timerType", value)}
+              />
+            )}
+            <SettingToggle
               title="Show RIR"
               value={settings.showRir}
               onValueChange={() => toggleSetting("showRir")}
               icon="fitness-outline"
+            />
+            <SettingToggle
+              title="Show Notes"
+              value={settings.showNotes}
+              onValueChange={() => toggleSetting("showNotes")}
+              icon="document-text-outline"
             />
           </>
         );

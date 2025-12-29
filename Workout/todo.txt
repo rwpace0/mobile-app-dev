@@ -1,8 +1,5 @@
 Active workout page/components:
 go to exercise's page when pressed on exercise name on active exercise card
-make the set row turn green when completed. watch for red delete in background showing when lower opacity. needs a way around.
-make a rest timer option in settings to be underneath each set with delete functionality.
-notes toggle setting
 add a completed workout page/modal to show up after pressing finish and confirm workout finished with a modal when pressing finfish button. 
 if the workout is from a routine and the user adds a set or exercise and presses finish, have a modal that asks if the user wants to update the routine with x new sets and x new exercises or keep the routine the same. if the routine is chosen to be kept the same still update the exercise weight, reps, and rir values.
 positive feedback on a new best set for the exercise

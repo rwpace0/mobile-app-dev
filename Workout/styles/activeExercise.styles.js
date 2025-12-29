@@ -187,6 +187,43 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.base,
       fontWeight: FontWeight.bold,
     },
+    setTimerInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "transparent",
+      marginHorizontal: Spacing.m,
+      marginTop: -2,
+      marginBottom: 0,
+      paddingVertical: 0,
+      paddingHorizontal: 0,
+      minHeight: 0,
+    },
+    setTimerLine: {
+      flex: 1,
+      height: 1.5,
+      marginHorizontal: Spacing.xs,
+    },
+    setTimerLineIncomplete: {
+      backgroundColor: colors.primaryBlue,
+    },
+    setTimerLineCompleted: {
+      backgroundColor: colors.accentGreen,
+    },
+    setTimerInputField: {
+      textAlign: "center",
+      paddingVertical: 2,
+      paddingHorizontal: Spacing.xs,
+      minHeight: 20,
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.medium,
+    },
+    setTimerInputFieldIncomplete: {
+      color: colors.primaryBlue,
+    },
+    setTimerInputFieldCompleted: {
+      color: colors.accentGreen,
+    },
     totalCell: {
       flex: 1.5,
       alignItems: "center",
@@ -302,6 +339,33 @@ export const createStyles = (isDark = true) => {
       width: 75,
       height: "100%",
       paddingHorizontal: 10,
+    },
+    setTimerProgressContainer: {
+      position: "relative",
+      height: 30,
+      backgroundColor: colors.backgroundSecondary,
+      marginHorizontal: Spacing.m,
+      marginTop: Spacing.xxs,
+      borderRadius: BorderRadius.sm,
+      overflow: "hidden",
+      justifyContent: "center",
+      alignItems: "center",
+      //borderWidth: 2,
+      //borderColor: colors.textWhite,
+    },
+    setTimerProgressBar: {
+      position: "absolute",
+      left: 0,
+      top: 0,
+      height: "100%",
+      backgroundColor: colors.accentGreen,
+      opacity: 0.3,
+    },
+    setTimerCountdown: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.semiBold,
+      zIndex: 1,
     },
   });
 };

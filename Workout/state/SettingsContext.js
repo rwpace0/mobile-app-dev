@@ -39,6 +39,9 @@ const DEFAULT_SETTINGS = {
   autoRestTimer: true,
   showRir: true,
   showWeightHistory: true,
+  showNotes: true,
+  restTimerEnabled: true,
+  timerType: "exercise", // 'exercise' or 'set'
 
   // Account settings
   emailNotifications: false,
@@ -153,6 +156,9 @@ export const SettingsProvider = ({ children }) => {
       autoRestTimer: settings.autoRestTimer,
       showRir: settings.showRir,
       showWeightHistory: settings.showWeightHistory,
+      showNotes: settings.showNotes,
+      restTimerEnabled: settings.restTimerEnabled,
+      timerType: settings.timerType,
 
       emailNotifications: settings.emailNotifications,
       workoutReminders: settings.workoutReminders,
