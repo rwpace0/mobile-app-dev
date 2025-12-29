@@ -109,8 +109,10 @@ const RoutineDetail = () => {
         setWorkout(lastWorkoutResponse);
         console.log("Template:", templateResponse);
         console.log("Last workout:", lastWorkoutResponse);
-        // If no workout history, fetch exercise names and recent data for template exercises
-        if (!lastWorkoutResponse && templateResponse?.exercises) {
+
+        // Always fetch exercise names and recent data for template exercises
+        // This ensures we always show the actual routine structure, not workout data
+        if (templateResponse?.exercises) {
           const exercisesWithNames = await Promise.all(
             templateResponse.exercises.map(async (exercise) => {
               const [exerciseDetails, exerciseHistory] = await Promise.all([
@@ -267,7 +269,7 @@ const RoutineDetail = () => {
     );
   }
 
-  if (error || (!workout && !template)) {
+  if (error || !template) {
     return (
       <SafeAreaView style={styles.container}>
         <Header title="Routine Details" leftComponent={{ type: "back" }} />
@@ -286,21 +288,24 @@ const RoutineDetail = () => {
     );
   }
 
-  // Use workout data if available, otherwise use template data
-  const displayData = workout || template;
-  const hasWorkoutHistory = !!workout;
+  // Always use template data for the routine structure
+  const displayData = template;
 
-  const totalSets = hasWorkoutHistory
-    ? workout.exercises?.reduce((total, ex) => {
-        return total + (ex.sets?.length || 0);
-      }, 0)
-    : template.exercises?.reduce((total, ex) => {
-        return total + (ex.sets || 1);
-      }, 0);
+  // Check if workout is "meaningful" - has exercises with sets
+  // A workout is meaningful if it has at least one exercise with at least one set
+  const hasMeaningfulWorkout =
+    workout &&
+    workout.exercises &&
+    workout.exercises.length > 0 &&
+    workout.exercises.some((ex) => ex.sets && ex.sets.length > 0);
 
-  const totalExercises = hasWorkoutHistory
-    ? workout.exercises?.length || 0
-    : template.exercises?.length || 0;
+  // Always use template data for exercise and set counts
+  const totalSets =
+    template?.exercises?.reduce((total, ex) => {
+      return total + (ex.sets || 1);
+    }, 0) || 0;
+
+  const totalExercises = template?.exercises?.length || 0;
 
   return (
     <SafeAreaView style={styles.detailContainer}>
@@ -323,15 +328,15 @@ const RoutineDetail = () => {
         <View style={styles.detailHeader}>
           <Text style={styles.detailTitle}>{displayData.name}</Text>
 
-          {hasWorkoutHistory ? (
+          {hasMeaningfulWorkout ? (
             <Text style={styles.detailDate}>
-              {formatDate(workout.date_performed)}
+              Last performed: {formatDate(workout.date_performed)}
             </Text>
           ) : (
             <Text style={styles.detailDate}>Never performed</Text>
           )}
           <View style={styles.detailStatsRow}>
-            {hasWorkoutHistory && (
+            {hasMeaningfulWorkout && (
               <View style={styles.statItemWithIcon}>
                 <View style={styles.statIconContainer}>
                   <Ionicons
@@ -373,60 +378,52 @@ const RoutineDetail = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Display exercises from workout history or template */}
-        {hasWorkoutHistory
-          ? // Display workout exercises with actual data
-            workout.exercises?.map((exerciseData, idx) => {
-              if (!exerciseData || !exerciseData.workout_exercises_id)
-                return null;
-              return (
-                <View
-                  key={exerciseData.workout_exercises_id}
-                  style={styles.exerciseContainer}
-                >
-                  <TouchableOpacity
-                    onPress={() => handleExercisePress(exerciseData)}
-                    style={styles.exerciseTitleRow}
-                  >
-                    <ExerciseImage
-                      exercise={exerciseData}
-                      colors={colors}
-                      styles={styles}
-                    />
-                    <Text style={styles.exerciseCardTitle}>
-                      {exerciseData.name || "Unknown Exercise"}
-                    </Text>
-                  </TouchableOpacity>
+        {/* Always display template exercises (the actual routine structure) */}
+        {templateExercisesWithNames?.map((exerciseData, idx) => {
+          return (
+            <View
+              key={exerciseData.exercise_id || idx}
+              style={styles.exerciseContainer}
+            >
+              <TouchableOpacity
+                onPress={() => handleExercisePress(exerciseData)}
+                style={styles.exerciseTitleRow}
+              >
+                <ExerciseImage
+                  exercise={exerciseData}
+                  colors={colors}
+                  styles={styles}
+                />
+                <Text style={styles.exerciseCardTitle}>
+                  {exerciseData.name || "Unknown Exercise"}
+                </Text>
+              </TouchableOpacity>
 
-                  {exerciseData.notes && (
-                    <Text style={styles.exerciseNotes}>
-                      {exerciseData.notes}
-                    </Text>
-                  )}
-                  <View style={styles.setsContainer}>
-                    <View style={styles.setsHeader}>
-                      <Text
-                        style={[styles.setsHeaderText, styles.setHeaderColumn]}
-                      >
-                        SET
-                      </Text>
-                      <Text
-                        style={[
-                          styles.setsHeaderText,
-                          { flex: 1, marginLeft: Spacing.m },
-                        ]}
-                      >
-                        WEIGHT × REPS
-                      </Text>
-                      <Text
-                        style={[styles.setsHeaderText, styles.rirHeaderColumn]}
-                      >
-                        RIR
-                      </Text>
-                    </View>
-                    {(exerciseData.sets || []).map((set, setIdx) => (
+              <View style={styles.setsContainer}>
+                <View style={styles.setsHeader}>
+                  <Text style={[styles.setsHeaderText, styles.setHeaderColumn]}>
+                    SET
+                  </Text>
+                  <Text
+                    style={[
+                      styles.setsHeaderText,
+                      { flex: 1, marginLeft: Spacing.m },
+                    ]}
+                  >
+                    WEIGHT × REPS
+                  </Text>
+                  <Text style={[styles.setsHeaderText, styles.rirHeaderColumn]}>
+                    RIR
+                  </Text>
+                </View>
+                {Array(exerciseData.sets || 1)
+                  .fill()
+                  .map((_, setIdx) => {
+                    // Use recent data if available, otherwise show placeholders
+                    const recentSet = exerciseData.recentSets?.[setIdx];
+                    return (
                       <View
-                        key={set.set_id || setIdx}
+                        key={setIdx}
                         style={[
                           styles.setRow,
                           setIdx % 2 === 0
@@ -434,113 +431,39 @@ const RoutineDetail = () => {
                             : styles.setRowOdd,
                         ]}
                       >
-                        <Text style={styles.setNumber}>
-                          {set.set_order || setIdx + 1}
+                        <Text style={styles.setNumber}>{setIdx + 1}</Text>
+                        <Text
+                          style={[
+                            styles.setInfo,
+                            { opacity: recentSet ? 1 : 0.5 },
+                          ]}
+                        >
+                          {recentSet
+                            ? `${weight.formatSet(
+                                recentSet.weight,
+                                recentSet.reps
+                              )} reps`
+                            : "- reps"}
                         </Text>
-                        <Text style={styles.setInfo}>
-                          {weight.formatSet(set.weight, set.reps)} reps
-                        </Text>
-                        <Text style={styles.setRir}>
-                          {set.rir !== null && set.rir !== undefined
-                            ? `${set.rir} RIR`
+                        <Text
+                          style={[
+                            styles.setRir,
+                            { opacity: recentSet ? 1 : 0.5 },
+                          ]}
+                        >
+                          {recentSet &&
+                          recentSet.rir !== null &&
+                          recentSet.rir !== undefined
+                            ? `${recentSet.rir} RIR`
                             : "-"}
                         </Text>
                       </View>
-                    ))}
-                  </View>
-                </View>
-              );
-            })
-          : // Display template exercises without workout data
-            templateExercisesWithNames?.map((exerciseData, idx) => {
-              return (
-                <View
-                  key={exerciseData.exercise_id || idx}
-                  style={styles.exerciseContainer}
-                >
-                  <TouchableOpacity
-                    onPress={() => handleExercisePress(exerciseData)}
-                    style={styles.exerciseTitleRow}
-                  >
-                    <ExerciseImage
-                      exercise={exerciseData}
-                      colors={colors}
-                      styles={styles}
-                    />
-                    <Text style={styles.exerciseCardTitle}>
-                      {exerciseData.name || "Unknown Exercise"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.setsContainer}>
-                    <View style={styles.setsHeader}>
-                      <Text
-                        style={[styles.setsHeaderText, styles.setHeaderColumn]}
-                      >
-                        SET
-                      </Text>
-                      <Text
-                        style={[
-                          styles.setsHeaderText,
-                          { flex: 1, marginLeft: Spacing.m },
-                        ]}
-                      >
-                        WEIGHT × REPS
-                      </Text>
-                      <Text
-                        style={[styles.setsHeaderText, styles.rirHeaderColumn]}
-                      >
-                        RIR
-                      </Text>
-                    </View>
-                    {Array(exerciseData.sets || 1)
-                      .fill()
-                      .map((_, setIdx) => {
-                        // Use recent data if available, otherwise show placeholders
-                        const recentSet = exerciseData.recentSets?.[setIdx];
-                        return (
-                          <View
-                            key={setIdx}
-                            style={[
-                              styles.setRow,
-                              setIdx % 2 === 0
-                                ? styles.setRowEven
-                                : styles.setRowOdd,
-                            ]}
-                          >
-                            <Text style={styles.setNumber}>{setIdx + 1}</Text>
-                            <Text
-                              style={[
-                                styles.setInfo,
-                                { opacity: recentSet ? 1 : 0.5 },
-                              ]}
-                            >
-                              {recentSet
-                                ? `${weight.formatSet(
-                                    recentSet.weight,
-                                    recentSet.reps
-                                  )} reps`
-                                : "- reps"}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.setRir,
-                                { opacity: recentSet ? 1 : 0.5 },
-                              ]}
-                            >
-                              {recentSet &&
-                              recentSet.rir !== null &&
-                              recentSet.rir !== undefined
-                                ? `${recentSet.rir} RIR`
-                                : "-"}
-                            </Text>
-                          </View>
-                        );
-                      })}
-                  </View>
-                </View>
-              );
-            })}
+                    );
+                  })}
+              </View>
+            </View>
+          );
+        })}
       </ScrollView>
       <ActiveWorkoutModal
         visible={showActiveWorkoutModal}
