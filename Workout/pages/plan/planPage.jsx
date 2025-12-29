@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import DraggableFlatList from "react-native-draggable-flatlist";
 import Header from "../../components/static/header";
 import ScrollableCalendar from "../../components/ScrollableCalendar";
 import VolumeStats from "../../components/VolumeStats";
@@ -190,141 +189,10 @@ const PlanPage = () => {
     );
   };
 
-  const handleReorderTemplates = useCallback(
-    async (data) => {
-      // Update local state immediately for responsive UI
-      setTemplates(data);
-
-      if (!activePlan) {
-        return;
-      }
-
-      try {
-        // Create maps for tracking schedule entries
-        const scheduleMap = new Map(); // template_id -> schedule entry
-        const positionToScheduleMap = new Map(); // pattern_position -> schedule entry
-        if (activePlan.schedule) {
-          activePlan.schedule.forEach((s) => {
-            if (s.template_id) {
-              scheduleMap.set(s.template_id, s);
-              positionToScheduleMap.set(s.pattern_position, s);
-            }
-          });
-        }
-
-        // Separate templates into those in schedule and those not
-        const scheduleUpdates = [];
-        const displayOrderUpdates = [];
-        let displayOrderCounter = 0;
-
-        // Track which positions are being moved to (for swap detection)
-        const newPositionToTemplateMap = new Map(); // newPosition -> template_id
-        const templateToNewPositionMap = new Map(); // template_id -> newPosition
-
-        // First pass: collect all position changes
-        data.forEach((template, newIndex) => {
-          const scheduleEntry = scheduleMap.get(template.template_id);
-
-          if (scheduleEntry) {
-            // Template is in schedule - track position change
-            const oldPosition = scheduleEntry.pattern_position;
-            if (oldPosition !== newIndex) {
-              newPositionToTemplateMap.set(newIndex, template.template_id);
-              templateToNewPositionMap.set(template.template_id, {
-                newPosition: newIndex,
-                oldPosition: oldPosition,
-                scheduleId: scheduleEntry.schedule_id,
-              });
-            }
-          } else {
-            // Template is not in schedule - update its display_order
-            displayOrderUpdates.push({
-              templateId: template.template_id,
-              displayOrder: displayOrderCounter++,
-            });
-          }
-        });
-
-        // Second pass: handle swaps by updating pattern_positions
-        // We need to update all pattern_positions, handling conflicts
-        const positionUpdates = [];
-        const processedTemplates = new Set();
-
-        templateToNewPositionMap.forEach((change, templateId) => {
-          if (processedTemplates.has(templateId)) {
-            return; // Already processed as part of a swap
-          }
-
-          const conflictingTemplate = newPositionToTemplateMap.get(
-            change.newPosition
-          );
-
-          if (conflictingTemplate && conflictingTemplate !== templateId) {
-            // There's a conflict - need to swap
-            const conflictingChange =
-              templateToNewPositionMap.get(conflictingTemplate);
-            if (conflictingChange) {
-              // Swap: update both positions
-              positionUpdates.push({
-                scheduleId: change.scheduleId,
-                newPosition: change.newPosition,
-              });
-              positionUpdates.push({
-                scheduleId: conflictingChange.scheduleId,
-                newPosition: change.oldPosition,
-              });
-              processedTemplates.add(templateId);
-              processedTemplates.add(conflictingTemplate);
-            } else {
-              // No swap needed, just update this one
-              positionUpdates.push({
-                scheduleId: change.scheduleId,
-                newPosition: change.newPosition,
-              });
-              processedTemplates.add(templateId);
-            }
-          } else {
-            // No conflict, just update
-            positionUpdates.push({
-              scheduleId: change.scheduleId,
-              newPosition: change.newPosition,
-            });
-            processedTemplates.add(templateId);
-          }
-        });
-
-        // Update pattern positions for templates in schedule
-        for (const update of positionUpdates) {
-          await planAPI.updateSchedulePatternPosition(
-            update.scheduleId,
-            update.newPosition
-          );
-        }
-
-        // Batch update display orders for templates not in schedule
-        if (displayOrderUpdates.length > 0) {
-          await planAPI.updateTemplateDisplayOrders(displayOrderUpdates);
-        }
-
-        // Refresh plan data to get updated schedule
-        if (scheduleUpdates.length > 0) {
-          const updatedPlan = await planAPI.getActivePlan();
-          setActivePlan(updatedPlan);
-        }
-      } catch (error) {
-        console.error("Failed to save template order:", error);
-        // Refresh data to restore correct order
-        fetchPlanData(false);
-      }
-    },
-    [activePlan, fetchPlanData]
-  );
-
-  const renderTemplateItem = ({ item: template, drag, isActive }) => (
+  const renderTemplateItem = (template) => (
     <TouchableOpacity
-      style={[styles.templateContainer, isActive && styles.templateDragging]}
-      onLongPress={drag}
-      delayLongPress={500}
+      key={template.template_id}
+      style={styles.templateContainer}
       activeOpacity={0.7}
       onPress={() =>
         navigation.navigate("RoutineDetail", {
@@ -334,10 +202,7 @@ const PlanPage = () => {
     >
       {/* Routine Header */}
       <View style={styles.routineHeader}>
-        <Text
-          style={[styles.routineTitle, isActive && { opacity: 0.5 }]}
-          numberOfLines={1}
-        >
+        <Text style={styles.routineTitle} numberOfLines={1}>
           {template.name}
         </Text>
       </View>
@@ -374,14 +239,7 @@ const PlanPage = () => {
     }
 
     return (
-      <DraggableFlatList
-        data={templates}
-        renderItem={renderTemplateItem}
-        keyExtractor={(item) => item.template_id}
-        onDragEnd={({ data }) => handleReorderTemplates(data)}
-        scrollEnabled={false}
-        activationDistance={10}
-      />
+      <View>{templates.map((template) => renderTemplateItem(template))}</View>
     );
   };
 
