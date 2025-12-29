@@ -17,7 +17,6 @@ On the edit/create exercise page update the ui to that of the app's consistency.
 Routine Page:
 Make the edit/create routine page use a rep range feature. the rep range feautre will show under the reps column in active workout like for example 5-10 and the default if the set is completed without rep value is the low end of the rep range.
 Update backend db and frontend db to use this feature and correctly update the backend.
-routine detail page needs to show actual routine not just recent workout.
 
 Statistics Page:
 Full UI overhaul to match the app.
@@ -31,3 +30,4 @@ Get rid of icons in most buttons like workout settings and discard workout icons
 
 All:
 add haptic feedback to more button presses.
+add positive feedback and animation to most actions
