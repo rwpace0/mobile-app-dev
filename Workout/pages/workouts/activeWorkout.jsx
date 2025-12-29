@@ -24,6 +24,8 @@ import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 import ActiveRestTimer from "../../components/ActiveRestTimer";
+import FinishWorkoutModal from "../../components/modals/FinishWorkoutModal";
+import templateAPI from "../../API/templateAPI";
 
 const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
@@ -43,6 +45,16 @@ const ActiveWorkoutPage = () => {
   const [workoutName, setWorkoutName] = useState("");
   const [exerciseTotals, setExerciseTotals] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [originalTemplate, setOriginalTemplate] = useState(null);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [finishModalMode, setFinishModalMode] = useState(null);
+  const [routineChanges, setRoutineChanges] = useState({
+    addedExercises: 0,
+    removedExercises: 0,
+    addedSets: 0,
+    removedSets: 0,
+  });
+  const [processedExerciseStates, setProcessedExerciseStates] = useState(null);
   const {
     alertState,
     showError,
@@ -69,6 +81,10 @@ const ActiveWorkoutPage = () => {
       setTotalVolume(activeWorkout.totalVolume || 0);
       setTotalSets(activeWorkout.totalSets || 0);
       setExerciseTotals(activeWorkout.exerciseTotals || {});
+      // Use templateId from context if available, otherwise from route params
+      if (activeWorkout.templateId && !templateId) {
+        navigation.setParams({ templateId: activeWorkout.templateId });
+      }
     } else {
       // Handle initial exercises and workout name from template/routine start for new workout
       const initialExercises = route.params?.selectedExercises || [];
@@ -90,6 +106,7 @@ const ActiveWorkoutPage = () => {
             totalVolume: 0,
             totalSets: 0,
             exerciseTotals: {},
+            templateId: templateId, // Store templateId in context for persistence
           });
         } catch (error) {
           console.error("Failed to start new workout:", error);
@@ -108,6 +125,27 @@ const ActiveWorkoutPage = () => {
       }
     }
   }, []); // Only run on mount
+
+  // Load original template if workout is from a routine
+  useEffect(() => {
+    const loadOriginalTemplate = async () => {
+      // Get templateId from route params or activeWorkout context
+      const currentTemplateId =
+        templateId || activeWorkout?.templateId;
+      if (currentTemplateId) {
+        try {
+          const template = await templateAPI.getTemplateById(currentTemplateId);
+          if (template) {
+            setOriginalTemplate(template);
+          }
+        } catch (error) {
+          console.error("Failed to load original template:", error);
+        }
+      }
+    };
+
+    loadOriginalTemplate();
+  }, [templateId, activeWorkout?.templateId]);
 
   // Update workout in context when state changes - debounced for performance
   useEffect(() => {
@@ -224,7 +262,95 @@ const ActiveWorkoutPage = () => {
     }));
   };
 
-  const handleFinish = async () => {
+  // Helper function to check for routine changes and show modal if needed
+  const checkAndShowRoutineUpdateModal = (statesToUse = null) => {
+    const currentTemplateId = templateId || activeWorkout?.templateId;
+    if (!currentTemplateId || !originalTemplate) {
+      return false;
+    }
+
+    // Use provided states or current states
+    const statesForComparison = statesToUse || exerciseStates;
+
+    // Compare current workout with original template
+    const templateExerciseIds = new Set(
+      (originalTemplate.exercises || []).map((ex) => ex.exercise_id)
+    );
+    const currentExerciseIds = new Set(
+      exercises.map((ex) => ex.exercise_id)
+    );
+
+    // Count added exercises (exercises in workout not in template)
+    const addedExercises = exercises.filter(
+      (ex) => !templateExerciseIds.has(ex.exercise_id)
+    );
+    const addedExercisesCount = addedExercises.length;
+
+    // Count removed exercises (exercises in template not in workout)
+    const removedExercises = (originalTemplate.exercises || []).filter(
+      (te) => !currentExerciseIds.has(te.exercise_id)
+    );
+    const removedExercisesCount = removedExercises.length;
+
+    // Count set changes
+    let addedSetsCount = 0;
+    let removedSetsCount = 0;
+
+    // For exercises that exist in both template and workout
+    exercises.forEach((ex) => {
+      const templateExercise = (originalTemplate.exercises || []).find(
+        (te) => te.exercise_id === ex.exercise_id
+      );
+      if (templateExercise) {
+        const state = statesForComparison[ex.exercise_id] || { sets: [] };
+        const completedSetsCount = (state.sets || []).filter(
+          (set) => set.completed && set.weight && set.reps
+        ).length;
+        const templateSetsCount = templateExercise.sets || 1;
+        
+        if (completedSetsCount > templateSetsCount) {
+          addedSetsCount += completedSetsCount - templateSetsCount;
+        } else if (templateSetsCount > completedSetsCount) {
+          removedSetsCount += templateSetsCount - completedSetsCount;
+        }
+      } else {
+        // New exercise - count all its completed sets as added sets
+        const state = statesForComparison[ex.exercise_id] || { sets: [] };
+        const completedSetsCount = (state.sets || []).filter(
+          (set) => set.completed && set.weight && set.reps
+        ).length;
+        addedSetsCount += completedSetsCount;
+      }
+    });
+
+    // For exercises that were removed from template
+    removedExercises.forEach((templateExercise) => {
+      const templateSetsCount = templateExercise.sets || 1;
+      removedSetsCount += templateSetsCount;
+    });
+
+    // If any changes detected, show modal
+    if (
+      addedExercisesCount > 0 ||
+      removedExercisesCount > 0 ||
+      addedSetsCount > 0 ||
+      removedSetsCount > 0
+    ) {
+      setRoutineChanges({
+        addedExercises: addedExercisesCount,
+        removedExercises: removedExercisesCount,
+        addedSets: addedSetsCount,
+        removedSets: removedSetsCount,
+      });
+      setFinishModalMode("routineUpdate");
+      setShowFinishModal(true);
+      return true;
+    }
+
+    return false;
+  };
+
+  const finishWorkoutInternal = async (filteredExerciseStates = null) => {
     try {
       // Build workout name and date
       const now = new Date();
@@ -232,9 +358,12 @@ const ActiveWorkoutPage = () => {
         workoutName || `Workout on ${now.toLocaleDateString()}`;
       const datePerformed = now.toISOString();
 
+      // Use filtered states if provided, otherwise use current states
+      const statesToUse = filteredExerciseStates || exerciseStates;
+
       // Build exercises array
       const exercisesPayload = exercises.map((exercise, index) => {
-        const state = exerciseStates[exercise.exercise_id] || {
+        const state = statesToUse[exercise.exercise_id] || {
           sets: [],
           notes: "",
         };
@@ -267,12 +396,13 @@ const ActiveWorkoutPage = () => {
         return;
       }
 
+      const currentTemplateId = templateId || activeWorkout?.templateId;
       const payload = {
         name: finalWorkoutName,
         date_performed: datePerformed,
         duration: activeWorkout?.duration || 0,
         exercises: validExercises,
-        templateId: templateId,
+        templateId: currentTemplateId,
       };
 
       await workoutAPI.finishWorkout(payload);
@@ -285,6 +415,135 @@ const ActiveWorkoutPage = () => {
       console.error("Failed to save workout:", err);
       showError("Error", "Failed to save workout. Please try again.");
     }
+  };
+
+  const handleFinish = async () => {
+    // Check for incomplete sets first
+    const incompleteSets = exercises.some((ex) => {
+      const state = exerciseStates[ex.exercise_id] || { sets: [] };
+      return (state.sets || []).some(
+        (set) => !set.completed && set.weight && set.reps
+      );
+    });
+
+    if (incompleteSets) {
+      // Show incomplete sets modal
+      setFinishModalMode("incompleteSets");
+      setShowFinishModal(true);
+      return;
+    }
+
+    // If no incomplete sets, check for routine changes
+    const hasChanges = checkAndShowRoutineUpdateModal();
+    if (hasChanges) {
+      return;
+    }
+
+    // No incomplete sets and no routine changes (or not from routine) - proceed normally
+    await finishWorkoutInternal();
+  };
+
+  const handleCompleteUnfinishedSets = async () => {
+    // Mark all incomplete sets as completed
+    const updatedStates = { ...exerciseStates };
+    exercises.forEach((ex) => {
+      const state = exerciseStates[ex.exercise_id] || { sets: [] };
+      const updatedSets = (state.sets || []).map((set) => {
+        if (!set.completed && set.weight && set.reps) {
+          return { ...set, completed: true };
+        }
+        return set;
+      });
+      updatedStates[ex.exercise_id] = {
+        ...state,
+        sets: updatedSets,
+      };
+    });
+    setExerciseStates(updatedStates);
+    setProcessedExerciseStates(updatedStates);
+
+    // Wait a bit for state to update, then check for routine changes
+    setTimeout(() => {
+      const hasChanges = checkAndShowRoutineUpdateModal(updatedStates);
+      if (!hasChanges) {
+        // No routine changes, proceed with finish
+        finishWorkoutInternal(updatedStates);
+      }
+    }, 100);
+  };
+
+  const handleDiscardUnfinishedSets = async () => {
+    // Filter out incomplete sets
+    const updatedStates = { ...exerciseStates };
+    exercises.forEach((ex) => {
+      const state = exerciseStates[ex.exercise_id] || { sets: [] };
+      const filteredSets = (state.sets || []).filter(
+        (set) => set.completed || !(set.weight && set.reps)
+      );
+      updatedStates[ex.exercise_id] = {
+        ...state,
+        sets: filteredSets,
+      };
+    });
+    setExerciseStates(updatedStates);
+    setProcessedExerciseStates(updatedStates);
+
+    // Wait a bit for state to update, then check for routine changes
+    setTimeout(() => {
+      const hasChanges = checkAndShowRoutineUpdateModal(updatedStates);
+      if (!hasChanges) {
+        // No routine changes, proceed with finish
+        finishWorkoutInternal(updatedStates);
+      }
+    }, 100);
+  };
+
+  const handleUpdateRoutine = async () => {
+    try {
+      const currentTemplateId = templateId || activeWorkout?.templateId;
+      if (!currentTemplateId) {
+        showError("Error", "Template ID not found");
+        return;
+      }
+
+      // Use processed states if available (from set completion/discard), otherwise use current states
+      const statesToUse = processedExerciseStates || exerciseStates;
+
+      // Build updated template structure based on current exercises and completed sets
+      const updatedExercises = exercises.map((ex, index) => {
+        const state = statesToUse[ex.exercise_id] || { sets: [] };
+        const completedSetsCount = (state.sets || []).filter(
+          (set) => set.completed && set.weight && set.reps
+        ).length;
+        return {
+          exercise_id: ex.exercise_id,
+          exercise_order: index + 1,
+          sets: completedSetsCount || 1,
+        };
+      });
+
+      // Update template
+      await templateAPI.updateTemplate(currentTemplateId, {
+        name: originalTemplate.name,
+        is_public: originalTemplate.is_public || false,
+        exercises: updatedExercises,
+      });
+
+      // Then finish workout using the processed states
+      await finishWorkoutInternal(statesToUse);
+      setProcessedExerciseStates(null); // Clear processed states
+    } catch (error) {
+      console.error("Failed to update routine:", error);
+      showError("Error", "Failed to update routine. Please try again.");
+    }
+  };
+
+  const handleKeepRoutineSame = async () => {
+    // Finish workout without updating template (weight/reps/RIR still saved in workout)
+    // Use processed states if available (from set completion/discard), otherwise use current states
+    const statesToUse = processedExerciseStates || exerciseStates;
+    await finishWorkoutInternal(statesToUse);
+    setProcessedExerciseStates(null); // Clear processed states
   };
 
   const updateTotals = (exerciseId, volume, sets) => {
@@ -614,6 +873,24 @@ const ActiveWorkoutPage = () => {
         showCancel={alertState.showCancel}
         onConfirm={alertState.onConfirm}
         onCancel={alertState.onCancel}
+      />
+      <FinishWorkoutModal
+        visible={showFinishModal}
+        onClose={() => {
+          setShowFinishModal(false);
+          setFinishModalMode(null);
+        }}
+        mode={finishModalMode}
+        newExercisesCount={routineChanges.addedExercises}
+        newSetsCount={routineChanges.addedSets}
+        addedExercises={routineChanges.addedExercises}
+        removedExercises={routineChanges.removedExercises}
+        addedSets={routineChanges.addedSets}
+        removedSets={routineChanges.removedSets}
+        onCompleteSets={handleCompleteUnfinishedSets}
+        onDiscardSets={handleDiscardUnfinishedSets}
+        onUpdateRoutine={handleUpdateRoutine}
+        onKeepRoutineSame={handleKeepRoutineSame}
       />
     </SafeAreaView>
   );
