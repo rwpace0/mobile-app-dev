@@ -130,6 +130,29 @@ class PlanAPI {
     }
   }
 
+  // Update pattern position for a specific schedule entry
+  async updateSchedulePatternPosition(scheduleId, newPatternPosition) {
+    try {
+      await this.ensureInitialized();
+      const now = new Date().toISOString();
+
+      await this.db.execute(
+        `UPDATE plan_schedule 
+         SET pattern_position = ?, day_of_week = ?, updated_at = ?
+         WHERE schedule_id = ?`,
+        [newPatternPosition, newPatternPosition, now, scheduleId]
+      );
+
+      console.log(
+        `[PlanAPI] Updated pattern_position for schedule ${scheduleId} to ${newPatternPosition}`
+      );
+      return { success: true };
+    } catch (error) {
+      console.error("[PlanAPI] Update schedule pattern position error:", error);
+      throw error;
+    }
+  }
+
   // Update plan schedule - assign or remove templates from pattern positions
   async updatePlanSchedule(planId, patternPosition, templateId) {
     try {
@@ -491,12 +514,13 @@ class PlanAPI {
   }
 
   // Get all templates for display in plan page
-  async getAllTemplates() {
+  // planSchedule: optional array of schedule items with pattern_position and template_id
+  async getAllTemplates(planSchedule = null) {
     try {
       await this.ensureInitialized();
 
       const templates = await this.db.query(
-        `SELECT t.template_id, t.name, t.created_by, t.is_public, t.created_at, t.updated_at,
+        `SELECT t.template_id, t.name, t.created_by, t.is_public, t.created_at, t.updated_at, t.display_order,
           CASE 
             WHEN COUNT(te.template_exercise_id) = 0 THEN '[]'
             ELSE json_group_array(
@@ -518,7 +542,7 @@ class PlanAPI {
         ORDER BY t.created_at DESC`
       );
 
-      return templates.map((template) => {
+      let processedTemplates = templates.map((template) => {
         let exercises = [];
         if (template.exercises) {
           try {
@@ -535,13 +559,108 @@ class PlanAPI {
           }
         }
 
+        // Find pattern_position if this template is in the plan schedule
+        let patternPosition = null;
+        if (planSchedule && Array.isArray(planSchedule)) {
+          const scheduleEntry = planSchedule.find(
+            (s) => s.template_id === template.template_id
+          );
+          if (scheduleEntry) {
+            patternPosition = scheduleEntry.pattern_position;
+          }
+        }
+
         return {
           ...template,
           exercises,
+          pattern_position: patternPosition,
         };
       });
+
+      // Sort templates: schedule routines first (by pattern_position), then others (by display_order or created_at)
+      processedTemplates.sort((a, b) => {
+        // If both are in schedule, sort by pattern_position
+        if (a.pattern_position !== null && b.pattern_position !== null) {
+          return a.pattern_position - b.pattern_position;
+        }
+        // If only a is in schedule, it comes first
+        if (a.pattern_position !== null && b.pattern_position === null) {
+          return -1;
+        }
+        // If only b is in schedule, it comes first
+        if (a.pattern_position === null && b.pattern_position !== null) {
+          return 1;
+        }
+        // Neither is in schedule: sort by display_order (if set), then by created_at DESC
+        if (a.display_order !== null && b.display_order !== null) {
+          return a.display_order - b.display_order;
+        }
+        if (a.display_order !== null) {
+          return -1;
+        }
+        if (b.display_order !== null) {
+          return 1;
+        }
+        // Both have no display_order, sort by created_at DESC
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      return processedTemplates;
     } catch (error) {
       console.error("[PlanAPI] Get all templates error:", error);
+      throw error;
+    }
+  }
+
+  // Update template display order
+  async updateTemplateDisplayOrder(templateId, displayOrder) {
+    try {
+      await this.ensureInitialized();
+      const now = new Date().toISOString();
+
+      await this.db.execute(
+        `UPDATE workout_templates 
+         SET display_order = ?, updated_at = ?
+         WHERE template_id = ?`,
+        [displayOrder, now, templateId]
+      );
+
+      console.log(
+        `[PlanAPI] Updated display_order for template ${templateId} to ${displayOrder}`
+      );
+      return { success: true };
+    } catch (error) {
+      console.error("[PlanAPI] Update template display order error:", error);
+      throw error;
+    }
+  }
+
+  // Update multiple template display orders in batch
+  async updateTemplateDisplayOrders(updates) {
+    try {
+      await this.ensureInitialized();
+      const now = new Date().toISOString();
+
+      await this.db.execute("BEGIN TRANSACTION");
+
+      for (const { templateId, displayOrder } of updates) {
+        await this.db.execute(
+          `UPDATE workout_templates 
+           SET display_order = ?, updated_at = ?
+           WHERE template_id = ?`,
+          [displayOrder, now, templateId]
+        );
+      }
+
+      await this.db.execute("COMMIT");
+
+      console.log(
+        `[PlanAPI] Updated display_order for ${updates.length} templates`
+      );
+      return { success: true };
+    } catch (error) {
+      await this.db.execute("ROLLBACK");
+      console.error("[PlanAPI] Update template display orders error:", error);
       throw error;
     }
   }

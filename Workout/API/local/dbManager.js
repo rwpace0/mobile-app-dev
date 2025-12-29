@@ -460,6 +460,36 @@ class DatabaseManager {
         }
       }
 
+      if (currentVersion < 7) {
+        console.log("[DatabaseManager] Updating to database version 7");
+
+        // Add display_order column to workout_templates table
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE workout_templates ADD COLUMN display_order INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added display_order column to workout_templates table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] display_order column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        // Update version
+        const version7Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 7"
+        );
+        if (version7Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (7)"
+          );
+          console.log("[DatabaseManager] Database version updated to 7");
+        }
+      }
+
       // Force check for secondary_muscle_groups column and add if missing (regardless of version)
       try {
         const tableInfo = await this.db.getAllAsync(

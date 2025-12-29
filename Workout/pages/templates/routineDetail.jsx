@@ -102,13 +102,13 @@ const RoutineDetail = () => {
         const [templateResponse, lastWorkoutResponse] = await Promise.all([
           templateAPI.getTemplateById(template_id),
           workoutAPI.getLastWorkoutForTemplate(template_id),
-          console.log("Template ID:", template_id),
+          //console.log("Template ID:", template_id),
         ]);
 
         setTemplate(templateResponse);
         setWorkout(lastWorkoutResponse);
-        console.log("Template:", templateResponse);
-        console.log("Last workout:", lastWorkoutResponse);
+        //console.log("Template:", templateResponse);
+        //console.log("Last workout:", lastWorkoutResponse);
 
         // Always fetch exercise names and recent data for template exercises
         // This ensures we always show the actual routine structure, not workout data
@@ -442,8 +442,8 @@ const RoutineDetail = () => {
                             ? `${weight.formatSet(
                                 recentSet.weight,
                                 recentSet.reps
-                              )} reps`
-                            : "- reps"}
+                              )}`
+                            : "-"}
                         </Text>
                         <Text
                           style={[
