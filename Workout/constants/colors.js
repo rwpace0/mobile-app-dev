@@ -42,6 +42,9 @@ const darkTheme = {
   errorOverlay: "rgba(255, 59, 48, 0.1)",
   infoOverlay: "rgba(33, 150, 243, 0.1)",
 
+  // completed set background (darker green than success overlay)
+  completedSetBackground: "#008000", // Dark green for completed set rows
+
   // iOS specific
   iosGray: "#AEAEB2", // iOS gray for buttons
 };
@@ -89,6 +92,9 @@ const lightTheme = {
   warningOverlay: "rgba(255, 235, 59, 0.2)",
   errorOverlay: "rgba(255, 59, 48, 0.1)",
   infoOverlay: "rgba(33, 150, 243, 0.1)",
+
+  // completed set background (darker green than success overlay)
+  completedSetBackground: "#008000", // Dark green for completed set rows
 
   // iOS specific
   iosGray: "#8E8E93", // iOS gray for buttons

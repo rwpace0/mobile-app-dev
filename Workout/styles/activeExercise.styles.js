@@ -107,7 +107,7 @@ export const createStyles = (isDark = true) => {
     setHeaderCell: {
       color: colors.textFaded,
       fontSize: FontSize.small,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.regular,
       textAlign: "center",
     },
     setRow: {
@@ -122,13 +122,16 @@ export const createStyles = (isDark = true) => {
     setRowOdd: {
       backgroundColor: colors.backgroundCard,
     },
-    completedSetRow: {},
+    completedSetRow: {
+      backgroundColor: colors.completedSetBackground, // Dark green background for completed sets
+    },
     warmupSetRow: {
       backgroundColor: colors.warningOverlay,
     },
     setCell: {
       color: colors.textPrimary,
       fontSize: FontSize.base,
+      fontWeight: FontWeight.bold,
     },
     setNumberCell: {
       flex: 0.8,
@@ -161,6 +164,7 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
       fontSize: FontSize.base,
       color: colors.textPrimary,
+      fontWeight: FontWeight.bold,
     },
     repsInput: {
       flex: 1,
@@ -168,6 +172,7 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
       fontSize: FontSize.base,
       color: colors.textPrimary,
+      fontWeight: FontWeight.bold,
     },
     rirHeaderCell: {
       flex: 1.0,
@@ -180,6 +185,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
       textAlign: "center",
       fontSize: FontSize.base,
+      fontWeight: FontWeight.bold,
     },
     totalCell: {
       flex: 1.5,

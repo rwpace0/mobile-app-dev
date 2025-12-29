@@ -35,6 +35,7 @@ const RoutineExerciseComponent = ({
   const styles = createStyles(isDark);
   const weight = useWeight();
   const inputRefs = useRef({});
+  const swipeListRef = useRef(null);
   const lastReportedSetsCount = useRef(0);
 
   const [sets, setSets] = useState([]);
@@ -134,14 +135,24 @@ const RoutineExerciseComponent = ({
   };
 
   const handleWeightChange = (id, value) => {
+    // Allow only numbers and one decimal point, max 7 characters (e.g., "9999.5")
+    const sanitized = value.replace(/[^0-9.]/g, "");
+    // Ensure only one decimal point
+    const parts = sanitized.split(".");
+    const filtered = parts.length > 2 
+      ? parts[0] + "." + parts.slice(1).join("")
+      : sanitized;
+    // Limit to 7 characters
+    const limited = filtered.length > 7 ? filtered.slice(0, 7) : filtered;
+    
     setSets((prev) =>
       prev.map((set) => {
         if (set.id === id) {
-          const weight = parseFloat(value) || 0;
+          const weight = parseFloat(limited) || 0;
           const reps = parseFloat(set.reps) || 0;
           return {
             ...set,
-            weight: value,
+            weight: limited,
             total: Math.round(weight * reps).toString(),
           };
         }
@@ -151,14 +162,18 @@ const RoutineExerciseComponent = ({
   };
 
   const handleRepsChange = (id, value) => {
+    // Allow only whole numbers, max 3 digits (999)
+    const sanitized = value.replace(/[^0-9]/g, "");
+    const limited = sanitized.length > 3 ? sanitized.slice(0, 3) : sanitized;
+    
     setSets((prev) =>
       prev.map((set) => {
         if (set.id === id) {
           const weight = parseFloat(set.weight) || 0;
-          const reps = parseFloat(value) || 0;
+          const reps = parseFloat(limited) || 0;
           return {
             ...set,
-            reps: value,
+            reps: limited,
             total: Math.round(weight * reps).toString(),
           };
         }
@@ -168,12 +183,16 @@ const RoutineExerciseComponent = ({
   };
 
   const handleRirChange = (id, value) => {
+    // Allow only whole numbers, max 2 digits (99)
+    const sanitized = value.replace(/[^0-9]/g, "");
+    const limited = sanitized.length > 2 ? sanitized.slice(0, 2) : sanitized;
+    
     setSets((prev) =>
       prev.map((set) => {
         if (set.id === id) {
           return {
             ...set,
-            rir: value,
+            rir: limited,
           };
         }
         return set;
@@ -208,15 +227,32 @@ const RoutineExerciseComponent = ({
     setSets([...sets, newSet]);
   };
 
-  const handleDeleteSet = (setId) => {
+  const handleDeleteSet = (setId, rowKey) => {
     hapticMedium();
-    const newSets = sets.filter((set) => set.id !== setId);
-    // Renumber sets
-    const renumberedSets = newSets.map((set, index) => ({
-      ...set,
-      id: (index + 1).toString(),
-    }));
-    setSets(renumberedSets);
+    // Close all open rows before deleting
+    if (swipeListRef.current) {
+      swipeListRef.current.closeAllOpenRows();
+    }
+    setSets((prev) => {
+      // Filter out the deleted set
+      const filtered = prev.filter((set) => set.id !== setId);
+      // Renumber regular sets (skip warmup sets with id "W")
+      let setNumber = 1;
+      return filtered.map((set) => {
+        if (set.id === "W") {
+          // Keep warmup sets as-is
+          return set;
+        } else {
+          // Renumber regular sets sequentially
+          const newId = setNumber.toString();
+          setNumber++;
+          return {
+            ...set,
+            id: newId,
+          };
+        }
+      });
+    });
   };
 
   const toggleSetCompletion = (index) => {
@@ -286,7 +322,12 @@ const RoutineExerciseComponent = ({
             <Text
               style={[
                 styles.setCell,
-                { color: colors.textSecondary, fontSize: FontSize.small },
+                {
+                  color: set.completed
+                    ? colors.textPrimary
+                    : colors.textSecondary,
+                  fontSize: FontSize.small,
+                },
               ]}
             >
               -
@@ -303,6 +344,7 @@ const RoutineExerciseComponent = ({
             value={set.weight}
             onChangeText={(value) => handleWeightChange(set.id, value)}
             keyboardType="numeric"
+            maxLength={7}
             placeholder="0"
             placeholderTextColor={colors.textSecondary}
             selectTextOnFocus={true}
@@ -318,6 +360,7 @@ const RoutineExerciseComponent = ({
             value={set.reps}
             onChangeText={(value) => handleRepsChange(set.id, value)}
             keyboardType="numeric"
+            maxLength={3}
             placeholder="0"
             placeholderTextColor={colors.textSecondary}
             selectTextOnFocus={true}
@@ -334,6 +377,7 @@ const RoutineExerciseComponent = ({
               value={set.rir}
               onChangeText={(value) => handleRirChange(set.id, value)}
               keyboardType="numeric"
+              maxLength={2}
               placeholder="0"
               placeholderTextColor={colors.textSecondary}
               selectTextOnFocus={true}
@@ -367,7 +411,7 @@ const RoutineExerciseComponent = ({
       <View style={styles.hiddenItemLeft} />
       <TouchableOpacity
         style={styles.deleteAction}
-        onPress={() => handleDeleteSet(item.set.id)}
+        onPress={() => handleDeleteSet(item.set.id, item.key)}
       >
         <Ionicons name="trash-outline" size={24} color="white" />
       </TouchableOpacity>
@@ -484,6 +528,7 @@ const RoutineExerciseComponent = ({
 
             {/* Swipe List for Sets */}
             <SwipeListView
+              ref={swipeListRef}
               data={swipeListData}
               renderItem={renderItem}
               renderHiddenItem={renderHiddenItem}
