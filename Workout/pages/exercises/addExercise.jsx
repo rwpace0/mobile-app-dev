@@ -241,14 +241,16 @@ const AddExercisePage = ({ route }) => {
     // Apply muscle group filter
     if (selectedMuscleGroup) {
       filtered = filtered.filter(
-        (exercise) => exercise.muscle_group === selectedMuscleGroup
+        (exercise) =>
+          exercise.muscle_group?.toLowerCase() === selectedMuscleGroup.toLowerCase()
       );
     }
 
     // Apply equipment filter
     if (selectedEquipment) {
       filtered = filtered.filter(
-        (exercise) => exercise.equipment === selectedEquipment
+        (exercise) =>
+          exercise.equipment?.toLowerCase() === selectedEquipment.toLowerCase()
       );
     }
 
