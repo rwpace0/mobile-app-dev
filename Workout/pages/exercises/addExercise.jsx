@@ -21,6 +21,32 @@ import { getColors } from "../../constants/colors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/display.styles";
+import FilterModal from "../../components/modals/FilterModal";
+
+const muscleOptions = [
+  "Chest",
+  "Back",
+  "Shoulders",
+  "Biceps",
+  "Triceps",
+  "Abs",
+  "Glutes",
+  "Quads",
+  "Hamstrings",
+  "Calves",
+  "Forearms",
+];
+
+const equipmentOptions = [
+  "Dumbbell",
+  "Cable",
+  "Machine",
+  "Barbell",
+  "Bodyweight",
+  "Kettlebell",
+  "Resistance Band",
+  "Other",
+];
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style, highlightStyle }) => {
@@ -113,6 +139,10 @@ const AddExercisePage = ({ route }) => {
   const [filteredExercises, setFilteredExercises] = useState([]);
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null);
+  const [selectedEquipment, setSelectedEquipment] = useState(null);
+  const [showMuscleGroupModal, setShowMuscleGroupModal] = useState(false);
+  const [showEquipmentModal, setShowEquipmentModal] = useState(false);
 
   const loadExercises = useCallback(async () => {
     try {
@@ -186,11 +216,14 @@ const AddExercisePage = ({ route }) => {
     };
   }, []);
 
-  // search function that properly filters results
+  // search and filter function that properly filters results
   useEffect(() => {
+    let filtered = exercises;
+
+    // Apply search filter
     if (searchText.trim()) {
       const searchTermLower = searchText.toLowerCase();
-      const filtered = exercises.filter((exercise) => {
+      filtered = filtered.filter((exercise) => {
         const nameMatch = exercise.name
           ?.toLowerCase()
           .includes(searchTermLower);
@@ -203,11 +236,24 @@ const AddExercisePage = ({ route }) => {
 
         return nameMatch || muscleGroupMatch || instructionMatch;
       });
-      setFilteredExercises(filtered.sort((a, b) => a.name.localeCompare(b.name)));
-    } else {
-      setFilteredExercises([...exercises].sort((a, b) => a.name.localeCompare(b.name)));
     }
-  }, [searchText, exercises]);
+
+    // Apply muscle group filter
+    if (selectedMuscleGroup) {
+      filtered = filtered.filter(
+        (exercise) => exercise.muscle_group === selectedMuscleGroup
+      );
+    }
+
+    // Apply equipment filter
+    if (selectedEquipment) {
+      filtered = filtered.filter(
+        (exercise) => exercise.equipment === selectedEquipment
+      );
+    }
+
+    setFilteredExercises(filtered.sort((a, b) => a.name.localeCompare(b.name)));
+  }, [searchText, exercises, selectedMuscleGroup, selectedEquipment]);
 
   const handleExerciseSelect = (exercise) => {
     setSelectedExercises((prev) => {
@@ -298,13 +344,63 @@ const AddExercisePage = ({ route }) => {
         </View>
 
         <View style={styles.filterContainer}>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterText}>Any Body Part</Text>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedMuscleGroup && styles.filterButtonActive,
+            ]}
+            onPress={() => setShowMuscleGroupModal(true)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                selectedMuscleGroup && styles.filterTextActive,
+              ]}
+            >
+              {selectedMuscleGroup
+                ? selectedMuscleGroup.charAt(0).toUpperCase() +
+                  selectedMuscleGroup.slice(1)
+                : "Any Body Part"}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterText}>Any Category</Text>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedEquipment && styles.filterButtonActive,
+            ]}
+            onPress={() => setShowEquipmentModal(true)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                selectedEquipment && styles.filterTextActive,
+              ]}
+            >
+              {selectedEquipment
+                ? selectedEquipment.charAt(0).toUpperCase() +
+                  selectedEquipment.slice(1)
+                : "Any Category"}
+            </Text>
           </TouchableOpacity>
         </View>
+
+        <FilterModal
+          visible={showMuscleGroupModal}
+          onClose={() => setShowMuscleGroupModal(false)}
+          title="Select Body Part"
+          options={muscleOptions}
+          selectedValue={selectedMuscleGroup}
+          onSelect={(value) => setSelectedMuscleGroup(value)}
+        />
+
+        <FilterModal
+          visible={showEquipmentModal}
+          onClose={() => setShowEquipmentModal(false)}
+          title="Select Category"
+          options={equipmentOptions}
+          selectedValue={selectedEquipment}
+          onSelect={(value) => setSelectedEquipment(value)}
+        />
 
         <View style={styles.exerciseListContainer}>
           <FlatList

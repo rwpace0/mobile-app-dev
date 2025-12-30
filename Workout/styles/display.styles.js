@@ -100,17 +100,28 @@ export const createStyles = (isDark = true) => {
 
     filterButton: {
       backgroundColor: colors.backgroundCard,
-      paddingVertical: Spacing.xxs,
+      paddingVertical: Spacing.s,
       paddingHorizontal: Spacing.m,
       borderRadius: BorderRadius.lg,
       marginRight: Spacing.xs,
       flex: 1,
+      height: 40,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+
+    filterButtonActive: {
+      backgroundColor: colors.primaryBlue,
     },
 
     filterText: {
       color: colors.textPrimary,
       fontSize: FontSize.caption,
       textAlign: "center",
+    },
+
+    filterTextActive: {
+      color: colors.textWhite,
     },
 
     exerciseListContainer: {
