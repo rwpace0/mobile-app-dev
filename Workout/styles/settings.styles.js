@@ -182,6 +182,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
       fontSize: FontSize.medium,
       fontWeight: FontWeight.semiBold,
+      textAlign: "center",
     },
 
     // Segmented Control styles

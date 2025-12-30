@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
+import { Spacing, FontSize, FontWeight, BorderRadius } from "../constants/theme";
 
 const VolumeStats = ({ volumeData }) => {
   const { isDark } = useTheme();
@@ -51,8 +52,14 @@ const VolumeStats = ({ volumeData }) => {
       <View key={category} style={styles.categorySection}>
         <Text style={styles.categoryTitle}>{category}</Text>
         <View style={styles.categoryMuscles}>
-          {muscles.map((muscle) => (
-            <View key={muscle} style={styles.volumeItem}>
+          {muscles.map((muscle, index) => (
+            <View
+              key={muscle}
+              style={[
+                styles.volumeItem,
+                index % 2 === 0 ? styles.volumeItemEven : styles.volumeItemOdd,
+              ]}
+            >
               <View style={styles.volumeItemContent}>
                 <Text style={styles.muscleLabel}>{muscle}</Text>
                 <Text style={styles.volumeValue}>{volumeData[muscle]}</Text>
@@ -89,54 +96,61 @@ const VolumeStats = ({ volumeData }) => {
 const createStyles = (colors, isDark) =>
   StyleSheet.create({
     container: {
-      paddingVertical: 20,
-      paddingHorizontal: 20,
-      backgroundColor: colors.backgroundCard,
-      borderRadius: 16,
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.m,
     },
     categorySection: {
-      marginBottom: 20,
+      marginBottom: Spacing.l,
     },
     categoryTitle: {
-      fontSize: 14,
-      fontWeight: "600",
+      fontSize: FontSize.small,
+      fontWeight: FontWeight.medium,
       color: colors.textSecondary,
       textTransform: "uppercase",
       letterSpacing: 0.5,
-      marginBottom: 12,
+      marginBottom: Spacing.s,
+      paddingHorizontal: Spacing.m,
     },
     categoryMuscles: {
-      gap: 12,
+      // Remove gap, use padding on items instead
     },
     volumeItem: {
       width: "100%",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+    },
+    volumeItemEven: {
+      backgroundColor: colors.backgroundPrimary,
+    },
+    volumeItemOdd: {
+      backgroundColor: colors.backgroundCard,
     },
     volumeItemContent: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 8,
+      marginBottom: Spacing.xs,
     },
     muscleLabel: {
-      fontSize: 15,
-      fontWeight: "600",
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.medium,
       color: colors.textPrimary,
     },
     volumeValue: {
-      fontSize: 16,
-      fontWeight: "700",
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semiBold,
       color: colors.primaryBlue,
     },
     volumeBar: {
       height: 6,
-      backgroundColor: colors.border,
-      borderRadius: 3,
+      backgroundColor: colors.borderColor,
+      borderRadius: BorderRadius.sm,
       overflow: "hidden",
     },
     volumeBarFill: {
       height: "100%",
       backgroundColor: colors.primaryBlue,
-      borderRadius: 3,
+      borderRadius: BorderRadius.sm,
     },
   });
 

@@ -52,9 +52,11 @@ export const createStyles = (isDark = true) => {
     },
     buttonText: {
       ...components.buttonText,
+      textAlign: "center",
     },
     secondaryButtonText: {
       color: colors.primaryBlue,
+      textAlign: "center",
     },
     inputContainer: {
       width: "100%",

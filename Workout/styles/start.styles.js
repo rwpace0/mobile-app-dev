@@ -54,18 +54,16 @@ export const createStyles = (isDark = true) => {
     },
 
     startEmptyWorkoutButton: {
-      flexDirection: "row",
-      alignItems: "center",
       backgroundColor: colors.primaryBlue,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.m,
       borderRadius: BorderRadius.md,
+      alignItems: "center",
     },
 
     startEmptyWorkoutText: {
       color: colors.textWhite,
       fontSize: FontSize.medium,
-      marginLeft: Spacing.s,
       textAlign: "center",
     },
 
@@ -91,7 +89,6 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
       fontSize: FontSize.medium,
       marginLeft: Spacing.s,
-      textAlign: "center",
     },
 
     emptyRoutinesContainer: {
@@ -148,6 +145,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textWhite,
       fontSize: FontSize.medium,
       fontWeight: FontWeight.semiBold,
+      textAlign: "center",
     },
 
     retryButton: {

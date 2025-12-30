@@ -14,9 +14,11 @@ import Header from "../../components/static/header";
 import ScrollableCalendar from "../../components/ScrollableCalendar";
 import VolumeStats from "../../components/VolumeStats";
 import BottomSheetModal from "../../components/modals/bottomModal";
+import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import { getColors } from "../../constants/colors";
 import { createStyles } from "../../styles/plan.styles";
 import { useTheme } from "../../state/SettingsContext";
+import { Spacing } from "../../constants/theme";
 import planAPI from "../../API/planAPI";
 import exercisesAPI from "../../API/exercisesAPI";
 
@@ -32,6 +34,7 @@ const PlanPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showPlanOptions, setShowPlanOptions] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fetchPlanData = useCallback(async (showLoading = true) => {
     try {
@@ -124,11 +127,18 @@ const PlanPage = () => {
     try {
       await planAPI.deletePlan(activePlan.plan_id);
       setShowPlanOptions(false);
+      setShowDeleteConfirm(false);
       fetchPlanData(false);
     } catch (error) {
       console.error("Failed to delete plan:", error);
+      setShowDeleteConfirm(false);
     }
   }, [activePlan, fetchPlanData]);
+
+  const handleDeletePlanPress = useCallback(() => {
+    setShowPlanOptions(false);
+    setShowDeleteConfirm(true);
+  }, []);
 
   const handleDayPress = useCallback(
     (date, routine) => {
@@ -173,7 +183,7 @@ const PlanPage = () => {
       {
         title: "Delete Plan",
         icon: "trash-outline",
-        onPress: handleDeletePlan,
+        onPress: handleDeletePlanPress,
         destructive: true,
       },
     ];
@@ -189,48 +199,99 @@ const PlanPage = () => {
     );
   };
 
-  const renderTemplateItem = (template) => (
-    <TouchableOpacity
-      key={template.template_id}
-      style={styles.templateContainer}
-      activeOpacity={0.7}
-      onPress={() =>
-        navigation.navigate("RoutineDetail", {
-          template_id: template.template_id,
-        })
-      }
-    >
-      {/* Routine Header */}
-      <View style={styles.routineHeader}>
-        <Text style={styles.routineTitle} numberOfLines={1}>
-          {template.name}
-        </Text>
-      </View>
+  const renderTemplateItem = (template) => {
+    const totalSets =
+      template.exercises?.reduce((total, ex) => total + (ex.sets || 1), 0) || 0;
+    const totalExercises = template.exercises?.length || 0;
 
-      {/* Exercise List - Compact */}
-      <View style={styles.exerciseList}>
-        {template.exercises?.slice(0, 4).map((ex, index) => (
-          <View key={index} style={styles.exerciseRow}>
-            <Text style={styles.exerciseNumber}>{index + 1}</Text>
-            <Text style={styles.exerciseName} numberOfLines={1}>
-              {ex.name}
-            </Text>
-            <Text style={styles.exerciseSets}>{ex.sets || 0}</Text>
-          </View>
-        ))}
-        {template.exercises?.length > 4 && (
-          <Text style={styles.moreExercisesText}>
-            +{template.exercises.length - 4} more
+    return (
+      <TouchableOpacity
+        key={template.template_id}
+        style={styles.templateContainer}
+        activeOpacity={0.7}
+        onPress={() =>
+          navigation.navigate("RoutineDetail", {
+            template_id: template.template_id,
+          })
+        }
+      >
+        {/* Routine Header */}
+        <View style={styles.routineHeader}>
+          <Text style={styles.routineTitle} numberOfLines={1}>
+            {template.name}
           </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+          <View style={styles.statsRow}>
+            <View style={styles.statItemWithIcon}>
+              <View style={styles.statIconContainer}>
+                <Ionicons name="barbell" size={20} color={colors.textPrimary} />
+              </View>
+              <Text style={styles.statText}>
+                {totalExercises}{" "}
+                {totalExercises === 1 ? "exercise" : "exercises"}
+              </Text>
+            </View>
+            <View style={styles.statItemWithIcon}>
+              <View style={styles.statIconContainer}>
+                <Ionicons
+                  name="list-outline"
+                  size={20}
+                  color={colors.textPrimary}
+                />
+              </View>
+              <Text style={styles.statText}>{totalSets} sets</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Exercise List - Compact */}
+        <View style={styles.exerciseListContainer}>
+          <View style={styles.setsHeader}>
+            <Text style={[styles.setsHeaderText, styles.setHeaderColumn]}>
+              #
+            </Text>
+            <Text
+              style={[
+                styles.setsHeaderText,
+                { flex: 1, marginLeft: Spacing.m },
+              ]}
+            >
+              EXERCISE
+            </Text>
+            <Text style={[styles.setsHeaderText, styles.bestSetColumn]}>
+              SETS
+            </Text>
+          </View>
+          {template.exercises?.slice(0, 4).map((ex, index) => (
+            <View
+              key={index}
+              style={[
+                styles.exerciseRow,
+                index % 2 === 0
+                  ? styles.exerciseRowEven
+                  : styles.exerciseRowOdd,
+              ]}
+            >
+              <Text style={styles.exerciseNumber}>{index + 1}</Text>
+              <Text style={styles.exerciseName} numberOfLines={1}>
+                {ex.name}
+              </Text>
+              <Text style={styles.exerciseSets}>{ex.sets || 0}</Text>
+            </View>
+          ))}
+          {template.exercises?.length > 4 && (
+            <Text style={styles.moreExercisesText}>
+              +{template.exercises.length - 4} more
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderTemplates = () => {
     if (templates.length === 0) {
       return (
-        <View style={styles.templateContainer}>
+        <View style={styles.emptyStateContainer}>
           <Text style={styles.emptyStateText}>
             No routines created yet. Create a new routine to get started.
           </Text>
@@ -282,7 +343,6 @@ const PlanPage = () => {
       >
         {/* Scrollable Calendar */}
         <View style={styles.calendarSection}>
-          <Text style={styles.calendarTitle}>Schedule</Text>
           <ScrollableCalendar
             plan={activePlan}
             startDate={activePlan.start_date}
@@ -294,15 +354,19 @@ const PlanPage = () => {
 
         {/* Routines Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Routines</Text>
+          <View style={{ paddingHorizontal: Spacing.m }}>
+            <Text style={styles.sectionTitle}>Routines</Text>
+          </View>
 
-          <TouchableOpacity
-            style={styles.newRoutineButton}
-            onPress={handleNewRoutine}
-          >
-            <Ionicons name="add" size={20} color={colors.textWhite} />
-            <Text style={styles.newRoutineText}>New Routine</Text>
-          </TouchableOpacity>
+          <View style={{ paddingHorizontal: Spacing.m }}>
+            <TouchableOpacity
+              style={styles.newRoutineButton}
+              onPress={handleNewRoutine}
+            >
+              <Ionicons name="add" size={20} color={colors.textWhite} />
+              <Text style={styles.newRoutineText}>New Routine</Text>
+            </TouchableOpacity>
+          </View>
 
           {renderTemplates()}
         </View>
@@ -310,13 +374,22 @@ const PlanPage = () => {
         {/* Volume Stats */}
         {volumeData && Object.keys(volumeData).length > 0 && (
           <View style={styles.volumeSection}>
-            <Text style={styles.sectionTitle}>Weekly Volume</Text>
+            <View style={{ paddingHorizontal: Spacing.m }}>
+              <Text style={styles.sectionTitle}>Weekly Volume</Text>
+            </View>
             <VolumeStats volumeData={volumeData} />
           </View>
         )}
       </ScrollView>
 
       {renderPlanOptionsModal()}
+
+      <DeleteConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeletePlan}
+        title={`Delete "${activePlan?.name || "Plan"}"?`}
+      />
     </SafeAreaView>
   );
 };

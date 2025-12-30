@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Platform,
   Modal,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -20,6 +21,7 @@ import { SwipeListView } from "react-native-swipe-list-view";
 import { getColors } from "../../constants/colors";
 import { createStyles } from "../../styles/planSetup.styles";
 import { useTheme } from "../../state/SettingsContext";
+import { Spacing } from "../../constants/theme";
 import planAPI from "../../API/planAPI";
 
 const PlanSetupPage = () => {
@@ -56,6 +58,10 @@ const PlanSetupPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleAddRoutine = useCallback(() => {
+    navigation.navigate("RoutineCreate");
+  }, [navigation]);
 
   const loadData = async () => {
     try {
@@ -274,37 +280,32 @@ const PlanSetupPage = () => {
   };
 
   const renderDayItem = ({ item, index }) => (
-    <View style={styles.dayCard}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.dayCard,
+        pressed && styles.dayCardPressed,
+      ]}
+      onPress={() => handleSelectTemplate(index)}
+    >
       <View style={styles.dayCardContent}>
         <View style={styles.dayCardInfo}>
           <Text style={styles.dayCardLabel}>Day {index + 1}</Text>
-          <TouchableOpacity
-            onPress={() => handleSelectTemplate(index)}
-            activeOpacity={0.7}
-            style={{ flex: 1 }}
+          <Text
+            style={[
+              styles.dayCardTemplate,
+              item.template_id && styles.dayCardTemplateSelected,
+            ]}
           >
-            <Text
-              style={[
-                styles.dayCardTemplate,
-                item.template_id && styles.dayCardTemplateSelected,
-              ]}
-            >
-              {item.template_name || "Rest"}
-            </Text>
-          </TouchableOpacity>
+            {item.template_name || "Rest"}
+          </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => handleSelectTemplate(index)}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={item.template_id ? "barbell" : "moon-outline"}
-            size={24}
-            color={item.template_id ? colors.primaryBlue : colors.textSecondary}
-          />
-        </TouchableOpacity>
+        <Ionicons
+          name={item.template_id ? "barbell" : "moon-outline"}
+          size={24}
+          color={item.template_id ? colors.primaryBlue : colors.textSecondary}
+        />
       </View>
-    </View>
+    </Pressable>
   );
 
   const renderHiddenItem = ({ item, index }) => (
@@ -338,20 +339,18 @@ const PlanSetupPage = () => {
         scrollEventThrottle={16}
       >
         {/* Plan Name */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Plan Name</Text>
+        <View>
           <TextInput
             style={styles.nameInput}
             value={planName}
             onChangeText={setPlanName}
-            placeholder="Enter plan name"
+            placeholder="Plan Name"
             placeholderTextColor={colors.textSecondary}
           />
         </View>
 
         {/* Start Date */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Start Date</Text>
           <TouchableOpacity
             style={styles.dateCard}
             onPress={() => setShowDatePicker(true)}
@@ -372,16 +371,27 @@ const PlanSetupPage = () => {
 
         {/* Pattern Configuration */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Split Length</Text>
+          <View style={{ paddingHorizontal: Spacing.m }}>
+            <TouchableOpacity
+              style={styles.addRoutineButton}
+              onPress={handleAddRoutine}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={20} color={colors.textPrimary} />
+              <Text style={styles.addRoutineText}>New Routine</Text>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity
-            style={styles.addDayButton}
-            onPress={handleAddDay}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="add" size={20} color={colors.textWhite} />
-            <Text style={styles.addDayText}>Add Day</Text>
-          </TouchableOpacity>
+          <View style={{ paddingHorizontal: Spacing.m, marginTop: Spacing.l }}>
+            <TouchableOpacity
+              style={styles.addDayButton}
+              onPress={handleAddDay}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={20} color={colors.textWhite} />
+              <Text style={styles.addDayText}>Add Day</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.daysListContainer} pointerEvents="box-none">
             <SwipeListView

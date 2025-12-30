@@ -19,7 +19,6 @@ export const createStyles = (isDark = true) => {
 
     content: {
       flex: 1,
-      paddingHorizontal: Spacing.m,
       paddingBottom: Spacing.xl,
     },
 
@@ -45,7 +44,7 @@ export const createStyles = (isDark = true) => {
     calendarSection: {
       marginTop: Spacing.m,
       backgroundColor: "transparent",
-      paddingHorizontal: 0,
+      paddingHorizontal: Spacing.m,
       paddingTop: Spacing.m,
       paddingBottom: Spacing.m,
     },
@@ -86,18 +85,13 @@ export const createStyles = (isDark = true) => {
       color: colors.textWhite,
       fontSize: FontSize.medium,
       fontWeight: FontWeight.semiBold,
+      textAlign: "center",
     },
 
-    // Template Cards - Minimal iOS-like design
+    // Template Container - Flat design matching workout history/routine detail
     templateContainer: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      paddingVertical: Spacing.s,
-      paddingHorizontal: Spacing.m,
-      marginBottom: Spacing.s,
-      ...Shadow.small,
-      borderWidth: 1,
-      borderColor: colors.borderColor,
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.m,
     },
 
     templateDragging: {
@@ -126,16 +120,43 @@ export const createStyles = (isDark = true) => {
     },
 
     routineHeader: {
-      marginBottom: Spacing.xs,
-      paddingBottom: Spacing.xs,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor + "30",
+      paddingBottom: Spacing.s,
     },
 
     routineTitle: {
-      color: colors.primaryBlue,
-      fontSize: FontSize.medium,
+      fontSize: FontSize.large,
       fontWeight: FontWeight.semiBold,
+      color: colors.textPrimary,
+      marginBottom: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+    },
+
+    statsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: Spacing.m,
+      marginTop: Spacing.s,
+    },
+
+    statItemWithIcon: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginRight: Spacing.xl,
+    },
+
+    statIconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: BorderRadius.round,
+      backgroundColor: colors.backgroundSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: Spacing.s,
+    },
+
+    statText: {
+      fontSize: FontSize.base,
+      color: colors.textPrimary,
     },
 
     routineNameSpacer: {
@@ -147,14 +168,40 @@ export const createStyles = (isDark = true) => {
     },
 
     exerciseList: {
-      paddingTop: Spacing.xs,
+      marginTop: Spacing.s,
+    },
+
+    setsHeader: {
+      flexDirection: "row",
+      paddingHorizontal: Spacing.m,
+      paddingBottom: Spacing.xs,
+      marginBottom: Spacing.xs,
+    },
+
+    setsHeaderText: {
+      fontSize: FontSize.small,
+      color: colors.textSecondary,
+      fontWeight: FontWeight.medium,
+    },
+
+    setHeaderColumn: {
+      width: 50,
+      textAlign: "center",
     },
 
     exerciseRow: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: Spacing.xxs,
-      paddingHorizontal: 0,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+    },
+
+    exerciseRowEven: {
+      backgroundColor: colors.backgroundPrimary,
+    },
+
+    exerciseRowOdd: {
+      backgroundColor: colors.backgroundCard,
     },
 
     exerciseItem: {
@@ -175,35 +222,45 @@ export const createStyles = (isDark = true) => {
     },
 
     exerciseNumber: {
-      color: colors.textSecondary,
+      width: 50,
       fontSize: FontSize.base,
+      color: colors.textSecondary,
       fontWeight: FontWeight.medium,
-      width: 20,
-      textAlign: "left",
-      marginRight: Spacing.xs,
+      textAlign: "center",
     },
 
     exerciseName: {
-      color: colors.textPrimary,
-      fontSize: FontSize.base,
       flex: 1,
-      marginRight: Spacing.xs,
+      fontSize: FontSize.base,
+      color: colors.textPrimary,
+      fontWeight: FontWeight.medium,
+      marginLeft: Spacing.m,
     },
 
     exerciseSets: {
-      color: colors.textSecondary,
       fontSize: FontSize.base,
+      color: colors.textSecondary,
       fontWeight: FontWeight.medium,
-      minWidth: 24,
-      textAlign: "right",
+      width: 50,
+      textAlign: "center",
+    },
+
+    bestSetColumn: {
+      width: 50,
+      textAlign: "center",
     },
 
     moreExercisesText: {
       color: colors.textSecondary,
       fontSize: FontSize.small,
       fontStyle: "italic",
-      marginTop: Spacing.xxs,
-      paddingLeft: 28,
+      marginTop: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      paddingVertical: Spacing.xs,
+    },
+
+    exerciseListContainer: {
+      marginTop: Spacing.s,
     },
 
     templateExercises: {
@@ -225,6 +282,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textWhite,
       fontSize: FontSize.small,
       fontWeight: FontWeight.semiBold,
+      textAlign: "center",
     },
 
     // New Routine Button
@@ -324,6 +382,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
       fontSize: FontSize.medium,
       fontWeight: FontWeight.semiBold,
+      textAlign: "center",
     },
   });
 };

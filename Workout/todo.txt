@@ -2,12 +2,6 @@ Active workout page/components:
 go to exercise's page when pressed on exercise name on active exercise card
 positive feedback on a new best set for the exercise
 
-Plan Page:
-Make the routine cards scrollable
-the ui needs to match that of the workout history page Better
-add a create routine option on the edit/create plan page below everything currently. 
-On the edit/ create page change the ui to match the rest of the app better. the plan name field should be altered to match the app. 
-add confirm modal for deleting a plan
 
 Exercises Pages:
 Make the muscle group and machine/category filterable. 
@@ -27,6 +21,7 @@ Make modals consistent button sizing and spacing
 
 Buttons:
 Get rid of icons in most buttons like workout settings and discard workout icons
+should buttons be centered or left aligned and should they have icons?
 
 All:
 add haptic feedback to more button presses.

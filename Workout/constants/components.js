@@ -38,6 +38,7 @@ export const createComponentStyles = (isDark = true) => {
       fontSize: FontSize.base,
       fontWeight: '600',
       color: colors.textWhite,
+      textAlign: 'center',
     },
   });
 };

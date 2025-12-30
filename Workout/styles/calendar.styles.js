@@ -211,6 +211,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textWhite,
       fontSize: FontSize.base,
       fontWeight: FontWeight.semiBold,
+      textAlign: "center",
     },
   });
 };

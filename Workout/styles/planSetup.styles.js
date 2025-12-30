@@ -19,7 +19,6 @@ export const createStyles = (isDark = true) => {
 
     content: {
       flex: 1,
-      paddingHorizontal: Spacing.m,
       paddingBottom: Spacing.xl,
     },
 
@@ -35,15 +34,18 @@ export const createStyles = (isDark = true) => {
       marginBottom: Spacing.m,
     },
 
-    // Name input
+    // Name input - matching routine name field
     nameInput: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.md,
-      padding: Spacing.m,
       color: colors.textPrimary,
-      fontSize: FontSize.medium,
+      fontSize: FontSize.large,
       fontWeight: FontWeight.medium,
-      ...Shadow.small,
+      paddingHorizontal: Spacing.m,
+      paddingVertical: Spacing.xs,
+      paddingTop: Spacing.m,
+      marginBottom: 0,
+      marginHorizontal: Spacing.m,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
     },
 
     // Date card
@@ -54,6 +56,7 @@ export const createStyles = (isDark = true) => {
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.m,
+      marginHorizontal: Spacing.m,
       ...Shadow.small,
     },
 
@@ -68,7 +71,7 @@ export const createStyles = (isDark = true) => {
     addDayButton: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       backgroundColor: colors.primaryBlue,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.l,
@@ -84,19 +87,44 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.semiBold,
     },
 
-    // Days list container
-    daysListContainer: {
-      overflow: "hidden",
+    // Add routine button
+    addRoutineButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-start",
+      backgroundColor: colors.backgroundCard,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.l,
+      borderRadius: BorderRadius.md,
+      ...Shadow.small,
     },
 
-    // Day cards
+    addRoutineText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.medium,
+      marginLeft: Spacing.s,
+      fontWeight: FontWeight.semiBold,
+    },
+
+    // Days list container
+    daysListContainer: {
+      overflow: "visible",
+      marginTop: Spacing.l,
+      paddingHorizontal: Spacing.m,
+    },
+
+    // Day cards - Card layout
     dayCard: {
       backgroundColor: colors.backgroundCard,
       borderRadius: BorderRadius.md,
       padding: Spacing.m,
       marginBottom: Spacing.m,
-      ...Shadow.small,
       overflow: "visible",
+      ...Shadow.small,
+    },
+
+    dayCardPressed: {
+      backgroundColor: colors.backgroundSecondary,
     },
 
     dayCardContent: {
@@ -111,14 +139,14 @@ export const createStyles = (isDark = true) => {
 
     dayCardLabel: {
       color: colors.textPrimary,
-      fontSize: FontSize.large,
-      fontWeight: FontWeight.semiBold,
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.medium,
       marginBottom: Spacing.xs,
     },
 
     dayCardTemplate: {
       color: colors.textSecondary,
-      fontSize: FontSize.medium,
+      fontSize: FontSize.base,
     },
 
     dayCardTemplateSelected: {
