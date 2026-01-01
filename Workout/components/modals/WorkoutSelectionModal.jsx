@@ -22,6 +22,7 @@ import {
 } from "../../constants/theme";
 import { format, parseISO } from "date-fns";
 import { useWeight } from "../../utils/useWeight";
+import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 
 const { height: screenHeight } = Dimensions.get("window");
 
@@ -241,7 +242,10 @@ const WorkoutSelectionModal = ({
       onRequestClose={handleClose}
     >
       <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-        <TouchableWithoutFeedback onPress={handleClose}>
+        <TouchableWithoutFeedback onPress={() => {
+          hapticLight();
+          handleClose();
+        }}>
           <View style={styles.backdropTouchable} />
         </TouchableWithoutFeedback>
 

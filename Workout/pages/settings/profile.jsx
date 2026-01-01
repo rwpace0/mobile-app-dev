@@ -19,6 +19,7 @@ import { profileAPI } from "../../API/profileAPI";
 import { useFocusEffect } from "@react-navigation/native";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
+import { hapticLight } from "../../utils/hapticFeedback";
 
 const Profile = ({ navigation }) => {
   const [workoutCount, setWorkoutCount] = useState(0);
@@ -176,7 +177,10 @@ const Profile = ({ navigation }) => {
       <View style={styles.avatarContainer}>
         <TouchableOpacity
           style={styles.avatar}
-          onPress={() => navigation.navigate("EditProfile")}
+          onPress={() => {
+            hapticLight();
+            navigation.navigate("EditProfile");
+          }}
         >
           {profileAvatar ? (
             <Image
@@ -276,7 +280,10 @@ const Profile = ({ navigation }) => {
         leftComponent={{
           type: "button",
           text: "Edit",
-          onPress: () => navigation.navigate("EditProfile"),
+          onPress: () => {
+            hapticLight();
+            navigation.navigate("EditProfile");
+          },
         }}
         rightComponent={{
           type: "icon",

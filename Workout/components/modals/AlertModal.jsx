@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 
 const AlertModal = ({
   visible,
@@ -19,6 +20,7 @@ const AlertModal = ({
   const styles = createStyles(isDark);
 
   const handleConfirm = () => {
+    hapticMedium();
     if (onConfirm) {
       onConfirm();
     }
@@ -26,6 +28,7 @@ const AlertModal = ({
   };
 
   const handleCancel = () => {
+    hapticLight();
     if (onCancel) {
       onCancel();
     }

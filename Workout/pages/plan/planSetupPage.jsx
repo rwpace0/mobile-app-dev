@@ -23,6 +23,7 @@ import { createStyles } from "../../styles/planSetup.styles";
 import { useTheme } from "../../state/SettingsContext";
 import { Spacing } from "../../constants/theme";
 import planAPI from "../../API/planAPI";
+import { hapticLight, hapticMedium, hapticSelection, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
 
 const PlanSetupPage = () => {
   const navigation = useNavigation();
@@ -60,6 +61,7 @@ const PlanSetupPage = () => {
   }, []);
 
   const handleAddRoutine = useCallback(() => {
+    hapticMedium();
     navigation.navigate("RoutineCreate");
   }, [navigation]);
 
@@ -139,6 +141,7 @@ const PlanSetupPage = () => {
   };
 
   const handleSave = async () => {
+    hapticSuccess();
     if (!planName.trim()) {
       setAlertModal({
         visible: true,
@@ -267,6 +270,7 @@ const PlanSetupPage = () => {
   };
 
   const handleRemoveDay = (indexToRemove) => {
+    hapticWarning();
     if (schedule.length > 1) {
       const newSchedule = schedule
         .filter((_, index) => index !== indexToRemove)
@@ -312,7 +316,10 @@ const PlanSetupPage = () => {
     <View style={styles.hiddenItemContainer}>
       <TouchableOpacity
         style={styles.deleteButton}
-        onPress={() => handleRemoveDay(index)}
+        onPress={() => {
+          hapticWarning();
+          handleRemoveDay(index);
+        }}
         activeOpacity={0.8}
       >
         <Ionicons name="trash" size={24} color="#FFFFFF" />
@@ -353,7 +360,10 @@ const PlanSetupPage = () => {
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.dateCard}
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => {
+              hapticLight();
+              setShowDatePicker(true);
+            }}
           >
             <Ionicons
               name="calendar-outline"
@@ -418,13 +428,19 @@ const PlanSetupPage = () => {
           <TouchableOpacity
             style={styles.modalBackdrop}
             activeOpacity={1}
-            onPress={() => setShowDatePicker(false)}
+            onPress={() => {
+              hapticLight();
+              setShowDatePicker(false);
+            }}
           />
           <View style={styles.calendarModalContainer}>
             <View style={styles.calendarHeader}>
               <Text style={styles.calendarTitle}>Select Start Date</Text>
               <TouchableOpacity
-                onPress={() => setShowDatePicker(false)}
+                onPress={() => {
+                  hapticLight();
+                  setShowDatePicker(false);
+                }}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="close" size={26} color={colors.textSecondary} />

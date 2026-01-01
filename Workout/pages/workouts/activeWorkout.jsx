@@ -22,7 +22,7 @@ import { useActiveWorkout } from "../../state/ActiveWorkoutContext";
 import { useWeight } from "../../utils/useWeight";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
-import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
+import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
 import ActiveRestTimer from "../../components/ActiveRestTimer";
 import FinishWorkoutModal from "../../components/modals/FinishWorkoutModal";
 import templateAPI from "../../API/templateAPI";
@@ -240,6 +240,7 @@ const ActiveWorkoutPage = () => {
   };
 
   const handleDiscard = async () => {
+    hapticWarning();
     if (showDeleteConfirm) {
       try {
         // End workout in context
@@ -418,6 +419,7 @@ const ActiveWorkoutPage = () => {
   };
 
   const handleFinish = async () => {
+    hapticSuccess();
     // Check for incomplete sets first
     const incompleteSets = exercises.some((ex) => {
       const state = exerciseStates[ex.exercise_id] || { sets: [] };
@@ -586,6 +588,7 @@ const ActiveWorkoutPage = () => {
   }, [isTimerActive, remainingTime]);
 
   const handleSettings = (type) => {
+    hapticLight();
     navigation.navigate("WorkoutSettings", { type: "workouts" });
   };
 

@@ -22,6 +22,7 @@ import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/display.styles";
 import FilterModal from "../../components/modals/FilterModal";
+import { hapticLight, hapticSelection, hapticSuccess } from "../../utils/hapticFeedback";
 
 const muscleOptions = [
   "Chest",
@@ -80,7 +81,10 @@ const ExerciseItem = React.memo(
     return (
       <TouchableOpacity
         style={[styles.exerciseItem, isSelected && styles.selectedExerciseItem]}
-        onPress={() => onPress(item)}
+        onPress={() => {
+          hapticSelection();
+          onPress(item);
+        }}
       >
         <View style={styles.exerciseRow}>
           <View style={[
@@ -271,6 +275,7 @@ const AddExercisePage = ({ route }) => {
   };
 
   const handleAddSelected = () => {
+    hapticSuccess();
     if (selectedExercises.length > 0) {
       const onExercisesSelected = route?.params?.onExercisesSelected;
 
@@ -370,7 +375,10 @@ const AddExercisePage = ({ route }) => {
               styles.filterButton,
               selectedEquipment && styles.filterButtonActive,
             ]}
-            onPress={() => setShowEquipmentModal(true)}
+            onPress={() => {
+              hapticLight();
+              setShowEquipmentModal(true);
+            }}
           >
             <Text
               style={[

@@ -21,6 +21,7 @@ import { useTheme } from "../../state/SettingsContext";
 import { Spacing } from "../../constants/theme";
 import planAPI from "../../API/planAPI";
 import exercisesAPI from "../../API/exercisesAPI";
+import { hapticLight, hapticMedium, hapticSuccess } from "../../utils/hapticFeedback";
 
 const PlanPage = () => {
   const navigation = useNavigation();
@@ -142,6 +143,7 @@ const PlanPage = () => {
 
   const handleDayPress = useCallback(
     (date, routine) => {
+      hapticLight();
       if (routine && routine.template_id) {
         navigation.navigate("RoutineDetail", {
           template_id: routine.template_id,
@@ -332,7 +334,10 @@ const PlanPage = () => {
         rightComponent={{
           type: "icon",
           icon: "ellipsis-horizontal",
-          onPress: () => setShowPlanOptions(true),
+          onPress: () => {
+            hapticLight();
+            setShowPlanOptions(true);
+          },
         }}
       />
       <ScrollView

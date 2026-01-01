@@ -26,6 +26,7 @@ import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
+import { hapticLight, hapticSelection, hapticSuccess } from "../../utils/hapticFeedback";
 
 const equipmentOptions = [
   "Dumbbell",
@@ -235,7 +236,10 @@ const CreateExercise = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.closeButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            hapticLight();
+            navigation.goBack();
+          }}
         >
           <Ionicons name="arrow-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -271,7 +275,10 @@ const CreateExercise = () => {
         {/* Image Section */}
         <TouchableOpacity
           style={styles.imageSection}
-          onPress={handleImagePick}
+          onPress={() => {
+            hapticLight();
+            handleImagePick();
+          }}
           disabled={loading || uploadingMedia}
         >
           {selectedImage ? (
@@ -406,6 +413,7 @@ const CreateExercise = () => {
                         styles.dropdownItemSelected,
                     ]}
                     onPress={() => {
+                      hapticSelection();
                       setFormData((prev) => ({
                         ...prev,
                         muscle_group: option,
@@ -468,6 +476,7 @@ const CreateExercise = () => {
                         isSelected && styles.dropdownItemSelected,
                       ]}
                       onPress={() => {
+                        hapticSelection();
                         setFormData((prev) => {
                           const currentSelection = [
                             ...prev.secondary_muscle_groups,

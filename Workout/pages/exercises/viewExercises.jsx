@@ -19,6 +19,7 @@ import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import Header from "../../components/static/header";
 import FilterModal from "../../components/modals/FilterModal";
+import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 
 const muscleOptions = [
   "Chest",
@@ -297,7 +298,10 @@ const ViewExercisesPage = () => {
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => loadExercises()}
+          onPress={() => {
+            hapticLight();
+            loadExercises();
+          }}
         >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
@@ -354,7 +358,10 @@ const ViewExercisesPage = () => {
             styles.filterButton,
             selectedMuscleGroup && styles.filterButtonActive,
           ]}
-          onPress={() => setShowMuscleGroupModal(true)}
+          onPress={() => {
+            hapticLight();
+            setShowMuscleGroupModal(true);
+          }}
         >
           <Text
             style={[
@@ -373,7 +380,10 @@ const ViewExercisesPage = () => {
             styles.filterButton,
             selectedEquipment && styles.filterButtonActive,
           ]}
-          onPress={() => setShowEquipmentModal(true)}
+          onPress={() => {
+            hapticLight();
+            setShowEquipmentModal(true);
+          }}
         >
           <Text
             style={[

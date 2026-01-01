@@ -15,6 +15,7 @@ import { createBottomSheetStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { Spacing, BorderRadius, FontSize, FontWeight } from "../../constants/theme";
+import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
 
 const { height: screenHeight } = Dimensions.get("window");
 
@@ -133,6 +134,7 @@ const FilterModal = ({
   });
 
   const handleSelect = (value) => {
+    hapticSelection();
     onSelect(value);
     handleClose();
   };
@@ -185,7 +187,10 @@ const FilterModal = ({
           { opacity: backdropOpacity },
         ]}
       >
-        <TouchableWithoutFeedback onPress={handleClose}>
+        <TouchableWithoutFeedback onPress={() => {
+          hapticLight();
+          handleClose();
+        }}>
           <View style={styles.backdropTouchable} />
         </TouchableWithoutFeedback>
 

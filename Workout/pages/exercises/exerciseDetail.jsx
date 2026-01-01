@@ -26,6 +26,7 @@ import LineChart from "../../components/charts/LineChart";
 import ChartContainer from "../../components/charts/ChartContainer";
 import ChartPeriodSelector from "../../components/charts/ChartPeriodSelector";
 import { format, parseISO } from "date-fns";
+import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();
@@ -454,7 +455,10 @@ const ExerciseDetailPage = () => {
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => fetchData()}
+            onPress={() => {
+              hapticLight();
+              fetchData();
+            }}
           >
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
@@ -485,7 +489,10 @@ const ExerciseDetailPage = () => {
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => {
+              hapticSelection();
+              setActiveTab(tab);
+            }}
           >
             <Text
               style={[

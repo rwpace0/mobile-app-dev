@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { createBottomSheetStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { hapticLight } from "../../utils/hapticFeedback";
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -117,6 +118,7 @@ const BottomSheetModal = ({
         ]}
         onPress={() => {
           if (!isDisabled && action.onPress) {
+            hapticLight();
             action.onPress();
             handleClose();
           }
@@ -172,7 +174,10 @@ const BottomSheetModal = ({
           { opacity: backdropOpacity }
         ]}
       >
-        <TouchableWithoutFeedback onPress={handleClose}>
+        <TouchableWithoutFeedback onPress={() => {
+          hapticLight();
+          handleClose();
+        }}>
           <View style={styles.backdropTouchable} />
         </TouchableWithoutFeedback>
         

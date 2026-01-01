@@ -21,7 +21,7 @@ import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import Header from "../../components/static/header";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
-import { hapticLight } from "../../utils/hapticFeedback";
+import { hapticLight, hapticSuccess } from "../../utils/hapticFeedback";
 
 const EditRoutine = () => {
   const navigation = useNavigation();
@@ -168,6 +168,7 @@ const EditRoutine = () => {
 
   const handleSave = async () => {
     console.log("Save button pressed");
+    hapticSuccess();
 
     // Validate routine name
     if (!routineName.trim()) {

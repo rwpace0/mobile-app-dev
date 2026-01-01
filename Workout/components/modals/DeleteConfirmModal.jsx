@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { createStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 
 const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
   const { isDark } = useTheme();
@@ -24,6 +25,7 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
           <TouchableOpacity 
               style={styles.deleteModalConfirmButton} 
               onPress={() => {
+                hapticMedium();
                 onConfirm();
                 onClose();
               }}
@@ -32,7 +34,10 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.deleteModalCancelButton} 
-              onPress={onClose}
+              onPress={() => {
+                hapticLight();
+                onClose();
+              }}
             >
               <Text style={styles.deleteModalCancelText}>Cancel</Text>
             </TouchableOpacity>

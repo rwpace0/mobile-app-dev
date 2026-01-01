@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { createStyles } from '../../styles/header.styles';
 import { getColors } from '../../constants/colors';
 import { useTheme } from '../../state/SettingsContext';
+import { hapticLight } from '../../utils/hapticFeedback';
 
 const Header = ({ title, leftComponent, rightComponent }) => {
   const navigation = useNavigation();
@@ -39,7 +40,10 @@ const Header = ({ title, leftComponent, rightComponent }) => {
         <View style={styles.leftContainer}>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={leftComponent.onPress}
+            onPress={() => {
+              hapticLight();
+              if (leftComponent.onPress) leftComponent.onPress();
+            }}
           >
             <Ionicons
               name={leftComponent.icon}
@@ -73,7 +77,10 @@ const Header = ({ title, leftComponent, rightComponent }) => {
         <View style={styles.leftContainer}>
           <TouchableOpacity
             style={styles.textButton}
-            onPress={leftComponent.onPress}
+            onPress={() => {
+              hapticLight();
+              if (leftComponent.onPress) leftComponent.onPress();
+            }}
             disabled={leftComponent.disabled}
           >
             <Text style={[
@@ -115,7 +122,10 @@ const Header = ({ title, leftComponent, rightComponent }) => {
         <View style={styles.rightContainer}>
           <TouchableOpacity
             style={styles.textButton}
-            onPress={rightComponent.onPress}
+            onPress={() => {
+              hapticLight();
+              if (rightComponent.onPress) rightComponent.onPress();
+            }}
             disabled={rightComponent.disabled}
           >
             <Text style={[
@@ -134,7 +144,10 @@ const Header = ({ title, leftComponent, rightComponent }) => {
         <View style={styles.rightContainer}>
           <TouchableOpacity
             style={styles.textButton}
-            onPress={rightComponent.onPress}
+            onPress={() => {
+              hapticLight();
+              if (rightComponent.onPress) rightComponent.onPress();
+            }}
             disabled={rightComponent.disabled}
           >
             <Text style={[

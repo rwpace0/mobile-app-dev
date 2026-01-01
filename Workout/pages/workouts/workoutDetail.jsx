@@ -20,6 +20,7 @@ import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
 import { format, parseISO } from "date-fns";
+import { hapticLight } from "../../utils/hapticFeedback";
 
 const ExerciseImage = ({ exercise, colors, styles }) => {
   const [imageError, setImageError] = useState(false);
@@ -218,7 +219,10 @@ const WorkoutDetail = () => {
               style={styles.exerciseContainer}
             >
               <TouchableOpacity
-                onPress={() => handleExercisePress(exerciseData)}
+                onPress={() => {
+                  hapticLight();
+                  handleExercisePress(exerciseData);
+                }}
                 style={styles.exerciseTitleRow}
               >
                 <ExerciseImage

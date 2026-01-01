@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { hapticLight, hapticWarning } from "../../utils/hapticFeedback";
 
 const RoutineDeleteModal = ({
   visible,
@@ -31,6 +32,7 @@ const RoutineDeleteModal = ({
             <TouchableOpacity
               style={styles.deleteModalConfirmButton}
               onPress={() => {
+                hapticWarning();
                 onDeleteRoutine();
                 onClose();
               }}
@@ -39,7 +41,10 @@ const RoutineDeleteModal = ({
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.deleteModalCancelButton}
-              onPress={onClose}
+              onPress={() => {
+                hapticLight();
+                onClose();
+              }}
             >
               <Text style={styles.deleteModalCancelText}>Cancel</Text>
             </TouchableOpacity>

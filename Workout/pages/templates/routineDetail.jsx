@@ -24,6 +24,7 @@ import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
 import ActiveWorkoutModal from "../../components/modals/ActiveWorkoutModal";
 import { format, parseISO } from "date-fns";
+import { hapticLight, hapticSuccess } from "../../utils/hapticFeedback";
 
 const ExerciseImage = ({ exercise, colors, styles }) => {
   const [imageError, setImageError] = useState(false);
@@ -279,7 +280,10 @@ const RoutineDetail = () => {
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => fetchRoutineDetails()}
+            onPress={() => {
+              hapticLight();
+              fetchRoutineDetails();
+            }}
           >
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
@@ -386,7 +390,10 @@ const RoutineDetail = () => {
               style={styles.exerciseContainer}
             >
               <TouchableOpacity
-                onPress={() => handleExercisePress(exerciseData)}
+                onPress={() => {
+                  hapticLight();
+                  handleExercisePress(exerciseData);
+                }}
                 style={styles.exerciseTitleRow}
               >
                 <ExerciseImage

@@ -17,6 +17,7 @@ import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { useWeight } from "../../utils/useWeight";
 import { format, parseISO } from "date-fns";
+import { hapticLight } from "../../utils/hapticFeedback";
 
 const formatDate = (isoString) => {
   try {
@@ -270,6 +271,7 @@ const WorkoutHistoryPage = () => {
   }, [loadingMore]);
 
   const handleCalendarPress = useCallback(() => {
+    hapticLight();
     navigation.navigate("Calendar");
   }, [navigation]);
 
@@ -324,7 +326,10 @@ const WorkoutHistoryPage = () => {
           <View style={styles.loadingContainer}>
             <Text style={styles.errorText}>{error || "No workouts found"}</Text>
             {error && (
-              <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+              <TouchableOpacity style={styles.retryButton} onPress={() => {
+                hapticLight();
+                onRefresh();
+              }}>
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             )}

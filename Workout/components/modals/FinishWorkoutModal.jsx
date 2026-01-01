@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { hapticLight, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
 
 const FinishWorkoutModal = ({
   visible,
@@ -44,6 +45,7 @@ const FinishWorkoutModal = ({
               <TouchableOpacity
                 style={styles.primaryModalButton}
                 onPress={() => {
+                  hapticSuccess();
                   if (onCompleteSets) onCompleteSets();
                   onClose();
                 }}
@@ -55,6 +57,7 @@ const FinishWorkoutModal = ({
               <TouchableOpacity
                 style={styles.deleteModalConfirmButton}
                 onPress={() => {
+                  hapticWarning();
                   if (onDiscardSets) onDiscardSets();
                   onClose();
                 }}
@@ -65,7 +68,10 @@ const FinishWorkoutModal = ({
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.deleteModalCancelButton}
-                onPress={onClose}
+                onPress={() => {
+                  hapticLight();
+                  onClose();
+                }}
               >
                 <Text style={styles.deleteModalCancelText}>Cancel</Text>
               </TouchableOpacity>
@@ -122,6 +128,7 @@ const FinishWorkoutModal = ({
               <TouchableOpacity
                 style={styles.primaryModalButton}
                 onPress={() => {
+                  hapticSuccess();
                   if (onUpdateRoutine) onUpdateRoutine();
                   onClose();
                 }}
@@ -133,6 +140,7 @@ const FinishWorkoutModal = ({
               <TouchableOpacity
                 style={styles.deleteModalConfirmButton}
                 onPress={() => {
+                  hapticLight();
                   if (onKeepRoutineSame) onKeepRoutineSame();
                   onClose();
                 }}
@@ -143,7 +151,10 @@ const FinishWorkoutModal = ({
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.deleteModalCancelButton}
-                onPress={onClose}
+                onPress={() => {
+                  hapticLight();
+                  onClose();
+                }}
               >
                 <Text style={styles.deleteModalCancelText}>Cancel</Text>
               </TouchableOpacity>

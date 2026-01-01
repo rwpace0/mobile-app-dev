@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { hapticLight, hapticMedium, hapticSuccess } from "../../utils/hapticFeedback";
 
 const ActiveWorkoutModal = ({
   visible,
@@ -15,6 +16,7 @@ const ActiveWorkoutModal = ({
   const styles = createStyles(isDark);
 
   const handleResumeWorkout = () => {
+    hapticSuccess();
     if (onResumeWorkout) {
       onResumeWorkout();
     }
@@ -22,6 +24,7 @@ const ActiveWorkoutModal = ({
   };
 
   const handleStartNew = () => {
+    hapticMedium();
     if (onStartNew) {
       onStartNew();
     }
@@ -29,6 +32,7 @@ const ActiveWorkoutModal = ({
   };
 
   const handleCancel = () => {
+    hapticLight();
     onClose();
   };
 

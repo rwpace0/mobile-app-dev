@@ -7,6 +7,7 @@ import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import AlertModal from "../components/modals/AlertModal";
 import { useAlertModal } from "../utils/useAlertModal";
+import { hapticLight, hapticMedium } from "../utils/hapticFeedback";
 
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -163,7 +164,10 @@ const LoginPage = ({ navigation }) => {
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         activeOpacity={0.8}
-        onPress={handleLogin}
+        onPress={() => {
+          hapticMedium();
+          handleLogin();
+        }}
         disabled={loading}
       >
         <Text style={styles.buttonText}>
@@ -180,7 +184,10 @@ const LoginPage = ({ navigation }) => {
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate("ResetPassword")}
+        onPress={() => {
+          hapticLight();
+          navigation.navigate("ResetPassword");
+        }}
         disabled={loading}
       >
         <Text style={styles.textFooter}>Forgot your password?</Text>

@@ -20,6 +20,7 @@ import { useWeight } from "../../utils/useWeight";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
+import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
 
 const EditWorkoutPage = () => {
   const navigation = useNavigation();
@@ -152,6 +153,7 @@ const EditWorkoutPage = () => {
   };
 
   const handleDiscard = () => {
+    hapticWarning();
     if (showDeleteConfirm) {
       // End workout in context
       navigation.goBack();
@@ -168,6 +170,7 @@ const EditWorkoutPage = () => {
   };
 
   const handleSave = async () => {
+    hapticSuccess();
     try {
       if (!workoutName.trim()) {
         showError("Error", "Please enter a workout name");

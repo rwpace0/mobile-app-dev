@@ -24,6 +24,7 @@ import { useActiveWorkout } from "../state/ActiveWorkoutContext";
 import BottomSheetModal from "../components/modals/bottomModal";
 import ActiveWorkoutModal from "../components/modals/ActiveWorkoutModal";
 import RoutineDeleteModal from "../components/modals/RoutineDeleteModal";
+import { hapticLight, hapticMedium, hapticSuccess } from "../utils/hapticFeedback";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
@@ -428,7 +429,10 @@ const WorkoutStartPage = () => {
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.sectionHeader}
-            onPress={() => setIsTodaysWorkoutExpanded(!isTodaysWorkoutExpanded)}
+            onPress={() => {
+              hapticLight();
+              setIsTodaysWorkoutExpanded(!isTodaysWorkoutExpanded);
+            }}
             activeOpacity={0.7}
           >
             <Text style={styles.sectionTitle}>Today's Workout</Text>
@@ -459,7 +463,10 @@ const WorkoutStartPage = () => {
       <View style={styles.section}>
         <TouchableOpacity
           style={styles.sectionHeader}
-          onPress={() => setIsTodaysWorkoutExpanded(!isTodaysWorkoutExpanded)}
+          onPress={() => {
+            hapticLight();
+            setIsTodaysWorkoutExpanded(!isTodaysWorkoutExpanded);
+          }}
           activeOpacity={0.7}
         >
           <Text style={styles.sectionTitle}>Today's Workout</Text>
@@ -518,7 +525,10 @@ const WorkoutStartPage = () => {
       <View style={styles.section}>
         <TouchableOpacity
           style={styles.sectionHeader}
-          onPress={() => setIsWeeklyCalendarExpanded(!isWeeklyCalendarExpanded)}
+          onPress={() => {
+            hapticLight();
+            setIsWeeklyCalendarExpanded(!isWeeklyCalendarExpanded);
+          }}
           activeOpacity={0.7}
         >
           <Text style={styles.sectionTitle}>This Week</Text>
@@ -560,7 +570,10 @@ const WorkoutStartPage = () => {
           >
             <View style={itemStyles.templateHeader}>
               <Text style={itemStyles.templateName}>{template.name}</Text>
-              <TouchableOpacity onPress={() => onOptions(template)}>
+              <TouchableOpacity onPress={() => {
+                hapticLight();
+                onOptions(template);
+              }}>
                 <Ionicons
                   name="ellipsis-horizontal"
                   size={24}
@@ -626,7 +639,10 @@ const WorkoutStartPage = () => {
           <Text style={styles.emptyRoutinesText}>"Error loading routines"</Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => fetchTemplates()}
+            onPress={() => {
+              hapticLight();
+              fetchTemplates();
+            }}
           >
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
@@ -694,7 +710,10 @@ const WorkoutStartPage = () => {
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.sectionHeader}
-            onPress={() => setIsQuickStartExpanded(!isQuickStartExpanded)}
+            onPress={() => {
+              hapticLight();
+              setIsQuickStartExpanded(!isQuickStartExpanded);
+            }}
             activeOpacity={0.7}
           >
             <Text style={styles.sectionTitle}>Quick Start</Text>
@@ -720,7 +739,10 @@ const WorkoutStartPage = () => {
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.sectionHeader}
-            onPress={() => setIsRoutinesExpanded(!isRoutinesExpanded)}
+            onPress={() => {
+              hapticLight();
+              setIsRoutinesExpanded(!isRoutinesExpanded);
+            }}
             activeOpacity={0.7}
           >
             <Text style={styles.sectionTitle}>Routines</Text>
@@ -738,7 +760,10 @@ const WorkoutStartPage = () => {
               <View style={styles.routineActionButtons}>
                 <TouchableOpacity
                   style={styles.newRoutineButton}
-                  onPress={handleNewRoutine}
+                  onPress={() => {
+                    hapticMedium();
+                    handleNewRoutine();
+                  }}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="add" size={20} color={colors.textPrimary} />

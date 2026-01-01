@@ -20,6 +20,7 @@ import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
 import { useSettings, useTheme } from "../../state/SettingsContext";
 import BottomSheetModal from "../../components/modals/bottomModal";
+import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
 
 const SettingToggle = ({
   title,
@@ -74,7 +75,10 @@ const SettingDropdown = ({
     <>
       <TouchableOpacity
         style={styles.settingsItem}
-        onPress={() => setModalVisible(true)}
+        onPress={() => {
+          hapticLight();
+          setModalVisible(true);
+        }}
       >
         <View style={styles.settingsItemLeft}>
           <IconComponent
@@ -139,7 +143,10 @@ const SettingDropdown = ({
             })}
             <TouchableOpacity
               style={styles.modalCloseButton}
-              onPress={() => setModalVisible(false)}
+              onPress={() => {
+                hapticLight();
+                setModalVisible(false);
+              }}
             >
               <Text style={styles.modalCloseText}>Cancel</Text>
             </TouchableOpacity>
@@ -198,7 +205,10 @@ const ThemeSelector = ({ title, value, onSelect, icon }) => {
     <>
       <TouchableOpacity
         style={styles.settingsItem}
-        onPress={() => setShowThemeModal(true)}
+        onPress={() => {
+          hapticLight();
+          setShowThemeModal(true);
+        }}
       >
         <View style={styles.settingsItemLeft}>
           <Ionicons

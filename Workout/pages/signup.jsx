@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import debounce from "lodash/debounce";
 import AlertModal from "../components/modals/AlertModal";
 import { useAlertModal } from "../utils/useAlertModal";
+import { hapticLight, hapticMedium } from "../utils/hapticFeedback";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -248,7 +249,10 @@ const SignUpPage = ({ navigation }) => {
           />
           <TouchableOpacity
             style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
+            onPress={() => {
+              hapticLight();
+              setShowPassword(!showPassword);
+            }}
             disabled={loading}
           >
             <Ionicons
@@ -296,7 +300,10 @@ const SignUpPage = ({ navigation }) => {
           (!canSubmit || loading) && styles.buttonDisabled,
         ]}
         activeOpacity={0.8}
-        onPress={handleSignup}
+        onPress={() => {
+          hapticMedium();
+          handleSignup();
+        }}
         disabled={!canSubmit || loading}
       >
         <Text style={styles.buttonText}>
