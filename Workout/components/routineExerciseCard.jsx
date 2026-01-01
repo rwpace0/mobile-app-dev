@@ -14,6 +14,8 @@ import { createStyles } from "../styles/activeExercise.styles";
 import { useTheme, useSettings } from "../state/SettingsContext";
 import RestTimerModal from "./modals/RestTimerModal";
 import DeleteConfirmModal from "./modals/DeleteConfirmModal";
+import RepModeModal from "./modals/RepModeModal";
+import RirModeModal from "./modals/RirModeModal";
 import exercisesAPI from "../API/exercisesAPI";
 import { useWeight } from "../utils/useWeight";
 import {
@@ -30,7 +32,7 @@ const RoutineExerciseComponent = ({
   isActive,
 }) => {
   const { isDark } = useTheme();
-  const { showPreviousPerformance, showRir } = useSettings();
+  const { showRir } = useSettings();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
   const weight = useWeight();
@@ -45,6 +47,10 @@ const RoutineExerciseComponent = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const [imageError, setImageError] = useState(false);
+  const [repMode, setRepMode] = useState("single"); // 'single' or 'range'
+  const [rirMode, setRirMode] = useState("single"); // 'single' or 'range'
+  const [showRepModeModal, setShowRepModeModal] = useState(false);
+  const [showRirModeModal, setShowRirModeModal] = useState(false);
 
   // Animation state
   const [contentHeight, setContentHeight] = useState(0);
@@ -62,7 +68,9 @@ const RoutineExerciseComponent = ({
           id: (index + 1).toString(),
           weight: "",
           reps: "",
+          repRange: { min: "", max: "" },
           rir: "",
+          rirRange: { min: "", max: "" },
           total: "",
           completed: false,
         }));
@@ -139,61 +147,96 @@ const RoutineExerciseComponent = ({
     const sanitized = value.replace(/[^0-9.]/g, "");
     // Ensure only one decimal point
     const parts = sanitized.split(".");
-    const filtered = parts.length > 2 
-      ? parts[0] + "." + parts.slice(1).join("")
-      : sanitized;
+    const filtered =
+      parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : sanitized;
     // Limit to 7 characters
     const limited = filtered.length > 7 ? filtered.slice(0, 7) : filtered;
-    
+
     setSets((prev) =>
       prev.map((set) => {
         if (set.id === id) {
           const weight = parseFloat(limited) || 0;
-          const reps = parseFloat(set.reps) || 0;
-          return {
-            ...set,
-            weight: limited,
-            total: Math.round(weight * reps).toString(),
-          };
+          if (repMode === "range") {
+            const reps = parseFloat(set.repRange?.min) || 0;
+            return {
+              ...set,
+              weight: limited,
+              total: Math.round(weight * reps).toString(),
+            };
+          } else {
+            const reps = parseFloat(set.reps) || 0;
+            return {
+              ...set,
+              weight: limited,
+              total: Math.round(weight * reps).toString(),
+            };
+          }
         }
         return set;
       })
     );
   };
 
-  const handleRepsChange = (id, value) => {
+  const handleRepsChange = (id, value, isMin = true) => {
     // Allow only whole numbers, max 3 digits (999)
     const sanitized = value.replace(/[^0-9]/g, "");
     const limited = sanitized.length > 3 ? sanitized.slice(0, 3) : sanitized;
-    
+
     setSets((prev) =>
       prev.map((set) => {
         if (set.id === id) {
-          const weight = parseFloat(set.weight) || 0;
-          const reps = parseFloat(limited) || 0;
-          return {
-            ...set,
-            reps: limited,
-            total: Math.round(weight * reps).toString(),
-          };
+          if (repMode === "range") {
+            const newRepRange = {
+              ...set.repRange,
+              [isMin ? "min" : "max"]: limited,
+            };
+            const min = parseFloat(newRepRange.min) || 0;
+            const max = parseFloat(newRepRange.max) || 0;
+            const weight = parseFloat(set.weight) || 0;
+            // Use min for total calculation
+            const total = Math.round(weight * min).toString();
+            return {
+              ...set,
+              repRange: newRepRange,
+              total,
+            };
+          } else {
+            const weight = parseFloat(set.weight) || 0;
+            const reps = parseFloat(limited) || 0;
+            return {
+              ...set,
+              reps: limited,
+              total: Math.round(weight * reps).toString(),
+            };
+          }
         }
         return set;
       })
     );
   };
 
-  const handleRirChange = (id, value) => {
+  const handleRirChange = (id, value, isMin = true) => {
     // Allow only whole numbers, max 2 digits (99)
     const sanitized = value.replace(/[^0-9]/g, "");
     const limited = sanitized.length > 2 ? sanitized.slice(0, 2) : sanitized;
-    
+
     setSets((prev) =>
       prev.map((set) => {
         if (set.id === id) {
-          return {
-            ...set,
-            rir: limited,
-          };
+          if (rirMode === "range") {
+            return {
+              ...set,
+              rirRange: {
+                ...set.rirRange,
+                [isMin ? "min" : "max"]: limited,
+              },
+            };
+          } else {
+            return {
+              ...set,
+              rir: limited,
+            };
+          }
         }
         return set;
       })
@@ -210,12 +253,17 @@ const RoutineExerciseComponent = ({
 
     let defaultWeight = lastSet ? lastSet.weight : "";
     let defaultReps = lastSet ? lastSet.reps : "";
+    let defaultRepRange = lastSet ? lastSet.repRange : { min: "", max: "" };
+    let defaultRir = lastSet ? lastSet.rir : "";
+    let defaultRirRange = lastSet ? lastSet.rirRange : { min: "", max: "" };
 
     const newSet = {
       id: newSetId,
       weight: defaultWeight,
       reps: defaultReps,
-      rir: "",
+      repRange: defaultRepRange,
+      rir: defaultRir,
+      rirRange: defaultRirRange,
       total:
         defaultWeight && defaultReps
           ? Math.round(
@@ -317,23 +365,6 @@ const RoutineExerciseComponent = ({
         <View style={styles.setNumberCell}>
           <Text style={styles.setCell}>{set.id}</Text>
         </View>
-        {showPreviousPerformance && (
-          <View style={styles.previousCell}>
-            <Text
-              style={[
-                styles.setCell,
-                {
-                  color: set.completed
-                    ? colors.textPrimary
-                    : colors.textSecondary,
-                  fontSize: FontSize.small,
-                },
-              ]}
-            >
-              -
-            </Text>
-          </View>
-        )}
         <View style={styles.weightHeaderCell}>
           <TextInput
             ref={(ref) => {
@@ -351,56 +382,145 @@ const RoutineExerciseComponent = ({
           />
         </View>
         <View style={styles.repsHeaderCell}>
-          <TextInput
-            ref={(ref) => {
-              if (inputRefs.current[set.id])
-                inputRefs.current[set.id].reps = ref;
-            }}
-            style={styles.repsInput}
-            value={set.reps}
-            onChangeText={(value) => handleRepsChange(set.id, value)}
-            keyboardType="numeric"
-            maxLength={3}
-            placeholder="0"
-            placeholderTextColor={colors.textSecondary}
-            selectTextOnFocus={true}
-          />
-        </View>
-        {showRir && (
-          <View style={styles.rirHeaderCell}>
+          {repMode === "range" ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+              }}
+            >
+              <TextInput
+                ref={(ref) => {
+                  if (!inputRefs.current[set.id])
+                    inputRefs.current[set.id] = {};
+                  inputRefs.current[set.id].repMin = ref;
+                }}
+                style={[styles.repsInput, { flex: 1, maxWidth: 45 }]}
+                value={set.repRange?.min || ""}
+                onChangeText={(value) => handleRepsChange(set.id, value, true)}
+                keyboardType="numeric"
+                maxLength={3}
+                placeholder="0"
+                placeholderTextColor={colors.textSecondary}
+                selectTextOnFocus={true}
+              />
+              <Text
+                style={{ color: colors.textSecondary, fontSize: FontSize.base }}
+              >
+                -
+              </Text>
+              <TextInput
+                ref={(ref) => {
+                  if (!inputRefs.current[set.id])
+                    inputRefs.current[set.id] = {};
+                  inputRefs.current[set.id].repMax = ref;
+                }}
+                style={[styles.repsInput, { flex: 1, maxWidth: 45 }]}
+                value={set.repRange?.max || ""}
+                onChangeText={(value) => handleRepsChange(set.id, value, false)}
+                keyboardType="numeric"
+                maxLength={3}
+                placeholder="0"
+                placeholderTextColor={colors.textSecondary}
+                selectTextOnFocus={true}
+              />
+            </View>
+          ) : (
             <TextInput
               ref={(ref) => {
-                if (inputRefs.current[set.id])
-                  inputRefs.current[set.id].rir = ref;
+                if (!inputRefs.current[set.id]) inputRefs.current[set.id] = {};
+                inputRefs.current[set.id].reps = ref;
               }}
-              style={styles.rirInput}
-              value={set.rir}
-              onChangeText={(value) => handleRirChange(set.id, value)}
+              style={styles.repsInput}
+              value={set.reps}
+              onChangeText={(value) => handleRepsChange(set.id, value)}
               keyboardType="numeric"
-              maxLength={2}
+              maxLength={3}
               placeholder="0"
               placeholderTextColor={colors.textSecondary}
               selectTextOnFocus={true}
             />
+          )}
+        </View>
+        {showRir && (
+          <View style={styles.rirHeaderCell}>
+            {rirMode === "range" ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                }}
+              >
+                <TextInput
+                  ref={(ref) => {
+                    if (!inputRefs.current[set.id])
+                      inputRefs.current[set.id] = {};
+                    inputRefs.current[set.id].rirMin = ref;
+                  }}
+                  style={[styles.rirInput, { flex: 1, maxWidth: 35 }]}
+                  value={set.rirRange?.min || ""}
+                  onChangeText={(value) => handleRirChange(set.id, value, true)}
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="0"
+                  placeholderTextColor={colors.textSecondary}
+                  selectTextOnFocus={true}
+                />
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: FontSize.base,
+                  }}
+                >
+                  -
+                </Text>
+                <TextInput
+                  ref={(ref) => {
+                    if (!inputRefs.current[set.id])
+                      inputRefs.current[set.id] = {};
+                    inputRefs.current[set.id].rirMax = ref;
+                  }}
+                  style={[styles.rirInput, { flex: 1, maxWidth: 35 }]}
+                  value={set.rirRange?.max || ""}
+                  onChangeText={(value) =>
+                    handleRirChange(set.id, value, false)
+                  }
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholder="0"
+                  placeholderTextColor={colors.textSecondary}
+                  selectTextOnFocus={true}
+                />
+              </View>
+            ) : (
+              <TextInput
+                ref={(ref) => {
+                  if (!inputRefs.current[set.id])
+                    inputRefs.current[set.id] = {};
+                  inputRefs.current[set.id].rir = ref;
+                }}
+                style={styles.rirInput}
+                value={set.rir}
+                onChangeText={(value) => handleRirChange(set.id, value)}
+                keyboardType="numeric"
+                maxLength={2}
+                placeholder="0"
+                placeholderTextColor={colors.textSecondary}
+                selectTextOnFocus={true}
+              />
+            )}
           </View>
         )}
-        {!showPreviousPerformance && !showRir && (
+        {!showRir && (
           <View style={styles.totalCell}>
             <Text style={styles.setCell}>{set.total}</Text>
           </View>
         )}
-        <View style={styles.completedCell}>
-          <TouchableOpacity onPress={() => toggleSetCompletion(index)}>
-            <View
-              style={[
-                styles.checkmarkContainer,
-                set.completed && styles.completedCheckmark,
-              ]}
-            >
-              <Ionicons name="checkmark" size={18} color={colors.textPrimary} />
-            </View>
-          </TouchableOpacity>
-        </View>
+        <View style={[styles.completedCell, { width: 24, minHeight: 24, alignSelf: 'stretch' }]} />
       </View>
     );
   };
@@ -502,23 +622,42 @@ const RoutineExerciseComponent = ({
               <Text style={[styles.setHeaderCell, styles.setNumberCell]}>
                 SET
               </Text>
-              {showPreviousPerformance && (
-                <Text style={[styles.setHeaderCell, styles.previousCell]}>
-                  PREVIOUS
-                </Text>
-              )}
               <Text style={[styles.setHeaderCell, styles.weightHeaderCell]}>
                 {weight.unitLabel()}
               </Text>
-              <Text style={[styles.setHeaderCell, styles.repsHeaderCell]}>
-                REPS
-              </Text>
-              {showRir && (
-                <Text style={[styles.setHeaderCell, styles.rirHeaderCell]}>
-                  RIR
+              <TouchableOpacity
+                style={[styles.repsHeaderCell, { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 }]}
+                onPress={() => {
+                  hapticLight();
+                  setShowRepModeModal(true);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[styles.setHeaderCell, { color: colors.textFaded }]}
+                >
+                  REPS
                 </Text>
+                <Ionicons name="chevron-down" size={14} color={colors.textFaded} />
+              </TouchableOpacity>
+              {showRir && (
+                <TouchableOpacity
+                  style={[styles.rirHeaderCell, { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 }]}
+                  onPress={() => {
+                    hapticLight();
+                    setShowRirModeModal(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[styles.setHeaderCell, { color: colors.textFaded }]}
+                  >
+                    RIR
+                  </Text>
+                  <Ionicons name="chevron-down" size={14} color={colors.textFaded} />
+                </TouchableOpacity>
               )}
-              {!showPreviousPerformance && !showRir && (
+              {!showRir && (
                 <Text style={[styles.setHeaderCell, styles.totalCell]}>
                   TOTAL
                 </Text>
@@ -566,6 +705,58 @@ const RoutineExerciseComponent = ({
           onRemoveExercise(exercise.exercise_id);
         }}
         title={`Delete ${exerciseDetails?.name || "Exercise"}?`}
+      />
+
+      <RepModeModal
+        visible={showRepModeModal}
+        onClose={() => setShowRepModeModal(false)}
+        currentMode={repMode}
+        onModeSelect={(mode) => {
+          setRepMode(mode);
+          // Reset rep values when switching modes
+          setSets((prev) =>
+            prev.map((set) => {
+              if (mode === "range") {
+                return {
+                  ...set,
+                  reps: "",
+                  repRange: { min: "", max: "" },
+                };
+              } else {
+                return {
+                  ...set,
+                  repRange: { min: "", max: "" },
+                };
+              }
+            })
+          );
+        }}
+      />
+
+      <RirModeModal
+        visible={showRirModeModal}
+        onClose={() => setShowRirModeModal(false)}
+        currentMode={rirMode}
+        onModeSelect={(mode) => {
+          setRirMode(mode);
+          // Reset RIR values when switching modes
+          setSets((prev) =>
+            prev.map((set) => {
+              if (mode === "range") {
+                return {
+                  ...set,
+                  rir: "",
+                  rirRange: { min: "", max: "" },
+                };
+              } else {
+                return {
+                  ...set,
+                  rirRange: { min: "", max: "" },
+                };
+              }
+            })
+          );
+        }}
       />
     </View>
   );

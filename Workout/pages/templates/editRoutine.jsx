@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   ActivityIndicator,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -269,7 +270,9 @@ const EditRoutine = () => {
       {exercises.length === 0 ? (
         <ScrollView
           style={styles.content}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 300 }}
+          keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={() => Keyboard.dismiss()}
         >
           <TextInput
             style={styles.routineNameInput}
@@ -307,7 +310,9 @@ const EditRoutine = () => {
           keyExtractor={(item) => item.exercise_id.toString()}
           onDragEnd={handleDragEnd}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 300 }}
+          keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={() => Keyboard.dismiss()}
           ListHeaderComponent={RoutineNameHeader}
           ListFooterComponent={() => (
             <TouchableOpacity
