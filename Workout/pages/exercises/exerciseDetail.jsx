@@ -419,7 +419,7 @@ const ExerciseDetailPage = () => {
                     </Text>
                     <Text style={styles.setRir}>
                       {set.rir !== null && set.rir !== undefined
-                        ? `${set.rir} RIR`
+                        ? `${set.rir}`
                         : "-"}
                     </Text>
                   </View>

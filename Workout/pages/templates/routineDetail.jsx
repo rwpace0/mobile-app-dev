@@ -111,22 +111,19 @@ const RoutineDetail = () => {
         //console.log("Template:", templateResponse);
         //console.log("Last workout:", lastWorkoutResponse);
 
-        // Always fetch exercise names and recent data for template exercises
+        // Always fetch exercise names for template exercises
         // This ensures we always show the actual routine structure, not workout data
         if (templateResponse?.exercises) {
           const exercisesWithNames = await Promise.all(
             templateResponse.exercises.map(async (exercise) => {
-              const [exerciseDetails, exerciseHistory] = await Promise.all([
-                exercisesAPI.getExerciseById(exercise.exercise_id),
-                exercisesAPI.getExerciseHistory(exercise.exercise_id), // Get exercise history
-              ]);
+              const exerciseDetails = await exercisesAPI.getExerciseById(
+                exercise.exercise_id
+              );
 
               return {
                 ...exercise,
                 name: exerciseDetails?.name || "Unknown Exercise",
                 muscle_group: exerciseDetails?.muscle_group || "",
-                recentSets:
-                  exerciseHistory?.length > 0 ? exerciseHistory[0].sets : null,
               };
             })
           );
@@ -473,8 +470,61 @@ const RoutineDetail = () => {
                 {Array(exerciseData.sets || 1)
                   .fill()
                   .map((_, setIdx) => {
-                    // Use recent data if available, otherwise show placeholders
-                    const recentSet = exerciseData.recentSets?.[setIdx];
+                    // Format weight from template
+                    let formattedWeight = "";
+                    if (
+                      exerciseData.weight !== null &&
+                      exerciseData.weight !== undefined
+                    ) {
+                      const convertedWeight = weight.fromStorage(
+                        exerciseData.weight
+                      );
+                      const roundedWeight = weight.roundToHalf(convertedWeight);
+                      formattedWeight = roundedWeight.toString();
+                    }
+
+                    // Format reps from template - single value or range
+                    let formattedReps = "";
+                    if (
+                      exerciseData.rep_range_min !== null &&
+                      exerciseData.rep_range_min !== undefined &&
+                      exerciseData.rep_range_max !== null &&
+                      exerciseData.rep_range_max !== undefined
+                    ) {
+                      formattedReps = `${exerciseData.rep_range_min}-${exerciseData.rep_range_max}`;
+                    } else if (
+                      exerciseData.reps !== null &&
+                      exerciseData.reps !== undefined
+                    ) {
+                      formattedReps = exerciseData.reps.toString();
+                    }
+
+                    // Format RIR from template - single value or range
+                    let formattedRir = "";
+                    if (
+                      exerciseData.rir_range_min !== null &&
+                      exerciseData.rir_range_min !== undefined &&
+                      exerciseData.rir_range_max !== null &&
+                      exerciseData.rir_range_max !== undefined
+                    ) {
+                      formattedRir = `${exerciseData.rir_range_min}-${exerciseData.rir_range_max}`;
+                    } else if (
+                      exerciseData.rir !== null &&
+                      exerciseData.rir !== undefined
+                    ) {
+                      formattedRir = exerciseData.rir.toString();
+                    }
+
+                    // Format weight × reps display
+                    let weightRepsDisplay = "-";
+                    if (formattedWeight && formattedReps) {
+                      weightRepsDisplay = `${formattedWeight}${weight.unit} × ${formattedReps}`;
+                    } else if (formattedWeight) {
+                      weightRepsDisplay = `${formattedWeight}${weight.unit}`;
+                    } else if (formattedReps) {
+                      weightRepsDisplay = formattedReps;
+                    }
+
                     return (
                       <View
                         key={setIdx}
@@ -486,30 +536,9 @@ const RoutineDetail = () => {
                         ]}
                       >
                         <Text style={styles.setNumber}>{setIdx + 1}</Text>
-                        <Text
-                          style={[
-                            styles.setInfo,
-                            { opacity: recentSet ? 1 : 0.5 },
-                          ]}
-                        >
-                          {recentSet
-                            ? `${weight.formatSet(
-                                recentSet.weight,
-                                recentSet.reps
-                              )}`
-                            : "-"}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.setRir,
-                            { opacity: recentSet ? 1 : 0.5 },
-                          ]}
-                        >
-                          {recentSet &&
-                          recentSet.rir !== null &&
-                          recentSet.rir !== undefined
-                            ? `${recentSet.rir} RIR`
-                            : "-"}
+                        <Text style={styles.setInfo}>{weightRepsDisplay}</Text>
+                        <Text style={styles.setRir}>
+                          {formattedRir ? `${formattedRir}` : "-"}
                         </Text>
                       </View>
                     );

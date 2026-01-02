@@ -250,7 +250,7 @@ export const createStyles = (isDark = true) => {
     setRir: {
       width: 70,
       fontSize: FontSize.base,
-      color: colors.textSecondary,
+      color: colors.textPrimary,
       textAlign: "center",
     },
 
