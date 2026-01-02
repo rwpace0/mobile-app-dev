@@ -25,36 +25,70 @@ export async function createTemplate(req, res) {
     // Create authenticated client
     const supabaseWithAuth = getClientToken(token);
 
-    const { name, is_public, exercises } = req.body;
+    const { template_id, name, is_public, exercises } = req.body;
 
     // Basic validation
     if (!name || !Array.isArray(exercises) || exercises.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // 1. Insert template
+    // Check if template already exists (for ownership check and preserving created_by)
+    const { data: existingTemplate } = await supabaseWithAuth
+      .from("workout_templates")
+      .select("created_by")
+      .eq("template_id", template_id)
+      .single();
+
+    // If template exists, verify ownership
+    if (existingTemplate && existingTemplate.created_by !== user.id) {
+      return res.status(403).json({
+        error: "You don't have permission to modify this template",
+      });
+    }
+
+    // 1. Upsert template (allows retry if creation fails partway through)
+    // Note: created_at is preserved automatically by Supabase on update
+    const templateToUpsert = {
+      template_id,
+      name,
+      created_by: existingTemplate?.created_by || user.id, // Preserve original creator on update
+      is_public: is_public || false,
+      updated_at: new Date().toISOString(),
+    };
+
     const { data: templateData, error: templateError } = await supabaseWithAuth
       .from("workout_templates")
-      .insert([
-        {
-          name,
-          created_by: user.id,
-          is_public: is_public || false,
-        },
-      ])
+      .upsert([templateToUpsert], {
+        onConflict: "template_id",
+        ignoreDuplicates: false,
+      })
       .select();
 
     if (templateError || !templateData || !templateData[0]) {
-      console.error("Template insert error:", templateError);
+      console.error("Template upsert error:", templateError);
       return res.status(500).json({
-        error: "Failed to create template",
+        error: "Failed to create/update template",
         details: templateError?.message || "Unknown error",
       });
     }
 
     const template = templateData[0];
 
-    // 2. Insert template exercises
+    // 2. Delete existing template exercises (in case of retry)
+    const { error: deleteExercisesError } = await supabaseWithAuth
+      .from("template_exercises")
+      .delete()
+      .eq("template_id", template.template_id);
+
+    if (deleteExercisesError) {
+      console.error("Template exercises delete error:", deleteExercisesError);
+      return res.status(500).json({
+        error: "Failed to clear existing template exercises",
+        details: deleteExercisesError.message,
+      });
+    }
+
+    // 3. Insert template exercises
     const templateExercisesToInsert = exercises.map((ex) => ({
       template_id: template.template_id,
       exercise_id: ex.exercise_id,
