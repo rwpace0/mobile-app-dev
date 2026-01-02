@@ -60,6 +60,13 @@ export async function createTemplate(req, res) {
       exercise_id: ex.exercise_id,
       exercise_order: ex.exercise_order,
       sets: ex.sets || 1, // Add default of 1 if not specified
+      weight: ex.weight !== undefined ? ex.weight : null,
+      reps: ex.reps !== undefined ? ex.reps : null,
+      reps_min: ex.rep_range_min !== undefined ? ex.rep_range_min : null,
+      reps_max: ex.rep_range_max !== undefined ? ex.rep_range_max : null,
+      rir: ex.rir !== undefined ? ex.rir : null,
+      rir_min: ex.rir_range_min !== undefined ? ex.rir_range_min : null,
+      rir_max: ex.rir_range_max !== undefined ? ex.rir_range_max : null,
     }));
 
     const { data: templateExercisesData, error: templateExercisesError } =
@@ -121,28 +128,32 @@ export async function updateTemplate(req, res) {
     }
 
     // Check if template exists and belongs to the user
-    const { data: existingTemplate, error: templateCheckError } = await supabaseWithAuth
-      .from("workout_templates")
-      .select("template_id, created_by")
-      .eq("template_id", templateId)
-      .eq("created_by", user.id)
-      .single();
+    const { data: existingTemplate, error: templateCheckError } =
+      await supabaseWithAuth
+        .from("workout_templates")
+        .select("template_id, created_by")
+        .eq("template_id", templateId)
+        .eq("created_by", user.id)
+        .single();
 
     if (templateCheckError || !existingTemplate) {
-      return res.status(404).json({ error: "Template not found or access denied" });
+      return res
+        .status(404)
+        .json({ error: "Template not found or access denied" });
     }
 
     // 1. Update the template record
-    const { data: updatedTemplate, error: templateUpdateError } = await supabaseWithAuth
-      .from("workout_templates")
-      .update({
-        name,
-        is_public: is_public || false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("template_id", templateId)
-      .select()
-      .single();
+    const { data: updatedTemplate, error: templateUpdateError } =
+      await supabaseWithAuth
+        .from("workout_templates")
+        .update({
+          name,
+          is_public: is_public || false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("template_id", templateId)
+        .select()
+        .single();
 
     if (templateUpdateError) {
       console.error("Template update error:", templateUpdateError);
@@ -174,6 +185,13 @@ export async function updateTemplate(req, res) {
         exercise_id: ex.exercise_id,
         exercise_order: ex.exercise_order,
         sets: ex.sets || 1,
+        weight: ex.weight !== undefined ? ex.weight : null,
+        reps: ex.reps !== undefined ? ex.reps : null,
+        reps_min: ex.rep_range_min !== undefined ? ex.rep_range_min : null,
+        reps_max: ex.rep_range_max !== undefined ? ex.rep_range_max : null,
+        rir: ex.rir !== undefined ? ex.rir : null,
+        rir_min: ex.rir_range_min !== undefined ? ex.rir_range_min : null,
+        rir_max: ex.rir_range_max !== undefined ? ex.rir_range_max : null,
       }));
 
       const { data: insertedExercises, error: templateExercisesError } =
@@ -183,7 +201,10 @@ export async function updateTemplate(req, res) {
           .select();
 
       if (templateExercisesError) {
-        console.error("Template exercises insert error:", templateExercisesError);
+        console.error(
+          "Template exercises insert error:",
+          templateExercisesError
+        );
         return res.status(500).json({
           error: "Failed to create template exercises",
           details: templateExercisesError.message,
@@ -232,15 +253,24 @@ export async function getTemplates(req, res) {
     // Query templates with their exercises
     const { data: templates, error: templatesError } = await supabaseWithAuth
       .from("workout_templates")
-      .select(`
+      .select(
+        `
         *,
         template_exercises (
           exercise_id,
           exercise_order,
           sets,
+          weight,
+          reps,
+          reps_min,
+          reps_max,
+          rir,
+          rir_min,
+          rir_max,
           exercises (*)
         )
-      `)
+      `
+      )
       .eq("created_by", user.id)
       .order("created_at", { ascending: false });
 
@@ -250,13 +280,22 @@ export async function getTemplates(req, res) {
     }
 
     // Format the response
-    const formattedTemplates = templates.map(template => ({
+    const formattedTemplates = templates.map((template) => ({
       ...template,
-      exercises: template.template_exercises.map(te => ({
-        ...te.exercises,
-        exercise_order: te.exercise_order,
-        sets: te.sets
-      })).sort((a, b) => a.exercise_order - b.exercise_order)
+      exercises: template.template_exercises
+        .map((te) => ({
+          ...te.exercises,
+          exercise_order: te.exercise_order,
+          sets: te.sets,
+          weight: te.weight,
+          reps: te.reps,
+          rep_range_min: te.reps_min,
+          rep_range_max: te.reps_max,
+          rir: te.rir,
+          rir_range_min: te.rir_min,
+          rir_range_max: te.rir_max,
+        }))
+        .sort((a, b) => a.exercise_order - b.exercise_order),
     }));
 
     return res.json(formattedTemplates);
@@ -309,7 +348,9 @@ export async function deleteTemplate(req, res) {
 
     // Verify ownership
     if (template.created_by !== user.id) {
-      return res.status(403).json({ error: "You don't have permission to delete this template" });
+      return res
+        .status(403)
+        .json({ error: "You don't have permission to delete this template" });
     }
 
     // Delete template exercises first (due to foreign key constraint)

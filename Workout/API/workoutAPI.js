@@ -1085,17 +1085,6 @@ class WorkoutAPI extends APIBase {
         WHERE w.sync_status != 'pending_delete' 
         AND we.workout_exercises_id IS NULL
       `);
-
-      if (workoutsWithoutExercises.length > 0) {
-        console.log(
-          `[WorkoutAPI] Found ${workoutsWithoutExercises.length} workouts with missing exercise data`
-        );
-        console.log(
-          "[WorkoutAPI] Missing exercise data should be populated during initial sync, not during normal operation"
-        );
-        // Don't make individual API calls - this data should be complete from initial sync
-        // If data is missing, it indicates a sync issue that should be resolved manually
-      }
     } catch (error) {
       console.error(
         "[WorkoutAPI] Error checking for missing exercise data:",

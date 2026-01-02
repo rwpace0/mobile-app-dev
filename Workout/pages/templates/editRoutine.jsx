@@ -72,6 +72,34 @@ const EditRoutine = () => {
               name: exerciseDetails?.name || "Unknown Exercise",
               muscle_group: exerciseDetails?.muscle_group || "",
               sets: templateExercise.sets || 1,
+              weight:
+                templateExercise.weight !== undefined
+                  ? templateExercise.weight
+                  : null,
+              reps:
+                templateExercise.reps !== undefined
+                  ? templateExercise.reps
+                  : null,
+              rep_range_min:
+                templateExercise.rep_range_min !== undefined
+                  ? templateExercise.rep_range_min
+                  : null,
+              rep_range_max:
+                templateExercise.rep_range_max !== undefined
+                  ? templateExercise.rep_range_max
+                  : null,
+              rir:
+                templateExercise.rir !== undefined
+                  ? templateExercise.rir
+                  : null,
+              rir_range_min:
+                templateExercise.rir_range_min !== undefined
+                  ? templateExercise.rir_range_min
+                  : null,
+              rir_range_max:
+                templateExercise.rir_range_max !== undefined
+                  ? templateExercise.rir_range_max
+                  : null,
             };
           })
         );
@@ -135,6 +163,14 @@ const EditRoutine = () => {
     );
   };
 
+  const handleUpdateValues = (exerciseId, values) => {
+    setExercises((prev) =>
+      prev.map((ex) =>
+        ex.exercise_id === exerciseId ? { ...ex, ...values } : ex
+      )
+    );
+  };
+
   const handleDragEnd = ({ data }) => {
     hapticLight();
     setExercises(data);
@@ -148,6 +184,7 @@ const EditRoutine = () => {
         onUpdateTotals={updateTotals}
         onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
         onUpdateSets={handleUpdateSets}
+        onUpdateValues={handleUpdateValues}
         drag={drag}
         isActive={isActive}
       />
@@ -191,6 +228,17 @@ const EditRoutine = () => {
         exercise_id: exercise.exercise_id,
         exercise_order: index + 1,
         sets: exercise.sets || 1,
+        weight: exercise.weight !== undefined ? exercise.weight : null,
+        reps: exercise.reps !== undefined ? exercise.reps : null,
+        rep_range_min:
+          exercise.rep_range_min !== undefined ? exercise.rep_range_min : null,
+        rep_range_max:
+          exercise.rep_range_max !== undefined ? exercise.rep_range_max : null,
+        rir: exercise.rir !== undefined ? exercise.rir : null,
+        rir_range_min:
+          exercise.rir_range_min !== undefined ? exercise.rir_range_min : null,
+        rir_range_max:
+          exercise.rir_range_max !== undefined ? exercise.rir_range_max : null,
       }));
 
       console.log("Exercises payload:", exercisesPayload);

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -62,6 +63,14 @@ const RoutineCreate = () => {
     );
   };
 
+  const handleUpdateValues = (exerciseId, values) => {
+    setExercises((prev) =>
+      prev.map((ex) =>
+        ex.exercise_id === exerciseId ? { ...ex, ...values } : ex
+      )
+    );
+  };
+
   const handleDragEnd = ({ data }) => {
     hapticLight();
     setExercises(data);
@@ -75,6 +84,7 @@ const RoutineCreate = () => {
         onUpdateTotals={updateTotals}
         onRemoveExercise={() => handleRemoveExercise(exercise.exercise_id)}
         onUpdateSets={handleUpdateSets}
+        onUpdateValues={handleUpdateValues}
         drag={drag}
         isActive={isActive}
       />
@@ -93,7 +103,6 @@ const RoutineCreate = () => {
     ),
     [routineName]
   );
-
 
   const handleSave = async () => {
     console.log("Save button pressed");
@@ -119,6 +128,17 @@ const RoutineCreate = () => {
         exercise_id: exercise.exercise_id,
         exercise_order: index + 1,
         sets: exercise.sets || 1,
+        weight: exercise.weight !== undefined ? exercise.weight : null,
+        reps: exercise.reps !== undefined ? exercise.reps : null,
+        rep_range_min:
+          exercise.rep_range_min !== undefined ? exercise.rep_range_min : null,
+        rep_range_max:
+          exercise.rep_range_max !== undefined ? exercise.rep_range_max : null,
+        rir: exercise.rir !== undefined ? exercise.rir : null,
+        rir_range_min:
+          exercise.rir_range_min !== undefined ? exercise.rir_range_min : null,
+        rir_range_max:
+          exercise.rir_range_max !== undefined ? exercise.rir_range_max : null,
       }));
 
       console.log("Exercises payload:", exercisesPayload);
@@ -176,7 +196,9 @@ const RoutineCreate = () => {
       {exercises.length === 0 ? (
         <ScrollView
           style={styles.content}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 300 }}
+          keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={() => Keyboard.dismiss()}
         >
           <TextInput
             style={styles.routineNameInput}
@@ -214,7 +236,9 @@ const RoutineCreate = () => {
           keyExtractor={(item) => item.exercise_id.toString()}
           onDragEnd={handleDragEnd}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 300 }}
+          keyboardShouldPersistTaps="handled"
+          onScrollBeginDrag={() => Keyboard.dismiss()}
           ListHeaderComponent={RoutineNameHeader}
           ListFooterComponent={() => (
             <TouchableOpacity

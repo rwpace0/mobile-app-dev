@@ -28,6 +28,7 @@ const RoutineExerciseComponent = ({
   exercise,
   onUpdateSets,
   onRemoveExercise,
+  onUpdateValues,
   drag,
   isActive,
 }) => {
@@ -51,11 +52,72 @@ const RoutineExerciseComponent = ({
   const [rirMode, setRirMode] = useState("single"); // 'single' or 'range'
   const [showRepModeModal, setShowRepModeModal] = useState(false);
   const [showRirModeModal, setShowRirModeModal] = useState(false);
+  const [savedWeight, setSavedWeight] = useState(null);
+  const [savedReps, setSavedReps] = useState(null);
+  const [savedRepRange, setSavedRepRange] = useState({ min: null, max: null });
+  const [savedRir, setSavedRir] = useState(null);
+  const [savedRirRange, setSavedRirRange] = useState({ min: null, max: null });
 
   // Animation state
   const [contentHeight, setContentHeight] = useState(0);
   const animatedHeight = useSharedValue(300);
   const animatedOpacity = useSharedValue(1);
+
+  // Initialize from exercise props (weight, reps, RIR)
+  useEffect(() => {
+    // Initialize rep mode based on whether range exists
+    if (
+      exercise.rep_range_min !== null &&
+      exercise.rep_range_min !== undefined &&
+      exercise.rep_range_max !== null &&
+      exercise.rep_range_max !== undefined
+    ) {
+      setRepMode("range");
+      setSavedRepRange({
+        min: exercise.rep_range_min?.toString() || "",
+        max: exercise.rep_range_max?.toString() || "",
+      });
+      setSavedReps(null);
+    } else if (exercise.reps !== null && exercise.reps !== undefined) {
+      setRepMode("single");
+      setSavedReps(exercise.reps?.toString() || "");
+      setSavedRepRange({ min: null, max: null });
+    }
+
+    // Initialize RIR mode based on whether range exists
+    if (
+      exercise.rir_range_min !== null &&
+      exercise.rir_range_min !== undefined &&
+      exercise.rir_range_max !== null &&
+      exercise.rir_range_max !== undefined
+    ) {
+      setRirMode("range");
+      setSavedRirRange({
+        min: exercise.rir_range_min?.toString() || "",
+        max: exercise.rir_range_max?.toString() || "",
+      });
+      setSavedRir(null);
+    } else if (exercise.rir !== null && exercise.rir !== undefined) {
+      setRirMode("single");
+      setSavedRir(exercise.rir?.toString() || "");
+      setSavedRirRange({ min: null, max: null });
+    }
+
+    // Initialize weight
+    if (exercise.weight !== null && exercise.weight !== undefined) {
+      const convertedWeight = weight.fromStorage(exercise.weight);
+      const roundedWeight = weight.roundToHalf(convertedWeight);
+      setSavedWeight(roundedWeight.toString());
+    }
+  }, [
+    exercise.weight,
+    exercise.reps,
+    exercise.rep_range_min,
+    exercise.rep_range_max,
+    exercise.rir,
+    exercise.rir_range_min,
+    exercise.rir_range_max,
+  ]);
 
   // Initialize sets based on exercise.sets count
   useEffect(() => {
@@ -64,20 +126,67 @@ const RoutineExerciseComponent = ({
     if (sets.length !== numSets) {
       const initialSets = Array(numSets)
         .fill()
-        .map((_, index) => ({
-          id: (index + 1).toString(),
-          weight: "",
-          reps: "",
-          repRange: { min: "", max: "" },
-          rir: "",
-          rirRange: { min: "", max: "" },
-          total: "",
-          completed: false,
-        }));
+        .map((_, index) => {
+          // Don't pre-fill values, use placeholders instead
+          return {
+            id: (index + 1).toString(),
+            weight: "",
+            reps: "",
+            repRange: { min: "", max: "" },
+            rir: "",
+            rirRange: { min: "", max: "" },
+            total: "",
+            completed: false,
+          };
+        });
       setSets(initialSets);
       lastReportedSetsCount.current = numSets;
+    } else if (
+      sets.length > 0 &&
+      sets[0] &&
+      (savedWeight ||
+        savedReps ||
+        savedRepRange.min ||
+        savedRir ||
+        savedRirRange.min)
+    ) {
+      // Update first set if we have saved values and sets already exist
+      setSets((prevSets) => {
+        const updated = [...prevSets];
+        if (updated[0]) {
+          updated[0] = {
+            ...updated[0],
+            weight: savedWeight || updated[0].weight || "",
+            reps: savedReps || updated[0].reps || "",
+            repRange:
+              savedRepRange.min !== null
+                ? { min: savedRepRange.min, max: savedRepRange.max || "" }
+                : updated[0].repRange,
+            rir: savedRir || updated[0].rir || "",
+            rirRange:
+              savedRirRange.min !== null
+                ? { min: savedRirRange.min, max: savedRirRange.max || "" }
+                : updated[0].rirRange,
+            total:
+              savedWeight && (savedReps || savedRepRange.min)
+                ? Math.round(
+                    parseFloat(savedWeight) *
+                      parseFloat(savedReps || savedRepRange.min || 0)
+                  ).toString()
+                : updated[0].total || "",
+          };
+        }
+        return updated;
+      });
     }
-  }, [exercise.sets]);
+  }, [
+    exercise.sets,
+    savedWeight,
+    savedReps,
+    savedRepRange,
+    savedRir,
+    savedRirRange,
+  ]);
 
   // Update parent when sets count changes (but not when initializing or when parent updates)
   useEffect(() => {
@@ -152,8 +261,8 @@ const RoutineExerciseComponent = ({
     // Limit to 7 characters
     const limited = filtered.length > 7 ? filtered.slice(0, 7) : filtered;
 
-    setSets((prev) =>
-      prev.map((set) => {
+    setSets((prev) => {
+      const updated = prev.map((set) => {
         if (set.id === id) {
           const weight = parseFloat(limited) || 0;
           if (repMode === "range") {
@@ -173,8 +282,26 @@ const RoutineExerciseComponent = ({
           }
         }
         return set;
-      })
-    );
+      });
+
+      // Update parent with first set's weight if it's the first set
+      if (id === "1" && onUpdateValues) {
+        const firstSet = updated.find((s) => s.id === "1");
+        if (firstSet) {
+          const weightValue = firstSet.weight
+            ? parseFloat(firstSet.weight)
+            : null;
+          onUpdateValues(exercise.exercise_id, {
+            weight:
+              weightValue !== null && !isNaN(weightValue)
+                ? weight.toStorage(weightValue)
+                : null,
+          });
+        }
+      }
+
+      return updated;
+    });
   };
 
   const handleRepsChange = (id, value, isMin = true) => {
@@ -182,8 +309,8 @@ const RoutineExerciseComponent = ({
     const sanitized = value.replace(/[^0-9]/g, "");
     const limited = sanitized.length > 3 ? sanitized.slice(0, 3) : sanitized;
 
-    setSets((prev) =>
-      prev.map((set) => {
+    setSets((prev) => {
+      const updated = prev.map((set) => {
         if (set.id === id) {
           if (repMode === "range") {
             const newRepRange = {
@@ -211,8 +338,34 @@ const RoutineExerciseComponent = ({
           }
         }
         return set;
-      })
-    );
+      });
+
+      // Update parent with first set's reps if it's the first set
+      if (id === "1" && onUpdateValues) {
+        const firstSet = updated.find((s) => s.id === "1");
+        if (firstSet) {
+          if (repMode === "range") {
+            onUpdateValues(exercise.exercise_id, {
+              rep_range_min: firstSet.repRange?.min
+                ? parseInt(firstSet.repRange.min)
+                : null,
+              rep_range_max: firstSet.repRange?.max
+                ? parseInt(firstSet.repRange.max)
+                : null,
+              reps: null,
+            });
+          } else {
+            onUpdateValues(exercise.exercise_id, {
+              reps: firstSet.reps ? parseInt(firstSet.reps) : null,
+              rep_range_min: null,
+              rep_range_max: null,
+            });
+          }
+        }
+      }
+
+      return updated;
+    });
   };
 
   const handleRirChange = (id, value, isMin = true) => {
@@ -220,8 +373,8 @@ const RoutineExerciseComponent = ({
     const sanitized = value.replace(/[^0-9]/g, "");
     const limited = sanitized.length > 2 ? sanitized.slice(0, 2) : sanitized;
 
-    setSets((prev) =>
-      prev.map((set) => {
+    setSets((prev) => {
+      const updated = prev.map((set) => {
         if (set.id === id) {
           if (rirMode === "range") {
             return {
@@ -239,8 +392,34 @@ const RoutineExerciseComponent = ({
           }
         }
         return set;
-      })
-    );
+      });
+
+      // Update parent with first set's RIR if it's the first set
+      if (id === "1" && onUpdateValues) {
+        const firstSet = updated.find((s) => s.id === "1");
+        if (firstSet) {
+          if (rirMode === "range") {
+            onUpdateValues(exercise.exercise_id, {
+              rir_range_min: firstSet.rirRange?.min
+                ? parseInt(firstSet.rirRange.min)
+                : null,
+              rir_range_max: firstSet.rirRange?.max
+                ? parseInt(firstSet.rirRange.max)
+                : null,
+              rir: null,
+            });
+          } else {
+            onUpdateValues(exercise.exercise_id, {
+              rir: firstSet.rir ? parseInt(firstSet.rir) : null,
+              rir_range_min: null,
+              rir_range_max: null,
+            });
+          }
+        }
+      }
+
+      return updated;
+    });
   };
 
   const handleAddSet = () => {
@@ -376,7 +555,7 @@ const RoutineExerciseComponent = ({
             onChangeText={(value) => handleWeightChange(set.id, value)}
             keyboardType="numeric"
             maxLength={7}
-            placeholder="0"
+            placeholder={set.id === "1" && savedWeight ? savedWeight : "0"}
             placeholderTextColor={colors.textSecondary}
             selectTextOnFocus={true}
           />
@@ -402,7 +581,9 @@ const RoutineExerciseComponent = ({
                 onChangeText={(value) => handleRepsChange(set.id, value, true)}
                 keyboardType="numeric"
                 maxLength={3}
-                placeholder="0"
+                placeholder={
+                  set.id === "1" && savedRepRange.min ? savedRepRange.min : "0"
+                }
                 placeholderTextColor={colors.textSecondary}
                 selectTextOnFocus={true}
               />
@@ -422,7 +603,9 @@ const RoutineExerciseComponent = ({
                 onChangeText={(value) => handleRepsChange(set.id, value, false)}
                 keyboardType="numeric"
                 maxLength={3}
-                placeholder="0"
+                placeholder={
+                  set.id === "1" && savedRepRange.max ? savedRepRange.max : "0"
+                }
                 placeholderTextColor={colors.textSecondary}
                 selectTextOnFocus={true}
               />
@@ -438,7 +621,7 @@ const RoutineExerciseComponent = ({
               onChangeText={(value) => handleRepsChange(set.id, value)}
               keyboardType="numeric"
               maxLength={3}
-              placeholder="0"
+              placeholder={set.id === "1" && savedReps ? savedReps : "0"}
               placeholderTextColor={colors.textSecondary}
               selectTextOnFocus={true}
             />
@@ -466,7 +649,11 @@ const RoutineExerciseComponent = ({
                   onChangeText={(value) => handleRirChange(set.id, value, true)}
                   keyboardType="numeric"
                   maxLength={2}
-                  placeholder="0"
+                  placeholder={
+                    set.id === "1" && savedRirRange.min
+                      ? savedRirRange.min
+                      : "0"
+                  }
                   placeholderTextColor={colors.textSecondary}
                   selectTextOnFocus={true}
                 />
@@ -491,7 +678,11 @@ const RoutineExerciseComponent = ({
                   }
                   keyboardType="numeric"
                   maxLength={2}
-                  placeholder="0"
+                  placeholder={
+                    set.id === "1" && savedRirRange.max
+                      ? savedRirRange.max
+                      : "0"
+                  }
                   placeholderTextColor={colors.textSecondary}
                   selectTextOnFocus={true}
                 />
@@ -508,7 +699,7 @@ const RoutineExerciseComponent = ({
                 onChangeText={(value) => handleRirChange(set.id, value)}
                 keyboardType="numeric"
                 maxLength={2}
-                placeholder="0"
+                placeholder={set.id === "1" && savedRir ? savedRir : "0"}
                 placeholderTextColor={colors.textSecondary}
                 selectTextOnFocus={true}
               />
@@ -520,7 +711,12 @@ const RoutineExerciseComponent = ({
             <Text style={styles.setCell}>{set.total}</Text>
           </View>
         )}
-        <View style={[styles.completedCell, { width: 24, minHeight: 24, alignSelf: 'stretch' }]} />
+        <View
+          style={[
+            styles.completedCell,
+            { width: 24, minHeight: 24, alignSelf: "stretch" },
+          ]}
+        />
       </View>
     );
   };
@@ -626,7 +822,15 @@ const RoutineExerciseComponent = ({
                 {weight.unitLabel()}
               </Text>
               <TouchableOpacity
-                style={[styles.repsHeaderCell, { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 }]}
+                style={[
+                  styles.repsHeaderCell,
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
+                  },
+                ]}
                 onPress={() => {
                   hapticLight();
                   setShowRepModeModal(true);
@@ -638,11 +842,23 @@ const RoutineExerciseComponent = ({
                 >
                   REPS
                 </Text>
-                <Ionicons name="chevron-down" size={14} color={colors.textFaded} />
+                <Ionicons
+                  name="chevron-down"
+                  size={14}
+                  color={colors.textFaded}
+                />
               </TouchableOpacity>
               {showRir && (
                 <TouchableOpacity
-                  style={[styles.rirHeaderCell, { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 }]}
+                  style={[
+                    styles.rirHeaderCell,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 4,
+                    },
+                  ]}
                   onPress={() => {
                     hapticLight();
                     setShowRirModeModal(true);
@@ -654,7 +870,11 @@ const RoutineExerciseComponent = ({
                   >
                     RIR
                   </Text>
-                  <Ionicons name="chevron-down" size={14} color={colors.textFaded} />
+                  <Ionicons
+                    name="chevron-down"
+                    size={14}
+                    color={colors.textFaded}
+                  />
                 </TouchableOpacity>
               )}
               {!showRir && (
@@ -714,8 +934,8 @@ const RoutineExerciseComponent = ({
         onModeSelect={(mode) => {
           setRepMode(mode);
           // Reset rep values when switching modes
-          setSets((prev) =>
-            prev.map((set) => {
+          setSets((prev) => {
+            return prev.map((set) => {
               if (mode === "range") {
                 return {
                   ...set,
@@ -728,8 +948,25 @@ const RoutineExerciseComponent = ({
                   repRange: { min: "", max: "" },
                 };
               }
-            })
-          );
+            });
+          });
+
+          // Update parent when mode changes (outside state update to avoid render warning)
+          if (onUpdateValues) {
+            if (mode === "range") {
+              onUpdateValues(exercise.exercise_id, {
+                rep_range_min: null,
+                rep_range_max: null,
+                reps: null,
+              });
+            } else {
+              onUpdateValues(exercise.exercise_id, {
+                reps: null,
+                rep_range_min: null,
+                rep_range_max: null,
+              });
+            }
+          }
         }}
       />
 
@@ -740,8 +977,8 @@ const RoutineExerciseComponent = ({
         onModeSelect={(mode) => {
           setRirMode(mode);
           // Reset RIR values when switching modes
-          setSets((prev) =>
-            prev.map((set) => {
+          setSets((prev) => {
+            return prev.map((set) => {
               if (mode === "range") {
                 return {
                   ...set,
@@ -754,8 +991,25 @@ const RoutineExerciseComponent = ({
                   rirRange: { min: "", max: "" },
                 };
               }
-            })
-          );
+            });
+          });
+
+          // Update parent when mode changes (outside state update to avoid render warning)
+          if (onUpdateValues) {
+            if (mode === "range") {
+              onUpdateValues(exercise.exercise_id, {
+                rir_range_min: null,
+                rir_range_max: null,
+                rir: null,
+              });
+            } else {
+              onUpdateValues(exercise.exercise_id, {
+                rir: null,
+                rir_range_min: null,
+                rir_range_max: null,
+              });
+            }
+          }
         }}
       />
     </View>

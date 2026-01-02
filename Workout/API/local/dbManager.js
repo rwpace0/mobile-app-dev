@@ -138,6 +138,13 @@ class DatabaseManager {
                     exercise_id TEXT NOT NULL,
                     exercise_order INTEGER,
                     sets INTEGER,
+                    weight REAL,
+                    reps INTEGER,
+                    rep_range_min INTEGER,
+                    rep_range_max INTEGER,
+                    rir INTEGER,
+                    rir_range_min INTEGER,
+                    rir_range_max INTEGER,
                     created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
                     updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
                     sync_status TEXT DEFAULT 'synced'
@@ -490,6 +497,120 @@ class DatabaseManager {
         }
       }
 
+      if (currentVersion < 8) {
+        console.log("[DatabaseManager] Updating to database version 8");
+
+        // Add weight, reps, rep ranges, RIR, and RIR ranges to template_exercises table
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE template_exercises ADD COLUMN weight REAL;"
+          );
+          console.log(
+            "[DatabaseManager] Added weight column to template_exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] weight column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE template_exercises ADD COLUMN reps INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added reps column to template_exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] reps column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE template_exercises ADD COLUMN rep_range_min INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added rep_range_min column to template_exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] rep_range_min column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE template_exercises ADD COLUMN rep_range_max INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added rep_range_max column to template_exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] rep_range_max column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE template_exercises ADD COLUMN rir INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added rir column to template_exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] rir column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE template_exercises ADD COLUMN rir_range_min INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added rir_range_min column to template_exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] rir_range_min column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        try {
+          await this.db.execAsync(
+            "ALTER TABLE template_exercises ADD COLUMN rir_range_max INTEGER;"
+          );
+          console.log(
+            "[DatabaseManager] Added rir_range_max column to template_exercises table"
+          );
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] rir_range_max column already exists or failed to add:",
+            e.message
+          );
+        }
+
+        // Update version
+        const version8Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 8"
+        );
+        if (version8Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (8)"
+          );
+          console.log("[DatabaseManager] Database version updated to 8");
+        }
+      }
+
       // Force check for secondary_muscle_groups column and add if missing (regardless of version)
       try {
         const tableInfo = await this.db.getAllAsync(
@@ -516,6 +637,51 @@ class DatabaseManager {
           error
         );
         throw error;
+      }
+
+      // Force check for template_exercises columns from version 8 and add if missing (regardless of version)
+      try {
+        const templateExercisesTableInfo = await this.db.getAllAsync(
+          "PRAGMA table_info(template_exercises)"
+        );
+        const columnNames = templateExercisesTableInfo.map((col) => col.name);
+
+        const requiredColumns = [
+          { name: "weight", type: "REAL" },
+          { name: "reps", type: "INTEGER" },
+          { name: "rep_range_min", type: "INTEGER" },
+          { name: "rep_range_max", type: "INTEGER" },
+          { name: "rir", type: "INTEGER" },
+          { name: "rir_range_min", type: "INTEGER" },
+          { name: "rir_range_max", type: "INTEGER" },
+        ];
+
+        for (const column of requiredColumns) {
+          if (!columnNames.includes(column.name)) {
+            console.log(
+              `[DatabaseManager] Adding missing ${column.name} column to template_exercises table`
+            );
+            try {
+              await this.db.execAsync(
+                `ALTER TABLE template_exercises ADD COLUMN ${column.name} ${column.type};`
+              );
+              console.log(
+                `[DatabaseManager] Successfully added ${column.name} column`
+              );
+            } catch (e) {
+              console.log(
+                `[DatabaseManager] ${column.name} column already exists or failed to add:`,
+                e.message
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          "[DatabaseManager] Error checking/adding template_exercises columns:",
+          error
+        );
+        // Don't throw - continue with initialization
       }
 
       // Defensive check: Ensure all core tables exist even if version check failed
@@ -701,6 +867,13 @@ class DatabaseManager {
                     exercise_id TEXT NOT NULL,
                     exercise_order INTEGER,
                     sets INTEGER,
+                    weight REAL,
+                    reps INTEGER,
+                    rep_range_min INTEGER,
+                    rep_range_max INTEGER,
+                    rir INTEGER,
+                    rir_range_min INTEGER,
+                    rir_range_max INTEGER,
                     created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
                     updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
                     sync_status TEXT DEFAULT 'synced'

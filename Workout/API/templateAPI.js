@@ -79,10 +79,6 @@ class TemplateAPI extends APIBase {
                   continue;
                 }
 
-                console.log(
-                  `[TemplateAPI] Exercise ${exercise.exercise_id} sync status: ${exerciseRecord.sync_status}, last_synced_at: ${exerciseRecord.last_synced_at}`
-                );
-
                 // If exercise hasn't been synced to server yet, sync it first
                 if (
                   !exerciseRecord.last_synced_at ||
@@ -433,6 +429,13 @@ class TemplateAPI extends APIBase {
                     'exercise_id', te.exercise_id,
                     'exercise_order', te.exercise_order,
                     'sets', te.sets,
+                    'weight', te.weight,
+                    'reps', te.reps,
+                    'rep_range_min', te.rep_range_min,
+                    'rep_range_max', te.rep_range_max,
+                    'rir', te.rir,
+                    'rir_range_min', te.rir_range_min,
+                    'rir_range_max', te.rir_range_max,
                     'created_at', te.created_at,
                     'updated_at', te.updated_at
                   )
@@ -501,6 +504,13 @@ class TemplateAPI extends APIBase {
                     'exercise_id', te.exercise_id,
                     'exercise_order', te.exercise_order,
                     'sets', te.sets,
+                    'weight', te.weight,
+                    'reps', te.reps,
+                    'rep_range_min', te.rep_range_min,
+                    'rep_range_max', te.rep_range_max,
+                    'rir', te.rir,
+                    'rir_range_min', te.rir_range_min,
+                    'rir_range_max', te.rir_range_max,
                     'created_at', te.created_at,
                     'updated_at', te.updated_at
                   )
@@ -628,14 +638,29 @@ class TemplateAPI extends APIBase {
 
           await this.db.execute(
             `INSERT INTO template_exercises 
-            (template_exercise_id, template_id, exercise_id, exercise_order, sets, created_at, updated_at, sync_status, version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (template_exercise_id, template_id, exercise_id, exercise_order, sets, weight, reps, rep_range_min, rep_range_max, rir, rir_range_min, rir_range_max, created_at, updated_at, sync_status, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               templateExerciseId,
               templateId,
               exercise.exercise_id,
               i + 1, // exercise_order
               exercise.sets || 1,
+              exercise.weight !== undefined ? exercise.weight : null,
+              exercise.reps !== undefined ? exercise.reps : null,
+              exercise.rep_range_min !== undefined
+                ? exercise.rep_range_min
+                : null,
+              exercise.rep_range_max !== undefined
+                ? exercise.rep_range_max
+                : null,
+              exercise.rir !== undefined ? exercise.rir : null,
+              exercise.rir_range_min !== undefined
+                ? exercise.rir_range_min
+                : null,
+              exercise.rir_range_max !== undefined
+                ? exercise.rir_range_max
+                : null,
               updatedTemplate.created_at,
               updatedTemplate.updated_at,
               "pending_sync",

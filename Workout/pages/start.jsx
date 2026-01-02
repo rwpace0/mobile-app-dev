@@ -24,10 +24,16 @@ import { useActiveWorkout } from "../state/ActiveWorkoutContext";
 import BottomSheetModal from "../components/modals/bottomModal";
 import ActiveWorkoutModal from "../components/modals/ActiveWorkoutModal";
 import RoutineDeleteModal from "../components/modals/RoutineDeleteModal";
-import { hapticLight, hapticMedium, hapticSuccess } from "../utils/hapticFeedback";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSuccess,
+} from "../utils/hapticFeedback";
+import { useWeight } from "../utils/useWeight";
 
 const WorkoutStartPage = () => {
   const navigation = useNavigation();
+  const weight = useWeight();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -316,20 +322,65 @@ const WorkoutStartPage = () => {
         setPendingWorkoutAction(() => () => {
           // Transform template exercises into the format expected by activeWorkout
           const selectedExercises = templateWithFullDetails.exercises.map(
-            (exercise) => ({
-              exercise_id: exercise.exercise_id,
-              name: exercise.name,
-              muscle_group: exercise.muscle_group,
-              sets: Array(exercise.sets || 1)
-                .fill()
-                .map((_, idx) => ({
-                  id: (idx + 1).toString(),
-                  weight: "",
-                  reps: "",
-                  rir: "",
-                  completed: false,
-                })),
-            })
+            (exercise) => {
+              // Get weight, reps, and RIR from template
+              let initialWeight = "";
+              let initialReps = "";
+              let initialRir = "";
+
+              if (exercise.weight !== null && exercise.weight !== undefined) {
+                const convertedWeight = weight.fromStorage(exercise.weight);
+                const roundedWeight = weight.roundToHalf(convertedWeight);
+                initialWeight = roundedWeight.toString();
+              }
+
+              // Handle reps - single value or range
+              if (
+                exercise.rep_range_min !== null &&
+                exercise.rep_range_min !== undefined &&
+                exercise.rep_range_max !== null &&
+                exercise.rep_range_max !== undefined
+              ) {
+                initialReps = `${exercise.rep_range_min}-${exercise.rep_range_max}`;
+              } else if (
+                exercise.reps !== null &&
+                exercise.reps !== undefined
+              ) {
+                initialReps = exercise.reps.toString();
+              }
+
+              // Handle RIR - single value or range
+              if (
+                exercise.rir_range_min !== null &&
+                exercise.rir_range_min !== undefined &&
+                exercise.rir_range_max !== null &&
+                exercise.rir_range_max !== undefined
+              ) {
+                initialRir = `${exercise.rir_range_min}-${exercise.rir_range_max}`;
+              } else if (exercise.rir !== null && exercise.rir !== undefined) {
+                initialRir = exercise.rir.toString();
+              }
+
+              return {
+                exercise_id: exercise.exercise_id,
+                name: exercise.name,
+                muscle_group: exercise.muscle_group,
+                // Preserve template range data for placeholder use
+                rep_range_min: exercise.rep_range_min,
+                rep_range_max: exercise.rep_range_max,
+                rir_range_min: exercise.rir_range_min,
+                rir_range_max: exercise.rir_range_max,
+                sets: Array(exercise.sets || 1)
+                  .fill()
+                  .map((_, idx) => ({
+                    id: (idx + 1).toString(),
+                    weight: idx === 0 ? initialWeight : "",
+                    reps: idx === 0 ? initialReps : "",
+                    rir: idx === 0 ? initialRir : "",
+                    completed: false,
+                  })),
+              };
+            }
           );
 
           // Navigate to activeWorkout with the exercises and template ID
@@ -343,20 +394,62 @@ const WorkoutStartPage = () => {
       } else {
         // Transform template exercises into the format expected by activeWorkout
         const selectedExercises = templateWithFullDetails.exercises.map(
-          (exercise) => ({
-            exercise_id: exercise.exercise_id,
-            name: exercise.name,
-            muscle_group: exercise.muscle_group,
-            sets: Array(exercise.sets || 1)
-              .fill()
-              .map((_, idx) => ({
-                id: (idx + 1).toString(),
-                weight: "",
-                reps: "",
-                rir: "",
-                completed: false,
-              })),
-          })
+          (exercise) => {
+            // Get weight, reps, and RIR from template
+            let initialWeight = "";
+            let initialReps = "";
+            let initialRir = "";
+
+            if (exercise.weight !== null && exercise.weight !== undefined) {
+              const convertedWeight = weight.fromStorage(exercise.weight);
+              const roundedWeight = weight.roundToHalf(convertedWeight);
+              initialWeight = roundedWeight.toString();
+            }
+
+            // Handle reps - single value or range
+            if (
+              exercise.rep_range_min !== null &&
+              exercise.rep_range_min !== undefined &&
+              exercise.rep_range_max !== null &&
+              exercise.rep_range_max !== undefined
+            ) {
+              initialReps = `${exercise.rep_range_min}-${exercise.rep_range_max}`;
+            } else if (exercise.reps !== null && exercise.reps !== undefined) {
+              initialReps = exercise.reps.toString();
+            }
+
+            // Handle RIR - single value or range
+            if (
+              exercise.rir_range_min !== null &&
+              exercise.rir_range_min !== undefined &&
+              exercise.rir_range_max !== null &&
+              exercise.rir_range_max !== undefined
+            ) {
+              initialRir = `${exercise.rir_range_min}-${exercise.rir_range_max}`;
+            } else if (exercise.rir !== null && exercise.rir !== undefined) {
+              initialRir = exercise.rir.toString();
+            }
+
+            return {
+              exercise_id: exercise.exercise_id,
+              name: exercise.name,
+              muscle_group: exercise.muscle_group,
+              // Preserve template range data for placeholder use
+              rep_range_min: exercise.rep_range_min,
+              rep_range_max: exercise.rep_range_max,
+              rir_range_min: exercise.rir_range_min,
+              rir_range_max: exercise.rir_range_max,
+              sets: Array(exercise.sets || 1)
+                .fill()
+                .map((_, idx) => ({
+                  id: (idx + 1).toString(),
+                  weight: idx === 0 ? initialWeight : "",
+                  reps: idx === 0 ? initialReps : "",
+                  rir: idx === 0 ? initialRir : "",
+                  completed: false,
+                })),
+            };
+          }
         );
 
         // Navigate to activeWorkout with the exercises and template ID
@@ -570,10 +663,12 @@ const WorkoutStartPage = () => {
           >
             <View style={itemStyles.templateHeader}>
               <Text style={itemStyles.templateName}>{template.name}</Text>
-              <TouchableOpacity onPress={() => {
-                hapticLight();
-                onOptions(template);
-              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  hapticLight();
+                  onOptions(template);
+                }}
+              >
                 <Ionicons
                   name="ellipsis-horizontal"
                   size={24}

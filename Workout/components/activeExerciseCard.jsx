@@ -154,44 +154,35 @@ const ActiveExerciseComponent = ({
             setPreviousPerformance(performanceData);
 
             // Initialize sets based on previous workout if current sets are empty
+            // Use placeholders instead of pre-filling values
             if (!hasPrefilledData && sets.length === 0) {
               const initialSets = lastWorkout.sets.map((prevSet, index) => {
-                const convertedWeight = weight.fromStorage(prevSet.weight);
-                // Round to only allow whole numbers and .5 increments
-                const roundedWeight = weight.roundToHalf(convertedWeight);
                 return {
                   id: (index + 1).toString(),
-                  weight: showPreviousPerformance
-                    ? roundedWeight.toString()
-                    : "",
-                  reps: showPreviousPerformance ? prevSet.reps.toString() : "",
+                  weight: "",
+                  reps: "",
                   rir: "",
-                  total: showPreviousPerformance
-                    ? Math.round(roundedWeight * prevSet.reps).toString()
-                    : "",
+                  total: "",
                   completed: false,
                 };
               });
 
               setSets(initialSets);
               setHasPrefilledData(true);
-            } else if (!hasPrefilledData && showPreviousPerformance) {
-              // Pre-fill existing empty sets with previous performance data
-              setSets((prevSets) =>
-                prevSets.map((set) => {
-                  if (!set.weight && !set.reps) {
-                    return {
-                      ...set,
-                      weight: performanceData.weight.toString(),
-                      reps: performanceData.reps.toString(),
-                      total: Math.round(
-                        performanceData.weight * performanceData.reps
-                      ).toString(),
-                    };
-                  }
-                  return set;
-                })
-              );
+            } else if (!hasPrefilledData) {
+              // Ensure at least one empty set exists
+              if (sets.length === 0) {
+                setSets([
+                  {
+                    id: "1",
+                    weight: "",
+                    reps: "",
+                    rir: "",
+                    total: "",
+                    completed: false,
+                  },
+                ]);
+              }
               setHasPrefilledData(true);
             }
           }
@@ -468,15 +459,21 @@ const ActiveExerciseComponent = ({
   };
 
   const handleRepsChange = (id, value) => {
-    // Allow only whole numbers, max 3 digits (999)
-    const sanitized = value.replace(/[^0-9]/g, "");
-    const limited = sanitized.length > 3 ? sanitized.slice(0, 3) : sanitized;
+    // Allow whole numbers and "-" for ranges (e.g., "1-2"), max 7 characters
+    const sanitized = value.replace(/[^0-9-]/g, "");
+    // Ensure only one dash
+    const parts = sanitized.split("-");
+    const filtered =
+      parts.length > 2 ? parts[0] + "-" + parts.slice(1).join("") : sanitized;
+    const limited = filtered.length > 7 ? filtered.slice(0, 7) : filtered;
 
     setSets((prev) =>
       prev.map((set) => {
         if (set.id === id) {
           const weight = parseFloat(set.weight) || 0;
-          const reps = parseFloat(limited) || 0;
+          // For range format "1-2", use the first number for total calculation
+          const repsMatch = limited.match(/^(\d+)/);
+          const reps = repsMatch ? parseFloat(repsMatch[1]) : 0;
           return {
             ...set,
             reps: limited,
@@ -489,9 +486,13 @@ const ActiveExerciseComponent = ({
   };
 
   const handleRirChange = (id, value) => {
-    // Allow only whole numbers, max 2 digits (99)
-    const sanitized = value.replace(/[^0-9]/g, "");
-    const limited = sanitized.length > 2 ? sanitized.slice(0, 2) : sanitized;
+    // Allow whole numbers and "-" for ranges (e.g., "1-2"), max 5 characters
+    const sanitized = value.replace(/[^0-9-]/g, "");
+    // Ensure only one dash
+    const parts = sanitized.split("-");
+    const filtered =
+      parts.length > 2 ? parts[0] + "-" + parts.slice(1).join("") : sanitized;
+    const limited = filtered.length > 5 ? filtered.slice(0, 5) : filtered;
 
     setSets((prev) =>
       prev.map((set) => {
@@ -514,43 +515,17 @@ const ActiveExerciseComponent = ({
         ? (parseInt(lastSet.id) + 1).toString()
         : "1";
 
-    // Use previous performance data as defaults if available and setting is enabled
-    let defaultWeight = lastSet ? lastSet.weight : "";
-    let defaultReps = lastSet ? lastSet.reps : "";
-
-    // Get the corresponding previous set for this new set number
+    // Don't pre-fill values, use placeholders instead
+    // Get the corresponding previous set for this new set number for placeholder reference
     const newSetIndex = sets.length;
     const correspondingPreviousSet = previousWorkoutSets[newSetIndex];
 
-    if (
-      showPreviousPerformance &&
-      correspondingPreviousSet &&
-      (!lastSet || (!lastSet.weight && !lastSet.reps))
-    ) {
-      // Use the corresponding previous set data for this set number
-      defaultWeight = correspondingPreviousSet.weight.toString();
-      defaultReps = correspondingPreviousSet.reps.toString();
-    } else if (
-      showPreviousPerformance &&
-      previousPerformance &&
-      (!lastSet || (!lastSet.weight && !lastSet.reps))
-    ) {
-      // Fallback to best set data if no corresponding previous set
-      defaultWeight = weight.roundToHalf(previousPerformance.weight).toString();
-      defaultReps = previousPerformance.reps.toString();
-    }
-
     const newSet = {
       id: newSetId,
-      weight: defaultWeight,
-      reps: defaultReps,
+      weight: "",
+      reps: "",
       rir: "",
-      total:
-        defaultWeight && defaultReps
-          ? Math.round(
-              parseFloat(defaultWeight) * parseFloat(defaultReps)
-            ).toString()
-          : "",
+      total: "",
       completed: false,
     };
     setSets([...sets, newSet]);
@@ -781,7 +756,13 @@ const ActiveExerciseComponent = ({
             keyboardType="numeric"
             maxLength={3}
             placeholder={
-              showPreviousPerformance && correspondingPreviousSet
+              // Prioritize template ranges over previous workout values
+              exercise.rep_range_min !== null &&
+              exercise.rep_range_min !== undefined &&
+              exercise.rep_range_max !== null &&
+              exercise.rep_range_max !== undefined
+                ? `${exercise.rep_range_min}-${exercise.rep_range_max}`
+                : showPreviousPerformance && correspondingPreviousSet
                 ? correspondingPreviousSet.reps.toString()
                 : "0"
             }
@@ -801,7 +782,20 @@ const ActiveExerciseComponent = ({
               onChangeText={(value) => handleRirChange(set.id, value)}
               keyboardType="numeric"
               maxLength={2}
-              placeholder="0"
+              placeholder={
+                // Prioritize template ranges over previous workout values
+                exercise.rir_range_min !== null &&
+                exercise.rir_range_min !== undefined &&
+                exercise.rir_range_max !== null &&
+                exercise.rir_range_max !== undefined
+                  ? `${exercise.rir_range_min}-${exercise.rir_range_max}`
+                  : showPreviousPerformance && correspondingPreviousSet
+                  ? correspondingPreviousSet.rir !== null &&
+                    correspondingPreviousSet.rir !== undefined
+                    ? correspondingPreviousSet.rir.toString()
+                    : "0"
+                  : "0"
+              }
               placeholderTextColor={colors.textSecondary}
               selectTextOnFocus={true}
             />
@@ -1034,7 +1028,14 @@ const ActiveExerciseComponent = ({
                           keyboardType="numeric"
                           maxLength={3}
                           placeholder={
-                            showPreviousPerformance && correspondingPreviousSet
+                            // Prioritize template ranges over previous workout values
+                            exercise.rep_range_min !== null &&
+                            exercise.rep_range_min !== undefined &&
+                            exercise.rep_range_max !== null &&
+                            exercise.rep_range_max !== undefined
+                              ? `${exercise.rep_range_min}-${exercise.rep_range_max}`
+                              : showPreviousPerformance &&
+                                correspondingPreviousSet
                               ? correspondingPreviousSet.reps.toString()
                               : "0"
                           }
@@ -1056,7 +1057,21 @@ const ActiveExerciseComponent = ({
                             }
                             keyboardType="numeric"
                             maxLength={2}
-                            placeholder="0"
+                            placeholder={
+                              // Prioritize template ranges over previous workout values
+                              exercise.rir_range_min !== null &&
+                              exercise.rir_range_min !== undefined &&
+                              exercise.rir_range_max !== null &&
+                              exercise.rir_range_max !== undefined
+                                ? `${exercise.rir_range_min}-${exercise.rir_range_max}`
+                                : showPreviousPerformance &&
+                                  correspondingPreviousSet
+                                ? correspondingPreviousSet.rir !== null &&
+                                  correspondingPreviousSet.rir !== undefined
+                                  ? correspondingPreviousSet.rir.toString()
+                                  : "0"
+                                : "0"
+                            }
                             placeholderTextColor={colors.textSecondary}
                             selectTextOnFocus={true}
                           />

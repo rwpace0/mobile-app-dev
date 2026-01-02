@@ -69,8 +69,14 @@ const ActiveWorkoutPage = () => {
   const [remainingTime, setRemainingTime] = useState(0);
   const [totalTimerTime, setTotalTimerTime] = useState(0);
 
+  // Track if we've initialized to prevent re-initialization loops
+  const hasInitializedRef = React.useRef(false);
+
   // Initialize state on mount - optimized for faster loading
   useEffect(() => {
+    // Prevent re-initialization if already done
+    if (hasInitializedRef.current) return;
+    
     if (activeWorkout) {
       // Restore from existing workout context
       setExercises(activeWorkout.exercises || []);
@@ -85,6 +91,7 @@ const ActiveWorkoutPage = () => {
       if (activeWorkout.templateId && !templateId) {
         navigation.setParams({ templateId: activeWorkout.templateId });
       }
+      hasInitializedRef.current = true;
     } else {
       // Handle initial exercises and workout name from template/routine start for new workout
       const initialExercises = route.params?.selectedExercises || [];
@@ -94,6 +101,9 @@ const ActiveWorkoutPage = () => {
 
       setExercises(initialExercises);
       setWorkoutName(initialWorkoutName);
+      
+      // Set initialization flag before async call to prevent re-initialization
+      hasInitializedRef.current = true;
 
       // Create new workout in context immediately
       const startNewWorkout = async () => {
@@ -147,11 +157,46 @@ const ActiveWorkoutPage = () => {
     loadOriginalTemplate();
   }, [templateId, activeWorkout?.templateId]);
 
-  // Update workout in context when state changes - debounced for performance
+  // Use refs to track previous values and prevent unnecessary updates
+  const prevValuesRef = React.useRef({
+    workoutName: null,
+    exercises: null,
+    exerciseStates: null,
+    totalVolume: null,
+    totalSets: null,
+    exerciseTotals: null,
+  });
+
+  // Update workout in context when state changes - prevent infinite loops
   useEffect(() => {
-    if (activeWorkout) {
-      // Only update if there's actual data to save
-      if (exercises.length > 0 || Object.keys(exerciseStates).length > 0) {
+    // Don't update if we haven't initialized yet (prevents loop during initial setup)
+    if (!hasInitializedRef.current || !activeWorkout) {
+      return;
+    }
+
+    // Only update if there's actual data to save
+    if (exercises.length > 0 || Object.keys(exerciseStates).length > 0) {
+      // Check if values have actually changed from previous update
+      const prev = prevValuesRef.current;
+      const hasChanges = 
+        prev.workoutName !== workoutName ||
+        prev.totalVolume !== totalVolume ||
+        prev.totalSets !== totalSets ||
+        JSON.stringify(prev.exercises) !== JSON.stringify(exercises) ||
+        JSON.stringify(prev.exerciseStates) !== JSON.stringify(exerciseStates) ||
+        JSON.stringify(prev.exerciseTotals) !== JSON.stringify(exerciseTotals);
+
+      if (hasChanges) {
+        // Update refs with current values
+        prevValuesRef.current = {
+          workoutName,
+          exercises: JSON.parse(JSON.stringify(exercises)), // Deep copy
+          exerciseStates: JSON.parse(JSON.stringify(exerciseStates)), // Deep copy
+          totalVolume,
+          totalSets,
+          exerciseTotals: JSON.parse(JSON.stringify(exerciseTotals)), // Deep copy
+        };
+
         const workoutUpdate = {
           name: workoutName || `Workout on ${new Date().toLocaleDateString()}`,
           exercises: exercises,

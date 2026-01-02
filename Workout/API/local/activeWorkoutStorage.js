@@ -1,6 +1,6 @@
-import { storage } from './tokenStorage';
+import { storage } from "./tokenStorage";
 
-const ACTIVE_WORKOUT_KEY = 'active_workout';
+const ACTIVE_WORKOUT_KEY = "active_workout";
 
 class ActiveWorkoutStorage {
   constructor() {
@@ -14,7 +14,9 @@ class ActiveWorkoutStorage {
   async saveActiveWorkout(workoutData) {
     try {
       if (!workoutData) {
-        console.warn('[ActiveWorkoutStorage] Attempted to save null/undefined workout');
+        console.warn(
+          "[ActiveWorkoutStorage] Attempted to save null/undefined workout"
+        );
         return;
       }
 
@@ -26,9 +28,12 @@ class ActiveWorkoutStorage {
       };
 
       await storage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(persistentData));
-      console.log('[ActiveWorkoutStorage] Active workout saved successfully');
+      //console.log('[ActiveWorkoutStorage] Active workout saved successfully');
     } catch (error) {
-      console.error('[ActiveWorkoutStorage] Failed to save active workout:', error);
+      console.error(
+        "[ActiveWorkoutStorage] Failed to save active workout:",
+        error
+      );
     }
   }
 
@@ -39,35 +44,48 @@ class ActiveWorkoutStorage {
   async loadActiveWorkout() {
     try {
       const workoutJson = await storage.getItem(ACTIVE_WORKOUT_KEY);
-      
+
       if (!workoutJson) {
-        console.log('[ActiveWorkoutStorage] No active workout found in storage');
+        console.log(
+          "[ActiveWorkoutStorage] No active workout found in storage"
+        );
         return null;
       }
 
       const workoutData = JSON.parse(workoutJson);
-      
+
       // Validate that we have required fields
       if (!workoutData.startTime) {
-        console.warn('[ActiveWorkoutStorage] Invalid workout data - missing startTime');
+        console.warn(
+          "[ActiveWorkoutStorage] Invalid workout data - missing startTime"
+        );
         await this.clearActiveWorkout();
         return null;
       }
 
       // Calculate the current duration based on real time elapsed
       const currentTime = Date.now();
-      const elapsedSeconds = Math.floor((currentTime - workoutData.startTime) / 1000);
-      
+      const elapsedSeconds = Math.floor(
+        (currentTime - workoutData.startTime) / 1000
+      );
+
       const restoredWorkout = {
         ...workoutData,
         duration: elapsedSeconds, // Real-time calculated duration
         lastRestoredTime: currentTime,
       };
 
-      console.log(`[ActiveWorkoutStorage] Active workout restored - elapsed time: ${this.formatDuration(elapsedSeconds)}`);
+      console.log(
+        `[ActiveWorkoutStorage] Active workout restored - elapsed time: ${this.formatDuration(
+          elapsedSeconds
+        )}`
+      );
       return restoredWorkout;
     } catch (error) {
-      console.error('[ActiveWorkoutStorage] Failed to load active workout:', error);
+      console.error(
+        "[ActiveWorkoutStorage] Failed to load active workout:",
+        error
+      );
       // Clear corrupted data
       await this.clearActiveWorkout();
       return null;
@@ -80,9 +98,12 @@ class ActiveWorkoutStorage {
   async clearActiveWorkout() {
     try {
       await storage.removeItem(ACTIVE_WORKOUT_KEY);
-      console.log('[ActiveWorkoutStorage] Active workout cleared from storage');
+      console.log("[ActiveWorkoutStorage] Active workout cleared from storage");
     } catch (error) {
-      console.error('[ActiveWorkoutStorage] Failed to clear active workout:', error);
+      console.error(
+        "[ActiveWorkoutStorage] Failed to clear active workout:",
+        error
+      );
     }
   }
 
@@ -95,7 +116,10 @@ class ActiveWorkoutStorage {
       const workoutJson = await storage.getItem(ACTIVE_WORKOUT_KEY);
       return !!workoutJson;
     } catch (error) {
-      console.error('[ActiveWorkoutStorage] Failed to check for active workout:', error);
+      console.error(
+        "[ActiveWorkoutStorage] Failed to check for active workout:",
+        error
+      );
       return false;
     }
   }
@@ -118,7 +142,10 @@ class ActiveWorkoutStorage {
         await this.saveActiveWorkout(updatedWorkout);
       }
     } catch (error) {
-      console.error('[ActiveWorkoutStorage] Failed to update active workout:', error);
+      console.error(
+        "[ActiveWorkoutStorage] Failed to update active workout:",
+        error
+      );
     }
   }
 
@@ -133,10 +160,12 @@ class ActiveWorkoutStorage {
 
       const workoutData = JSON.parse(workoutJson);
       const currentTime = Date.now();
-      const elapsedSeconds = Math.floor((currentTime - workoutData.startTime) / 1000);
+      const elapsedSeconds = Math.floor(
+        (currentTime - workoutData.startTime) / 1000
+      );
 
       return {
-        name: workoutData.name || 'Active Workout',
+        name: workoutData.name || "Active Workout",
         duration: elapsedSeconds,
         exerciseCount: (workoutData.exercises || []).length,
         totalSets: workoutData.totalSets || 0,
@@ -144,7 +173,10 @@ class ActiveWorkoutStorage {
         startTime: workoutData.startTime,
       };
     } catch (error) {
-      console.error('[ActiveWorkoutStorage] Failed to get workout stats:', error);
+      console.error(
+        "[ActiveWorkoutStorage] Failed to get workout stats:",
+        error
+      );
       return null;
     }
   }
@@ -160,9 +192,13 @@ class ActiveWorkoutStorage {
     const remainingSeconds = seconds % 60;
 
     if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     } else {
-      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+        .toString()
+        .padStart(2, "0")}`;
     }
   }
 
@@ -171,14 +207,14 @@ class ActiveWorkoutStorage {
    */
   async initialize() {
     if (this.isInitialized) return;
-    
+
     try {
       // Check if we can access storage
-      await storage.getItem('test');
+      await storage.getItem("test");
       this.isInitialized = true;
-      console.log('[ActiveWorkoutStorage] Initialized successfully');
+      console.log("[ActiveWorkoutStorage] Initialized successfully");
     } catch (error) {
-      console.error('[ActiveWorkoutStorage] Failed to initialize:', error);
+      console.error("[ActiveWorkoutStorage] Failed to initialize:", error);
     }
   }
 }
