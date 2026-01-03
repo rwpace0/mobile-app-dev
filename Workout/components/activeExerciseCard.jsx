@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { SwipeListView } from "react-native-swipe-list-view";
+import { useNavigation } from "@react-navigation/native";
 import SwipeToDelete from "../animations/SwipeToDelete";
 import Animated, {
   useSharedValue,
@@ -54,6 +55,7 @@ const ActiveExerciseComponent = ({
   const animatedOpacity = useSharedValue(1); // Start visible
   const [needsRemeasurement, setNeedsRemeasurement] = useState(false);
 
+  const navigation = useNavigation();
   const { isDark } = useTheme();
   const {
     showPreviousPerformance,
@@ -939,8 +941,13 @@ const ActiveExerciseComponent = ({
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.exerciseTitleRow}
-          onLongPress={drag}
-          disabled={!drag}
+          onLongPress={drag || undefined}
+          onPress={() => {
+            hapticLight();
+            navigation.navigate("ExerciseDetail", {
+              exerciseId: exercise.exercise_id,
+            });
+          }}
           activeOpacity={0.8}
         >
           <View style={styles.exerciseIconContainer}>
