@@ -1,10 +1,6 @@
 Active workout page/components:
-go to exercise's page when pressed on exercise name on active exercise card
 positive feedback on a new best set for the exercise
-
-Routine Page:
-Make the edit/create routine page use a rep range feature. the rep range feautre will show under the reps column in active workout like for example 5-10 and the default if the set is completed without rep value is the low end of the rep range.
-Update backend db and frontend db to use this feature and correctly update the backend.
+buttons consistency
 
 Statistics Page:
 Full UI overhaul to match the app.
@@ -16,7 +12,7 @@ modals should come from the button location and not just come from the bottom ev
 
 Buttons:
 Get rid of icons in most buttons like workout settings and discard workout icons
-should buttons be centered or left aligned and should they have icons?
+should button text be centered or left aligned and should they have icons?
 
 All:
 add haptic feedback to more button presses.
