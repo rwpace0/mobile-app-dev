@@ -587,6 +587,83 @@ const ActiveExerciseComponent = ({
           // Use success haptic when completing, light when uncompleting
           if (newSet.completed && !set.completed) {
             hapticSuccess();
+
+            // Get corresponding previous set for this index
+            const correspondingPreviousSet = previousWorkoutSets[index];
+
+            // If weight is empty, populate with historical data
+            let updatedWeight = String(newSet.weight || "").trim();
+            if (
+              !updatedWeight &&
+              showPreviousPerformance &&
+              correspondingPreviousSet
+            ) {
+              updatedWeight = String(correspondingPreviousSet.weight);
+            }
+
+            // If reps is empty, populate with template or historical data
+            let updatedReps = String(newSet.reps || "").trim();
+            if (!updatedReps) {
+              // Check for template range first
+              if (
+                exercise.rep_range_min !== null &&
+                exercise.rep_range_min !== undefined &&
+                exercise.rep_range_max !== null &&
+                exercise.rep_range_max !== undefined
+              ) {
+                updatedReps = `${exercise.rep_range_min}-${exercise.rep_range_max}`;
+              } else if (showPreviousPerformance && correspondingPreviousSet) {
+                updatedReps = String(correspondingPreviousSet.reps);
+              }
+            }
+
+            // If rir is empty, populate with template or historical data
+            let updatedRir = String(newSet.rir || "").trim();
+            if (!updatedRir) {
+              // Check for template range first
+              if (
+                exercise.rir_range_min !== null &&
+                exercise.rir_range_min !== undefined &&
+                exercise.rir_range_max !== null &&
+                exercise.rir_range_max !== undefined
+              ) {
+                updatedRir = `${exercise.rir_range_min}-${exercise.rir_range_max}`;
+              } else if (showPreviousPerformance && correspondingPreviousSet) {
+                if (
+                  correspondingPreviousSet.rir !== null &&
+                  correspondingPreviousSet.rir !== undefined
+                ) {
+                  updatedRir = String(correspondingPreviousSet.rir);
+                }
+              }
+            }
+
+            // Convert ranges to first number when completing set
+            // Check if reps contains a range (e.g., "1-2")
+            if (updatedReps.includes("-")) {
+              const repsMatch = updatedReps.match(/^(\d+)/);
+              if (repsMatch && repsMatch[1]) {
+                updatedReps = repsMatch[1];
+              }
+            }
+
+            // Check if rir contains a range (e.g., "1-2")
+            if (updatedRir.includes("-")) {
+              const rirMatch = updatedRir.match(/^(\d+)/);
+              if (rirMatch && rirMatch[1]) {
+                updatedRir = rirMatch[1];
+              }
+            }
+
+            // Update weight, reps, and recalculate total
+            const weight = parseFloat(updatedWeight) || 0;
+            const reps = parseFloat(updatedReps) || 0;
+            newSet.weight = updatedWeight;
+            newSet.reps = updatedReps;
+            newSet.total = Math.round(weight * reps).toString();
+
+            // Always update rir
+            newSet.rir = updatedRir;
           } else {
             hapticLight();
           }
@@ -730,7 +807,14 @@ const ActiveExerciseComponent = ({
               if (!inputRefs.current[set.id]) inputRefs.current[set.id] = {};
               inputRefs.current[set.id].weight = ref;
             }}
-            style={styles.weightInput}
+            style={[
+              styles.weightInput,
+              {
+                color: set.completed
+                  ? colors.textPrimary
+                  : colors.textSecondary,
+              },
+            ]}
             value={set.weight}
             onChangeText={(value) => handleWeightChange(set.id, value)}
             keyboardType="numeric"
@@ -750,7 +834,14 @@ const ActiveExerciseComponent = ({
               if (inputRefs.current[set.id])
                 inputRefs.current[set.id].reps = ref;
             }}
-            style={styles.repsInput}
+            style={[
+              styles.repsInput,
+              {
+                color: set.completed
+                  ? colors.textPrimary
+                  : colors.textSecondary,
+              },
+            ]}
             value={set.reps}
             onChangeText={(value) => handleRepsChange(set.id, value)}
             keyboardType="numeric"
@@ -777,7 +868,14 @@ const ActiveExerciseComponent = ({
                 if (inputRefs.current[set.id])
                   inputRefs.current[set.id].rir = ref;
               }}
-              style={styles.rirInput}
+              style={[
+                styles.rirInput,
+                {
+                  color: set.completed
+                    ? colors.textPrimary
+                    : colors.textSecondary,
+                },
+              ]}
               value={set.rir}
               onChangeText={(value) => handleRirChange(set.id, value)}
               keyboardType="numeric"
@@ -998,7 +1096,14 @@ const ActiveExerciseComponent = ({
                               inputRefs.current[set.id] = {};
                             inputRefs.current[set.id].weight = ref;
                           }}
-                          style={styles.weightInput}
+                          style={[
+                            styles.weightInput,
+                            {
+                              color: set.completed
+                                ? colors.textPrimary
+                                : colors.textSecondary,
+                            },
+                          ]}
                           value={set.weight}
                           onChangeText={(value) =>
                             handleWeightChange(set.id, value)
@@ -1020,7 +1125,14 @@ const ActiveExerciseComponent = ({
                             if (inputRefs.current[set.id])
                               inputRefs.current[set.id].reps = ref;
                           }}
-                          style={styles.repsInput}
+                          style={[
+                            styles.repsInput,
+                            {
+                              color: set.completed
+                                ? colors.textPrimary
+                                : colors.textSecondary,
+                            },
+                          ]}
                           value={set.reps}
                           onChangeText={(value) =>
                             handleRepsChange(set.id, value)
@@ -1050,7 +1162,14 @@ const ActiveExerciseComponent = ({
                               if (inputRefs.current[set.id])
                                 inputRefs.current[set.id].rir = ref;
                             }}
-                            style={styles.rirInput}
+                            style={[
+                              styles.rirInput,
+                              {
+                                color: set.completed
+                                  ? colors.textPrimary
+                                  : colors.textSecondary,
+                              },
+                            ]}
                             value={set.rir}
                             onChangeText={(value) =>
                               handleRirChange(set.id, value)
