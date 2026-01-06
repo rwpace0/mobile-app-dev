@@ -51,24 +51,44 @@ const AccountFormField = ({
             secureTextEntry={!showPassword}
             editable={editable}
           />
-          <TouchableOpacity style={styles.eyeIcon} onPress={onTogglePassword}>
-            <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+          <View style={styles.passwordIconsContainer}>
+            {value && value.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => onChangeText("")}
+              >
+                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.eyeIcon} onPress={onTogglePassword}>
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={24}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
-        <TextInput
-          style={[styles.formFieldInput, error && styles.formFieldInputError]}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textFaded}
-          secureTextEntry={secureTextEntry}
-          editable={editable}
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={[styles.formFieldInput, error && styles.formFieldInputError]}
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            placeholderTextColor={colors.textFaded}
+            secureTextEntry={secureTextEntry}
+            editable={editable}
+          />
+          {value && value.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => onChangeText("")}
+            >
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       )}
     </View>
   );

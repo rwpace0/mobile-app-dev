@@ -346,7 +346,7 @@ const PlanSetupPage = () => {
         scrollEventThrottle={16}
       >
         {/* Plan Name */}
-        <View>
+        <View style={styles.nameInputContainer}>
           <TextInput
             style={styles.nameInput}
             value={planName}
@@ -354,6 +354,14 @@ const PlanSetupPage = () => {
             placeholder="Plan Name"
             placeholderTextColor={colors.textSecondary}
           />
+          {planName && planName.length > 0 && (
+            <TouchableOpacity
+              style={styles.nameInputClearButton}
+              onPress={() => setPlanName("")}
+            >
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Start Date */}

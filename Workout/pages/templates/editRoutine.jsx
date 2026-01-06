@@ -193,15 +193,25 @@ const EditRoutine = () => {
 
   const RoutineNameHeader = useMemo(
     () => (
-      <TextInput
-        style={styles.routineNameInput}
-        placeholder="Routine Name"
-        placeholderTextColor="rgba(255, 255, 255, 0.5)"
-        value={routineName}
-        onChangeText={setRoutineName}
-      />
+      <View style={styles.routineNameInputContainer}>
+        <TextInput
+          style={styles.routineNameInput}
+          placeholder="Routine Name"
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          value={routineName}
+          onChangeText={setRoutineName}
+        />
+        {routineName && routineName.length > 0 && (
+          <TouchableOpacity
+            style={styles.routineNameClearButton}
+            onPress={() => setRoutineName("")}
+          >
+            <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </View>
     ),
-    [routineName]
+    [routineName, styles, colors]
   );
 
   const handleSave = async () => {
@@ -322,13 +332,23 @@ const EditRoutine = () => {
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={() => Keyboard.dismiss()}
         >
-          <TextInput
-            style={styles.routineNameInput}
-            placeholder="Routine Name"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            value={routineName}
-            onChangeText={setRoutineName}
-          />
+          <View style={styles.routineNameInputContainer}>
+            <TextInput
+              style={styles.routineNameInput}
+              placeholder="Routine Name"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={routineName}
+              onChangeText={setRoutineName}
+            />
+            {routineName && routineName.length > 0 && (
+              <TouchableOpacity
+                style={styles.routineNameClearButton}
+                onPress={() => setRoutineName("")}
+              >
+                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.emptyWorkoutContainer}>
             <View style={styles.iconContainer}>
               <Ionicons

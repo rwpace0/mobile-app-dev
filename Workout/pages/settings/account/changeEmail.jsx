@@ -17,8 +17,16 @@ import { useAuth } from "../../../API/auth/authContext";
 import { authAPI } from "../../../API/auth/authAPI";
 import { useAlertModal } from "../../../utils/useAlertModal";
 import AlertModal from "../../../components/modals/AlertModal";
+import { Ionicons } from "@expo/vector-icons";
 
-const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextEntry = false, editable = true }) => {
+const AccountFormField = ({
+  title,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry = false,
+  editable = true,
+}) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -26,15 +34,32 @@ const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextE
   return (
     <View style={styles.formField}>
       <Text style={styles.formFieldLabel}>{title}</Text>
-      <TextInput
-        style={[styles.formFieldInput, !editable && styles.formFieldInputDisabled]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textFaded}
-        secureTextEntry={secureTextEntry}
-        editable={editable}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[
+            styles.formFieldInput,
+            !editable && styles.formFieldInputDisabled,
+          ]}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textFaded}
+          secureTextEntry={secureTextEntry}
+          editable={editable}
+        />
+        {value && value.length > 0 && (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={() => onChangeText("")}
+          >
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -48,26 +73,26 @@ const ChangeEmail = () => {
   const { alertState, showSuccess, showError, hideAlert } = useAlertModal();
 
   const [formData, setFormData] = useState({
-    newEmail: '',
+    newEmail: user?.email || "",
   });
   const [loading, setLoading] = useState(false);
 
   // Set current email from user data
   useEffect(() => {
     if (user?.email) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        currentEmail: user.email
+        newEmail: user.email,
       }));
     }
   }, [user]);
 
   const handleFormChange = (field, value) => {
     // Convert email to lowercase
-    const processedValue = field === 'newEmail' ? value.toLowerCase() : value;
-    setFormData(prev => ({
+    const processedValue = field === "newEmail" ? value.toLowerCase() : value;
+    setFormData((prev) => ({
       ...prev,
-      [field]: processedValue
+      [field]: processedValue,
     }));
   };
 
@@ -99,11 +124,12 @@ const ChangeEmail = () => {
         onConfirm: () => {
           hideAlert();
           navigation.goBack();
-        }
+        },
       });
     } catch (error) {
       // Customize error message for display
-      let errorMessage = error.error || error.message || "Failed to change email";
+      let errorMessage =
+        error.error || error.message || "Failed to change email";
       if (errorMessage.includes("already in use")) {
         errorMessage = "Email is unavailable";
       }
@@ -118,13 +144,13 @@ const ChangeEmail = () => {
       <Header title="Change Email" leftComponent={{ type: "back" }} />
       <ScrollView style={styles.scrollView}>
         <AccountFormField
-          title="New Email"
+          title="Email"
           value={formData.newEmail}
-          onChangeText={(value) => handleFormChange('newEmail', value)}
+          onChangeText={(value) => handleFormChange("newEmail", value)}
           placeholder="Enter new email"
         />
-        <TouchableOpacity 
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
+        <TouchableOpacity
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={loading}
         >
@@ -135,7 +161,7 @@ const ChangeEmail = () => {
           )}
         </TouchableOpacity>
       </ScrollView>
-      
+
       <AlertModal
         visible={alertState.visible}
         onClose={hideAlert}

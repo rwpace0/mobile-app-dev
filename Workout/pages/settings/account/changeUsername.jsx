@@ -16,8 +16,16 @@ import { useTheme } from "../../../state/SettingsContext";
 import { useAuth } from "../../../API/auth/authContext";
 import { useAlertModal } from "../../../utils/useAlertModal";
 import AlertModal from "../../../components/modals/AlertModal";
+import { Ionicons } from "@expo/vector-icons";
 
-const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextEntry = false, editable = true }) => {
+const AccountFormField = ({
+  title,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry = false,
+  editable = true,
+}) => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -25,15 +33,32 @@ const AccountFormField = ({ title, value, onChangeText, placeholder, secureTextE
   return (
     <View style={styles.formField}>
       <Text style={styles.formFieldLabel}>{title}</Text>
-      <TextInput
-        style={[styles.formFieldInput, !editable && styles.formFieldInputDisabled]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textFaded}
-        secureTextEntry={secureTextEntry}
-        editable={editable}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[
+            styles.formFieldInput,
+            !editable && styles.formFieldInputDisabled,
+          ]}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textFaded}
+          secureTextEntry={secureTextEntry}
+          editable={editable}
+        />
+        {value && value.length > 0 && (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={() => onChangeText("")}
+          >
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
@@ -47,26 +72,27 @@ const ChangeUsername = () => {
   const { alertState, showSuccess, showError, hideAlert } = useAlertModal();
 
   const [formData, setFormData] = useState({
-    newUsername: '',
+    newUsername: user?.username || "",
   });
   const [loading, setLoading] = useState(false);
 
   // Set current username from user data
   useEffect(() => {
     if (user?.username) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        currentUsername: user.username
+        newUsername: user.username,
       }));
     }
   }, [user]);
 
   const handleFormChange = (field, value) => {
     // Convert username to lowercase
-    const processedValue = field === 'newUsername' ? value.toLowerCase() : value;
-    setFormData(prev => ({
+    const processedValue =
+      field === "newUsername" ? value.toLowerCase() : value;
+    setFormData((prev) => ({
       ...prev,
-      [field]: processedValue
+      [field]: processedValue,
     }));
   };
 
@@ -103,11 +129,12 @@ const ChangeUsername = () => {
         onConfirm: () => {
           hideAlert();
           navigation.goBack();
-        }
+        },
       });
     } catch (error) {
       // Customize error message for display
-      let errorMessage = error.error || error.message || "Failed to change username";
+      let errorMessage =
+        error.error || error.message || "Failed to change username";
       if (errorMessage.includes("already in use")) {
         errorMessage = "Username is unavailable";
       }
@@ -122,13 +149,13 @@ const ChangeUsername = () => {
       <Header title="Change Username" leftComponent={{ type: "back" }} />
       <ScrollView style={styles.scrollView}>
         <AccountFormField
-          title="New Username"
+          title="Username"
           value={formData.newUsername}
-          onChangeText={(value) => handleFormChange('newUsername', value)}
+          onChangeText={(value) => handleFormChange("newUsername", value)}
           placeholder="Enter new username"
         />
-        <TouchableOpacity 
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
+        <TouchableOpacity
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleSave}
           disabled={loading}
         >
@@ -139,7 +166,7 @@ const ChangeUsername = () => {
           )}
         </TouchableOpacity>
       </ScrollView>
-      
+
       <AlertModal
         visible={alertState.visible}
         onClose={hideAlert}
