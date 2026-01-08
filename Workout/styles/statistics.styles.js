@@ -49,45 +49,6 @@ export const createStyles = (isDark = true) => {
       color: colors.textWhite,
     },
 
-    // Overview Stats Card
-    overviewCard: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      marginHorizontal: Spacing.m,
-      marginBottom: Spacing.l,
-      overflow: "hidden",
-      ...Shadow.small,
-    },
-    statsGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-    },
-    statItem: {
-      width: "50%",
-      paddingVertical: Spacing.l,
-      paddingHorizontal: Spacing.m,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    statItemBorderRight: {
-      borderRightWidth: 1,
-      borderRightColor: colors.borderColor,
-    },
-    statItemBorderBottom: {
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor,
-    },
-    statValue: {
-      fontSize: 32,
-      fontWeight: FontWeight.bold,
-      color: colors.primaryBlue,
-      marginBottom: Spacing.xs,
-    },
-    statLabel: {
-      fontSize: FontSize.small,
-      color: colors.textSecondary,
-      textAlign: "center",
-    },
 
     // Period Selector Section
     periodSelectorContainer: {
@@ -97,13 +58,11 @@ export const createStyles = (isDark = true) => {
 
     // Unified Chart Section
     chartSection: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
+      backgroundColor: colors.backgroundPrimary,
       marginHorizontal: Spacing.m,
       marginBottom: Spacing.l,
       paddingTop: Spacing.m,
       paddingBottom: Spacing.m,
-      ...Shadow.small,
     },
     chartHeader: {
       flexDirection: "row",
@@ -194,6 +153,46 @@ export const createStyles = (isDark = true) => {
     exerciseCount: {
       fontSize: FontSize.small,
       color: colors.textSecondary,
+    },
+
+    // Statistics Sections
+    sectionsContainer: {
+      marginTop: Spacing.m,
+    },
+    sectionsGroup: {
+      backgroundColor: colors.backgroundSecondary,
+      marginHorizontal: Spacing.m,
+      marginBottom: Spacing.l,
+      borderRadius: BorderRadius.lg,
+      overflow: "hidden",
+    },
+    sectionItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundSecondary,
+    },
+    sectionItemBorder: {
+      borderBottomWidth: 0.5,
+      borderBottomColor: colors.borderColor,
+    },
+    sectionLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    sectionIcon: {
+      marginRight: Spacing.m,
+      width: Spacing.l,
+      height: Spacing.l,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    sectionTitle: {
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.regular,
+      color: colors.textPrimary,
     },
   });
 };

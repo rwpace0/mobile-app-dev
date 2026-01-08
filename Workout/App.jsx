@@ -37,6 +37,10 @@ import EditProfile from "./pages/settings/editProfile";
 import RoutineDetail from "./pages/templates/routineDetail";
 import CalendarView from "./pages/workouts/calendarView";
 import Statistics from "./pages/statistics/statistics";
+import WeeklySetsStatistics from "./pages/statistics/weeklySets";
+import TopExercisesStatistics from "./pages/statistics/topExercises";
+import MuscleGroupsStatistics from "./pages/statistics/muscleGroups";
+import RecentBestsStatistics from "./pages/statistics/recentBests";
 import PlanPage from "./pages/plan/planPage";
 import PlanSetupPage from "./pages/plan/planSetupPage";
 import ActiveMini from "./components/activeMini";
@@ -147,6 +151,26 @@ const stackScreens = {
     {
       name: "StatisticsMain",
       component: Statistics,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "StatisticsWeeklySets",
+      component: WeeklySetsStatistics,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "StatisticsTopExercises",
+      component: TopExercisesStatistics,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "StatisticsMuscleGroups",
+      component: MuscleGroupsStatistics,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "StatisticsRecentBests",
+      component: RecentBestsStatistics,
       options: slideFromRightOptions,
     },
     {

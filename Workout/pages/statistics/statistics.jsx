@@ -6,8 +6,9 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
@@ -18,8 +19,10 @@ import ViewModeToggle from "../../components/charts/ViewModeToggle";
 import MetricSelector from "../../components/charts/MetricSelector";
 import BarChart from "../../components/charts/BarChart";
 import statisticsAPI from "../../API/statisticsAPI";
+import { hapticLight } from "../../utils/hapticFeedback";
 
 const StatisticsPage = () => {
+  const navigation = useNavigation();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const styles = createStyles(isDark);
@@ -135,6 +138,14 @@ const StatisticsPage = () => {
     fetchAllData(selectedMetric, viewMode, false);
   }, [selectedMetric, viewMode, fetchAllData]);
 
+  const handleSectionPress = useCallback(
+    (route) => {
+      hapticLight();
+      navigation.navigate(route);
+    },
+    [navigation]
+  );
+
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
@@ -207,41 +218,7 @@ const StatisticsPage = () => {
           </View>
         ) : (
           <>
-            {/* Overview Stats */}
-            <View style={styles.overviewCard}>
-              <View style={styles.statsGrid}>
-                <View
-                  style={[
-                    styles.statItem,
-                    styles.statItemBorderRight,
-                    styles.statItemBorderBottom,
-                  ]}
-                >
-                  <Text style={styles.statValue}>
-                    {overviewStats?.totalWorkouts || 0}
-                  </Text>
-                  <Text style={styles.statLabel}>Workouts</Text>
-                </View>
-                <View style={[styles.statItem, styles.statItemBorderBottom]}>
-                  <Text style={styles.statValue}>
-                    {overviewStats?.avgDuration || 0}m
-                  </Text>
-                  <Text style={styles.statLabel}>Avg Duration</Text>
-                </View>
-                <View style={[styles.statItem, styles.statItemBorderRight]}>
-                  <Text style={styles.statValue}>
-                    {overviewStats?.totalSets || 0}
-                  </Text>
-                  <Text style={styles.statLabel}>Total Sets</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{topExercises.length}</Text>
-                  <Text style={styles.statLabel}>Exercises</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Unified Chart Section */}
+            {/* Chart Section at Top */}
             <View style={styles.chartSection}>
               <View style={styles.chartHeader}>
                 <Text style={styles.chartTitle}>
@@ -280,45 +257,101 @@ const StatisticsPage = () => {
               </View>
             </View>
 
-            {/* Top Exercises */}
-            <ChartContainer
-              title="Top Exercises"
-              subtitle="Most frequently performed exercises"
-            >
-              {topExercises.length > 0 ? (
-                <View style={styles.exerciseList}>
-                  {topExercises.map((exercise, index) => (
-                    <View
-                      key={exercise.exerciseId}
-                      style={[
-                        styles.exerciseItem,
-                        index === topExercises.length - 1 &&
-                          styles.exerciseItemLast,
-                      ]}
-                    >
-                      <View style={styles.exerciseInfo}>
-                        <Text style={styles.exerciseName}>{exercise.name}</Text>
-                        <Text style={styles.exerciseMuscle}>
-                          {exercise.muscleGroup || "Unknown"} •{" "}
-                          {exercise.totalSets} sets
-                        </Text>
-                      </View>
-                      <View style={styles.exerciseStats}>
-                        <Text style={styles.exerciseVolume}>
-                          {exercise.workoutCount} workouts
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyMessage}>
-                    No exercise data available
-                  </Text>
-                </View>
-              )}
-            </ChartContainer>
+            {/* Statistics Sections */}
+            <View style={styles.sectionsContainer}>
+              <View style={styles.sectionsGroup}>
+                {/* Weekly Sets Section */}
+                <TouchableOpacity
+                  style={[styles.sectionItem, styles.sectionItemBorder]}
+                  onPress={() => handleSectionPress("StatisticsWeeklySets")}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.sectionLeft}>
+                    <Ionicons
+                      name="stats-chart"
+                      size={24}
+                      color={colors.primaryBlue}
+                      style={styles.sectionIcon}
+                    />
+                    <Text style={styles.sectionTitle}>Weekly Sets</Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color={colors.textFaded}
+                  />
+                </TouchableOpacity>
+
+                {/* Top Exercises Section */}
+                <TouchableOpacity
+                  style={[styles.sectionItem, styles.sectionItemBorder]}
+                  onPress={() => handleSectionPress("StatisticsTopExercises")}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.sectionLeft}>
+                    <Ionicons
+                      name="barbell"
+                      size={24}
+                      color={colors.primaryBlue}
+                      style={styles.sectionIcon}
+                    />
+                    <Text style={styles.sectionTitle}>Top Exercises</Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color={colors.textFaded}
+                  />
+                </TouchableOpacity>
+
+                {/* Muscle Groups Section */}
+                <TouchableOpacity
+                  style={[styles.sectionItem, styles.sectionItemBorder]}
+                  onPress={() => handleSectionPress("StatisticsMuscleGroups")}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.sectionLeft}>
+                    <Ionicons
+                      name="time"
+                      size={24}
+                      color={colors.primaryBlue}
+                      style={styles.sectionIcon}
+                    />
+                    <Text style={styles.sectionTitle}>
+                      Sets per Muscle Group
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color={colors.textFaded}
+                  />
+                </TouchableOpacity>
+
+                {/* Recent Bests Section */}
+                <TouchableOpacity
+                  style={[styles.sectionItem, styles.sectionItemBorder]}
+                  onPress={() => handleSectionPress("StatisticsRecentBests")}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.sectionLeft}>
+                    <Ionicons
+                      name="list"
+                      size={24}
+                      color={colors.primaryBlue}
+                      style={styles.sectionIcon}
+                    />
+                    <Text style={styles.sectionTitle}>Recent Bests</Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color={colors.textFaded}
+                  />
+                </TouchableOpacity>
+
+              </View>
+            </View>
           </>
         )}
       </ScrollView>

@@ -686,6 +686,67 @@ class StatisticsAPI {
       return [];
     }
   }
+
+  /**
+   * Get recent best sets (personal records) across exercises
+   * Ordered by most recent PR date, limited to top N
+   */
+  async getRecentBests(period = "all", limit = 10) {
+    try {
+      await this.db.initializationPromise;
+
+      const startDate = this.getPeriodStartDate(period);
+      let whereClause = "WHERE w.sync_status != 'pending_delete'";
+      const params = [];
+
+      if (startDate) {
+        whereClause += " AND w.date_performed >= ?";
+        params.push(startDate.toISOString());
+      }
+
+      // For each exercise, find its best (heaviest) set and keep the most recent
+      const query = `
+        WITH exercise_prs AS (
+          SELECT 
+            e.exercise_id,
+            e.name,
+            e.muscle_group,
+            s.weight,
+            s.reps,
+            w.date_performed,
+            ROW_NUMBER() OVER (
+              PARTITION BY e.exercise_id 
+              ORDER BY s.weight DESC, w.date_performed DESC
+            ) AS rn
+          FROM workouts w
+          JOIN workout_exercises we ON w.workout_id = we.workout_id
+          JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+          JOIN exercises e ON we.exercise_id = e.exercise_id
+          ${whereClause}
+        )
+        SELECT *
+        FROM exercise_prs
+        WHERE rn = 1
+        ORDER BY date_performed DESC
+        LIMIT ?
+      `;
+
+      params.push(limit);
+      const results = await this.db.query(query, params);
+
+      return results.map((row) => ({
+        exerciseId: row.exercise_id,
+        name: row.name,
+        muscleGroup: row.muscle_group,
+        weight: row.weight || 0,
+        reps: row.reps || 0,
+        date: row.date_performed,
+      }));
+    } catch (error) {
+      console.error("[StatisticsAPI] Error getting recent bests:", error);
+      return [];
+    }
+  }
 }
 
 export const statisticsAPI = new StatisticsAPI();
