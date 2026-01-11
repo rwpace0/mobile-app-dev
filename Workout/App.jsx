@@ -41,6 +41,7 @@ import WeeklySetsStatistics from "./pages/statistics/weeklySets";
 import TopExercisesStatistics from "./pages/statistics/topExercises";
 import MuscleGroupsStatistics from "./pages/statistics/muscleGroups";
 import RecentBestsStatistics from "./pages/statistics/recentBests";
+import WorkoutFrequencyStatistics from "./pages/statistics/workoutFrequency";
 import PlanPage from "./pages/plan/planPage";
 import PlanSetupPage from "./pages/plan/planSetupPage";
 import ActiveMini from "./components/activeMini";
@@ -171,6 +172,11 @@ const stackScreens = {
     {
       name: "StatisticsRecentBests",
       component: RecentBestsStatistics,
+      options: slideFromRightOptions,
+    },
+    {
+      name: "StatisticsWorkoutFrequency",
+      component: WorkoutFrequencyStatistics,
       options: slideFromRightOptions,
     },
     {

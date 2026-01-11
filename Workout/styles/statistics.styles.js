@@ -49,7 +49,6 @@ export const createStyles = (isDark = true) => {
       color: colors.textWhite,
     },
 
-
     // Period Selector Section
     periodSelectorContainer: {
       marginHorizontal: Spacing.m,
@@ -114,65 +113,22 @@ export const createStyles = (isDark = true) => {
       lineHeight: 22,
     },
 
-    // Top Exercises List
-    exerciseList: {
-      paddingHorizontal: Spacing.m,
-    },
-    exerciseItem: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: Spacing.m,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor,
-    },
-    exerciseItemLast: {
-      borderBottomWidth: 0,
-    },
-    exerciseInfo: {
-      flex: 1,
-    },
-    exerciseName: {
-      fontSize: FontSize.base,
-      fontWeight: FontWeight.semiBold,
-      color: colors.textPrimary,
-      marginBottom: Spacing.xxs,
-    },
-    exerciseMuscle: {
-      fontSize: FontSize.small,
-      color: colors.textSecondary,
-    },
-    exerciseStats: {
-      alignItems: "flex-end",
-    },
-    exerciseVolume: {
-      fontSize: FontSize.large,
-      fontWeight: FontWeight.semiBold,
-      color: colors.primaryBlue,
-    },
-    exerciseCount: {
-      fontSize: FontSize.small,
-      color: colors.textSecondary,
-    },
-
     // Statistics Sections
     sectionsContainer: {
       marginTop: Spacing.m,
     },
     sectionsGroup: {
-      backgroundColor: colors.backgroundSecondary,
-      marginHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundPrimary,
       marginBottom: Spacing.l,
-      borderRadius: BorderRadius.lg,
       overflow: "hidden",
     },
     sectionItem: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingVertical: Spacing.m,
+      paddingVertical: Spacing.l,
       paddingHorizontal: Spacing.m,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: colors.backgroundPrimary,
     },
     sectionItemBorder: {
       borderBottomWidth: 0.5,
