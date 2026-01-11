@@ -53,7 +53,7 @@ const Stack = createNativeStackNavigator();
 // Create navigation reference for global navigation
 const navigationRef = createNavigationContainerRef();
 
-const IP = "192.168.1.212";
+const IP = "192.168.1.85";
 // Deep linking configuration
 const linking = {
   prefixes: [
