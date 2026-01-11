@@ -688,6 +688,107 @@ class StatisticsAPI {
   }
 
   /**
+   * Get sets per muscle group over time
+   * Returns data with dates and muscle groups as separate series
+   */
+  async getSetsPerMuscleGroup(period = "1m", groupBy = "week") {
+    try {
+      await this.db.initializationPromise;
+
+      let weeks = [];
+      let startDateStr;
+
+      if (groupBy === "week") {
+        // Generate weeks based on period
+        const numWeeks = period === "1y" ? 52 : period === "3m" ? 12 : 4;
+        for (let i = numWeeks - 1; i >= 0; i--) {
+          const weekStart = startOfWeek(subDays(new Date(), i * 7), {
+            weekStartsOn: 0,
+          });
+          weeks.push(format(weekStart, "yyyy-MM-dd"));
+        }
+        startDateStr = weeks[0];
+      } else if (groupBy === "month") {
+        // Generate months based on period
+        const numMonths = period === "1y" ? 12 : period === "3m" ? 3 : 12;
+        for (let i = numMonths - 1; i >= 0; i--) {
+          const monthStart = startOfMonth(subMonths(new Date(), i));
+          weeks.push(format(monthStart, "yyyy-MM-dd"));
+        }
+        startDateStr = weeks[0];
+      } else {
+        // Year grouping - monthly data points
+        for (let i = 11; i >= 0; i--) {
+          const monthStart = startOfMonth(subMonths(new Date(), i));
+          weeks.push(format(monthStart, "yyyy-MM-dd"));
+        }
+        startDateStr = weeks[0];
+        groupBy = "month"; // Treat as month for query
+      }
+
+      // Get all sets with muscle groups in the date range
+      const query = `
+        SELECT
+          w.date_performed,
+          e.muscle_group,
+          COUNT(s.set_id) as set_count
+        FROM workouts w
+        JOIN workout_exercises we ON w.workout_id = we.workout_id
+        JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+        JOIN exercises e ON we.exercise_id = e.exercise_id
+        WHERE date(w.date_performed) >= date(?)
+          AND w.sync_status != 'pending_delete'
+          AND e.muscle_group IS NOT NULL
+        GROUP BY w.workout_id, e.muscle_group
+        ORDER BY w.date_performed ASC
+      `;
+
+      const results = await this.db.query(query, [startDateStr]);
+
+      // Group sets by period and muscle group
+      const periodSets = new Map();
+
+      results.forEach((row) => {
+        const workoutDate = parseISO(row.date_performed);
+        let periodKey;
+
+        if (groupBy === "week") {
+          periodKey = format(
+            startOfWeek(workoutDate, { weekStartsOn: 0 }),
+            "yyyy-MM-dd"
+          );
+        } else {
+          periodKey = format(startOfMonth(workoutDate), "yyyy-MM-dd");
+        }
+
+        if (!periodSets.has(periodKey)) {
+          periodSets.set(periodKey, {});
+        }
+
+        const periodData = periodSets.get(periodKey);
+        const muscleGroup = row.muscle_group;
+        periodData[muscleGroup] =
+          (periodData[muscleGroup] || 0) + Number(row.set_count);
+      });
+
+      // Fill in all periods with zeros for missing data
+      return weeks.map((period) => {
+        const data = periodSets.get(period) || {};
+        return {
+          date: period,
+          ...data,
+        };
+      });
+    } catch (error) {
+      console.error(
+        "[StatisticsAPI] Error fetching sets per muscle group:",
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
    * Get recent best sets (personal records) across exercises
    * Ordered by most recent PR date, limited to top N
    */
