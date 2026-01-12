@@ -75,10 +75,41 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.bold,
       color: colors.textPrimary,
     },
+    chartDescription: {
+      fontSize: FontSize.small,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+    },
+    swipeableContainer: {
+      marginBottom: Spacing.s,
+    },
+    swipeablePage: {
+      paddingHorizontal: Spacing.m,
+    },
     chartWrapper: {
       minHeight: 220,
       marginBottom: Spacing.xs,
       marginTop: Spacing.xs,
+    },
+    paginationContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: Spacing.s,
+      marginBottom: Spacing.m,
+      gap: Spacing.xs,
+    },
+    paginationDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.borderColor,
+    },
+    paginationDotActive: {
+      backgroundColor: colors.primaryBlue,
+      width: 24,
     },
     emptyChartContainer: {
       height: 180,
@@ -192,6 +223,69 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
       marginTop: Spacing.xs,
       marginBottom: Spacing.m,
+    },
+
+    // Breakdown Section (styled like muscle group list)
+    breakdownContainer: {
+      backgroundColor: colors.backgroundPrimary,
+      marginTop: Spacing.m,
+    },
+    breakdownHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundPrimary,
+    },
+    breakdownHeaderText: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semiBold,
+      color: colors.textSecondary,
+    },
+    breakdownRow: {
+      flexDirection: "column",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundPrimary,
+    },
+    breakdownRowAlt: {
+      backgroundColor: colors.backgroundCard,
+    },
+    breakdownDateText: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semiBold,
+      color: colors.textPrimary,
+      marginBottom: Spacing.s,
+    },
+    breakdownMusclesContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: Spacing.s,
+    },
+    muscleBadgeWrapper: {
+      marginBottom: Spacing.xs,
+    },
+    muscleBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.s,
+      borderRadius: BorderRadius.sm,
+    },
+    muscleBadgeText: {
+      fontSize: FontSize.small,
+      fontWeight: FontWeight.semiBold,
+      marginRight: Spacing.xs,
+    },
+    muscleBadgeSets: {
+      fontSize: FontSize.small,
+      fontWeight: FontWeight.bold,
+    },
+    breakdownNoDataText: {
+      fontSize: FontSize.small,
+      color: colors.textSecondary,
+      fontStyle: "italic",
     },
 
     // Muscle Groups List

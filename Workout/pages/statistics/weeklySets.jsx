@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   SafeAreaView,
   View,
@@ -7,6 +13,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -66,12 +73,16 @@ const WeeklySetsStatistics = () => {
   const [muscleGroups, setMuscleGroups] = useState([]);
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
   const [showTimePeriodModal, setShowTimePeriodModal] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+
+  // Track if component is mounted to prevent memory leaks
+  const isMountedRef = useRef(true);
 
   // Fetch data from API
   const fetchData = useCallback(
     async (showLoading = true) => {
       try {
-        if (showLoading) {
+        if (showLoading && isMountedRef.current) {
           setLoading(true);
         }
 
@@ -80,12 +91,40 @@ const WeeklySetsStatistics = () => {
           timePeriod
         );
 
-        setChartData(data);
+        // Only update state if component is still mounted
+        if (!isMountedRef.current) {
+          return;
+        }
+
+        // Memory safety checks - warn in development
+        if (__DEV__) {
+          const dataSize = data.length;
+          const estimatedMemory = dataSize * 12 * 50; // Rough estimate: points * muscle groups * bytes
+
+          if (dataSize > 100) {
+            console.warn(
+              `[WeeklySets] Large dataset detected: ${dataSize} data points. ` +
+                `This may cause memory issues. Consider using a shorter time period.`
+            );
+          }
+
+          if (estimatedMemory > 50000) {
+            console.warn(
+              `[WeeklySets] Estimated memory usage: ~${Math.round(
+                estimatedMemory / 1024
+              )}KB. ` + `Consider optimizing data size.`
+            );
+          }
+        }
+
+        // Validate and sanitize data
+        const validatedData = Array.isArray(data) ? data : [];
+        setChartData(validatedData);
 
         // Extract unique muscle groups from data and calculate totals
         const muscleGroupsMap = new Map();
 
-        data.forEach((item) => {
+        validatedData.forEach((item) => {
           Object.keys(item).forEach((key) => {
             if (key !== "date") {
               const current = muscleGroupsMap.get(key) || {
@@ -107,14 +146,28 @@ const WeeklySetsStatistics = () => {
           (a, b) => b.total - a.total
         );
 
-        setMuscleGroups(muscleGroupsArray);
+        // Warn if too many muscle groups
+        if (__DEV__ && muscleGroupsArray.length > 15) {
+          console.warn(
+            `[WeeklySets] ${muscleGroupsArray.length} muscle groups detected. ` +
+              `This may impact chart performance.`
+          );
+        }
+
+        if (isMountedRef.current) {
+          setMuscleGroups(muscleGroupsArray);
+        }
       } catch (error) {
         console.error("[WeeklySets] Error fetching data:", error);
-        setChartData([]);
-        setMuscleGroups([]);
+        if (isMountedRef.current) {
+          setChartData([]);
+          setMuscleGroups([]);
+        }
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     },
     [dateRange, timePeriod, colors.primaryBlue]
@@ -122,9 +175,50 @@ const WeeklySetsStatistics = () => {
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       fetchData();
+
+      // Aggressive cleanup on blur/unmount to prevent memory leaks
+      return () => {
+        isMountedRef.current = false;
+        // Null out data first to help GC, then set to empty
+        setChartData([]);
+        setMuscleGroups([]);
+        setShowBreakdown(false);
+        setShowDateRangeModal(false);
+        setShowTimePeriodModal(false);
+
+        // Hint for garbage collection (if available)
+        if (global.gc) {
+          setTimeout(() => {
+            try {
+              global.gc();
+            } catch (e) {
+              // GC not available
+            }
+          }, 100);
+        }
+      };
     }, [fetchData])
   );
+
+  // Reset breakdown visibility when filters change
+  useEffect(() => {
+    setShowBreakdown(false);
+  }, [dateRange, timePeriod]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      // Clear all state to free memory
+      setChartData([]);
+      setMuscleGroups([]);
+      setShowBreakdown(false);
+      setShowDateRangeModal(false);
+      setShowTimePeriodModal(false);
+    };
+  }, []);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -143,39 +237,211 @@ const WeeklySetsStatistics = () => {
     setShowTimePeriodModal(false);
   }, []);
 
+  // Debounce ref for muscle group toggling
+  const toggleDebounceRef = useRef(null);
+
   const toggleMuscleGroup = useCallback((index) => {
     hapticLight();
+
+    // Clear any pending debounce
+    if (toggleDebounceRef.current) {
+      clearTimeout(toggleDebounceRef.current);
+    }
+
+    // Update immediately for UI responsiveness
     setMuscleGroups((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], enabled: !updated[index].enabled };
       return updated;
     });
+
+    // Debounce breakdown recalculation for multiple rapid toggles
+    toggleDebounceRef.current = setTimeout(() => {
+      toggleDebounceRef.current = null;
+    }, 100);
   }, []);
 
-  // Get date range label
-  const getDateRangeLabel = () => {
-    if (chartData.length === 0) return "";
-    const startDate = format(parseISO(chartData[0].date), "d MMM yyyy");
-    const endDate = format(
-      parseISO(chartData[chartData.length - 1].date),
-      "d MMM yyyy"
-    );
-    return `${startDate} - ${endDate}`;
-  };
+  const handleToggleBreakdown = useCallback(() => {
+    hapticLight();
+    setShowBreakdown((prev) => !prev);
+  }, []);
 
-  // Prepare lines config for MultiLineChart
-  const lines = muscleGroups.map((mg) => ({
-    key: mg.name,
-    color: mg.color,
-    enabled: mg.enabled,
-  }));
-
-  // Get selected option labels
+  // Get selected option labels - must be defined before using them
   const selectedDateRangeLabel =
     DATE_RANGE_OPTIONS.find((opt) => opt.value === dateRange)?.label || "Month";
   const selectedTimePeriodLabel =
     TIME_PERIOD_OPTIONS.find((opt) => opt.value === timePeriod)?.label ||
     "Week";
+
+  // Memoize date range label
+  const dateRangeLabel = useMemo(() => {
+    if (!chartData || chartData.length === 0) return "";
+    try {
+      const startDate = format(parseISO(chartData[0].date), "d MMM yyyy");
+      const endDate = format(
+        parseISO(chartData[chartData.length - 1].date),
+        "d MMM yyyy"
+      );
+      return `${startDate} - ${endDate}`;
+    } catch {
+      return "";
+    }
+  }, [chartData]);
+
+  // Memoize chart description text
+  const chartDescription = useMemo(() => {
+    const timePeriodLower = selectedTimePeriodLabel?.toLowerCase() || "week";
+    const dateRangeLower = selectedDateRangeLabel?.toLowerCase() || "month";
+
+    if (dateRange === "all") {
+      return `Sets per ${timePeriodLower} (all time)`;
+    }
+    return `Sets per ${timePeriodLower} over the last ${dateRangeLower}`;
+  }, [dateRange, selectedDateRangeLabel, selectedTimePeriodLabel]);
+
+  // Format date for breakdown display - memoized function
+  const formatBreakdownDate = useCallback((dateStr) => {
+    try {
+      return format(parseISO(dateStr), "MMM d");
+    } catch {
+      return dateStr;
+    }
+  }, []);
+
+  // Prepare lines config for MultiLineChart - memoized to prevent re-renders
+  const lines = useMemo(() => {
+    return muscleGroups.map((mg) => ({
+      key: mg.name,
+      color: mg.color,
+      enabled: mg.enabled,
+    }));
+  }, [muscleGroups]);
+
+  // Memoize breakdown rows to prevent crash and memory issues
+  const breakdownRows = useMemo(() => {
+    // Only calculate when breakdown is visible to save memory
+    if (!showBreakdown) return [];
+    if (!chartData || chartData.length === 0) return [];
+
+    // Warn if dataset is large
+    if (__DEV__ && chartData.length > 52) {
+      console.warn(
+        `[WeeklySets] Breakdown calculation for ${chartData.length} rows. ` +
+          `Limiting to 100 most recent rows for performance.`
+      );
+    }
+
+    // Limit processing to prevent memory issues (max 100 rows)
+    const maxRows = 100;
+    const dataToProcess = chartData.slice(-maxRows);
+
+    // Create a map of enabled muscle groups for quick lookup
+    const enabledMuscleGroups = new Set(
+      muscleGroups.filter((mg) => mg.enabled).map((mg) => mg.name)
+    );
+
+    // If no muscle groups enabled, return empty to save computation
+    if (enabledMuscleGroups.size === 0) return [];
+
+    // Process data and reverse to show most recent first
+    const processedRows = [];
+
+    for (let i = dataToProcess.length - 1; i >= 0; i--) {
+      const item = dataToProcess[i];
+      const muscleGroupsWithSets = [];
+
+      // Extract muscle groups with sets (only if enabled)
+      // Use Object.entries for better performance than for-in
+      const entries = Object.entries(item);
+      for (let j = 0; j < entries.length; j++) {
+        const [key, value] = entries[j];
+        if (
+          key !== "date" &&
+          Number(value) > 0 &&
+          enabledMuscleGroups.has(key)
+        ) {
+          muscleGroupsWithSets.push({
+            name: key,
+            displayName: key.charAt(0).toUpperCase() + key.slice(1),
+            sets: Number(value),
+            color: MUSCLE_COLORS[key] || "#007AFF",
+          });
+        }
+      }
+
+      // Sort by sets descending only if there are items
+      if (muscleGroupsWithSets.length > 1) {
+        muscleGroupsWithSets.sort((a, b) => b.sets - a.sets);
+      }
+
+      // Add row
+      processedRows.push({
+        date: item.date,
+        muscles: muscleGroupsWithSets,
+        isAlt: processedRows.length % 2 === 1,
+      });
+    }
+
+    return processedRows;
+  }, [showBreakdown, chartData, muscleGroups]);
+
+  // Render function for breakdown rows (virtualized)
+  const renderBreakdownRow = useCallback(
+    ({ item: row, index }) => (
+      <View style={[styles.breakdownRow, row.isAlt && styles.breakdownRowAlt]}>
+        <Text style={styles.breakdownDateText}>
+          {formatBreakdownDate(row.date)}
+        </Text>
+        <View style={styles.breakdownMusclesContainer}>
+          {row.muscles.length > 0 ? (
+            row.muscles.map((mg, mgIndex) => (
+              <View
+                key={`${mg.name}-${mgIndex}`}
+                style={styles.muscleBadgeWrapper}
+              >
+                <View
+                  style={[
+                    styles.muscleBadge,
+                    {
+                      backgroundColor: mg.color + "20",
+                      borderColor: mg.color + "40",
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.muscleBadgeText, { color: mg.color }]}>
+                    {mg.displayName}
+                  </Text>
+                  <Text style={[styles.muscleBadgeSets, { color: mg.color }]}>
+                    {mg.sets}
+                  </Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.breakdownNoDataText}>No data</Text>
+          )}
+        </View>
+      </View>
+    ),
+    [formatBreakdownDate, styles, colors]
+  );
+
+  // Optimized getItemLayout for FlatList
+  const getBreakdownItemLayout = useCallback(
+    (data, index) => ({
+      length: 60, // Approximate row height
+      offset: 60 * index,
+      index,
+    }),
+    []
+  );
+
+  // Key extractor for FlatList
+  const keyExtractor = useCallback(
+    (item, index) => `${item.date}-${index}`,
+    []
+  );
 
   // Create actions for bottom sheet modals
   const dateRangeActions = DATE_RANGE_OPTIONS.map((option) => ({
@@ -259,20 +525,65 @@ const WeeklySetsStatistics = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Chart Section */}
-        <View style={styles.chartWrapper}>
-          <MultiLineChart
-            data={chartData}
-            lines={lines}
-            xAccessor="date"
-            period={dateRange}
-            height={220}
-          />
-        </View>
-
-        {/* Date Range Label */}
+        {/* Chart and Breakdown */}
         {chartData.length > 0 && (
-          <Text style={styles.chartDateRange}>{getDateRangeLabel()}</Text>
+          <>
+            <Text style={styles.chartDescription}>{chartDescription}</Text>
+
+            {/* Tappable Chart */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={handleToggleBreakdown}
+            >
+              <View style={styles.chartWrapper}>
+                <MultiLineChart
+                  data={chartData}
+                  lines={lines}
+                  xAccessor="date"
+                  period={dateRange}
+                  height={220}
+                />
+              </View>
+              {dateRangeLabel && (
+                <Text style={styles.chartDateRange}>{dateRangeLabel}</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Breakdown - Only render when visible, using FlatList for virtualization */}
+            {showBreakdown && breakdownRows.length > 0 && (
+              <View style={styles.breakdownContainer}>
+                {/* Header Row */}
+                <View
+                  style={[
+                    styles.breakdownHeaderRow,
+                    {
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.borderColor,
+                    },
+                  ]}
+                >
+                  <Text style={styles.breakdownHeaderText}>
+                    {selectedTimePeriodLabel}
+                  </Text>
+                  <Text style={styles.breakdownHeaderText}>Muscle Groups</Text>
+                </View>
+
+                {/* Data Rows - Virtualized with FlatList */}
+                <FlatList
+                  data={breakdownRows}
+                  renderItem={renderBreakdownRow}
+                  keyExtractor={keyExtractor}
+                  getItemLayout={getBreakdownItemLayout}
+                  maxToRenderPerBatch={10}
+                  initialNumToRender={10}
+                  windowSize={5}
+                  removeClippedSubviews={true}
+                  scrollEnabled={false}
+                  nestedScrollEnabled={false}
+                />
+              </View>
+            )}
+          </>
         )}
 
         {/* Muscle Groups List */}
@@ -303,7 +614,7 @@ const WeeklySetsStatistics = () => {
                 { fontWeight: "500", color: colors.textSecondary },
               ]}
             >
-              {chartData.length > 0 ? getDateRangeLabel() : "Sets"}
+              Total Sets
             </Text>
           </View>
 

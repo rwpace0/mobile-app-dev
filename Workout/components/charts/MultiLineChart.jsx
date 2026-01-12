@@ -127,7 +127,7 @@ const MultiLineChart = ({
         xKey="x"
         yKeys={yKeys}
         padding={{ left: 8, right: 8, top: 8, bottom: 8 }}
-        domainPadding={{ left: 0, right: 0, top: 0, bottom: 0 }}
+        domainPadding={{ left: 0, right: 20, top: 0, bottom: 0 }}
         domain={{
           x: chartData.length > 0 ? [0, chartData.length - 1] : [0, 1],
           y: [0, maxValue],
@@ -144,6 +144,9 @@ const MultiLineChart = ({
             const item = chartData[index];
             if (!item) return "";
 
+            // Always show the last label
+            const isLastLabel = index === chartData.length - 1;
+
             // Format based on period
             try {
               const dateStr = item.label;
@@ -151,16 +154,12 @@ const MultiLineChart = ({
 
               // For yearly view, show month initials
               if (period === "1y" || period === "all") {
-                return format(date, "MMM");
+                const formatted = format(date, "MMM");
+                return isLastLabel ? formatted : formatted;
               }
 
-              // For 3 month and 6 month view, show abbreviated month
-              if (period === "3m" || period === "6m") {
-                return format(date, "MMM d");
-              }
-
-              // For other periods, show M/d
-              return format(date, "M/d");
+              // For all other periods, show abbreviated month + day (Dec 21)
+              return format(date, "MMM d");
             } catch {
               return "";
             }
@@ -188,45 +187,30 @@ const MultiLineChart = ({
             (_, i) => i * yStep
           );
 
+          // Determine if we should render circles based on data size
+          const shouldRenderCircles = chartData.length <= 20;
+          // For larger datasets, only show every Nth circle
+          const circleInterval =
+            chartData.length > 30 ? 3 : chartData.length > 20 ? 2 : 1;
+
           return (
             <>
-              {/* Render dashed horizontal grid lines at Y-axis values */}
+              {/* Render simplified horizontal grid lines - solid instead of dashed */}
               {yTicks.map((tickValue, i) => {
                 const yRange = chartBounds.bottom - chartBounds.top;
                 const yPosition =
                   chartBounds.bottom - (tickValue / maxValue) * yRange;
 
-                // Create dashed line effect
-                const dashLength = 5;
-                const gapLength = 5;
-                const totalLength = chartBounds.right - chartBounds.left;
-                const segments = Math.floor(
-                  totalLength / (dashLength + gapLength)
-                );
-
                 return (
-                  <React.Fragment key={`grid-${i}`}>
-                    {Array.from({ length: segments }, (_, segIndex) => {
-                      const xStart =
-                        chartBounds.left + segIndex * (dashLength + gapLength);
-                      const xEnd = Math.min(
-                        xStart + dashLength,
-                        chartBounds.right
-                      );
-
-                      return (
-                        <SkiaLine
-                          key={`dash-${i}-${segIndex}`}
-                          p1={{ x: xStart, y: yPosition }}
-                          p2={{ x: xEnd, y: yPosition }}
-                          color={gridLineColor}
-                          style="stroke"
-                          strokeWidth={0.5}
-                          opacity={0.4}
-                        />
-                      );
-                    })}
-                  </React.Fragment>
+                  <SkiaLine
+                    key={`grid-${i}`}
+                    p1={{ x: chartBounds.left, y: yPosition }}
+                    p2={{ x: chartBounds.right, y: yPosition }}
+                    color={gridLineColor}
+                    style="stroke"
+                    strokeWidth={0.5}
+                    opacity={0.3}
+                  />
                 );
               })}
 
@@ -240,16 +224,26 @@ const MultiLineChart = ({
                     curveType="linear"
                     animate={{ type: "timing", duration: 300 }}
                   />
-                  {/* Render data point dots */}
-                  {points[line.key]?.map((point, index) => (
-                    <Circle
-                      key={`${line.key}-dot-${index}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r={3.5}
-                      color={line.color}
-                    />
-                  ))}
+                  {/* Render data point dots - conditionally and with interval */}
+                  {shouldRenderCircles &&
+                    points[line.key]?.map((point, index) => {
+                      // Only render every Nth circle for performance
+                      if (
+                        index % circleInterval !== 0 &&
+                        index !== points[line.key].length - 1
+                      ) {
+                        return null;
+                      }
+                      return (
+                        <Circle
+                          key={`${line.key}-dot-${index}`}
+                          cx={point.x}
+                          cy={point.y}
+                          r={2.5}
+                          color={line.color}
+                        />
+                      );
+                    })}
                 </React.Fragment>
               ))}
             </>

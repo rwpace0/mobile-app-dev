@@ -12,6 +12,12 @@ import {
 class StatisticsAPI {
   constructor() {
     this.db = dbManager;
+    // Memory safety limits for data points
+    this.MAX_DATA_POINTS = {
+      week: 52, // Max 52 weeks (1 year)
+      month: 24, // Max 24 months (2 years)
+      year: 12, // Max 12 months for year view
+    };
   }
 
   /**
@@ -699,8 +705,22 @@ class StatisticsAPI {
       let startDateStr;
 
       if (groupBy === "week") {
-        // Generate weeks based on period
-        const numWeeks = period === "1y" ? 52 : period === "3m" ? 12 : 4;
+        // Generate weeks based on period with safety limits
+        let numWeeks =
+          period === "1y"
+            ? 52
+            : period === "6m"
+            ? 26
+            : period === "3m"
+            ? 12
+            : 4;
+        // Enforce max limit for "all" period
+        if (period === "all") {
+          numWeeks = this.MAX_DATA_POINTS.week;
+        }
+        // Cap at max limit
+        numWeeks = Math.min(numWeeks, this.MAX_DATA_POINTS.week);
+
         for (let i = numWeeks - 1; i >= 0; i--) {
           const weekStart = startOfWeek(subDays(new Date(), i * 7), {
             weekStartsOn: 0,
@@ -709,16 +729,25 @@ class StatisticsAPI {
         }
         startDateStr = weeks[0];
       } else if (groupBy === "month") {
-        // Generate months based on period
-        const numMonths = period === "1y" ? 12 : period === "3m" ? 3 : 12;
+        // Generate months based on period with safety limits
+        let numMonths =
+          period === "1y" ? 12 : period === "6m" ? 6 : period === "3m" ? 3 : 12;
+        // Enforce max limit for "all" period
+        if (period === "all") {
+          numMonths = this.MAX_DATA_POINTS.month;
+        }
+        // Cap at max limit
+        numMonths = Math.min(numMonths, this.MAX_DATA_POINTS.month);
+
         for (let i = numMonths - 1; i >= 0; i--) {
           const monthStart = startOfMonth(subMonths(new Date(), i));
           weeks.push(format(monthStart, "yyyy-MM-dd"));
         }
         startDateStr = weeks[0];
       } else {
-        // Year grouping - monthly data points
-        for (let i = 11; i >= 0; i--) {
+        // Year grouping - monthly data points with limit
+        const numMonths = Math.min(12, this.MAX_DATA_POINTS.year);
+        for (let i = numMonths - 1; i >= 0; i--) {
           const monthStart = startOfMonth(subMonths(new Date(), i));
           weeks.push(format(monthStart, "yyyy-MM-dd"));
         }
@@ -772,13 +801,19 @@ class StatisticsAPI {
       });
 
       // Fill in all periods with zeros for missing data
-      return weeks.map((period) => {
+      const finalData = weeks.map((period) => {
         const data = periodSets.get(period) || {};
         return {
           date: period,
           ...data,
         };
       });
+
+      // Clear large intermediate data structures to help GC
+      results.length = 0;
+      periodSets.clear();
+
+      return finalData;
     } catch (error) {
       console.error(
         "[StatisticsAPI] Error fetching sets per muscle group:",
