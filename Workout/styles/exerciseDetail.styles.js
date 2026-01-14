@@ -303,6 +303,164 @@ export const createStyles = (isDark = true) => {
     periodSelectorContainer: {
       marginBottom: Spacing.m,
     },
+
+    // Progress tab - Sets screen style
+    scrollContent: {
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.xl,
+    },
+
+    // Selection Buttons
+    selectionButtonsContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      paddingHorizontal: Spacing.m,
+      paddingTop: Spacing.s,
+      paddingBottom: Spacing.m,
+    },
+    selectionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.backgroundCard,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.l,
+      borderRadius: BorderRadius.md,
+      minWidth: 120,
+    },
+    selectionButtonContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    selectionButtonText: {
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.semiBold,
+      color: colors.textPrimary,
+    },
+    selectionButtonChevron: {
+      marginLeft: Spacing.xs,
+    },
+
+    // Chart Section
+    chartDescription: {
+      fontSize: FontSize.small,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+    },
+    chartWrapper: {
+      minHeight: 220,
+      marginBottom: Spacing.xs,
+      marginTop: Spacing.xs,
+    },
+    chartDateRange: {
+      fontSize: FontSize.small,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: Spacing.xs,
+      marginBottom: Spacing.m,
+    },
+
+    // Metric Selector Buttons
+    metricButtonsContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      paddingHorizontal: Spacing.m,
+      paddingTop: Spacing.s,
+      paddingBottom: Spacing.m,
+      gap: Spacing.s,
+    },
+    metricButton: {
+      flex: 1,
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.m,
+      borderRadius: 999,
+      backgroundColor: colors.backgroundCard,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 32,
+    },
+    metricButtonActive: {
+      backgroundColor: colors.primaryBlue,
+      borderColor: colors.primaryBlue,
+    },
+    metricButtonText: {
+      fontSize: FontSize.small,
+      fontWeight: FontWeight.medium,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    metricButtonTextActive: {
+      color: colors.textWhite,
+      fontWeight: FontWeight.semiBold,
+    },
+
+    // Breakdown Section
+    breakdownContainer: {
+      backgroundColor: colors.backgroundPrimary,
+      marginTop: Spacing.m,
+    },
+    breakdownHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundPrimary,
+    },
+    breakdownHeaderText: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semiBold,
+      color: colors.textSecondary,
+    },
+    breakdownRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      backgroundColor: colors.backgroundPrimary,
+    },
+    breakdownRowAlt: {
+      backgroundColor: colors.backgroundCard,
+    },
+    breakdownDateText: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semiBold,
+      color: colors.textPrimary,
+    },
+    breakdownWeightText: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semiBold,
+      color: colors.primaryBlue,
+    },
+
+    // Empty State
+    emptyContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: Spacing.xl,
+      minHeight: 300,
+    },
+    emptyIcon: {
+      marginBottom: Spacing.m,
+    },
+    emptyTitle: {
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+      color: colors.textPrimary,
+      marginBottom: Spacing.xs,
+      textAlign: "center",
+    },
+    emptyMessage: {
+      fontSize: FontSize.base,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 22,
+    },
   });
 };
 

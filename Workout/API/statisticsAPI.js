@@ -824,6 +824,125 @@ class StatisticsAPI {
   }
 
   /**
+   * Get best metric per workout for a specific exercise
+   * Returns the best value (weight, reps, or volume) from each workout for the exercise within the date range
+   * @param {string} exerciseId - The exercise ID
+   * @param {string} period - Date range: "1m", "3m", "6m", "1y"
+   * @param {string} metric - Metric type: "weight", "reps", "volume" (weight × reps)
+   * @returns {Array} Array of { date: string, value: number }
+   */
+  async getExerciseBestMetricPerWorkout(
+    exerciseId,
+    period = "1m",
+    metric = "weight"
+  ) {
+    try {
+      await this.db.initializationPromise;
+
+      const startDate = this.getPeriodStartDate(period);
+      let whereClause =
+        "WHERE we.exercise_id = ? AND w.sync_status != 'pending_delete'";
+      const params = [exerciseId];
+
+      if (startDate) {
+        whereClause += " AND date(w.date_performed) >= date(?)";
+        params.push(startDate.toISOString());
+      }
+
+      if (metric === "volume") {
+        // For volume, find the set with max volume and return weight, reps, rir, and volume
+        const query = `
+          WITH best_sets AS (
+            SELECT
+              w.date_performed,
+              s.weight,
+              s.reps,
+              s.rir,
+              s.weight * s.reps as volume,
+              ROW_NUMBER() OVER (
+                PARTITION BY w.workout_id 
+                ORDER BY s.weight * s.reps DESC
+              ) as rn
+            FROM workouts w
+            JOIN workout_exercises we ON w.workout_id = we.workout_id
+            JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+            ${whereClause}
+          )
+          SELECT
+            date_performed,
+            weight as best_weight,
+            reps as best_reps,
+            rir as best_rir,
+            volume as max_value
+          FROM best_sets
+          WHERE rn = 1
+          ORDER BY date_performed ASC
+        `;
+
+        const results = await this.db.query(query, params);
+        return results.map((row) => ({
+          date: row.date_performed,
+          value: Number(row.max_value) || 0,
+          weight: Number(row.best_weight) || 0,
+          reps: Number(row.best_reps) || 0,
+          rir:
+            row.best_rir !== null && row.best_rir !== undefined
+              ? Number(row.best_rir)
+              : null,
+        }));
+      }
+
+      // For weight and reps, use simpler query
+      let selectClause;
+
+      if (metric === "weight") {
+        selectClause = "MAX(s.weight) as max_value";
+      } else if (metric === "reps") {
+        selectClause = "MAX(s.reps) as max_value";
+      } else {
+        // Default to weight
+        selectClause = "MAX(s.weight) as max_value";
+      }
+
+      const query = `
+        SELECT
+          w.date_performed,
+          ${selectClause}
+        FROM workouts w
+        JOIN workout_exercises we ON w.workout_id = we.workout_id
+        JOIN sets s ON we.workout_exercises_id = s.workout_exercises_id
+        ${whereClause}
+        GROUP BY w.workout_id
+        ORDER BY w.date_performed ASC
+      `;
+
+      const results = await this.db.query(query, params);
+      return results.map((row) => ({
+        date: row.date_performed,
+        value: Number(row.max_value) || 0,
+      }));
+    } catch (error) {
+      console.error(
+        "[StatisticsAPI] Error fetching exercise best metric per workout:",
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Get best weight per workout for a specific exercise
+   * Returns the maximum weight from each workout for the exercise within the date range
+   * @param {string} exerciseId - The exercise ID
+   * @param {string} period - Date range: "1m", "3m", "6m", "1y"
+   * @returns {Array} Array of { date: string, weight: number }
+   * @deprecated Use getExerciseBestMetricPerWorkout instead
+   */
+  async getExerciseBestWeightPerWorkout(exerciseId, period = "1m") {
+    return this.getExerciseBestMetricPerWorkout(exerciseId, period, "weight");
+  }
+
+  /**
    * Get recent best sets (personal records) across exercises
    * Ordered by most recent PR date, limited to top N
    */

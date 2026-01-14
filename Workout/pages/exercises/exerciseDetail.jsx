@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -8,9 +14,14 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import exercisesAPI from "../../API/exercisesAPI";
 import { createStyles } from "../../styles/exerciseDetail.styles";
 import * as FileSystem from "expo-file-system/legacy";
@@ -22,11 +33,17 @@ import BottomSheetModal from "../../components/modals/bottomModal";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import { useWeight } from "../../utils/useWeight";
 import statisticsAPI from "../../API/statisticsAPI";
-import LineChart from "../../components/charts/LineChart";
-import ChartContainer from "../../components/charts/ChartContainer";
-import ChartPeriodSelector from "../../components/charts/ChartPeriodSelector";
+import MultiLineChart from "../../components/charts/MultiLineChart";
 import { format, parseISO } from "date-fns";
 import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
+
+// Date range options
+const DATE_RANGE_OPTIONS = [
+  { value: "1m", label: "Month" },
+  { value: "3m", label: "3 Months" },
+  { value: "6m", label: "6 Months" },
+  { value: "1y", label: "Year" },
+];
 
 const ExerciseDetailPage = () => {
   const navigation = useNavigation();
@@ -45,9 +62,14 @@ const ExerciseDetailPage = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Progress tab state
-  const [progressPeriod, setProgressPeriod] = useState("3m");
-  const [progressData, setProgressData] = useState(null);
-  const [personalRecord, setPersonalRecord] = useState(null);
+  const [dateRange, setDateRange] = useState("1m");
+  const [metric, setMetric] = useState("weight"); // "weight", "reps", "volume"
+  const [chartData, setChartData] = useState([]);
+  const [showDateRangeModal, setShowDateRangeModal] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+
+  // Track if component is mounted to prevent memory leaks
+  const isMountedRef = useRef(true);
 
   // Cleanup function to clear exercise-specific cache on unmount
   useEffect(() => {
@@ -56,6 +78,35 @@ const ExerciseDetailPage = () => {
       exercisesAPI.clearExerciseCache(exerciseId);
     };
   }, [route.params.exerciseId]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      // Clear all state to free memory
+      setChartData([]);
+      setShowBreakdown(false);
+      setShowDateRangeModal(false);
+    };
+  }, []);
+
+  // Aggressive cleanup on blur/unmount to prevent memory leaks
+  useFocusEffect(
+    useCallback(() => {
+      isMountedRef.current = true;
+      if (exercise) {
+        fetchProgressData(exercise.exercise_id, dateRange, metric);
+      }
+
+      return () => {
+        isMountedRef.current = false;
+        // Null out data first to help GC, then set to empty
+        setChartData([]);
+        setShowBreakdown(false);
+        setShowDateRangeModal(false);
+      };
+    }, [exercise, dateRange, metric, fetchProgressData])
+  );
 
   const fetchData = useCallback(
     async (showLoading = true) => {
@@ -103,7 +154,7 @@ const ExerciseDetailPage = () => {
         setHistory(historyData || []);
 
         // Fetch progress data for Progress tab
-        await fetchProgressData(exerciseId, progressPeriod);
+        await fetchProgressData(exerciseId, dateRange, metric);
       } catch (error) {
         console.error("Error fetching exercise data:", error);
         setError(error.message || "Failed to load exercise");
@@ -111,32 +162,51 @@ const ExerciseDetailPage = () => {
         if (showLoading) setLoading(false);
       }
     },
-    [route.params.exerciseId, progressPeriod]
+    [route.params.exerciseId, dateRange, metric]
   );
 
-  const fetchProgressData = useCallback(async (exerciseId, period) => {
-    try {
-      const [progression, pr] = await Promise.all([
-        statisticsAPI.getExerciseProgression(exerciseId, period),
-        statisticsAPI.getExercisePR(exerciseId),
-      ]);
+  const fetchProgressData = useCallback(
+    async (exerciseId, period, metricType) => {
+      try {
+        const data = await statisticsAPI.getExerciseBestMetricPerWorkout(
+          exerciseId,
+          period,
+          metricType
+        );
 
-      setProgressData(progression);
-      setPersonalRecord(pr);
-    } catch (error) {
-      console.error("[ExerciseDetail] Error fetching progress data:", error);
-    }
-  }, []);
+        // Only update state if component is still mounted
+        if (!isMountedRef.current) {
+          return;
+        }
 
-  const handleProgressPeriodChange = useCallback(
-    (period) => {
-      setProgressPeriod(period);
-      if (exercise) {
-        fetchProgressData(exercise.exercise_id, period);
+        // Validate and sanitize data
+        const validatedData = Array.isArray(data) ? data : [];
+        setChartData(validatedData);
+      } catch (error) {
+        console.error("[ExerciseDetail] Error fetching progress data:", error);
+        if (isMountedRef.current) {
+          setChartData([]);
+        }
       }
     },
-    [exercise, fetchProgressData]
+    []
   );
+
+  const handleDateRangeChange = useCallback((value) => {
+    hapticLight();
+    setDateRange(value);
+    setShowDateRangeModal(false);
+  }, []);
+
+  // Reset breakdown visibility when filters change
+  useEffect(() => {
+    setShowBreakdown(false);
+  }, [dateRange, metric]);
+
+  const handleMetricChange = useCallback((newMetric) => {
+    hapticLight();
+    setMetric(newMetric);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -146,6 +216,193 @@ const ExerciseDetailPage = () => {
     setRefreshing(true);
     fetchData(false);
   }, [fetchData]);
+
+  const handleToggleBreakdown = useCallback(() => {
+    hapticLight();
+    setShowBreakdown((prev) => !prev);
+  }, []);
+
+  // Get selected option label
+  const selectedDateRangeLabel =
+    DATE_RANGE_OPTIONS.find((opt) => opt.value === dateRange)?.label || "Month";
+
+  // Memoize date range label
+  const dateRangeLabel = useMemo(() => {
+    if (!chartData || chartData.length === 0) return "";
+    try {
+      const startDate = format(parseISO(chartData[0].date), "d MMM yyyy");
+      const endDate = format(
+        parseISO(chartData[chartData.length - 1].date),
+        "d MMM yyyy"
+      );
+      return `${startDate} - ${endDate}`;
+    } catch {
+      return "";
+    }
+  }, [chartData]);
+
+  // Memoize chart description text
+  const chartDescription = useMemo(() => {
+    const dateRangeLower = selectedDateRangeLabel?.toLowerCase() || "month";
+    let metricLabel;
+    if (metric === "weight") {
+      metricLabel = "heaviest weight";
+    } else if (metric === "reps") {
+      metricLabel = "highest reps";
+    } else if (metric === "volume") {
+      metricLabel = "best performance";
+    } else {
+      metricLabel = "heaviest weight";
+    }
+    return `${
+      metricLabel.charAt(0).toUpperCase() + metricLabel.slice(1)
+    } per workout over the last ${dateRangeLower}`;
+  }, [selectedDateRangeLabel, metric]);
+
+  // Format date for breakdown display
+  const formatBreakdownDate = useCallback((dateStr) => {
+    try {
+      return format(parseISO(dateStr), "MMM d, yyyy");
+    } catch {
+      return dateStr;
+    }
+  }, []);
+
+  // Prepare lines config for MultiLineChart (single line for value)
+  const lines = useMemo(() => {
+    return [
+      {
+        key: "value",
+        color: colors.primaryBlue,
+        enabled: true,
+      },
+    ];
+  }, [colors.primaryBlue]);
+
+  // Memoize breakdown rows
+  const breakdownRows = useMemo(() => {
+    // Only calculate when breakdown is visible to save memory
+    if (!showBreakdown) return [];
+    if (!chartData || chartData.length === 0) return [];
+
+    // Limit processing to prevent memory issues (max 100 rows)
+    const maxRows = 100;
+    const dataToProcess = chartData.slice(-maxRows);
+
+    // Process data and reverse to show most recent first
+    const processedRows = [];
+
+    for (let i = dataToProcess.length - 1; i >= 0; i--) {
+      const item = dataToProcess[i];
+      const value = Number(item.value) || 0;
+
+      // Only add row if there's data
+      if (value > 0) {
+        const row = {
+          date: item.date,
+          value: value,
+          isAlt: processedRows.length % 2 === 1,
+        };
+        // Include weight, reps, and rir for volume metric
+        if (
+          metric === "volume" &&
+          item.weight !== undefined &&
+          item.reps !== undefined
+        ) {
+          row.weight = Number(item.weight) || 0;
+          row.reps = Number(item.reps) || 0;
+          row.rir =
+            item.rir !== null && item.rir !== undefined
+              ? Number(item.rir)
+              : null;
+        }
+        processedRows.push(row);
+      }
+    }
+
+    return processedRows;
+  }, [showBreakdown, chartData, metric]);
+
+  // Format breakdown value based on metric
+  const formatBreakdownValue = useCallback(
+    (value, rowData = null) => {
+      if (metric === "weight") {
+        return weight.format(value);
+      } else if (metric === "reps") {
+        return `${Math.round(value)} reps`;
+      } else if (metric === "volume") {
+        // Display as weight × reps @ rir format (or just weight × reps if no rir)
+        if (
+          rowData &&
+          rowData.weight !== undefined &&
+          rowData.reps !== undefined
+        ) {
+          const weightReps = `${weight.format(rowData.weight)} × ${Math.round(
+            rowData.reps
+          )}`;
+          // Add RIR if available
+          if (rowData.rir !== null && rowData.rir !== undefined) {
+            return `${weightReps} @ ${Math.round(rowData.rir)}`;
+          }
+          return weightReps;
+        }
+        // Fallback to calculated volume if weight/reps not available
+        return Math.round(value).toLocaleString();
+      }
+      return value.toString();
+    },
+    [metric, weight]
+  );
+
+  // Get breakdown header label based on metric
+  const breakdownHeaderLabel = useMemo(() => {
+    if (metric === "weight") {
+      return "Heaviest Weight";
+    } else if (metric === "reps") {
+      return "Highest Reps";
+    } else if (metric === "volume") {
+      return "Best Performance";
+    }
+    return "Best Weight";
+  }, [metric]);
+
+  // Render function for breakdown rows
+  const renderBreakdownRow = useCallback(
+    ({ item: row, index }) => (
+      <View style={[styles.breakdownRow, row.isAlt && styles.breakdownRowAlt]}>
+        <Text style={styles.breakdownDateText}>
+          {formatBreakdownDate(row.date)}
+        </Text>
+        <Text style={styles.breakdownWeightText}>
+          {formatBreakdownValue(row.value, row)}
+        </Text>
+      </View>
+    ),
+    [formatBreakdownDate, formatBreakdownValue, styles]
+  );
+
+  // Optimized getItemLayout for FlatList
+  const getBreakdownItemLayout = useCallback(
+    (data, index) => ({
+      length: 60, // Approximate row height
+      offset: 60 * index,
+      index,
+    }),
+    []
+  );
+
+  // Key extractor for FlatList
+  const keyExtractor = useCallback(
+    (item, index) => `${item.date}-${index}`,
+    []
+  );
+
+  // Create actions for bottom sheet modal
+  const dateRangeActions = DATE_RANGE_OPTIONS.map((option) => ({
+    title: option.label,
+    onPress: () => handleDateRangeChange(option.value),
+    icon: dateRange === option.value ? "checkmark" : null,
+  }));
 
   const handleMenuPress = () => {
     setShowBottomModal(true);
@@ -281,78 +538,169 @@ const ExerciseDetailPage = () => {
   );
 
   const renderProgressTab = () => {
-    const formatXLabel = (dateStr) => {
-      try {
-        const date = parseISO(dateStr);
-        return format(date, "MMM d");
-      } catch {
-        return "";
-      }
-    };
-
     return (
       <ScrollView
-        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primaryBlue}
+          />
         }
       >
-        {/* Personal Record Card */}
-        {personalRecord && (
-          <View style={styles.prCard}>
-            <Text style={styles.prTitle}>Personal Record</Text>
-            <View style={styles.prStats}>
-              <View style={styles.prStatItem}>
-                <Text style={styles.prValue}>
-                  {weight.format(personalRecord.maxWeight)}
-                </Text>
-                <Text style={styles.prLabel}>Max Weight</Text>
-              </View>
-              <View style={styles.prStatItem}>
-                <Text style={styles.prValue}>{personalRecord.repsAtMax}</Text>
-                <Text style={styles.prLabel}>Reps</Text>
-              </View>
-              <View style={styles.prStatItem}>
-                <Text style={styles.prDate}>
-                  {personalRecord.date
-                    ? format(parseISO(personalRecord.date), "EEEE, MMM d, yyyy")
-                    : "N/A"}
-                </Text>
-                <Text style={styles.prLabel}>Date</Text>
-              </View>
+        {/* Selection Button */}
+        <View style={styles.selectionButtonsContainer}>
+          <TouchableOpacity
+            style={styles.selectionButton}
+            onPress={() => {
+              hapticLight();
+              setShowDateRangeModal(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.selectionButtonContent}>
+              <Text style={styles.selectionButtonText}>
+                {selectedDateRangeLabel}
+              </Text>
+              <Ionicons
+                name="chevron-down"
+                size={16}
+                color={colors.textSecondary}
+                style={styles.selectionButtonChevron}
+              />
             </View>
-          </View>
-        )}
-
-        {/* Period Selector */}
-        <View style={styles.periodSelectorContainer}>
-          <ChartPeriodSelector
-            selectedPeriod={progressPeriod}
-            onPeriodChange={handleProgressPeriodChange}
-          />
+          </TouchableOpacity>
         </View>
 
-        {/* Weight Progression Chart */}
-        <ChartContainer
-          title="Weight Progression"
-          subtitle="Maximum weight lifted per workout"
-        >
-          {progressData && progressData.length > 0 ? (
-            <LineChart
-              data={progressData}
-              yAccessor="weight"
-              xAccessor="date"
-              color={colors.primaryBlue}
-              period={progressPeriod}
-            />
-          ) : (
-            <View style={styles.emptyHistory}>
-              <Text style={styles.emptyHistoryText}>
-                No progression data available
-              </Text>
+        {/* Chart and Breakdown */}
+        {chartData.length > 0 ? (
+          <>
+            <Text style={styles.chartDescription}>{chartDescription}</Text>
+
+            {/* Tappable Chart */}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={handleToggleBreakdown}
+            >
+              <View style={styles.chartWrapper}>
+                <MultiLineChart
+                  data={chartData}
+                  lines={lines}
+                  xAccessor="date"
+                  period={dateRange}
+                  height={220}
+                />
+              </View>
+              {dateRangeLabel && (
+                <Text style={styles.chartDateRange}>{dateRangeLabel}</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Metric Selector Buttons */}
+            <View style={styles.metricButtonsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.metricButton,
+                  metric === "weight" && styles.metricButtonActive,
+                ]}
+                onPress={() => handleMetricChange("weight")}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.metricButtonText,
+                    metric === "weight" && styles.metricButtonTextActive,
+                  ]}
+                >
+                  Weight
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.metricButton,
+                  metric === "reps" && styles.metricButtonActive,
+                ]}
+                onPress={() => handleMetricChange("reps")}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.metricButtonText,
+                    metric === "reps" && styles.metricButtonTextActive,
+                  ]}
+                >
+                  Reps
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.metricButton,
+                  metric === "volume" && styles.metricButtonActive,
+                ]}
+                onPress={() => handleMetricChange("volume")}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.metricButtonText,
+                    metric === "volume" && styles.metricButtonTextActive,
+                  ]}
+                >
+                  Overall
+                </Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </ChartContainer>
+
+            {/* Breakdown - Only render when visible, using FlatList for virtualization */}
+            {showBreakdown && breakdownRows.length > 0 && (
+              <View style={styles.breakdownContainer}>
+                {/* Header Row */}
+                <View
+                  style={[
+                    styles.breakdownHeaderRow,
+                    {
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.borderColor,
+                    },
+                  ]}
+                >
+                  <Text style={styles.breakdownHeaderText}>Workout</Text>
+                  <Text style={styles.breakdownHeaderText}>
+                    {breakdownHeaderLabel}
+                  </Text>
+                </View>
+
+                {/* Data Rows - Virtualized with FlatList */}
+                <FlatList
+                  data={breakdownRows}
+                  renderItem={renderBreakdownRow}
+                  keyExtractor={keyExtractor}
+                  getItemLayout={getBreakdownItemLayout}
+                  maxToRenderPerBatch={10}
+                  initialNumToRender={10}
+                  windowSize={5}
+                  removeClippedSubviews={true}
+                  scrollEnabled={false}
+                  nestedScrollEnabled={false}
+                />
+              </View>
+            )}
+          </>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="stats-chart-outline"
+              size={80}
+              color={colors.textSecondary}
+              style={styles.emptyIcon}
+            />
+            <Text style={styles.emptyTitle}>No Data Available</Text>
+            <Text style={styles.emptyMessage}>
+              Start tracking workouts with this exercise to see progression.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     );
   };
@@ -525,6 +873,14 @@ const ExerciseDetailPage = () => {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={confirmDelete}
         title={`Delete ${exercise?.name}?`}
+      />
+
+      {/* Bottom Sheet Modal for Progress Tab */}
+      <BottomSheetModal
+        visible={showDateRangeModal}
+        onClose={() => setShowDateRangeModal(false)}
+        title="Select Date Range"
+        actions={dateRangeActions}
       />
     </SafeAreaView>
   );
