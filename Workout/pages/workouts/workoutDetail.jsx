@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { getColors } from "../../constants/colors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import workoutAPI from "../../API/workoutAPI";
+import exercisesAPI from "../../API/exercisesAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
 import { format, parseISO } from "date-fns";
@@ -78,6 +79,8 @@ const WorkoutDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [exerciseHistories, setExerciseHistories] = useState({});
+  const [exercisePRs, setExercisePRs] = useState({});
 
   const fetchWorkoutDetails = useCallback(
     async (showLoading = true) => {
@@ -90,6 +93,92 @@ const WorkoutDetail = () => {
 
         const response = await workoutAPI.getWorkoutById(workout_id);
         setWorkout(response);
+
+        // Fetch exercise histories for performance indicators and PR calculation
+        if (response?.exercises) {
+          const histories = {};
+          const prs = {};
+
+          await Promise.all(
+            response.exercises.map(async (exercise) => {
+              try {
+                const history = await exercisesAPI.getExerciseHistory(
+                  exercise.exercise_id
+                );
+                histories[exercise.exercise_id] = history || [];
+
+                // Calculate PR for this exercise
+                let bestPerformance = 0;
+                let bestWorkoutId = null;
+                let bestSetIds = new Set();
+
+                // First pass: find the best performance value
+                history?.forEach((workout) => {
+                  workout.sets?.forEach((set) => {
+                    const performance =
+                      (set.weight || 0) *
+                      (set.reps || 0) *
+                      (set.rir !== null && set.rir !== undefined
+                        ? set.rir
+                        : 1);
+
+                    if (performance > bestPerformance) {
+                      bestPerformance = performance;
+                    }
+                  });
+                });
+
+                // Second pass: find the most recent workout that achieved this performance
+                if (history) {
+                  for (const workout of history) {
+                    if (workout.sets && workout.sets.length > 0) {
+                      const workoutHasPR = workout.sets.some((set) => {
+                        const performance =
+                          (set.weight || 0) *
+                          (set.reps || 0) *
+                          (set.rir !== null && set.rir !== undefined
+                            ? set.rir
+                            : 1);
+                        return performance === bestPerformance;
+                      });
+
+                      if (workoutHasPR) {
+                        bestWorkoutId = workout.workout_exercises_id;
+                        // Collect all set IDs in this workout that match the PR
+                        workout.sets.forEach((set) => {
+                          const performance =
+                            (set.weight || 0) *
+                            (set.reps || 0) *
+                            (set.rir !== null && set.rir !== undefined
+                              ? set.rir
+                              : 1);
+                          if (performance === bestPerformance) {
+                            bestSetIds.add(set.set_id);
+                          }
+                        });
+                        break; // Stop at the most recent workout with PR
+                      }
+                    }
+                  }
+                }
+
+                prs[exercise.exercise_id] = {
+                  performance: bestPerformance,
+                  workoutId: bestWorkoutId,
+                  setIds: bestSetIds,
+                };
+              } catch (err) {
+                console.error(
+                  `Error fetching history for exercise ${exercise.exercise_id}:`,
+                  err
+                );
+              }
+            })
+          );
+
+          setExerciseHistories(histories);
+          setExercisePRs(prs);
+        }
       } catch (err) {
         console.error("Error fetching workout:", err);
         setError(err.message || "Failed to load workout details");
@@ -213,6 +302,17 @@ const WorkoutDetail = () => {
         </View>
         {workout.exercises?.map((exerciseData, idx) => {
           if (!exerciseData || !exerciseData.workout_exercises_id) return null;
+
+          // Get history and PR for this exercise
+          const exerciseHistory =
+            exerciseHistories[exerciseData.exercise_id] || [];
+          const exercisePR = exercisePRs[exerciseData.exercise_id];
+
+          // Find the previous workout for this exercise (skip current workout)
+          const previousWorkout = exerciseHistory.find(
+            (h) => h.workout_exercises_id !== exerciseData.workout_exercises_id
+          );
+
           return (
             <View
               key={exerciseData.workout_exercises_id}
@@ -255,27 +355,94 @@ const WorkoutDetail = () => {
                     RIR
                   </Text>
                 </View>
-                {(exerciseData.sets || []).map((set, setIdx) => (
-                  <View
-                    key={set.set_id || setIdx}
-                    style={[
-                      styles.setRow,
-                      setIdx % 2 === 0 ? styles.setRowEven : styles.setRowOdd,
-                    ]}
-                  >
-                    <Text style={styles.setNumber}>
-                      {set.set_order || setIdx + 1}
-                    </Text>
-                    <Text style={styles.setInfo}>
-                      {weight.formatSet(set.weight, set.reps)} reps
-                    </Text>
-                    <Text style={styles.setRir}>
-                      {set.rir !== null && set.rir !== undefined
-                        ? `${set.rir}`
-                        : "-"}
-                    </Text>
-                  </View>
-                ))}
+                {(exerciseData.sets || []).map((set, setIdx) => {
+                  // Calculate performance indicators
+                  const prevSet = previousWorkout?.sets?.[setIdx];
+                  let indicators = [];
+
+                  if (prevSet) {
+                    // Calculate weight difference
+                    const weightDiff = (set.weight || 0) - (prevSet.weight || 0);
+                    // Only show if difference is significant (≥ 0.5 in current unit)
+                    if (Math.abs(weightDiff) >= 0.5) {
+                      const formattedWeight = weight.format(
+                        Math.abs(weightDiff)
+                      );
+                      indicators.push({
+                        text: `${weightDiff > 0 ? "+" : "-"}${formattedWeight}`,
+                        isIncrease: weightDiff > 0,
+                      });
+                    }
+
+                    // Calculate reps difference
+                    const repsDiff = (set.reps || 0) - (prevSet.reps || 0);
+                    if (repsDiff !== 0) {
+                      indicators.push({
+                        text: `${repsDiff > 0 ? "+" : ""}${repsDiff} rep${
+                          Math.abs(repsDiff) !== 1 ? "s" : ""
+                        }`,
+                        isIncrease: repsDiff > 0,
+                      });
+                    }
+                  }
+
+                  // Check if this set is a PR (only in the most recent workout that achieved the best performance)
+                  const isPR =
+                    exercisePR &&
+                    exerciseData.workout_exercises_id === exercisePR.workoutId &&
+                    exercisePR.setIds.has(set.set_id);
+
+                  return (
+                    <View
+                      key={set.set_id || setIdx}
+                      style={[
+                        styles.setRow,
+                        setIdx % 2 === 0 ? styles.setRowEven : styles.setRowOdd,
+                      ]}
+                    >
+                      <Text style={styles.setNumber}>
+                        {set.set_order || setIdx + 1}
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          flex: 1,
+                        }}
+                      >
+                        <Text style={styles.setInfo}>
+                          {weight.formatSet(set.weight, set.reps)} reps
+                        </Text>
+                        {indicators.map((indicator, idx) => (
+                          <Text
+                            key={idx}
+                            style={[
+                              styles.setIndicator,
+                              indicator.isIncrease
+                                ? styles.setIndicatorIncrease
+                                : styles.setIndicatorDecrease,
+                            ]}
+                          >
+                            {indicator.text}
+                          </Text>
+                        ))}
+                        {isPR && (
+                          <Ionicons
+                            name="trophy"
+                            size={16}
+                            color={colors.accentGold}
+                            style={styles.prIcon}
+                          />
+                        )}
+                      </View>
+                      <Text style={styles.setRir}>
+                        {set.rir !== null && set.rir !== undefined
+                          ? `${set.rir}`
+                          : "-"}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
             </View>
           );

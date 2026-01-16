@@ -241,17 +241,33 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
     },
     setInfo: {
-      flex: 1,
       fontSize: FontSize.base,
       color: colors.textPrimary,
       fontWeight: FontWeight.medium,
-      marginLeft: Spacing.m,
     },
     setRir: {
       width: 70,
       fontSize: FontSize.base,
       color: colors.textPrimary,
       textAlign: "center",
+    },
+
+    setIndicator: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.medium,
+      marginLeft: Spacing.xs,
+    },
+
+    setIndicatorIncrease: {
+      color: colors.accentGreen,
+    },
+
+    setIndicatorDecrease: {
+      color: colors.accentRed,
+    },
+
+    prIcon: {
+      marginLeft: Spacing.xs,
     },
 
     // Loading and Error states

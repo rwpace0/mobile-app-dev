@@ -17,6 +17,7 @@ class StatisticsAPI {
       week: 52, // Max 52 weeks (1 year)
       month: 24, // Max 24 months (2 years)
       year: 12, // Max 12 months for year view
+      day: 90, // Max 90 days (3 months) for workout view
     };
   }
 
@@ -704,7 +705,29 @@ class StatisticsAPI {
       let weeks = [];
       let startDateStr;
 
-      if (groupBy === "week") {
+      if (groupBy === "day") {
+        // Generate days based on period with safety limits
+        // For "day" view, we show individual workouts, not calendar days
+        let numDays =
+          period === "1y"
+            ? 365
+            : period === "6m"
+            ? 180
+            : period === "3m"
+            ? 90
+            : 30;
+        // Enforce max limit for "all" period
+        if (period === "all") {
+          numDays = this.MAX_DATA_POINTS.day;
+        }
+        // Cap at max limit
+        numDays = Math.min(numDays, this.MAX_DATA_POINTS.day);
+
+        // Calculate start date for query
+        startDateStr = format(subDays(new Date(), numDays - 1), "yyyy-MM-dd");
+        // Note: We don't pre-generate days array for "day" mode
+        // Instead, we'll collect actual workout dates from the query results
+      } else if (groupBy === "week") {
         // Generate weeks based on period with safety limits
         let numWeeks =
           period === "1y"
@@ -781,7 +804,10 @@ class StatisticsAPI {
         const workoutDate = parseISO(row.date_performed);
         let periodKey;
 
-        if (groupBy === "week") {
+        if (groupBy === "day") {
+          // Use exact workout date for per-workout tracking
+          periodKey = format(workoutDate, "yyyy-MM-dd");
+        } else if (groupBy === "week") {
           periodKey = format(
             startOfWeek(workoutDate, { weekStartsOn: 0 }),
             "yyyy-MM-dd"
@@ -801,13 +827,26 @@ class StatisticsAPI {
       });
 
       // Fill in all periods with zeros for missing data
-      const finalData = weeks.map((period) => {
-        const data = periodSets.get(period) || {};
-        return {
-          date: period,
-          ...data,
-        };
-      });
+      let finalData;
+      if (groupBy === "day") {
+        // For day/workout view, only include days with actual workouts
+        // Sort by date ascending
+        finalData = Array.from(periodSets.entries())
+          .map(([date, data]) => ({
+            date,
+            ...data,
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+      } else {
+        // For week/month view, fill in all periods including zeros
+        finalData = weeks.map((period) => {
+          const data = periodSets.get(period) || {};
+          return {
+            date: period,
+            ...data,
+          };
+        });
+      }
 
       // Clear large intermediate data structures to help GC
       results.length = 0;

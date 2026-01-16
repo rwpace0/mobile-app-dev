@@ -26,6 +26,7 @@ const darkTheme = {
   accentRed: "#FF3B30", // error states
   accentOrange: "#FF9500", // warning states
   accentPurple: "#AF52DE", // secondary accent
+  accentGold: "#FFD700", // gold for PR icons
 
   // opacity variants for overlays
   overlayDark: "rgba(0, 0, 0, 0.7)",
@@ -77,6 +78,7 @@ const lightTheme = {
   accentRed: "#FF3B30", // error states
   accentOrange: "#FF9500", // warning states
   accentPurple: "#AF52DE", // secondary accent
+  accentGold: "#DAA520", // gold for PR icons
 
   // opacity variants for overlays
   overlayDark: "rgba(0, 0, 0, 0.4)",

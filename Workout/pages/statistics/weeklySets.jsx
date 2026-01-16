@@ -56,8 +56,7 @@ const DATE_RANGE_OPTIONS = [
 // Time period options
 const TIME_PERIOD_OPTIONS = [
   { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "year", label: "Year" },
+  { value: "day", label: "Workout" },
 ];
 
 const WeeklySetsStatistics = () => {

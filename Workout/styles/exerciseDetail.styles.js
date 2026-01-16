@@ -195,11 +195,9 @@ export const createStyles = (isDark = true) => {
     },
 
     setInfo: {
-      flex: 1,
       fontSize: FontSize.base,
       color: colors.textPrimary,
       fontWeight: FontWeight.medium,
-      marginLeft: Spacing.m,
     },
 
     setsContainer: {
@@ -270,6 +268,38 @@ export const createStyles = (isDark = true) => {
       color: colors.accentRed,
     },
 
+    prIcon: {
+      marginLeft: Spacing.xs,
+    },
+
+    // Records Rows
+    recordsContainer: {
+      paddingTop: Spacing.s,
+      paddingBottom: Spacing.m,
+    },
+
+    recordRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
+
+    recordRowLabel: {
+      fontSize: FontSize.large,
+      color: colors.textSecondary,
+      fontWeight: FontWeight.medium,
+    },
+
+    recordRowValue: {
+      fontSize: FontSize.large,
+      color: colors.primaryBlue,
+      fontWeight: FontWeight.semiBold,
+    },
+
     // Progress tab styles
     prCard: {
       backgroundColor: colors.backgroundCard,
@@ -335,6 +365,7 @@ export const createStyles = (isDark = true) => {
       paddingBottom: Spacing.m,
     },
     selectionButton: {
+      flex: 1,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -342,7 +373,6 @@ export const createStyles = (isDark = true) => {
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.l,
       borderRadius: BorderRadius.md,
-      minWidth: 120,
     },
     selectionButtonContent: {
       flexDirection: "row",

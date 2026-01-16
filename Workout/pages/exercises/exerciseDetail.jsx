@@ -602,6 +602,23 @@ const ExerciseDetailPage = () => {
               <TouchableOpacity
                 style={[
                   styles.metricButton,
+                  metric === "volume" && styles.metricButtonActive,
+                ]}
+                onPress={() => handleMetricChange("volume")}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.metricButtonText,
+                    metric === "volume" && styles.metricButtonTextActive,
+                  ]}
+                >
+                  Performance
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.metricButton,
                   metric === "weight" && styles.metricButtonActive,
                 ]}
                 onPress={() => handleMetricChange("weight")}
@@ -633,24 +650,57 @@ const ExerciseDetailPage = () => {
                   Reps
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.metricButton,
-                  metric === "volume" && styles.metricButtonActive,
-                ]}
-                onPress={() => handleMetricChange("volume")}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.metricButtonText,
-                    metric === "volume" && styles.metricButtonTextActive,
-                  ]}
-                >
-                  Overall
-                </Text>
-              </TouchableOpacity>
             </View>
+
+            {/* Records Rows */}
+            {exerciseRecords && (
+              <View style={styles.recordsContainer}>
+                {/* Heaviest Weight */}
+                {exerciseRecords.heaviestWeight && (
+                  <View style={styles.recordRow}>
+                    <Text style={styles.recordRowLabel}>Heaviest Weight</Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleRecordPress(
+                          exerciseRecords.heaviestWeight.workout_id
+                        )
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.recordRowValue}>
+                        {weight.format(exerciseRecords.heaviestWeight.weight)}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* Best Performance */}
+                {exerciseRecords.bestPerformance && (
+                  <View style={styles.recordRow}>
+                    <Text style={styles.recordRowLabel}>Best Performance</Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handleRecordPress(
+                          exerciseRecords.bestPerformance.workout_id
+                        )
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.recordRowValue}>
+                        {weight.formatSet(
+                          exerciseRecords.bestPerformance.weight,
+                          exerciseRecords.bestPerformance.reps
+                        )}
+                        {exerciseRecords.bestPerformance.rir !== null &&
+                        exerciseRecords.bestPerformance.rir !== undefined
+                          ? ` @ ${exerciseRecords.bestPerformance.rir}`
+                          : ""}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
 
             {/* Breakdown - Only render when visible, using FlatList for virtualization */}
             {showBreakdown && breakdownRows.length > 0 && (
@@ -704,6 +754,132 @@ const ExerciseDetailPage = () => {
       </ScrollView>
     );
   };
+
+  // Memoize PR calculation for the exercise
+  const exercisePR = useMemo(() => {
+    if (!history || history.length === 0) return null;
+
+    let bestPerformance = 0;
+    let bestWorkoutId = null;
+    let bestSetIds = new Set();
+
+    // First pass: find the best performance value
+    history.forEach((workout) => {
+      if (workout.sets && workout.sets.length > 0) {
+        workout.sets.forEach((set) => {
+          const performance =
+            (set.weight || 0) *
+            (set.reps || 0) *
+            (set.rir !== null && set.rir !== undefined ? set.rir : 1);
+
+          if (performance > bestPerformance) {
+            bestPerformance = performance;
+          }
+        });
+      }
+    });
+
+    // Second pass: find the most recent workout (first in history array) that achieved this performance
+    // and collect all set IDs in that workout that match the PR
+    for (const workout of history) {
+      if (workout.sets && workout.sets.length > 0) {
+        const workoutHasPR = workout.sets.some((set) => {
+          const performance =
+            (set.weight || 0) *
+            (set.reps || 0) *
+            (set.rir !== null && set.rir !== undefined ? set.rir : 1);
+          return performance === bestPerformance;
+        });
+
+        if (workoutHasPR) {
+          bestWorkoutId = workout.workout_exercises_id;
+          // Collect all set IDs in this workout that match the PR
+          workout.sets.forEach((set) => {
+            const performance =
+              (set.weight || 0) *
+              (set.reps || 0) *
+              (set.rir !== null && set.rir !== undefined ? set.rir : 1);
+            if (performance === bestPerformance) {
+              bestSetIds.add(set.set_id);
+            }
+          });
+          break; // Stop at the most recent workout with PR
+        }
+      }
+    }
+
+    return {
+      performance: bestPerformance,
+      workoutId: bestWorkoutId,
+      setIds: bestSetIds,
+    };
+  }, [history]);
+
+  // Memoize heaviest weight and best performance records for navigation
+  const exerciseRecords = useMemo(() => {
+    if (!history || history.length === 0) return null;
+
+    let heaviestWeight = 0;
+    let heaviestWeightSet = null;
+    let bestPerformance = 0;
+    let bestPerformanceSet = null;
+
+    history.forEach((workout) => {
+      if (workout.sets && workout.sets.length > 0) {
+        workout.sets.forEach((set) => {
+          const setWeight = set.weight || 0;
+          const performance =
+            (set.weight || 0) *
+            (set.reps || 0) *
+            (set.rir !== null && set.rir !== undefined ? set.rir : 1);
+
+          // Track heaviest weight
+          if (setWeight > heaviestWeight) {
+            heaviestWeight = setWeight;
+            heaviestWeightSet = {
+              weight: set.weight,
+              reps: set.reps,
+              rir: set.rir,
+              workout_id: workout.workout_id,
+              set_id: set.set_id,
+              workout_name: workout.name,
+              date: workout.date_performed || workout.created_at,
+            };
+          }
+
+          // Track best performance
+          if (performance > bestPerformance) {
+            bestPerformance = performance;
+            bestPerformanceSet = {
+              weight: set.weight,
+              reps: set.reps,
+              rir: set.rir,
+              workout_id: workout.workout_id,
+              set_id: set.set_id,
+              workout_name: workout.name,
+              date: workout.date_performed || workout.created_at,
+            };
+          }
+        });
+      }
+    });
+
+    return {
+      heaviestWeight: heaviestWeightSet,
+      bestPerformance: bestPerformanceSet,
+    };
+  }, [history]);
+
+  // Handler to navigate to workout detail for a specific record
+  const handleRecordPress = useCallback(
+    (workoutId) => {
+      if (workoutId) {
+        hapticLight();
+        navigation.navigate("WorkoutDetail", { workout_id: workoutId });
+      }
+    },
+    [navigation]
+  );
 
   const renderHistoryTab = () => (
     <ScrollView
@@ -764,7 +940,8 @@ const ExerciseDetailPage = () => {
                     // Calculate weight difference
                     const weightDiff =
                       (set.weight || 0) - (prevSet.weight || 0);
-                    if (weightDiff !== 0) {
+                    // Only show if difference is significant (≥ 0.5 in current unit)
+                    if (Math.abs(weightDiff) >= 0.5) {
                       const formattedWeight = weight.format(
                         Math.abs(weightDiff)
                       );
@@ -786,6 +963,12 @@ const ExerciseDetailPage = () => {
                     }
                   }
 
+                  // Check if this set is a PR (only in the most recent workout that achieved the best performance)
+                  const isPR =
+                    exercisePR &&
+                    workout.workout_exercises_id === exercisePR.workoutId &&
+                    exercisePR.setIds.has(set.set_id);
+
                   return (
                     <View
                       key={set.set_id}
@@ -799,10 +982,9 @@ const ExerciseDetailPage = () => {
                       <Text style={styles.setNumber}>{set.set_order}</Text>
                       <View
                         style={{
-                          flex: 1,
                           flexDirection: "row",
                           alignItems: "center",
-                          marginLeft: Spacing.m,
+                          flex: 1,
                         }}
                       >
                         <Text style={styles.setInfo}>
@@ -821,6 +1003,14 @@ const ExerciseDetailPage = () => {
                             {indicator.text}
                           </Text>
                         ))}
+                        {isPR && (
+                          <Ionicons
+                            name="trophy"
+                            size={16}
+                            color={colors.accentGold}
+                            style={styles.prIcon}
+                          />
+                        )}
                       </View>
                       <Text style={styles.setRir}>
                         {set.rir !== null && set.rir !== undefined
