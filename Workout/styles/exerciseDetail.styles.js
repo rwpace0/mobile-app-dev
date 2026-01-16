@@ -152,6 +152,8 @@ export const createStyles = (isDark = true) => {
     workoutContainer: {
       paddingTop: Spacing.m,
       paddingBottom: Spacing.m,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
     },
 
     workoutTitle: {
@@ -252,6 +254,20 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.base,
       color: colors.textPrimary,
       textAlign: "center",
+    },
+
+    setIndicator: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.medium,
+      marginLeft: Spacing.xs,
+    },
+
+    setIndicatorIncrease: {
+      color: colors.accentGreen,
+    },
+
+    setIndicatorDecrease: {
+      color: colors.accentRed,
     },
 
     // Progress tab styles

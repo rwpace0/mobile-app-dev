@@ -753,25 +753,83 @@ const ExerciseDetailPage = () => {
               </View>
 
               {workout.sets && workout.sets.length > 0 ? (
-                workout.sets.map((set, setIndex) => (
-                  <View
-                    key={set.set_id}
-                    style={[
-                      styles.setRow,
-                      setIndex % 2 === 0 ? styles.setRowEven : styles.setRowOdd,
-                    ]}
-                  >
-                    <Text style={styles.setNumber}>{set.set_order}</Text>
-                    <Text style={styles.setInfo}>
-                      {weight.formatSet(set.weight, set.reps)} reps
-                    </Text>
-                    <Text style={styles.setRir}>
-                      {set.rir !== null && set.rir !== undefined
-                        ? `${set.rir}`
-                        : "-"}
-                    </Text>
-                  </View>
-                ))
+                workout.sets.map((set, setIndex) => {
+                  // Calculate performance indicators by comparing with previous workout
+                  const prevWorkout = history[workoutIndex + 1];
+                  const prevSet = prevWorkout?.sets?.[setIndex];
+
+                  let indicators = [];
+
+                  if (prevSet) {
+                    // Calculate weight difference
+                    const weightDiff =
+                      (set.weight || 0) - (prevSet.weight || 0);
+                    if (weightDiff !== 0) {
+                      const formattedWeight = weight.format(
+                        Math.abs(weightDiff)
+                      );
+                      indicators.push({
+                        text: `${weightDiff > 0 ? "+" : "-"}${formattedWeight}`,
+                        isIncrease: weightDiff > 0,
+                      });
+                    }
+
+                    // Calculate reps difference
+                    const repsDiff = (set.reps || 0) - (prevSet.reps || 0);
+                    if (repsDiff !== 0) {
+                      indicators.push({
+                        text: `${repsDiff > 0 ? "+" : ""}${repsDiff} rep${
+                          Math.abs(repsDiff) !== 1 ? "s" : ""
+                        }`,
+                        isIncrease: repsDiff > 0,
+                      });
+                    }
+                  }
+
+                  return (
+                    <View
+                      key={set.set_id}
+                      style={[
+                        styles.setRow,
+                        setIndex % 2 === 0
+                          ? styles.setRowEven
+                          : styles.setRowOdd,
+                      ]}
+                    >
+                      <Text style={styles.setNumber}>{set.set_order}</Text>
+                      <View
+                        style={{
+                          flex: 1,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginLeft: Spacing.m,
+                        }}
+                      >
+                        <Text style={styles.setInfo}>
+                          {weight.formatSet(set.weight, set.reps)} reps
+                        </Text>
+                        {indicators.map((indicator, idx) => (
+                          <Text
+                            key={idx}
+                            style={[
+                              styles.setIndicator,
+                              indicator.isIncrease
+                                ? styles.setIndicatorIncrease
+                                : styles.setIndicatorDecrease,
+                            ]}
+                          >
+                            {indicator.text}
+                          </Text>
+                        ))}
+                      </View>
+                      <Text style={styles.setRir}>
+                        {set.rir !== null && set.rir !== undefined
+                          ? `${set.rir}`
+                          : "-"}
+                      </Text>
+                    </View>
+                  );
+                })
               ) : (
                 <Text style={styles.emptyHistoryText}>No sets recorded</Text>
               )}
