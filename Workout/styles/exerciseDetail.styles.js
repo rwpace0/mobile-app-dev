@@ -83,11 +83,8 @@ export const createStyles = (isDark = true) => {
     imageContainer: {
       width: "100%",
       height: 250,
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      marginBottom: Spacing.m,
+      marginBottom: Spacing.l,
       overflow: "hidden",
-      ...Shadow.medium,
     },
 
     exerciseImage: {
@@ -96,56 +93,50 @@ export const createStyles = (isDark = true) => {
       resizeMode: "cover",
     },
 
-    // Info cards styles
-    infoCard: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      padding: Spacing.m,
+    // Summary tab styles - Heavy typography, no cards
+    summaryContent: {
+      paddingTop: Spacing.m,
+    },
+
+    summaryTitle: {
+      fontSize: FontSize.xxlarge,
+      fontWeight: FontWeight.bold,
+      color: colors.textPrimary,
       marginBottom: Spacing.m,
-      flexDirection: "row",
-      alignItems: "center",
-      ...Shadow.small,
+      paddingHorizontal: Spacing.m,
     },
 
-    infoIcon: {
-      marginRight: Spacing.m,
+    muscleGroupSection: {
+      marginBottom: Spacing.m,
+      paddingHorizontal: Spacing.m,
     },
 
-    infoContent: {
-      flex: 1,
-    },
-
-    infoLabel: {
+    muscleGroupLabel: {
       fontSize: FontSize.small,
       color: colors.textSecondary,
-      marginBottom: Spacing.xxs,
-    },
-
-    infoText: {
-      fontSize: FontSize.medium,
-      color: colors.textPrimary,
       fontWeight: FontWeight.medium,
+      marginBottom: Spacing.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
     },
 
-    // Summary tab styles
-    instructionContainer: {
-      backgroundColor: colors.backgroundCard,
-      borderRadius: BorderRadius.lg,
-      padding: Spacing.m,
+    muscleGroupText: {
+      fontSize: FontSize.large,
+      fontWeight: FontWeight.semiBold,
+      color: colors.textPrimary,
+    },
+
+    instructionSection: {
+      marginTop: Spacing.m,
       marginBottom: Spacing.m,
-      ...Shadow.medium,
-    },
-
-    instructionLabel: {
-      fontSize: FontSize.medium,
-      color: colors.textSecondary,
-      marginBottom: Spacing.s,
+      paddingHorizontal: Spacing.m,
     },
 
     instructionText: {
       fontSize: FontSize.base,
       color: colors.textPrimary,
       lineHeight: 24,
+      fontWeight: FontWeight.regular,
     },
 
     // History tab styles

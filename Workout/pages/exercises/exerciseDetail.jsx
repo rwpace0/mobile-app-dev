@@ -475,64 +475,37 @@ const ExerciseDetailPage = () => {
         </View>
       )}
 
-      <View style={styles.infoCard}>
-        <Ionicons
-          name="fitness-outline"
-          size={24}
-          color={colors.textSecondary}
-          style={styles.infoIcon}
-        />
-        <View style={styles.infoContent}>
-          <Text style={styles.infoLabel}>Muscle Group</Text>
-          <Text style={styles.infoText}>
-            {exercise?.muscle_group
-              ? exercise.muscle_group.charAt(0).toUpperCase() +
-                exercise.muscle_group.slice(1)
-              : "Not specified"}
-          </Text>
-        </View>
-      </View>
+      <View style={styles.summaryContent}>
+        <Text style={styles.summaryTitle}>{exercise?.name || "Exercise"}</Text>
 
-      <View style={styles.infoCard}>
-        <Ionicons
-          name="barbell-outline"
-          size={24}
-          color={colors.textSecondary}
-          style={styles.infoIcon}
-        />
-        <View style={styles.infoContent}>
-          <Text style={styles.infoLabel}>Equipment</Text>
-          <Text style={styles.infoText}>
-            {exercise?.equipment || "No equipment required"}
-          </Text>
-        </View>
-      </View>
+        {exercise?.muscle_group && (
+          <View style={styles.muscleGroupSection}>
+            <Text style={styles.muscleGroupLabel}>Primary</Text>
+            <Text style={styles.muscleGroupText}>
+              {exercise.muscle_group.charAt(0).toUpperCase() +
+                exercise.muscle_group.slice(1)}
+            </Text>
+          </View>
+        )}
 
-      {exercise?.secondary_muscle_groups &&
-        exercise.secondary_muscle_groups.length > 0 && (
-          <View style={styles.infoCard}>
-            <Ionicons
-              name="body-outline"
-              size={24}
-              color={colors.textSecondary}
-              style={styles.infoIcon}
-            />
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Secondary Muscle Groups</Text>
-              <Text style={styles.infoText}>
+        {exercise?.secondary_muscle_groups &&
+          exercise.secondary_muscle_groups.length > 0 && (
+            <View style={styles.muscleGroupSection}>
+              <Text style={styles.muscleGroupLabel}>Secondary</Text>
+              <Text style={styles.muscleGroupText}>
                 {exercise.secondary_muscle_groups
                   .map((m) => m.charAt(0).toUpperCase() + m.slice(1))
                   .join(", ")}
               </Text>
             </View>
+          )}
+
+        {exercise?.instruction && (
+          <View style={styles.instructionSection}>
+            <Text style={styles.muscleGroupLabel}>Instructions</Text>
+            <Text style={styles.instructionText}>{exercise.instruction}</Text>
           </View>
         )}
-
-      <View style={styles.instructionContainer}>
-        <Text style={styles.instructionLabel}>Instructions</Text>
-        <Text style={styles.instructionText}>
-          {exercise?.instruction || "No instructions available"}
-        </Text>
       </View>
     </ScrollView>
   );
