@@ -22,6 +22,9 @@ export const FontSize = {
   xxlarge: 28,
   title: 32,
   header: 40,
+  header2: 48,
+  timer: 56,
+
 };
 
 export const FontWeight = {

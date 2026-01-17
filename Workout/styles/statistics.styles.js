@@ -17,7 +17,7 @@ export const createStyles = (isDark = true) => {
       backgroundColor: colors.backgroundPrimary,
     },
     scrollContent: {
-      paddingTop: Spacing.m,
+      paddingTop: Spacing.xs,
       paddingBottom: Spacing.xl,
     },
     loadingContainer: {

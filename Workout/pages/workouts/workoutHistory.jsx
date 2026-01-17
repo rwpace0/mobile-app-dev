@@ -308,7 +308,7 @@ const WorkoutHistoryPage = () => {
         data={workouts}
         renderItem={renderWorkoutCard}
         keyExtractor={(item) => item.workout_id}
-        contentContainerStyle={{ paddingVertical: Spacing.m }}
+        contentContainerStyle={{ paddingTop: Spacing.xs, paddingBottom: Spacing.m }}
         onRefresh={onRefresh}
         refreshing={refreshing}
         onEndReached={loadMore}

@@ -66,7 +66,8 @@ export const createStyles = (isDark = true) => {
 
     searchContainer: {
       paddingHorizontal: Spacing.m,
-      paddingVertical: Spacing.m,
+      paddingTop: Spacing.xs,
+      paddingBottom: Spacing.m,
     },
 
     searchInputContainer: {

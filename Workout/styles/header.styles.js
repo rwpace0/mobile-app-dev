@@ -7,14 +7,13 @@ export const createStyles = (isDark = true) => {
   
   return StyleSheet.create({
   container: {
-    height: 60,
+    height: 50,
     backgroundColor: colors.backgroundPrimary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderColor,
+    paddingTop: 0,
   },
 
   leftContainer: {
@@ -61,7 +60,7 @@ export const createStyles = (isDark = true) => {
   },
 
   textButton: {
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.xxxs,
     paddingHorizontal: Spacing.s,
     borderRadius: 8,
     flexShrink: 0,

@@ -42,10 +42,10 @@ export const createStyles = (isDark = true) => {
 
     // Calendar Section
     calendarSection: {
-      marginTop: Spacing.m,
+      marginTop: Spacing.xs,
       backgroundColor: "transparent",
       paddingHorizontal: Spacing.m,
-      paddingTop: Spacing.m,
+      paddingTop: Spacing.xs,
       paddingBottom: Spacing.m,
     },
 

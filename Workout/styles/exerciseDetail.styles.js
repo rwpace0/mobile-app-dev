@@ -95,7 +95,7 @@ export const createStyles = (isDark = true) => {
 
     // Summary tab styles - Heavy typography, no cards
     summaryContent: {
-      paddingTop: Spacing.m,
+      paddingTop: Spacing.xs,
     },
 
     summaryTitle: {
@@ -343,7 +343,7 @@ export const createStyles = (isDark = true) => {
 
     // Progress tab - Sets screen style
     scrollContent: {
-      paddingTop: Spacing.m,
+      paddingTop: Spacing.xs,
       paddingBottom: Spacing.xl,
     },
 

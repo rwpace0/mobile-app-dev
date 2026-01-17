@@ -54,7 +54,7 @@ export const createStyles = (isDark = true) => {
 
     // Workout History Card styles (flat design matching workout/exercise detail)
     workoutCard: {
-      paddingTop: Spacing.m,
+      paddingTop: Spacing.xs,
       paddingBottom: Spacing.m,
       borderBottomWidth: 1,
       borderBottomColor: colors.borderColor,

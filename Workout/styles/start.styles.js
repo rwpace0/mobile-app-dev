@@ -37,7 +37,7 @@ export const createStyles = (isDark = true) => {
     },
 
     section: {
-      marginTop: Spacing.l,
+      marginTop: Spacing.m,
     },
 
     sectionHeader: {

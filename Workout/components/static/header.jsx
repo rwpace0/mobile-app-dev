@@ -28,7 +28,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
             <Ionicons
               name={leftComponent.icon || "chevron-back"}
               size={24}
-              color={colors.primaryBlue}
+              color={colors.textPrimary}
             />
           </TouchableOpacity>
         </View>
