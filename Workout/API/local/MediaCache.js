@@ -33,6 +33,7 @@ class MediaCache {
       // Create subdirectories
       await FileSystem.makeDirectoryAsync(`${this.baseDir}exercises/`, { intermediates: true });
       await FileSystem.makeDirectoryAsync(`${this.baseDir}avatars/`, { intermediates: true });
+      await FileSystem.makeDirectoryAsync(`${this.baseDir}exercise-videos/`, { intermediates: true });
     } catch (error) {
       console.error('Failed to initialize media cache directories:', error);
     }
@@ -207,11 +208,25 @@ class MediaCache {
       const cleanMediaUrl = mediaUrl.split('?')[0]; // Remove query parameters
       
       await dbManager.execute(
-        'UPDATE exercises SET media_url = ?, local_media_path = ?, updated_at = datetime("now") WHERE exercise_id = ?',
+        'UPDATE exercises SET image_url = ?, local_media_path = ?, updated_at = datetime("now") WHERE exercise_id = ?',
         [cleanMediaUrl, filename, exerciseId]
       );
     } catch (error) {
       console.error('Failed to update exercise media:', error);
+      throw error;
+    }
+  }
+
+  async updateExerciseVideo(exerciseId, videoUrl, filename) {
+    try {
+      const cleanVideoUrl = videoUrl.split('?')[0]; // Remove query parameters
+      
+      await dbManager.execute(
+        'UPDATE exercises SET video_url = ?, local_video_path = ?, updated_at = datetime("now") WHERE exercise_id = ?',
+        [cleanVideoUrl, filename, exerciseId]
+      );
+    } catch (error) {
+      console.error('Failed to update exercise video:', error);
       throw error;
     }
   }
@@ -285,12 +300,32 @@ class MediaCache {
       if (exercise?.local_media_path) {
         await this.deleteFile(exercise.local_media_path);
         await dbManager.execute(
-          'UPDATE exercises SET media_url = NULL, local_media_path = NULL, updated_at = datetime("now") WHERE exercise_id = ?',
+          'UPDATE exercises SET image_url = NULL, local_media_path = NULL, updated_at = datetime("now") WHERE exercise_id = ?',
           [exerciseId]
         );
       }
     } catch (error) {
       console.error('Failed to clear exercise media:', error);
+      throw error;
+    }
+  }
+
+  async clearExerciseVideo(exerciseId) {
+    try {
+      const [exercise] = await dbManager.query(
+        'SELECT local_video_path FROM exercises WHERE exercise_id = ?',
+        [exerciseId]
+      );
+
+      if (exercise?.local_video_path) {
+        await this.deleteFile(exercise.local_video_path);
+        await dbManager.execute(
+          'UPDATE exercises SET video_url = NULL, local_video_path = NULL, updated_at = datetime("now") WHERE exercise_id = ?',
+          [exerciseId]
+        );
+      }
+    } catch (error) {
+      console.error('Failed to clear exercise video:', error);
       throw error;
     }
   }
@@ -589,23 +624,91 @@ class MediaCache {
     }
   }
 
+  async downloadExerciseVideoIfNeeded(exerciseId, videoUrl) {
+    try {
+      if (!exerciseId || !videoUrl) {
+        console.log('[MediaCache] No exerciseId or videoUrl provided for exercise video download');
+        return null;
+      }
+
+      // Check if we already have a local copy of this exercise video
+      const [existingExercise] = await dbManager.query(
+        'SELECT local_video_path FROM exercises WHERE exercise_id = ?',
+        [exerciseId]
+      );
+      
+      if (existingExercise?.local_video_path) {
+        const localPath = `${this.baseDir}exercise-videos/${existingExercise.local_video_path}`;
+        const fileInfo = await FileSystem.getInfoAsync(localPath);
+        if (fileInfo.exists && fileInfo.size > 1000) { // Videos should be larger
+          return localPath;
+        } else if (fileInfo.exists && fileInfo.size <= 1000) {
+          console.log(`[MediaCache] Existing exercise video file is corrupted (${fileInfo.size} bytes), will re-download`);
+          // Delete corrupted file
+          try {
+            await FileSystem.deleteAsync(localPath);
+          } catch (e) {
+            // Ignore deletion errors
+          }
+        }
+      }
+      
+      // Check if download is already in progress
+      const cacheKey = `downloading_video_${exerciseId}`;
+      if (this.cache.get(cacheKey)) {
+        console.log(`[MediaCache] Exercise video download already in progress for exercise ${exerciseId}`);
+        return null;
+      }
+      
+      // Set download in progress flag
+      this.cache.set(cacheKey, true, 600); // 10 minute timeout for videos
+      
+      try {
+        // For R2 signed URLs, download directly (no backend endpoint needed for videos yet)
+        const localPath = this.generateLocalPath('exercise-videos', exerciseId, videoUrl);
+        
+        // Download video directly from R2 signed URL
+        const downloadResult = await FileSystem.downloadAsync(videoUrl, localPath);
+        
+        if (downloadResult.status === 200) {
+          // Update local exercise with the new video path
+          const fileName = localPath.split('/').pop();
+          await this.updateExerciseVideo(exerciseId, videoUrl, fileName);
+          console.log(`[MediaCache] Successfully downloaded and cached exercise video for exercise ${exerciseId}`);
+          return localPath;
+        }
+        
+        return null;
+      } finally {
+        // Clear download in progress flag
+        this.cache.delete(cacheKey);
+      }
+    } catch (error) {
+      console.error(`[MediaCache] Failed to download exercise video for exercise ${exerciseId}:`, error);
+      // Don't throw error - exercise video download is not critical
+      return null;
+    }
+  }
+
   async cleanupOldFiles() {
     try {
       // Clean up orphaned files that are no longer referenced in the database
       const exerciseFiles = await FileSystem.readDirectoryAsync(`${this.baseDir}exercises/`);
       const avatarFiles = await FileSystem.readDirectoryAsync(`${this.baseDir}avatars/`);
+      const videoFiles = await FileSystem.readDirectoryAsync(`${this.baseDir}exercise-videos/`).catch(() => []);
 
       // Get all referenced files from database
       const exercises = await dbManager.query(
-        'SELECT local_media_path FROM exercises WHERE local_media_path IS NOT NULL'
+        'SELECT local_media_path, local_video_path FROM exercises WHERE local_media_path IS NOT NULL OR local_video_path IS NOT NULL'
       );
       const profiles = await dbManager.query(
         'SELECT local_avatar_path FROM profiles WHERE local_avatar_path IS NOT NULL'
       );
 
       const referencedFiles = new Set([
-        ...(exercises || []).map(e => e.local_media_path),
-        ...(profiles || []).map(p => p.local_avatar_path)
+        ...(exercises || []).map(e => e.local_media_path).filter(Boolean),
+        ...(exercises || []).map(e => e.local_video_path).filter(Boolean),
+        ...(profiles || []).map(p => p.local_avatar_path).filter(Boolean)
       ]);
 
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
@@ -624,6 +727,21 @@ class MediaCache {
         if (shouldDelete) {
           await this.deleteFile(filePath);
           console.log(`Cleaned up exercise file: ${file} (orphaned: ${!referencedFiles.has(file)}, old: ${fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo})`);
+        }
+      }
+
+      // Delete unreferenced video files and files older than 30 days (videos are larger, keep longer)
+      for (const file of videoFiles) {
+        const filePath = `${this.baseDir}exercise-videos/${file}`;
+        const fileInfo = await FileSystem.getInfoAsync(filePath);
+        
+        if (!fileInfo.exists) continue;
+        
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
+        
+        if (!referencedFiles.has(file) || (fileInfo.modificationTime && fileInfo.modificationTime * 1000 < thirtyDaysAgo)) {
+          await FileSystem.deleteAsync(filePath);
+          console.log(`Cleaned up video file: ${file} (orphaned: ${!referencedFiles.has(file)}, old: ${fileInfo.modificationTime && fileInfo.modificationTime * 1000 < thirtyDaysAgo})`);
         }
       }
 

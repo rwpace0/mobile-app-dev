@@ -169,5 +169,65 @@ export const mediaAPI = {
       console.error('Cleanup old files error:', error);
       // Don't throw error for cleanup failures
     }
+  },
+
+  uploadExerciseVideo: async (exerciseId, videoUri) => {
+    try {
+      // Create form data
+      const formData = new FormData();
+      
+      // Get the filename from the URI
+      const filename = videoUri.split('/').pop();
+      
+      // Get file info for size validation
+      const fileInfo = await FileSystem.getInfoAsync(videoUri);
+      if (!fileInfo.exists) {
+        throw new Error('File does not exist');
+      }
+
+      // Validate file size (50MB limit for videos)
+      const maxSize = 50 * 1024 * 1024;
+      if (fileInfo.size > maxSize) {
+        throw new Error('Video size must be less than 50MB');
+      }
+      
+      // Append the file with correct field name
+      formData.append('exerciseVideo', {
+        uri: videoUri,
+        name: filename,
+        type: 'video/mp4'
+      });
+      
+      // Append exercise ID
+      formData.append('exerciseId', exerciseId);
+
+      const response = await api.post('/exercise/video', formData);
+      const { url: videoUrl } = response.data;
+
+      // Download and cache the video
+      const localPath = await mediaCache.downloadExerciseVideoIfNeeded(exerciseId, videoUrl);
+      
+      // Update local database
+      if (localPath) {
+        const fileName = localPath.split('/').pop();
+        await mediaCache.updateExerciseVideo(exerciseId, videoUrl, fileName);
+      }
+
+      return { videoUrl, localPath };
+    } catch (error) {
+      console.error('Upload exercise video error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+  },
+
+  downloadExerciseVideo: async (exerciseId, videoUrl) => {
+    try {
+      // Download and cache the exercise video
+      const localPath = await mediaCache.downloadExerciseVideoIfNeeded(exerciseId, videoUrl);
+      return localPath;
+    } catch (error) {
+      console.error('Download exercise video error:', error);
+      throw error;
+    }
   }
 }; 

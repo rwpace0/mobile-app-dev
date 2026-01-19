@@ -1,11 +1,10 @@
 import sharp from 'sharp';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import { supabase } from '../database/supabaseClient.js';
 import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
-import { getClientToken } from '../database/supabaseClient.js';
+import { R2Service } from './r2Service.js';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 const unlinkAsync = promisify(fs.unlink);
@@ -75,65 +74,83 @@ export class MediaService {
     });
   }
 
-  static async uploadMedia(fileBuffer, fileName, bucket, supabaseClient) {
+  static async uploadMedia(fileBuffer, fileName, bucket, metadata = {}) {
     // Add content type detection based on file extension
     const ext = path.extname(fileName).toLowerCase();
     const contentType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
                        ext === '.png' ? 'image/png' :
                        ext === '.gif' ? 'image/gif' :
+                       ext === '.mp4' ? 'video/mp4' :
+                       ext === '.mov' ? 'video/quicktime' :
                        'application/octet-stream';
 
-    const { data, error } = await (supabaseClient || supabase).storage
-      .from(bucket)
-      .upload(fileName, fileBuffer, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType
-      });
-
-    if (error) throw error;
-    return data;
+    // Upload to R2
+    await R2Service.uploadFile(bucket, fileName, fileBuffer, contentType);
+    
+    // Generate and return signed URL
+    const signedUrl = await R2Service.getSignedUrl(bucket, fileName);
+    
+    return { path: fileName, signedUrl };
   }
 
-  static async deleteMedia(fileName, bucket, supabaseClient) {
-    const { data, error } = await (supabaseClient || supabase).storage
-      .from(bucket)
-      .remove([fileName]);
-
-    if (error) throw error;
-    return data;
+  static async deleteMedia(fileName, bucket) {
+    // Delete from R2
+    const result = await R2Service.deleteFile(bucket, fileName);
+    return result;
   }
 
-  static generateFileName(originalName, userId, type) {
+  static generateFileName(originalName, userId, type, prefix = '') {
     const timestamp = Date.now();
     const extension = path.extname(originalName).toLowerCase();
-    // Ensure we always save jpegs for images (except gifs)
-    const finalExtension = extension !== '.gif' ? '.jpg' : extension;
+    
+    // For images: always save as jpeg (except gifs)
+    // For videos: keep original extension
+    let finalExtension;
+    if (type === 'video') {
+      finalExtension = extension === '.mov' ? '.mp4' : extension;
+    } else {
+      finalExtension = extension !== '.gif' ? '.jpg' : extension;
+    }
+    
+    if (prefix) {
+      return `${prefix}/${userId}/${timestamp}${finalExtension}`;
+    }
     return `${userId}/${timestamp}${finalExtension}`;
   }
 
-  static async getSignedUrl(bucket, fileName, supabaseClient) {
+  static async getSignedUrl(bucket, fileName) {
     console.log('Getting signed URL for:', { bucket, fileName });
     
     try {
-      const { data, error } = await (supabaseClient || supabase).storage
-        .from(bucket)
-        .createSignedUrl(fileName, 60 * 60); // 1 hour expiry
+      const signedUrl = await R2Service.getSignedUrl(bucket, fileName);
       
-      if (error) {
-        console.error('Error generating signed URL:', error);
-        throw error;
-      }
-      
-      if (!data?.signedUrl) {
+      if (!signedUrl) {
         throw new Error('No signed URL generated');
       }
       
       console.log('Generated signed URL successfully');
-      return data.signedUrl;
+      return signedUrl;
     } catch (error) {
       console.error('Error in getSignedUrl:', error);
       throw error;
     }
+  }
+
+  static async compressAndUploadImage(fileBuffer, fileName, bucket) {
+    // Compress the image first
+    const compressedBuffer = await this.compressImage({ buffer: fileBuffer });
+    
+    // Upload to R2
+    const result = await this.uploadMedia(compressedBuffer, fileName, bucket);
+    return result;
+  }
+
+  static async compressAndUploadVideo(filePath, fileName, bucket) {
+    // Compress the video
+    const compressedBuffer = await this.compressVideo({ path: filePath });
+    
+    // Upload to R2
+    const result = await this.uploadMedia(compressedBuffer, fileName, bucket);
+    return result;
   }
 } 

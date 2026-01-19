@@ -93,6 +93,20 @@ export const createStyles = (isDark = true) => {
       resizeMode: "cover",
     },
 
+    // Exercise video styles
+    videoContainer: {
+      width: "100%",
+      height: 250,
+      marginBottom: Spacing.l,
+      backgroundColor: colors.backgroundSecondary,
+      overflow: "hidden",
+    },
+
+    exerciseVideo: {
+      width: "100%",
+      height: "100%",
+    },
+
     // Summary tab styles - Heavy typography, no cards
     summaryContent: {
       paddingTop: Spacing.xs,

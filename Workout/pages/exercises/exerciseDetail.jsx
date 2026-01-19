@@ -15,6 +15,7 @@ import {
   RefreshControl,
   Image,
   FlatList,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -22,6 +23,7 @@ import {
   useRoute,
   useFocusEffect,
 } from "@react-navigation/native";
+import { Video, ResizeMode } from "expo-av";
 import exercisesAPI from "../../API/exercisesAPI";
 import { createStyles } from "../../styles/exerciseDetail.styles";
 import * as FileSystem from "expo-file-system/legacy";
@@ -124,13 +126,13 @@ const ExerciseDetailPage = () => {
 
         setExercise(exerciseData);
 
-        // Download exercise media if it exists on server but not locally
-        if (exerciseData.media_url && !exerciseData.local_media_path) {
+        // Download exercise image if it exists on server but not locally
+        if (exerciseData.image_url && !exerciseData.local_media_path) {
           try {
-            console.log("[ExerciseDetail] Downloading exercise media...");
+            console.log("[ExerciseDetail] Downloading exercise image...");
             await exercisesAPI.downloadExerciseMedia(
               exerciseData.exercise_id,
-              exerciseData.media_url
+              exerciseData.image_url
             );
 
             // Refresh the exercise data to get the updated local_media_path
@@ -142,10 +144,35 @@ const ExerciseDetailPage = () => {
             }
           } catch (mediaError) {
             console.warn(
-              "[ExerciseDetail] Failed to download exercise media:",
+              "[ExerciseDetail] Failed to download exercise image:",
               mediaError
             );
-            // Don't fail the entire page load for media download issues
+            // Don't fail the entire page load for image download issues
+          }
+        }
+
+        // Download exercise video if it exists on server but not locally
+        if (exerciseData.video_url && !exerciseData.local_video_path) {
+          try {
+            console.log("[ExerciseDetail] Downloading exercise video...");
+            await exercisesAPI.downloadExerciseVideo(
+              exerciseData.exercise_id,
+              exerciseData.video_url
+            );
+
+            // Refresh the exercise data to get the updated local_video_path
+            const updatedExercise = await exercisesAPI.getExerciseById(
+              exerciseId
+            );
+            if (updatedExercise) {
+              setExercise(updatedExercise);
+            }
+          } catch (videoError) {
+            console.warn(
+              "[ExerciseDetail] Failed to download exercise video:",
+              videoError
+            );
+            // Don't fail the entire page load for video download issues
           }
         }
 
@@ -463,7 +490,21 @@ const ExerciseDetailPage = () => {
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
     >
-      {exercise?.local_media_path && (
+      {/* Show video if available, otherwise show image */}
+      {exercise?.local_video_path ? (
+        <View style={styles.videoContainer}>
+          <Video
+            source={{
+              uri: `file://${FileSystem.cacheDirectory}app_media/exercise-videos/${exercise.local_video_path}`,
+            }}
+            style={styles.exerciseVideo}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping
+            shouldPlay={false}
+          />
+        </View>
+      ) : exercise?.local_media_path ? (
         <View style={styles.imageContainer}>
           <Image
             source={{
@@ -473,7 +514,7 @@ const ExerciseDetailPage = () => {
             resizeMode="cover"
           />
         </View>
-      )}
+      ) : null}
 
       <View style={styles.summaryContent}>
         <Text style={styles.summaryTitle}>{exercise?.name || "Exercise"}</Text>

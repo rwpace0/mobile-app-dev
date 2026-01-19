@@ -41,8 +41,10 @@ class DatabaseManager {
                     instruction TEXT,
                     muscle_group TEXT,
                     equipment TEXT,
-                    media_url TEXT,
+                    image_url TEXT,
                     local_media_path TEXT,
+                    video_url TEXT,
+                    local_video_path TEXT,
                     is_public INTEGER DEFAULT 0,
                     created_by TEXT,
                     created_at DATETIME NOT NULL,
@@ -639,6 +641,64 @@ class DatabaseManager {
         throw error;
       }
 
+      // Migrate from media_url to image_url and add video columns (R2 migration)
+      try {
+        const tableInfo = await this.db.getAllAsync(
+          "PRAGMA table_info(exercises)"
+        );
+        const columnNames = tableInfo.map((col) => col.name);
+        const hasMediaUrl = columnNames.includes("media_url");
+        const hasImageUrl = columnNames.includes("image_url");
+        const hasVideoUrl = columnNames.includes("video_url");
+        const hasLocalVideoPath = columnNames.includes("local_video_path");
+
+        // If we still have media_url, rename it to image_url
+        if (hasMediaUrl && !hasImageUrl) {
+          console.log(
+            "[DatabaseManager] Migrating media_url to image_url for R2 compatibility"
+          );
+          await this.db.execAsync(
+            "ALTER TABLE exercises RENAME COLUMN media_url TO image_url;"
+          );
+          console.log(
+            "[DatabaseManager] Successfully renamed media_url to image_url"
+          );
+        } else if (!hasImageUrl && !hasMediaUrl) {
+          // Neither exists, add image_url
+          console.log("[DatabaseManager] Adding image_url column");
+          await this.db.execAsync(
+            "ALTER TABLE exercises ADD COLUMN image_url TEXT;"
+          );
+          console.log("[DatabaseManager] Successfully added image_url column");
+        }
+
+        // Add video_url if missing
+        if (!hasVideoUrl) {
+          console.log("[DatabaseManager] Adding video_url column");
+          await this.db.execAsync(
+            "ALTER TABLE exercises ADD COLUMN video_url TEXT;"
+          );
+          console.log("[DatabaseManager] Successfully added video_url column");
+        }
+
+        // Add local_video_path if missing
+        if (!hasLocalVideoPath) {
+          console.log("[DatabaseManager] Adding local_video_path column");
+          await this.db.execAsync(
+            "ALTER TABLE exercises ADD COLUMN local_video_path TEXT;"
+          );
+          console.log(
+            "[DatabaseManager] Successfully added local_video_path column"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[DatabaseManager] Error during R2 migration (media_url -> image_url, adding video columns):",
+          error
+        );
+        throw error;
+      }
+
       // Force check for template_exercises columns from version 8 and add if missing (regardless of version)
       try {
         const templateExercisesTableInfo = await this.db.getAllAsync(
@@ -770,8 +830,10 @@ class DatabaseManager {
                     instruction TEXT,
                     muscle_group TEXT,
                     equipment TEXT,
-                    media_url TEXT,
+                    image_url TEXT,
                     local_media_path TEXT,
+                    video_url TEXT,
+                    local_video_path TEXT,
                     is_public INTEGER DEFAULT 0,
                     created_by TEXT,
                     created_at DATETIME NOT NULL,

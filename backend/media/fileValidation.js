@@ -43,6 +43,9 @@ const limits = {
   },
   exerciseMedia: {
     fileSize: 5 * 1024 * 1024, // 5MB for images
+  },
+  exerciseVideo: {
+    fileSize: 50 * 1024 * 1024, // 50MB for videos
   }
 };
 
@@ -53,16 +56,36 @@ export const uploadAvatar = multer({
 }).single('avatar');
 
 export const uploadExerciseMedia = multer({
-  storage: storage, // Always use memory storage since we only accept images now
+  storage: storage,
   fileFilter: fileFilter,
   limits: limits.exerciseMedia
 }).single('exerciseMedia');
+
+export const uploadExerciseVideo = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, '/tmp'); // Use temp directory for video processing
+    },
+    filename: (req, file, cb) => {
+      cb(null, `${Date.now()}-${file.originalname}`);
+    }
+  }),
+  fileFilter: (req, file, cb) => {
+    const allowedVideoTypes = ['video/mp4', 'video/quicktime'];
+    if (allowedVideoTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only MP4 and MOV videos are allowed.'), false);
+    }
+  },
+  limits: limits.exerciseVideo
+}).single('exerciseVideo');
 
 export const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
-        error: 'File size too large. Maximum size is 2MB for avatars and 5MB for exercise images.'
+        error: 'File size too large. Maximum size is 2MB for avatars, 5MB for exercise images, and 50MB for exercise videos.'
       });
     }
     return res.status(400).json({ error: err.message });

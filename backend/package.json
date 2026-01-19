@@ -8,6 +8,8 @@
     "dev": "nodemon ./bin/www"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.971.0",
+    "@aws-sdk/s3-request-presigner": "^3.971.0",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@supabase/supabase-js": "^2.49.4",
     "cookie-parser": "~1.4.4",
@@ -23,6 +25,7 @@
     "morgan": "~1.9.1",
     "multer": "^2.0.1",
     "nodemon": "^3.1.10",
-    "sharp": "^0.34.2"
+    "sharp": "^0.34.2",
+    "tslib": "^2.8.1"
   }
 }

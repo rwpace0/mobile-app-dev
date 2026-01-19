@@ -288,7 +288,8 @@ class ExercisesAPI extends APIBase {
         "muscle_group",
         "secondary_muscle_groups",
         "equipment",
-        "media_url",
+        "image_url",
+        "video_url",
         "is_public",
         "created_by",
         "created_at",
@@ -547,7 +548,7 @@ class ExercisesAPI extends APIBase {
     try {
       await this.ensureInitialized();
 
-      // Get existing exercise to preserve media_url and other fields
+      // Get existing exercise to preserve image_url, video_url, and other fields
       const [existingExercise] = await this.db.query(
         "SELECT * FROM exercises WHERE exercise_id = ?",
         [exerciseId]
@@ -578,9 +579,10 @@ class ExercisesAPI extends APIBase {
       };
 
       //console.log('[ExercisesAPI] Updating exercise:', exerciseId, updateData);
-      //console.log('[ExercisesAPI] Preserving existing media_url:', existingExercise.media_url);
+      //console.log('[ExercisesAPI] Preserving existing image_url:', existingExercise.image_url);
+      //console.log('[ExercisesAPI] Preserving existing video_url:', existingExercise.video_url);
 
-      // Update locally first - preserve existing media_url
+      // Update locally first - preserve existing image_url and video_url
       await this.db.execute(
         `UPDATE exercises 
          SET name = ?, equipment = ?, muscle_group = ?, secondary_muscle_groups = ?, instruction = ?, 
@@ -901,21 +903,39 @@ class ExercisesAPI extends APIBase {
             await this.storeLocally(exercise, "synced");
             //console.log(`[ExercisesAPI] Stored exercise ${exercise.exercise_id} locally`);
 
-            // Download exercise media if it exists
-            if (exercise.media_url) {
+            // Download exercise image if it exists
+            if (exercise.image_url) {
               try {
                 const { mediaCache } = await import("./local/MediaCache");
                 await mediaCache.downloadExerciseMediaIfNeeded(
                   exercise.exercise_id,
-                  exercise.media_url
+                  exercise.image_url
                 );
-                //console.log(`[ExercisesAPI] Downloaded media for exercise ${exercise.exercise_id}`);
+                //console.log(`[ExercisesAPI] Downloaded image for exercise ${exercise.exercise_id}`);
               } catch (mediaError) {
                 console.warn(
-                  `[ExercisesAPI] Failed to download media for exercise ${exercise.exercise_id}:`,
+                  `[ExercisesAPI] Failed to download image for exercise ${exercise.exercise_id}:`,
                   mediaError
                 );
                 // Don't fail the entire sync for media download issues
+              }
+            }
+
+            // Download exercise video if it exists
+            if (exercise.video_url) {
+              try {
+                const { mediaCache } = await import("./local/MediaCache");
+                await mediaCache.downloadExerciseVideoIfNeeded(
+                  exercise.exercise_id,
+                  exercise.video_url
+                );
+                //console.log(`[ExercisesAPI] Downloaded video for exercise ${exercise.exercise_id}`);
+              } catch (videoError) {
+                console.warn(
+                  `[ExercisesAPI] Failed to download video for exercise ${exercise.exercise_id}:`,
+                  videoError
+                );
+                // Don't fail the entire sync for video download issues
               }
             }
           } catch (error) {
@@ -1101,6 +1121,22 @@ class ExercisesAPI extends APIBase {
     } catch (error) {
       console.error(
         `[ExercisesAPI] Failed to download exercise media for ${exerciseId}:`,
+        error
+      );
+      return null;
+    }
+  }
+
+  async downloadExerciseVideo(exerciseId, videoUrl) {
+    try {
+      const { mediaCache } = await import("./local/MediaCache");
+      return await mediaCache.downloadExerciseVideoIfNeeded(
+        exerciseId,
+        videoUrl
+      );
+    } catch (error) {
+      console.error(
+        `[ExercisesAPI] Failed to download exercise video for ${exerciseId}:`,
         error
       );
       return null;

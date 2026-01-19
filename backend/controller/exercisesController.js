@@ -109,7 +109,8 @@ export async function createExercise(req, res) {
           equipment,
           muscle_group,
           secondary_muscle_groups: validatedSecondaryMuscles,
-          media_url: "",
+          image_url: null,
+          video_url: null,
           is_public: false,
           created_by: user.id,
           instruction: null,
@@ -203,7 +204,7 @@ export async function updateExercise(req, res) {
     // Check if exercise exists and belongs to the user
     const { data: exercise, error: exerciseCheckError } = await supabaseWithAuth
       .from("exercises")
-      .select("exercise_id, created_by, is_public, media_url")
+      .select("exercise_id, created_by, is_public, image_url, video_url")
       .eq("exercise_id", exerciseId)
       .single();
 
@@ -225,17 +226,22 @@ export async function updateExercise(req, res) {
         .json({ error: "You don't have permission to update this exercise" });
     }
 
-    // Update the exercise - preserve existing media_url if not provided
+    // Update the exercise - preserve existing image_url and video_url if not provided
     const updateData = {
       name,
       equipment,
       muscle_group,
       instruction: instruction || null,
-      // Preserve existing media_url if not explicitly provided
-      media_url:
-        req.body.media_url !== undefined
-          ? req.body.media_url
-          : exercise.media_url,
+      // Preserve existing image_url if not explicitly provided
+      image_url:
+        req.body.image_url !== undefined
+          ? req.body.image_url
+          : exercise.image_url,
+      // Preserve existing video_url if not explicitly provided
+      video_url:
+        req.body.video_url !== undefined
+          ? req.body.video_url
+          : exercise.video_url,
       updated_at: new Date().toISOString(),
     };
 
@@ -303,7 +309,7 @@ export async function deleteExercise(req, res) {
     // Check if exercise exists and belongs to the user
     const { data: exercise, error: exerciseCheckError } = await supabaseWithAuth
       .from("exercises")
-      .select("exercise_id, created_by, is_public, media_url")
+      .select("exercise_id, created_by, is_public, image_url, video_url")
       .eq("exercise_id", exerciseId)
       .single();
 
@@ -392,30 +398,9 @@ export async function deleteExercise(req, res) {
       });
     }
 
-    // Delete the exercise image if it exists
-    if (exercise.media_url) {
-      try {
-        // Extract filename from URL for deletion
-        const urlParts = exercise.media_url.split("/");
-        const bucketPath = urlParts[urlParts.length - 1];
-        const fileName = `${exercise.created_by}/${bucketPath.split("?")[0]}`;
-
-        // Delete the file from storage
-        const { error: storageError } = await supabaseWithAuth.storage
-          .from("exercise-media")
-          .remove([fileName]);
-
-        if (storageError) {
-          console.error("Error deleting exercise media:", storageError);
-          // Continue with exercise deletion even if media deletion fails
-        } else {
-          console.log("Successfully deleted exercise media:", fileName);
-        }
-      } catch (mediaError) {
-        console.error("Error processing media deletion:", mediaError);
-        // Continue with exercise deletion even if media deletion fails
-      }
-    }
+    // Note: Media deletion (images/videos in R2) is handled by the MediaController
+    // when the user explicitly deletes media through the media endpoints.
+    // We don't delete media here to avoid orphaning files if the exercise deletion fails.
 
     // Delete the exercise
     const { error: exerciseError } = await supabaseWithAuth
