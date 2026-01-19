@@ -222,9 +222,31 @@ export class R2Service {
       const pathParts = urlObj.pathname.split('/').filter(p => p);
       
       // R2 URLs format: https://account-id.r2.cloudflarestorage.com/bucket/key
+      // Path parts should be: [bucket, key-part1, key-part2, ...]
       if (pathParts.length >= 2) {
-        const bucket = pathParts[0];
-        const key = pathParts.slice(1).join('/');
+        const firstPart = pathParts[0];
+        
+        // If first part is a known bucket name, use it
+        if (firstPart === BUCKETS.USER_MEDIA || firstPart === BUCKETS.DEFAULT_EXERCISES) {
+          const bucket = firstPart;
+          const key = pathParts.slice(1).join('/');
+          return { bucket, key };
+        }
+        
+        // Otherwise, infer bucket from key path
+        // avatars/* and exercise-images/* -> user-media
+        // images/* and videos/* -> default-exercises
+        const key = pathParts.join('/');
+        let bucket;
+        
+        if (key.startsWith('avatars/') || key.startsWith('exercise-images/')) {
+          bucket = BUCKETS.USER_MEDIA;
+        } else if (key.startsWith('images/') || key.startsWith('videos/')) {
+          bucket = BUCKETS.DEFAULT_EXERCISES;
+        } else {
+          throw new Error(`Cannot determine bucket for key: ${key}`);
+        }
+        
         return { bucket, key };
       }
       

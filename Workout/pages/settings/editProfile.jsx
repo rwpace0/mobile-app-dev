@@ -145,6 +145,7 @@ const EditProfile = () => {
       >
         {selectedImage || profileAvatar ? (
           <Image
+            key={selectedImage || profileAvatar} // Force re-render when avatar changes
             source={{ uri: selectedImage || profileAvatar }}
             style={styles.avatarImage}
             resizeMode="cover"

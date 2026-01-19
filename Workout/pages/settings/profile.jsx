@@ -158,18 +158,15 @@ const Profile = ({ navigation }) => {
     }
   }, [user]);
 
-  // Only refresh workout count when the screen is focused, not profile data
+  // Refresh data when the screen is focused
   useFocusEffect(
     React.useCallback(() => {
       if (user?.isAuthenticated) {
         fetchWorkoutCount();
-        // Don't refetch profile data on every focus - it's already cached
-        // Only refetch avatar if we don't have one
-        if (!profileAvatar) {
-          fetchProfileAvatar();
-        }
+        // Always refetch avatar on focus to catch updates from edit screen
+        fetchProfileAvatar();
       }
-    }, [user, profileAvatar])
+    }, [user])
   );
 
   const renderProfile = () => (
