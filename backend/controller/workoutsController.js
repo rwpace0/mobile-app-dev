@@ -369,7 +369,7 @@ export async function finishWorkout(req, res) {
     if (userError || !user) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
-    const { name, date_performed, duration, exercises } = req.body;
+    const { name, date_performed, duration, template_id, exercises } = req.body;
     if (
       !name ||
       !date_performed ||
@@ -385,6 +385,7 @@ export async function finishWorkout(req, res) {
       name,
       date_performed,
       duration: duration || 0,
+      template_id: template_id || null,
     });
     const { data: workoutData, error: workoutError } = await supabaseWithAuth
       .from("workouts")
@@ -394,6 +395,7 @@ export async function finishWorkout(req, res) {
           name,
           date_performed,
           duration: duration || 0,
+          template_id: template_id || null, // Store template_id to link workout to template
         },
       ])
       .select();
@@ -715,7 +717,7 @@ export async function upsertWorkout(req, res) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
 
-    const { workout_id, name, date_performed, duration, exercises } = req.body;
+    const { workout_id, name, date_performed, duration, template_id, exercises } = req.body;
 
     // Basic validation
     if (!workout_id || !name || !date_performed) {
@@ -740,6 +742,7 @@ export async function upsertWorkout(req, res) {
             name,
             date_performed,
             duration: duration || 0,
+            template_id: template_id || null, // Store template_id to link workout to template
             updated_at: new Date().toISOString(),
           },
         ],

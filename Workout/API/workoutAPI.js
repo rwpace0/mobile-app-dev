@@ -115,6 +115,7 @@ class WorkoutAPI extends APIBase {
                   name: workout.name,
                   date_performed: workout.date_performed,
                   duration: workout.duration,
+                  template_id: workout.template_id || null, // Include template_id to link workout to template
                   exercises: Object.values(exercisesWithSets),
                 },
               });
