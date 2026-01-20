@@ -1,7 +1,14 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const isWeb = Platform.OS === 'web';
+
+// Keys that can hold larger, non-sensitive JSON payloads.
+// These should NOT use SecureStore because it has a ~2KB size limit.
+const LARGE_VALUE_KEYS = new Set(['active_workout', 'cached_user_data']);
+
+const isLargeValueKey = (key) => LARGE_VALUE_KEYS.has(key);
 
 export const storage = {
   async getItem(key) {
@@ -9,6 +16,13 @@ export const storage = {
       if (isWeb) {
         return localStorage.getItem(key);
       }
+
+      // Large, non-sensitive data lives in AsyncStorage on native
+      if (isLargeValueKey(key)) {
+        return await AsyncStorage.getItem(key);
+      }
+
+      // Small, sensitive values (tokens, etc.) stay in SecureStore
       return await SecureStore.getItemAsync(key);
     } catch (error) {
       console.error('Storage getItem error:', error);
@@ -22,6 +36,12 @@ export const storage = {
         localStorage.setItem(key, value);
         return;
       }
+
+      if (isLargeValueKey(key)) {
+        await AsyncStorage.setItem(key, value);
+        return;
+      }
+
       await SecureStore.setItemAsync(key, value);
     } catch (error) {
       console.error('Storage setItem error:', error);
@@ -34,6 +54,11 @@ export const storage = {
         localStorage.removeItem(key);
         return;
       }
+      if (isLargeValueKey(key)) {
+        await AsyncStorage.removeItem(key);
+        return;
+      }
+
       await SecureStore.deleteItemAsync(key);
     } catch (error) {
       console.error('Storage removeItem error:', error);

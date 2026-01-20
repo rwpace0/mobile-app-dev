@@ -27,8 +27,25 @@ export const useExerciseState = (
   // Generate unique keys for sets - use a ref to track the next key
   const nextUniqueKeyRef = useRef(1);
   
-  // Ensure all sets have unique keys
+  // Ensure all sets have unique keys and advance the ref past any existing keys
   const ensureSetKeys = (setsArray) => {
+    // First, scan existing keys so we never reuse a key value
+    setsArray.forEach((set) => {
+      if (set.key && typeof set.key === "string") {
+        const match = set.key.match(/^set-(\d+)$/);
+        if (match) {
+          const numericPart = parseInt(match[1], 10);
+          if (!Number.isNaN(numericPart)) {
+            nextUniqueKeyRef.current = Math.max(
+              nextUniqueKeyRef.current,
+              numericPart + 1
+            );
+          }
+        }
+      }
+    });
+
+    // Then, assign keys to any sets that are missing them
     return setsArray.map((set) => {
       if (!set.key) {
         return { ...set, key: `set-${nextUniqueKeyRef.current++}` };
