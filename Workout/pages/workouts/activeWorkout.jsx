@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import DraggableFlatList from "react-native-draggable-flatlist";
-import ActiveExerciseComponent from "../../components/activeExerciseCard";
+import ActiveExerciseComponent from "../../components/activeExercise";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
 import { getColors } from "../../constants/colors";
