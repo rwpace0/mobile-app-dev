@@ -104,12 +104,6 @@ const Settings = () => {
             showBorder={true}
           />
           <SettingsItem
-            icon="star-outline"
-            title="Manage Subscription"
-            onPress={() => navigateToSettings("account")}
-            showBorder={true}
-          />
-          <SettingsItem
             icon="notifications-outline"
             title="Notifications"
             onPress={() => navigateToSettings("account")}
@@ -137,24 +131,10 @@ const Settings = () => {
             showBorder={true}
           />
           <SettingsItem
-            IconComponent={Feather}
-            icon="shield"
-            title="Privacy & Social"
-            onPress={() => navigateToSettings("privacy")}
-            showBorder={true}
-          />
-          <SettingsItem
             IconComponent={MaterialIcons}
             icon="straighten"
             title="Units"
             onPress={() => navigateToSettings("units")}
-            showBorder={true}
-          />
-          <SettingsItem
-            IconComponent={FontAwesome5}
-            icon="flag"
-            title="Language"
-            onPress={() => navigateToSettings("account")}
             showBorder={true}
           />
           <SettingsItem

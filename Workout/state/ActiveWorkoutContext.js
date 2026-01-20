@@ -9,6 +9,11 @@ import React, {
 } from "react";
 import { AppState } from "react-native";
 import { activeWorkoutStorage } from "../API/local/activeWorkoutStorage";
+import {
+  cancelNotificationById,
+  cancelAllScheduledNotifications,
+  scheduleActiveWorkoutNotification,
+} from "../utils/notifications";
 
 const ActiveWorkoutContext = createContext();
 
@@ -16,6 +21,8 @@ export const ActiveWorkoutProvider = ({ children }) => {
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [appState, setAppState] = useState(AppState.currentState);
+  const activeWorkoutNotificationId = useRef(null);
+  const hasScheduledNotification = useRef(false);
 
   // Initialize storage and restore any existing workout on app start
   useEffect(() => {
@@ -103,8 +110,16 @@ export const ActiveWorkoutProvider = ({ children }) => {
             );
           }
         }
-      } else if (nextAppState.match(/inactive|background/)) {
-        // App going to background - save current state
+
+        // Clear any pending reminders since we're back in the app
+        // Cancel all scheduled notifications (we schedule multiple hourly ones)
+        await cancelAllScheduledNotifications();
+        activeWorkoutNotificationId.current = null;
+        // Reset the flag so we can schedule again if app goes to background
+        hasScheduledNotification.current = false;
+      } else if (nextAppState === "background") {
+        // App going to background (not just inactive) - save current state
+        // Only trigger on "background", not "inactive" (which is transient)
         if (activeWorkout) {
           try {
             await activeWorkoutStorage.saveActiveWorkout(activeWorkout);
@@ -113,6 +128,35 @@ export const ActiveWorkoutProvider = ({ children }) => {
               "[ActiveWorkoutContext] Failed to save workout on background:",
               error
             );
+          }
+
+          // Schedule a notification only once per backgrounding session.
+          // Note: AppState can emit "background" more than once in quick succession
+          // on some devices. We set the flag *before* awaiting to avoid a race.
+          if (!hasScheduledNotification.current) {
+            hasScheduledNotification.current = true;
+            try {
+              // Cancel any existing notifications first (we schedule multiple hourly ones)
+              await cancelAllScheduledNotifications();
+              activeWorkoutNotificationId.current = null;
+
+              const notificationId = await scheduleActiveWorkoutNotification(
+                activeWorkout.name
+              );
+
+              if (notificationId) {
+                activeWorkoutNotificationId.current = notificationId;
+              } else {
+                // Permission denied / couldn't schedule; allow retry next time
+                hasScheduledNotification.current = false;
+              }
+            } catch (error) {
+              hasScheduledNotification.current = false;
+              console.error(
+                "[ActiveWorkoutContext] Failed to schedule active workout reminder:",
+                error
+              );
+            }
           }
         }
       }
@@ -125,6 +169,16 @@ export const ActiveWorkoutProvider = ({ children }) => {
     );
     return () => subscription?.remove();
   }, [activeWorkout, appState]);
+
+  // If the workout ends, clear any pending reminder notifications
+  useEffect(() => {
+    if (!activeWorkout && activeWorkoutNotificationId.current) {
+      // Cancel all scheduled notifications (we schedule multiple hourly ones)
+      cancelAllScheduledNotifications();
+      activeWorkoutNotificationId.current = null;
+      hasScheduledNotification.current = false;
+    }
+  }, [activeWorkout]);
 
   const startWorkout = useCallback(async (workoutData) => {
     const now = Date.now();
