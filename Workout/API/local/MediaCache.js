@@ -13,9 +13,7 @@ class MediaCache {
     // Register sync function with sync manager
     syncManager.registerSyncFunction('media', async (isInitialSync = false) => {
       try {
-        console.log('[MediaCache] Performing media sync - cleanup old files');
         await this.cleanupOldFiles();
-        console.log('[MediaCache] Media sync completed');
       } catch (error) {
         console.error('[MediaCache] Media sync error:', error);
         // Don't throw error as media sync is not critical
@@ -54,7 +52,7 @@ class MediaCache {
       let downloadResult;
       
       if (isAvatar) {
-        // For avatars, use the backend endpoint instead of direct Supabase URL
+        // For avatars, use the backend endpoint to get the URL, then download the image
         const { tokenManager } = await import('../utils/tokenManager');
         const accessToken = await tokenManager.getValidToken();
         
@@ -74,14 +72,29 @@ class MediaCache {
           }
         }
         
-        const backendUrl = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/avatar/${avatarUserId}`;
+        const backendEndpoint = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/avatar/${avatarUserId}`;
         
-        // Download file with authentication
-        downloadResult = await FileSystem.downloadAsync(backendUrl, localPath, {
+        // First, fetch the JSON response to get the actual image URL
+        const response = await fetch(backendEndpoint, {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
         });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Backend returned ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        const imageUrl = data.url;
+        
+        if (!imageUrl) {
+          throw new Error('Backend did not return an image URL');
+        }
+        
+        // Now download the actual image from the URL
+        downloadResult = await FileSystem.downloadAsync(imageUrl, localPath);
       } else if (isExerciseMedia) {
         // For exercise media, use the backend endpoint instead of direct Supabase URL
         const { tokenManager } = await import('../utils/tokenManager');
@@ -104,14 +117,29 @@ class MediaCache {
           }
         }
         
-        const backendUrl = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/exercise/${exerciseId}`;
+        const backendEndpoint = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/exercise/${exerciseId}`;
         
-        // Download file with authentication
-        downloadResult = await FileSystem.downloadAsync(backendUrl, localPath, {
+        // First, fetch the JSON response to get the actual media URL
+        const response = await fetch(`${backendEndpoint}?type=image`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
         });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Backend returned ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        const mediaUrl = data.url;
+        
+        if (!mediaUrl) {
+          throw new Error('Backend did not return a media URL');
+        }
+        
+        // Now download the actual media from the URL
+        downloadResult = await FileSystem.downloadAsync(mediaUrl, localPath);
       } else {
         // For non-avatar files, use the original direct download
         const fileSize = await this.getRemoteFileSize(url);
@@ -125,10 +153,6 @@ class MediaCache {
       
       // Check if download failed with HTTP error
       if (downloadResult.status >= 400) {
-        console.error(`[MediaCache] Download failed with HTTP ${downloadResult.status}`);
-        console.error(`[MediaCache] Response headers:`, downloadResult.headers);
-        
-        // Delete the error response file
         try {
           await FileSystem.deleteAsync(localPath);
         } catch (e) {
@@ -146,24 +170,49 @@ class MediaCache {
         throw new Error('Downloaded file does not exist');
       }
       
+      // Validate file size
       if (fileInfo.size < 100) {
-        console.warn(`[MediaCache] Downloaded file is suspiciously small (${fileInfo.size} bytes), may be corrupted`);
-        
-        // Check if it's a JSON error response
-        if (downloadResult.headers['Content-Type']?.includes('application/json')) {
-          console.error(`[MediaCache] Downloaded file appears to be a JSON error response`);
-          // Try to read the error for debugging
-          try {
-            const errorContent = await FileSystem.readAsStringAsync(localPath);
-            console.error(`[MediaCache] Error response content:`, errorContent);
-          } catch (e) {
-            // Ignore read errors
-          }
-        }
-        
-        // Delete the corrupted file
         await FileSystem.deleteAsync(localPath);
         throw new Error(`Downloaded file is too small (${fileInfo.size} bytes), likely corrupted or error response`);
+      }
+      
+      // For images, verify it's actually an image file by checking file signature
+      if (isAvatar || isExerciseMedia) {
+        try {
+          // Read first few bytes to check file signature
+          // Read as base64 and convert to check magic bytes
+          const base64Content = await FileSystem.readAsStringAsync(localPath, {
+            encoding: FileSystem.EncodingType.Base64,
+            length: 20 // Just first 20 bytes
+          });
+          
+          // Convert base64 to binary string to check magic bytes
+          // In React Native, we can use atob to decode base64
+          const binaryString = atob(base64Content);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          
+          // Check for common image file signatures
+          const isJPEG = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+          const isPNG = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47;
+          const isGIF = bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46;
+          
+          if (!isJPEG && !isPNG && !isGIF) {
+            await FileSystem.deleteAsync(localPath);
+            throw new Error('Downloaded file is not a valid image file');
+          }
+        } catch (validationError) {
+          console.error(`[MediaCache] Error validating image file:`, validationError);
+          // If validation fails, delete the file
+          try {
+            await FileSystem.deleteAsync(localPath);
+          } catch (e) {
+            // Ignore deletion errors
+          }
+          throw validationError;
+        }
       }
       
       // Add to LRU cache
@@ -364,10 +413,9 @@ class MediaCache {
       const localPath = `${this.baseDir}avatars/${profile.local_avatar_path}`;
       const fileInfo = await FileSystem.getInfoAsync(localPath);
       
-      if (fileInfo.exists && fileInfo.size > 100) { // Basic validation that file exists and has content
-        return localPath;
+      if (fileInfo.exists && fileInfo.size > 100) {
+        return localPath.startsWith('file://') ? localPath : `file://${localPath}`;
       }
-      
       return null;
     } catch (error) {
       console.error('Failed to get profile avatar:', error);
@@ -390,7 +438,8 @@ class MediaCache {
       const fileInfo = await FileSystem.getInfoAsync(localPath);
       
       if (fileInfo.exists && fileInfo.size > 100) { // Basic validation that file exists and has content
-        return localPath;
+        // Return path with file:// prefix for React Native Image component
+        return `file://${localPath}`;
       }
       
       return null;
@@ -500,8 +549,7 @@ class MediaCache {
 
   async downloadUserAvatarIfNeeded(userId, avatarUrl) {
     try {
-      if (!userId || !avatarUrl) {
-        console.log('[MediaCache] No userId or avatarUrl provided for avatar download');
+      if (!userId) {
         return null;
       }
 
@@ -515,9 +563,9 @@ class MediaCache {
         const localPath = `${this.baseDir}avatars/${existingProfile.local_avatar_path}`;
         const fileInfo = await FileSystem.getInfoAsync(localPath);
         if (fileInfo.exists && fileInfo.size > 100) {
-          return localPath;
+          // Return path with file:// prefix for React Native Image component
+          return `file://${localPath}`;
         } else if (fileInfo.exists && fileInfo.size <= 100) {
-          console.log(`[MediaCache] Existing avatar file is corrupted (${fileInfo.size} bytes), will re-download`);
           // Delete corrupted file
           try {
             await FileSystem.deleteAsync(localPath);
@@ -530,22 +578,48 @@ class MediaCache {
       // Check if download is already in progress
       const cacheKey = `downloading_${userId}`;
       if (this.cache.get(cacheKey)) {
-        console.log(`[MediaCache] Avatar download already in progress for user ${userId}`);
         return null;
       }
       
       // Set download in progress flag
-      this.cache.set(cacheKey, true, 300); // 5 minute timeout
+      this.cache.set(cacheKey, true, 300);
       
       try {
-        // Download the avatar
-        const localPath = await this.downloadAndCacheFile(avatarUrl, 'avatars', userId, true);
+        const urlToUse = avatarUrl || `backend://avatar/${userId}`;
+        const localPath = await this.downloadAndCacheFile(urlToUse, 'avatars', userId, true);
         
         if (localPath) {
-          // Update local profile with the new avatar path
           const fileName = localPath.split('/').pop();
-          await this.updateProfileAvatar(userId, avatarUrl, fileName);
-          console.log(`[MediaCache] Successfully downloaded and cached avatar for user ${userId}`);
+          
+          // Verify the file exists before updating database
+          const fileInfo = await FileSystem.getInfoAsync(localPath);
+          if (!fileInfo.exists || fileInfo.size < 100) {
+            return null;
+          }
+          
+          if (avatarUrl) {
+            await this.updateProfileAvatar(userId, avatarUrl, fileName);
+          } else {
+            // Fetch the profile from backend to get the actual avatar URL
+            try {
+              const { profileAPI } = await import('../../API/profileAPI');
+              const profile = await profileAPI.getProfile(true, userId);
+              if (profile?.avatar_url) {
+                await this.updateProfileAvatar(userId, profile.avatar_url, fileName);
+              } else {
+                await dbManager.execute(
+                  'UPDATE profiles SET local_avatar_path = ?, updated_at = datetime("now") WHERE user_id = ?',
+                  [fileName, userId]
+                );
+              }
+            } catch (fetchError) {
+              await dbManager.execute(
+                'UPDATE profiles SET local_avatar_path = ?, updated_at = datetime("now") WHERE user_id = ?',
+                [fileName, userId]
+              );
+            }
+          }
+          
           return localPath;
         }
         
@@ -564,7 +638,6 @@ class MediaCache {
   async downloadExerciseMediaIfNeeded(exerciseId, mediaUrl) {
     try {
       if (!exerciseId || !mediaUrl) {
-        console.log('[MediaCache] No exerciseId or mediaUrl provided for exercise media download');
         return null;
       }
 
@@ -578,9 +651,9 @@ class MediaCache {
         const localPath = `${this.baseDir}exercises/${existingExercise.local_media_path}`;
         const fileInfo = await FileSystem.getInfoAsync(localPath);
         if (fileInfo.exists && fileInfo.size > 100) {
-          return localPath;
+          // Return path with file:// prefix for React Native Image component
+          return `file://${localPath}`;
         } else if (fileInfo.exists && fileInfo.size <= 100) {
-          console.log(`[MediaCache] Existing exercise media file is corrupted (${fileInfo.size} bytes), will re-download`);
           // Delete corrupted file
           try {
             await FileSystem.deleteAsync(localPath);
@@ -593,7 +666,6 @@ class MediaCache {
       // Check if download is already in progress
       const cacheKey = `downloading_exercise_${exerciseId}`;
       if (this.cache.get(cacheKey)) {
-        console.log(`[MediaCache] Exercise media download already in progress for exercise ${exerciseId}`);
         return null;
       }
       
@@ -608,7 +680,6 @@ class MediaCache {
           // Update local exercise with the new media path
           const fileName = localPath.split('/').pop();
           await this.updateExerciseMedia(exerciseId, mediaUrl, fileName);
-          console.log(`[MediaCache] Successfully downloaded and cached exercise media for exercise ${exerciseId}`);
           return localPath;
         }
         
@@ -627,7 +698,6 @@ class MediaCache {
   async downloadExerciseVideoIfNeeded(exerciseId, videoUrl) {
     try {
       if (!exerciseId || !videoUrl) {
-        console.log('[MediaCache] No exerciseId or videoUrl provided for exercise video download');
         return null;
       }
 
@@ -641,9 +711,9 @@ class MediaCache {
         const localPath = `${this.baseDir}exercise-videos/${existingExercise.local_video_path}`;
         const fileInfo = await FileSystem.getInfoAsync(localPath);
         if (fileInfo.exists && fileInfo.size > 1000) { // Videos should be larger
-          return localPath;
+          // Return path with file:// prefix for React Native Video component
+          return `file://${localPath}`;
         } else if (fileInfo.exists && fileInfo.size <= 1000) {
-          console.log(`[MediaCache] Existing exercise video file is corrupted (${fileInfo.size} bytes), will re-download`);
           // Delete corrupted file
           try {
             await FileSystem.deleteAsync(localPath);
@@ -656,7 +726,6 @@ class MediaCache {
       // Check if download is already in progress
       const cacheKey = `downloading_video_${exerciseId}`;
       if (this.cache.get(cacheKey)) {
-        console.log(`[MediaCache] Exercise video download already in progress for exercise ${exerciseId}`);
         return null;
       }
       
@@ -674,7 +743,6 @@ class MediaCache {
           // Update local exercise with the new video path
           const fileName = localPath.split('/').pop();
           await this.updateExerciseVideo(exerciseId, videoUrl, fileName);
-          console.log(`[MediaCache] Successfully downloaded and cached exercise video for exercise ${exerciseId}`);
           return localPath;
         }
         
@@ -726,7 +794,6 @@ class MediaCache {
         
         if (shouldDelete) {
           await this.deleteFile(filePath);
-          console.log(`Cleaned up exercise file: ${file} (orphaned: ${!referencedFiles.has(file)}, old: ${fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo})`);
         }
       }
 
@@ -741,7 +808,6 @@ class MediaCache {
         
         if (!referencedFiles.has(file) || (fileInfo.modificationTime && fileInfo.modificationTime * 1000 < thirtyDaysAgo)) {
           await FileSystem.deleteAsync(filePath);
-          console.log(`Cleaned up video file: ${file} (orphaned: ${!referencedFiles.has(file)}, old: ${fileInfo.modificationTime && fileInfo.modificationTime * 1000 < thirtyDaysAgo})`);
         }
       }
 
@@ -758,7 +824,6 @@ class MediaCache {
         
         if (shouldDelete) {
           await this.deleteFile(filePath);
-          console.log(`Cleaned up avatar file: ${file} (orphaned: ${!referencedFiles.has(file)}, old: ${fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo})`);
         }
       }
     } catch (error) {

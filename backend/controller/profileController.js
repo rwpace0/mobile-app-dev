@@ -1,5 +1,6 @@
 import { supabase } from '../database/supabaseClient.js';
 import { getClientToken } from '../database/supabaseClient.js';
+import { R2Service } from '../media/r2Service.js';
 
 export const getProfile = async (req, res) => {
   try {
@@ -27,6 +28,17 @@ export const getProfile = async (req, res) => {
         display_name: '',
         avatar_url: null
       });
+    }
+
+    // Generate avatar URL from stored path if it exists
+    if (profile.avatar_url) {
+      try {
+        const { bucket, key } = R2Service.extractBucketAndKey(profile.avatar_url);
+        profile.avatar_url = await R2Service.getMediaUrl(bucket, key);
+      } catch (error) {
+        console.error('[getProfile] Error generating avatar URL:', error);
+        // Keep original path if URL generation fails
+      }
     }
 
     res.json(profile);
@@ -82,9 +94,21 @@ export const updateProfile = async (req, res) => {
 
     if (result.error) throw result.error;
 
+    // Generate avatar URL from stored path if it exists
+    const profileResponse = { ...result.data };
+    if (profileResponse.avatar_url) {
+      try {
+        const { bucket, key } = R2Service.extractBucketAndKey(profileResponse.avatar_url);
+        profileResponse.avatar_url = await R2Service.getMediaUrl(bucket, key);
+      } catch (error) {
+        console.error('[updateProfile] Error generating avatar URL:', error);
+        // Keep original path if URL generation fails
+      }
+    }
+
     res.json({ 
       message: 'Profile updated successfully',
-      profile: result.data
+      profile: profileResponse
     });
   } catch (error) {
     console.error('Error updating profile:', error);

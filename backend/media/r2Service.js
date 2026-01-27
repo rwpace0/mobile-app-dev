@@ -108,12 +108,52 @@ export class R2Service {
   }
 
   /**
+   * Check if a bucket is public
+   * @param {string} bucket - Bucket name
+   * @returns {boolean} True if bucket is public
+   */
+  static isPublicBucket(bucket) {
+    return bucket === BUCKETS.DEFAULT_EXERCISES;
+  }
+
+  /**
+   * Generate a public URL for a file in the public bucket
+   * @param {string} bucket - Bucket name
+   * @param {string} key - File path/key in bucket
+   * @returns {string} Public URL
+   */
+  static getPublicUrl(bucket, key) {
+    if (!process.env.R2_PUBLIC_URL) {
+      throw new Error('R2_PUBLIC_URL environment variable is not set');
+    }
+    
+    // Ensure key doesn't start with /
+    const cleanKey = key.startsWith('/') ? key.slice(1) : key;
+    return `${process.env.R2_PUBLIC_URL}/${cleanKey}`;
+  }
+
+  /**
+   * Generate the appropriate URL for a media file
+   * @param {string} bucket - Bucket name
+   * @param {string} key - File path/key in bucket
+   * @param {number} expiresIn - Expiration time in seconds for signed URLs (default: 3600 = 1 hour)
+   * @returns {Promise<string>} Public URL or signed URL
+   */
+  static async getMediaUrl(bucket, key, expiresIn = 3600) {
+    if (this.isPublicBucket(bucket)) {
+      return this.getPublicUrl(bucket, key);
+    } else {
+      return await this.getSignedUrl(bucket, key, expiresIn);
+    }
+  }
+
+  /**
    * Upload exercise image to appropriate bucket
    * @param {string} userId - User ID (for user exercises)
    * @param {Buffer} buffer - Image buffer
    * @param {string} filename - Original filename
    * @param {boolean} isPublic - Whether exercise is public/default
-   * @returns {Promise<Object>} { key, signedUrl }
+   * @returns {Promise<Object>} { bucket, key }
    */
   static async uploadExerciseImage(userId, buffer, filename, isPublic = false) {
     try {
@@ -136,9 +176,8 @@ export class R2Service {
       const contentType = finalExtension === '.gif' ? 'image/gif' : 'image/jpeg';
       
       await this.uploadFile(bucket, key, buffer, contentType);
-      const signedUrl = await this.getSignedUrl(bucket, key);
 
-      return { bucket, key, signedUrl };
+      return { bucket, key };
     } catch (error) {
       console.error('[R2Service] Exercise image upload error:', error);
       throw error;
@@ -150,7 +189,7 @@ export class R2Service {
    * @param {string} exerciseId - Exercise ID
    * @param {Buffer} buffer - Video buffer
    * @param {string} filename - Original filename
-   * @returns {Promise<Object>} { key, signedUrl }
+   * @returns {Promise<Object>} { bucket, key }
    */
   static async uploadExerciseVideo(exerciseId, buffer, filename) {
     try {
@@ -160,9 +199,8 @@ export class R2Service {
       const contentType = 'video/mp4';
 
       await this.uploadFile(bucket, key, buffer, contentType);
-      const signedUrl = await this.getSignedUrl(bucket, key);
 
-      return { bucket, key, signedUrl };
+      return { bucket, key };
     } catch (error) {
       console.error('[R2Service] Exercise video upload error:', error);
       throw error;
@@ -174,7 +212,7 @@ export class R2Service {
    * @param {string} userId - User ID
    * @param {Buffer} buffer - Image buffer
    * @param {string} filename - Original filename
-   * @returns {Promise<Object>} { key, signedUrl }
+   * @returns {Promise<Object>} { bucket, key }
    */
   static async uploadAvatar(userId, buffer, filename) {
     try {
@@ -187,9 +225,8 @@ export class R2Service {
       const contentType = finalExtension === '.gif' ? 'image/gif' : 'image/jpeg';
 
       await this.uploadFile(bucket, key, buffer, contentType);
-      const signedUrl = await this.getSignedUrl(bucket, key);
 
-      return { bucket, key, signedUrl };
+      return { bucket, key };
     } catch (error) {
       console.error('[R2Service] Avatar upload error:', error);
       throw error;
@@ -212,13 +249,31 @@ export class R2Service {
   }
 
   /**
-   * Extract bucket and key from a signed URL
-   * @param {string} url - Signed URL
+   * Extract bucket and key from a URL or path
+   * Handles both full URLs and path-only strings
+   * @param {string} urlOrPath - Full URL or path string
    * @returns {Object} { bucket, key }
    */
-  static extractBucketAndKey(url) {
+  static extractBucketAndKey(urlOrPath) {
     try {
-      const urlObj = new URL(url);
+      // If it's already just a path (no protocol), infer bucket from path
+      if (!urlOrPath.includes('://')) {
+        const key = urlOrPath.startsWith('/') ? urlOrPath.slice(1) : urlOrPath;
+        let bucket;
+        
+        if (key.startsWith('avatars/') || key.startsWith('exercise-images/')) {
+          bucket = BUCKETS.USER_MEDIA;
+        } else if (key.startsWith('images/') || key.startsWith('videos/')) {
+          bucket = BUCKETS.DEFAULT_EXERCISES;
+        } else {
+          throw new Error(`Cannot determine bucket for key: ${key}`);
+        }
+        
+        return { bucket, key };
+      }
+      
+      // Otherwise, parse as URL
+      const urlObj = new URL(urlOrPath);
       const pathParts = urlObj.pathname.split('/').filter(p => p);
       
       // R2 URLs format: https://account-id.r2.cloudflarestorage.com/bucket/key

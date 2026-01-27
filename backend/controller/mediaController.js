@@ -46,17 +46,20 @@ export const uploadAvatar = async (req, res) => {
     const compressedBuffer = await MediaService.compressImage(req.file, { isAvatar: true });
     
     // Upload to R2
-    const { bucket, key, signedUrl } = await R2Service.uploadAvatar(userId, compressedBuffer, req.file.originalname);
+    const { bucket, key } = await R2Service.uploadAvatar(userId, compressedBuffer, req.file.originalname);
 
-    // Update the user's profile with the new avatar URL
+    // Generate URL for response
+    const url = await R2Service.getMediaUrl(bucket, key);
+
+    // Update the user's profile with the new avatar path
     const { error } = await supabaseWithToken
       .from('profiles')
-      .update({ avatar_url: signedUrl })
+      .update({ avatar_url: key })
       .eq('user_id', userId);
 
     if (error) throw error;
 
-    res.json({ url: signedUrl, bucket, key });
+    res.json({ url, bucket, key });
   } catch (error) {
     console.error('[uploadAvatar] Error:', error);
     res.status(500).json({ error: 'Failed to upload avatar', details: error.message });
@@ -115,22 +118,25 @@ export const uploadExerciseMedia = async (req, res) => {
     const compressedBuffer = await MediaService.compressImage(req.file);
 
     // Upload to R2
-    const { bucket, key, signedUrl } = await R2Service.uploadExerciseImage(
+    const { bucket, key } = await R2Service.uploadExerciseImage(
       isPublicExercise ? exerciseId : userId, 
       compressedBuffer, 
       req.file.originalname,
       isPublicExercise
     );
 
-    // Update the exercise with the new image URL
+    // Generate URL for response
+    const url = await R2Service.getMediaUrl(bucket, key);
+
+    // Update the exercise with the new image path
     const { error } = await supabaseWithToken
       .from('exercises')
-      .update({ image_url: signedUrl })
+      .update({ image_url: key })
       .eq('exercise_id', exerciseId);
 
     if (error) throw error;
 
-    res.json({ url: signedUrl, bucket, key });
+    res.json({ url, bucket, key });
   } catch (error) {
     console.error('[uploadExerciseMedia] Error:', error);
     res.status(500).json({ error: 'Failed to upload exercise media', details: error.message });
@@ -184,11 +190,14 @@ export const uploadExerciseVideo = async (req, res) => {
     const compressedBuffer = await MediaService.compressVideo(req.file);
 
     // Upload to R2
-    const { bucket, key, signedUrl } = await R2Service.uploadExerciseVideo(
+    const { bucket, key } = await R2Service.uploadExerciseVideo(
       exerciseId,
       compressedBuffer,
       req.file.originalname
     );
+
+    // Generate URL for response
+    const url = await R2Service.getMediaUrl(bucket, key);
 
     // Clean up temporary file
     if (req.file.path) {
@@ -199,15 +208,15 @@ export const uploadExerciseVideo = async (req, res) => {
       }
     }
 
-    // Update the exercise with the new video URL
+    // Update the exercise with the new video path
     const { error } = await supabaseWithToken
       .from('exercises')
-      .update({ video_url: signedUrl })
+      .update({ video_url: key })
       .eq('exercise_id', exerciseId);
 
     if (error) throw error;
 
-    res.json({ url: signedUrl, bucket, key });
+    res.json({ url, bucket, key });
   } catch (error) {
     console.error('[uploadExerciseVideo] Error:', error);
     
@@ -244,9 +253,13 @@ export const getAvatar = async (req, res) => {
       return res.status(404).json({ error: 'Avatar not found' });
     }
 
-    // R2 signed URLs are already accessible, just return it
-    // Or redirect to the signed URL
-    res.json({ url: profile.avatar_url });
+    // Extract bucket and key from stored path
+    const { bucket, key } = R2Service.extractBucketAndKey(profile.avatar_url);
+    
+    // Generate URL dynamically
+    const url = await R2Service.getMediaUrl(bucket, key);
+
+    res.json({ url });
 
   } catch (error) {
     console.error('[getAvatar] Error:', error);
@@ -279,14 +292,19 @@ export const getExerciseMedia = async (req, res) => {
       return res.status(404).json({ error: 'Exercise not found' });
     }
 
-    const mediaUrl = mediaType === 'video' ? exercise.video_url : exercise.image_url;
+    const mediaPath = mediaType === 'video' ? exercise.video_url : exercise.image_url;
 
-    if (!mediaUrl) {
+    if (!mediaPath) {
       return res.status(404).json({ error: `Exercise ${mediaType} not found` });
     }
 
-    // R2 signed URLs are already accessible, return it or redirect
-    res.json({ url: mediaUrl, type: mediaType });
+    // Extract bucket and key from stored path
+    const { bucket, key } = R2Service.extractBucketAndKey(mediaPath);
+    
+    // Generate URL dynamically
+    const url = await R2Service.getMediaUrl(bucket, key);
+
+    res.json({ url, type: mediaType });
 
   } catch (error) {
     console.error(`[getExerciseMedia] Error:`, error);

@@ -46,12 +46,7 @@ const Profile = ({ navigation }) => {
     if (user?.id) {
       try {
         const avatarPath = await mediaCache.getProfileAvatar(user.id);
-
-        if (avatarPath) {
-          setProfileAvatar(avatarPath);
-        } else {
-          setProfileAvatar(null);
-        }
+        setProfileAvatar(avatarPath || null);
       } catch (error) {
         console.error("Error fetching profile avatar:", error);
         setProfileAvatar(null);
@@ -147,12 +142,12 @@ const Profile = ({ navigation }) => {
       fetchProfileAvatar();
       fetchDisplayName();
 
-      // One-time delayed re-check to allow background avatar download to finish
+      // Delayed re-check to allow background avatar download to finish
       const timeoutId = setTimeout(() => {
         if (!profileAvatar) {
           fetchProfileAvatar();
         }
-      }, 2500);
+      }, 3000);
 
       return () => clearTimeout(timeoutId);
     }
@@ -181,10 +176,11 @@ const Profile = ({ navigation }) => {
         >
           {profileAvatar ? (
             <Image
-              key={profileAvatar} // Force re-render when path changes
+              key={profileAvatar}
               source={{ uri: profileAvatar }}
               style={styles.avatarImage}
               resizeMode="cover"
+              onError={() => setProfileAvatar(null)}
             />
           ) : (
             <Ionicons

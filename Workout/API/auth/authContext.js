@@ -32,15 +32,18 @@ const downloadUserAvatarOnce = async (userId) => {
     // Check local database for profile data (avoid API call)
     const localProfile = await mediaCache.getLocalProfile(userId);
 
+    // Always try to download avatar if we don't have a local file
+    // The backend endpoint will generate the URL from the path stored in Supabase
     if (localProfile?.avatar_url) {
-      console.log("[AuthContext] Downloading avatar from URL in local DB");
       await mediaCache.downloadUserAvatarIfNeeded(
         userId,
         localProfile.avatar_url
       );
     } else {
-      console.log(
-        "[AuthContext] No avatar URL found in local DB, skipping download"
+      // Even if no URL in local DB, try downloading using backend endpoint
+      await mediaCache.downloadUserAvatarIfNeeded(
+        userId,
+        `backend://avatar/${userId}`
       );
     }
   } catch (error) {

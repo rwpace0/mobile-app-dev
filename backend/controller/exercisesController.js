@@ -1,5 +1,41 @@
 import { supabase } from "../database/supabaseClient.js";
 import { getClientToken } from "../database/supabaseClient.js";
+import { R2Service } from "../media/r2Service.js";
+
+/**
+ * Transform exercise data by generating URLs from stored paths
+ * @param {Object} exercise - Exercise object with image_url and video_url paths
+ * @returns {Promise<Object>} Exercise object with generated URLs
+ */
+async function transformExerciseWithUrls(exercise) {
+  if (!exercise) return exercise;
+
+  const transformed = { ...exercise };
+
+  // Generate image URL if path exists
+  if (exercise.image_url) {
+    try {
+      const { bucket, key } = R2Service.extractBucketAndKey(exercise.image_url);
+      transformed.image_url = await R2Service.getMediaUrl(bucket, key);
+    } catch (error) {
+      console.error(`[transformExerciseWithUrls] Error generating image URL:`, error);
+      // Keep original path if URL generation fails
+    }
+  }
+
+  // Generate video URL if path exists
+  if (exercise.video_url) {
+    try {
+      const { bucket, key } = R2Service.extractBucketAndKey(exercise.video_url);
+      transformed.video_url = await R2Service.getMediaUrl(bucket, key);
+    } catch (error) {
+      console.error(`[transformExerciseWithUrls] Error generating video URL:`, error);
+      // Keep original path if URL generation fails
+    }
+  }
+
+  return transformed;
+}
 
 export async function getExercises(req, res) {
   try {
@@ -14,7 +50,12 @@ export async function getExercises(req, res) {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json(data);
+    // Transform exercises to include generated URLs
+    const exercisesWithUrls = await Promise.all(
+      data.map(exercise => transformExerciseWithUrls(exercise))
+    );
+
+    res.json(exercisesWithUrls);
   } catch (err) {
     console.error("Network or unexpected error:", err);
     res.status(500).json({
@@ -38,7 +79,10 @@ export async function getExerciseById(req, res) {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json(data);
+    // Transform exercise to include generated URLs
+    const exerciseWithUrls = await transformExerciseWithUrls(data);
+
+    res.json(exerciseWithUrls);
   } catch (err) {
     console.error("Network or unexpected error:", err);
     res.status(500).json({ error: "Failed to connect to Supabase API" });
@@ -265,10 +309,13 @@ export async function updateExercise(req, res) {
       });
     }
 
+    // Transform exercise to include generated URLs
+    const exerciseWithUrls = await transformExerciseWithUrls(updatedExercise);
+
     return res.json({
       success: true,
       message: "Exercise updated successfully",
-      exercise: updatedExercise,
+      exercise: exerciseWithUrls,
     });
   } catch (err) {
     console.error("Unexpected error:", err);
