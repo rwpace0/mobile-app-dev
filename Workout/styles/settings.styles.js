@@ -50,7 +50,7 @@ export const createStyles = (isDark = true) => {
       alignItems: "center",
       justifyContent: "space-between",
       paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
+      paddingHorizontal: Spacing.s,
       backgroundColor: colors.backgroundSecondary,
     },
     settingsItemBorder: {
@@ -253,7 +253,6 @@ export const createStyles = (isDark = true) => {
     // Password requirements styles
     passwordRequirementsContainer: {
       marginTop: Spacing.s,
-
       paddingHorizontal: Spacing.m,
     },
     requirementItem: {

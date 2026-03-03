@@ -17,3 +17,5 @@ should button text be centered or left aligned and should they have icons?
 All:
 add haptic feedback to more button presses.
 add positive feedback and animation to most actions
+add all exercises.
+review apple design standards.

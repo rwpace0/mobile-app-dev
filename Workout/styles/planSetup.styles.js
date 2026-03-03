@@ -221,7 +221,7 @@ export const createStyles = (isDark = true) => {
       justifyContent: "space-between",
       alignItems: "center",
       marginBottom: Spacing.m,
-      paddingHorizontal: Spacing.s,
+      paddingHorizontal: Spacing.m,
     },
 
     calendarTitle: {

@@ -241,9 +241,11 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
     },
     setInfo: {
+      flex: 1,
       fontSize: FontSize.base,
       color: colors.textPrimary,
       fontWeight: FontWeight.medium,
+      marginLeft: Spacing.m,
     },
     setRir: {
       width: 70,

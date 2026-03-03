@@ -408,9 +408,10 @@ const WorkoutDetail = () => {
                           flexDirection: "row",
                           alignItems: "center",
                           flex: 1,
+                          marginLeft: Spacing.m,
                         }}
                       >
-                        <Text style={styles.setInfo}>
+                        <Text style={[styles.setInfo, { flex: 0, marginLeft: 0 }]}>
                           {weight.formatSet(set.weight, set.reps)} reps
                         </Text>
                         {indicators.map((indicator, idx) => (

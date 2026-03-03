@@ -67,7 +67,6 @@ export const createStyles = (isDark = true) => {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: Spacing.m,
       marginBottom: Spacing.m,
     },
     chartTitle: {
@@ -80,13 +79,11 @@ export const createStyles = (isDark = true) => {
       color: colors.textSecondary,
       textAlign: "center",
       marginBottom: Spacing.xs,
-      paddingHorizontal: Spacing.m,
     },
     swipeableContainer: {
       marginBottom: Spacing.s,
     },
     swipeablePage: {
-      paddingHorizontal: Spacing.m,
     },
     chartWrapper: {
       minHeight: 220,
@@ -117,7 +114,6 @@ export const createStyles = (isDark = true) => {
       alignItems: "center",
     },
     metricSelectorContainer: {
-      paddingHorizontal: Spacing.m,
     },
 
     // Empty State

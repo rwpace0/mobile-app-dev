@@ -75,7 +75,7 @@ export const createStyles = (isDark = true) => {
       alignItems: "center",
       backgroundColor: colors.backgroundInput,
       borderRadius: BorderRadius.lg,
-      paddingHorizontal: Spacing.m,
+      paddingHorizontal: Spacing.s,
       height: 40,
       ...Shadow.small,
     },

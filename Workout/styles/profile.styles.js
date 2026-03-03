@@ -40,7 +40,6 @@ export const createStyles = (isDark = true) => {
 
     profileCard: {
       backgroundColor: colors.backgroundSecondary,
-      paddingHorizontal: Spacing.m,
       paddingTop: Spacing.l,
       paddingBottom: Spacing.l,
       marginHorizontal: Spacing.m,
@@ -192,7 +191,7 @@ export const createStyles = (isDark = true) => {
       alignItems: "center",
       justifyContent: "space-between",
       paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
+      paddingHorizontal: Spacing.s,
       backgroundColor: colors.backgroundSecondary,
     },
 

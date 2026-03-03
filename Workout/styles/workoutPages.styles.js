@@ -97,7 +97,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
       fontSize: FontSize.large,
       fontWeight: FontWeight.medium,
-      paddingHorizontal: Spacing.m,
+      paddingHorizontal: 0,
       paddingVertical: Spacing.xs,
     },
 

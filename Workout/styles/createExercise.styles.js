@@ -60,7 +60,7 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.base,
     },
     formContainer: {
-      paddingHorizontal: Spacing.l,
+      paddingHorizontal: Spacing.m,
     },
     label: {
       color: colors.textPrimary,

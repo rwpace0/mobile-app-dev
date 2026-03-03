@@ -371,7 +371,6 @@ export const createStyles = (isDark = true) => {
     restDayButton: {
       backgroundColor: colors.backgroundSecondary,
       paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
       borderRadius: BorderRadius.md,
       alignItems: "center",
       marginVertical: Spacing.m,

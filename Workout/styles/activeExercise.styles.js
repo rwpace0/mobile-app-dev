@@ -134,23 +134,23 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.bold,
     },
     setNumberCell: {
-      flex: 0.8,
+      flex: 0.6,
       alignItems: "center",
       justifyContent: "center",
     },
     previousCell: {
-      flex: 2.2,
+      flex: 1.8,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: Spacing.xxs,
     },
     weightHeaderCell: {
-      flex: 1.3,
+      flex: 1.5,
       alignItems: "center",
       justifyContent: "center",
     },
     repsHeaderCell: {
-      flex: 1.3,
+      flex: 1.5,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -230,8 +230,8 @@ export const createStyles = (isDark = true) => {
       justifyContent: "center",
     },
     completedCell: {
-      flex: 1,
-      alignItems: "center",
+      flex: 0.8,
+      alignItems: "flex-end",
       justifyContent: "center",
     },
     checkmarkContainer: {
