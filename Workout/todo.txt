@@ -19,3 +19,4 @@ add haptic feedback to more button presses.
 add positive feedback and animation to most actions
 add all exercises.
 review apple design standards.
+fix exercises equipment types

@@ -426,6 +426,7 @@ const ActiveWorkoutPage = () => {
 
         return {
           exercise_id: exercise.exercise_id,
+          name: exercise.name,
           exercise_order: index + 1,
           notes: state.notes || "",
           sets,
@@ -456,7 +457,16 @@ const ActiveWorkoutPage = () => {
 
       // End workout in context
       await endWorkout();
-      navigation.goBack();
+
+      // Fetch updated workout count for the completion page
+      const workoutCount = await workoutAPI.getTotalWorkoutCount();
+
+      navigation.replace("WorkoutComplete", {
+        exercises: validExercises,
+        duration: payload.duration,
+        name: finalWorkoutName,
+        workoutCount,
+      });
     } catch (err) {
       console.error("Failed to save workout:", err);
       showError("Error", "Failed to save workout. Please try again.");

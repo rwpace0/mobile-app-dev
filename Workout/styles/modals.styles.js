@@ -305,6 +305,7 @@ export const createStyles = (isDark = true) => {
       color: colors.textSecondary,
       fontSize: FontSize.medium,
     },
+
   });
 };
 

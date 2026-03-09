@@ -44,6 +44,7 @@ import RecentBestsStatistics from "./pages/statistics/recentBests";
 import WorkoutFrequencyStatistics from "./pages/statistics/workoutFrequency";
 import PlanPage from "./pages/plan/planPage";
 import PlanSetupPage from "./pages/plan/planSetupPage";
+import WorkoutComplete from "./pages/workouts/workoutComplete";
 import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
 import { mediaAPI } from "./API/mediaAPI";
@@ -279,6 +280,7 @@ const modalScreens = [
   { name: "ExerciseDetail", component: ExerciseDetail },
   { name: "editWorkout", component: editWorkout },
   { name: "PlanSetup", component: PlanSetupPage },
+  { name: "WorkoutComplete", component: WorkoutComplete },
 ];
 
 // Main Stack Navigator

@@ -133,7 +133,3 @@ mobile-app-dev/
 ## 🤝 Contributing
 
 This is a personal project currently in active development. Contributions will not be used.
-
----
-
-_Last updated: September 2025_
