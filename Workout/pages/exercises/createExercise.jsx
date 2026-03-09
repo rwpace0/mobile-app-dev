@@ -21,6 +21,7 @@ import {
   validateImageFile,
 } from "../../utils/permissions";
 import Header from "../../components/static/header";
+import SelectDropdown from "../../components/SelectDropdown";
 import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
@@ -284,54 +285,22 @@ const CreateExercise = () => {
           <Text style={[styles.label, { marginTop: Spacing.m }]}>
             Equipment
           </Text>
-          <TouchableOpacity
-            style={[
-              styles.input,
-              styles.dropdown,
-              formErrors.equipment && styles.inputError,
-            ]}
-            onPress={() =>
+          <SelectDropdown
+            options={equipmentOptions}
+            value={formData.equipment}
+            onSelect={(val) => {
+              setFormData((prev) => ({ ...prev, equipment: val }));
+              setOpenDropdown(null);
+            }}
+            placeholder="Select equipment"
+            isOpen={openDropdown === "equipment"}
+            onToggle={() =>
               setOpenDropdown(openDropdown === "equipment" ? null : "equipment")
             }
-          >
-            <Text
-              style={{
-                color: formData.equipment ? colors.textWhite : colors.textFaded,
-                flex: 1,
-              }}
-            >
-              {formData.equipment || "Select equipment"}
-            </Text>
-            <Ionicons
-              name={
-                openDropdown === "equipment" ? "chevron-up" : "chevron-down"
-              }
-              size={20}
-              color={colors.textFaded}
-            />
-          </TouchableOpacity>
-          {openDropdown === "equipment" && (
-            <View style={styles.dropdownMenu}>
-              <ScrollView style={{ maxHeight: 200 }}>
-                {equipmentOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.dropdownItem,
-                      formData.equipment === option &&
-                        styles.dropdownItemSelected,
-                    ]}
-                    onPress={() => {
-                      setFormData((prev) => ({ ...prev, equipment: option }));
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+            hasError={!!formErrors.equipment}
+            styles={styles}
+            colors={colors}
+          />
           {formErrors.equipment && (
             <Text style={styles.errorText}>{formErrors.equipment}</Text>
           )}
@@ -340,58 +309,23 @@ const CreateExercise = () => {
           <Text style={[styles.label, { marginTop: Spacing.m }]}>
             Primary Muscle Group
           </Text>
-          <TouchableOpacity
-            style={[
-              styles.input,
-              styles.dropdown,
-              formErrors.muscle_group && styles.inputError,
-            ]}
-            onPress={() =>
+          <SelectDropdown
+            options={muscleOptions}
+            value={formData.muscle_group}
+            onSelect={(val) => {
+              hapticSelection();
+              setFormData((prev) => ({ ...prev, muscle_group: val }));
+              setOpenDropdown(null);
+            }}
+            placeholder="Select muscle group"
+            isOpen={openDropdown === "muscle"}
+            onToggle={() =>
               setOpenDropdown(openDropdown === "muscle" ? null : "muscle")
             }
-          >
-            <Text
-              style={{
-                color: formData.muscle_group
-                  ? colors.textWhite
-                  : colors.textFaded,
-                flex: 1,
-              }}
-            >
-              {formData.muscle_group || "Select muscle group"}
-            </Text>
-            <Ionicons
-              name={openDropdown === "muscle" ? "chevron-up" : "chevron-down"}
-              size={20}
-              color={colors.textFaded}
-            />
-          </TouchableOpacity>
-          {openDropdown === "muscle" && (
-            <View style={styles.dropdownMenu}>
-              <ScrollView style={{ maxHeight: 200 }}>
-                {muscleOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.dropdownItem,
-                      formData.muscle_group === option &&
-                        styles.dropdownItemSelected,
-                    ]}
-                    onPress={() => {
-                      hapticSelection();
-                      setFormData((prev) => ({
-                        ...prev,
-                        muscle_group: option,
-                      }));
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+            hasError={!!formErrors.muscle_group}
+            styles={styles}
+            colors={colors}
+          />
           {formErrors.muscle_group && (
             <Text style={styles.errorText}>{formErrors.muscle_group}</Text>
           )}
@@ -400,87 +334,25 @@ const CreateExercise = () => {
           <Text style={[styles.label, { marginTop: Spacing.m }]}>
             Secondary Muscle Groups (Optional)
           </Text>
-          <TouchableOpacity
-            style={[styles.input, styles.dropdown]}
-            onPress={() =>
+          <SelectDropdown
+            options={muscleOptions}
+            value={formData.secondary_muscle_groups}
+            onSelect={(updated) => {
+              hapticSelection();
+              setFormData((prev) => ({
+                ...prev,
+                secondary_muscle_groups: updated,
+              }));
+            }}
+            placeholder="Select secondary muscle groups"
+            isOpen={openDropdown === "secondary"}
+            onToggle={() =>
               setOpenDropdown(openDropdown === "secondary" ? null : "secondary")
             }
-          >
-            <Text
-              style={{
-                color:
-                  formData.secondary_muscle_groups.length > 0
-                    ? colors.textWhite
-                    : colors.textFaded,
-                flex: 1,
-              }}
-            >
-              {formData.secondary_muscle_groups.length > 0
-                ? formData.secondary_muscle_groups.join(", ")
-                : "Select secondary muscle groups"}
-            </Text>
-            <Ionicons
-              name={
-                openDropdown === "secondary" ? "chevron-up" : "chevron-down"
-              }
-              size={20}
-              color={colors.textFaded}
-            />
-          </TouchableOpacity>
-          {openDropdown === "secondary" && (
-            <View style={styles.dropdownMenu}>
-              <ScrollView style={{ maxHeight: 200 }}>
-                {muscleOptions.map((option) => {
-                  const isSelected =
-                    formData.secondary_muscle_groups.includes(option);
-                  return (
-                    <TouchableOpacity
-                      key={option}
-                      style={[
-                        styles.dropdownItem,
-                        isSelected && styles.dropdownItemSelected,
-                      ]}
-                      onPress={() => {
-                        hapticSelection();
-                        setFormData((prev) => {
-                          const currentSelection = [
-                            ...prev.secondary_muscle_groups,
-                          ];
-                          if (isSelected) {
-                            // Remove from selection
-                            return {
-                              ...prev,
-                              secondary_muscle_groups: currentSelection.filter(
-                                (m) => m !== option,
-                              ),
-                            };
-                          } else {
-                            // Add to selection
-                            return {
-                              ...prev,
-                              secondary_muscle_groups: [
-                                ...currentSelection,
-                                option,
-                              ],
-                            };
-                          }
-                        });
-                      }}
-                    >
-                      <Text style={styles.dropdownItemText}>{option}</Text>
-                      {isSelected && (
-                        <Ionicons
-                          name="checkmark"
-                          size={20}
-                          color={colors.primaryBlue}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          )}
+            multiSelect
+            styles={styles}
+            colors={colors}
+          />
 
           {/* Instruction */}
           <Text style={[styles.label, { marginTop: Spacing.m }]}>
