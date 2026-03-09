@@ -59,7 +59,7 @@ const SettingsItem = ({
 
 const SectionHeader = ({ title }) => {
   const { isDark } = useTheme();
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return <Text style={styles.sectionHeader}>{title.toUpperCase()}</Text>;
 };

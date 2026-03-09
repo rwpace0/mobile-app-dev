@@ -23,9 +23,6 @@ const downloadUserAvatarOnce = async (userId) => {
     // Check if avatar already exists locally first
     const existingAvatar = await mediaCache.getProfileAvatar(userId);
     if (existingAvatar) {
-      console.log(
-        "[AuthContext] Avatar already cached locally, skipping download"
-      );
       return;
     }
 
@@ -73,7 +70,6 @@ export const AuthProvider = ({ children }) => {
       const { accessToken, refreshToken } = await storage.getTokens();
 
       if (!accessToken && !refreshToken) {
-        console.log("[AuthContext] No tokens found, user is not authenticated");
         setUser(null);
         setLoading(false);
         return;
@@ -90,10 +86,6 @@ export const AuthProvider = ({ children }) => {
           const isExpired = await storage.isTokenExpired();
 
           if (!isExpired) {
-            // Token is still valid, use cached data immediately
-            console.log(
-              "[AuthContext] Using cached user data with valid token (offline-first)"
-            );
             setUser({
               ...userData,
               isAuthenticated: !!userData.email_confirmed_at,
@@ -107,19 +99,11 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
             return;
           } else if (refreshToken) {
-            // Token expired but we have refresh token - refresh silently
-            console.log(
-              "[AuthContext] Token expired, refreshing with refresh token"
-            );
             try {
               const newAccessToken = await tokenManager.refreshAccessToken(
                 refreshToken
               );
               if (newAccessToken) {
-                // Successfully refreshed, use cached user data
-                console.log(
-                  "[AuthContext] Token refreshed successfully, using cached user data"
-                );
                 setUser({
                   ...userData,
                   isAuthenticated: !!userData.email_confirmed_at,
@@ -133,41 +117,24 @@ export const AuthProvider = ({ children }) => {
                 return;
               }
             } catch (refreshError) {
-              console.log(
-                "[AuthContext] Token refresh failed, will clear cache"
-              );
               // Continue to clear tokens below
             }
           }
 
-          // If we get here, token refresh failed
-          console.log(
-            "[AuthContext] Token refresh failed or no refresh token, clearing cache"
-          );
           await tokenManager.clearTokens();
           await storage.removeItem("cached_user_data");
           setUser(null);
           setLoading(false);
           return;
         } catch (error) {
-          console.log("[AuthContext] Failed to parse cached user data:", error);
           // Continue to fetch from server
         }
       }
-
-      // No cached user data - need to authenticate with server
-      // This should only happen on first login or after cache is cleared
-      console.log(
-        "[AuthContext] No cached user data, authenticating with server"
-      );
 
       // Check if token is expired
       const isExpired = await storage.isTokenExpired();
 
       if (isExpired && !refreshToken) {
-        console.log(
-          "[AuthContext] Token expired and no refresh token available"
-        );
         await tokenManager.clearTokens();
         setUser(null);
         setLoading(false);
@@ -180,7 +147,6 @@ export const AuthProvider = ({ children }) => {
         try {
           validToken = await tokenManager.refreshAccessToken(refreshToken);
         } catch (error) {
-          console.log("[AuthContext] Failed to refresh token");
           await tokenManager.clearTokens();
           setUser(null);
           setLoading(false);
@@ -189,7 +155,6 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (!validToken) {
-        console.log("[AuthContext] No valid token available");
         await tokenManager.clearTokens();
         setUser(null);
         setLoading(false);
@@ -226,10 +191,6 @@ export const AuthProvider = ({ children }) => {
             });
           }
         } else {
-          // Token is invalid on server, clear local tokens and cache
-          console.log(
-            "[AuthContext] Token invalid on server, clearing local tokens"
-          );
           await tokenManager.clearTokens();
           await storage.removeItem("cached_user_data");
           setUser(null);
@@ -254,7 +215,6 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       const data = await authAPI.login(email, password);
-      console.log("[AuthContext] Login successful");
 
       // Check email verification status
       const response = await fetch(`${getBaseUrl()}/auth/me`, {
@@ -283,12 +243,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const { profileAPI } = await import("../profileAPI");
         await profileAPI.getProfile(false, userData.id);
-        console.log("[AuthContext] Profile data cached successfully");
       } catch (profileError) {
-        console.log(
-          "[AuthContext] Failed to pre-fetch profile data:",
-          profileError.message
-        );
+        // Non-critical: profile pre-fetch failure doesn't block login
       }
 
       // Download user's avatar in the background after successful login
@@ -309,7 +265,6 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       const data = await authAPI.signup(email, password, username);
-      console.log("Signup successful:");
 
       // Set user as unverified after signup
       setUser({ ...data.user, isAuthenticated: false });
@@ -335,9 +290,7 @@ export const AuthProvider = ({ children }) => {
       const { profileAPI } = await import("../profileAPI");
       profileAPI.clearCache();
 
-      // Clear local database
       const { dbManager } = await import("../local/dbManager");
-      console.log("Clearing local database");
       await dbManager.clearAllData();
       setUser(null);
     } catch (error) {

@@ -254,7 +254,7 @@ const CreateExercise = () => {
             />
           ) : (
             <View style={styles.imageplaceholder}>
-              <Ionicons name="image-outline" size={48} color="#888" />
+              <Ionicons name="image-outline" size={48} color={colors.textFaded} />
             </View>
           )}
           <Text style={styles.addImageText}>
@@ -270,7 +270,7 @@ const CreateExercise = () => {
           <TextInput
             style={[styles.input, formErrors.name && styles.inputError]}
             placeholder="Enter exercise name"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.placeholder}
             value={formData.name}
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, name: text }))
@@ -307,7 +307,7 @@ const CreateExercise = () => {
                 openDropdown === "equipment" ? "chevron-up" : "chevron-down"
               }
               size={20}
-              color="#999"
+              color={colors.textFaded}
             />
           </TouchableOpacity>
           {openDropdown === "equipment" && (
@@ -363,7 +363,7 @@ const CreateExercise = () => {
             <Ionicons
               name={openDropdown === "muscle" ? "chevron-up" : "chevron-down"}
               size={20}
-              color="#999"
+              color={colors.textFaded}
             />
           </TouchableOpacity>
           {openDropdown === "muscle" && (
@@ -424,7 +424,7 @@ const CreateExercise = () => {
                 openDropdown === "secondary" ? "chevron-up" : "chevron-down"
               }
               size={20}
-              color="#999"
+              color={colors.textFaded}
             />
           </TouchableOpacity>
           {openDropdown === "secondary" && (
@@ -489,7 +489,7 @@ const CreateExercise = () => {
           <TextInput
             style={[styles.input, formErrors.instruction && styles.inputError]}
             placeholder="Enter exercise instruction"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.placeholder}
             value={formData.instruction}
             onChangeText={(text) =>
               setFormData((prev) => ({ ...prev, instruction: text }))

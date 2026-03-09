@@ -59,24 +59,14 @@ export const profileAPI = {
                 avatar_url: profile.avatar_url || null,
               };
               lastFetchTime = now;
-              console.log("[ProfileAPI] Using local database (offline-first)");
               return profileCache;
             }
           }
         }
       } catch (localError) {
-        console.log(
-          "[ProfileAPI] Local profile check failed, will fetch from server:",
-          localError
-        );
+        // Fall through to server fetch
       }
 
-      // Only fetch from server if:
-      // 1. No local data exists, OR
-      // 2. forceRefresh is explicitly true
-      console.log(
-        "[ProfileAPI] Fetching from server (no local data or forceRefresh)"
-      );
       const response = await api.get("/");
       const profileData = response.data;
 

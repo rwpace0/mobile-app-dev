@@ -133,7 +133,6 @@ const ExerciseDetailPage = () => {
         // Download exercise image if it exists on server but not locally
         if (exerciseData.image_url && !exerciseData.local_media_path) {
           try {
-            console.log("[ExerciseDetail] Downloading exercise image...");
             await exercisesAPI.downloadExerciseMedia(
               exerciseData.exercise_id,
               exerciseData.image_url
@@ -158,7 +157,6 @@ const ExerciseDetailPage = () => {
         // Download exercise video if it exists on server but not locally
         if (exerciseData.video_url && !exerciseData.local_video_path) {
           try {
-            console.log("[ExerciseDetail] Downloading exercise video...");
             await exercisesAPI.downloadExerciseVideo(
               exerciseData.exercise_id,
               exerciseData.video_url

@@ -125,10 +125,6 @@ const ViewExercisesPage = () => {
         );
 
         if (exercisesNeedingMedia.length > 0) {
-          console.log(
-            `[ViewExercises] Found ${exercisesNeedingMedia.length} exercises needing media download`
-          );
-
           // Download media in the background for better performance
           setTimeout(async () => {
             for (const exercise of exercisesNeedingMedia) {
@@ -136,9 +132,6 @@ const ViewExercisesPage = () => {
                 await exercisesAPI.downloadExerciseMedia(
                   exercise.exercise_id,
                   exercise.media_url
-                );
-                console.log(
-                  `[ViewExercises] Downloaded media for exercise ${exercise.exercise_id}`
                 );
               } catch (mediaError) {
                 console.warn(

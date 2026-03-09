@@ -457,7 +457,6 @@ const ActiveWorkoutPage = () => {
       };
 
       await workoutAPI.finishWorkout(payload);
-      console.log("Workout saved successfully!");
 
       // End workout in context
       await endWorkout();
@@ -702,19 +701,6 @@ const ActiveWorkoutPage = () => {
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={() => Keyboard.dismiss()}
           >
-            {/* Workout Name Input - Only show if not using a template */}
-            {/* {!templateId && (
-              <View style={styles.nameInputContainer}>
-                <TextInput
-                  style={styles.nameInput}
-                  value={workoutName}
-                  onChangeText={setWorkoutName}
-                  placeholder="Enter workout name"
-                  placeholderTextColor={colors.textSecondary}
-                />
-              </View>
-            )} */}
-
             <StatsBar
               duration={activeWorkout?.duration || 0}
               exerciseCount={exercises.length}
@@ -785,19 +771,6 @@ const ActiveWorkoutPage = () => {
             onScrollBeginDrag={() => Keyboard.dismiss()}
             ListHeaderComponent={() => (
               <View>
-                {/* Workout Name Input - Only show if not using a template */}
-                {/* {!templateId && (
-                  <View style={styles.nameInputContainer}>
-                    <TextInput
-                      style={styles.nameInput}
-                      value={workoutName}
-                      onChangeText={setWorkoutName}
-                      placeholder="Enter workout name"
-                      placeholderTextColor={colors.textSecondary}
-                    />
-                  </View>
-                )} */}
-
                 <StatsBar
                   duration={activeWorkout?.duration || 0}
                   exerciseCount={exercises.length}

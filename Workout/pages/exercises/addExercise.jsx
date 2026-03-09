@@ -139,14 +139,11 @@ const AddExercisePage = ({ route }) => {
         const exercisesNeedingMedia = data.filter(ex => ex.media_url && !ex.local_media_path);
         
         if (exercisesNeedingMedia.length > 0) {
-          console.log(`[AddExercise] Found ${exercisesNeedingMedia.length} exercises needing media download`);
-          
           // Download media in the background for better performance
           setTimeout(async () => {
             for (const exercise of exercisesNeedingMedia) {
               try {
                 await exercisesAPI.downloadExerciseMedia(exercise.exercise_id, exercise.media_url);
-                console.log(`[AddExercise] Downloaded media for exercise ${exercise.exercise_id}`);
               } catch (mediaError) {
                 console.warn(`[AddExercise] Failed to download media for exercise ${exercise.exercise_id}:`, mediaError);
               }
