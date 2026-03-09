@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
+import { usePasswordValidation } from "../utils/usePasswordValidation";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { authAPI } from "../API/auth/authAPI";
@@ -86,28 +87,8 @@ const SignUpPage = ({ navigation }) => {
     }
   };
 
-  const passwordRequirements = useMemo(() => {
-    const minLength = password.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-
-    return [
-      { met: minLength, text: "At least 8 characters" },
-      { met: hasUpperCase, text: "At least one uppercase letter" },
-      { met: hasNumbers, text: "At least one number" },
-    ];
-  }, [password]);
-
-  const isPasswordValid = useMemo(() => {
-    return passwordRequirements.every((req) => req.met);
-  }, [passwordRequirements]);
-
-  const passwordStrength = useMemo(() => {
-    const metRequirements = passwordRequirements.filter(
-      (req) => req.met,
-    ).length;
-    return (metRequirements / passwordRequirements.length) * 100;
-  }, [passwordRequirements]);
+  const { passwordRequirements, isPasswordValid, passwordStrength } =
+    usePasswordValidation(password);
 
   const canSubmit = useMemo(() => {
     return (

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { usePasswordValidation } from "../../../utils/usePasswordValidation";
 import {
   View,
   Text,
@@ -65,28 +66,8 @@ const ChangePassword = () => {
     }
   };
 
-  const passwordRequirements = useMemo(() => {
-    const minLength = formData.newPassword.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(formData.newPassword);
-    const hasNumbers = /\d/.test(formData.newPassword);
-
-    return [
-      { met: minLength, text: "At least 8 characters" },
-      { met: hasUpperCase, text: "At least one uppercase letter" },
-      { met: hasNumbers, text: "At least one number" },
-    ];
-  }, [formData.newPassword]);
-
-  const isPasswordValid = useMemo(() => {
-    return passwordRequirements.every((req) => req.met);
-  }, [passwordRequirements]);
-
-  const passwordStrength = useMemo(() => {
-    const metRequirements = passwordRequirements.filter(
-      (req) => req.met,
-    ).length;
-    return (metRequirements / passwordRequirements.length) * 100;
-  }, [passwordRequirements]);
+  const { passwordRequirements, isPasswordValid, passwordStrength } =
+    usePasswordValidation(formData.newPassword);
 
   const validateForm = () => {
     if (!formData.newPassword.trim()) {
