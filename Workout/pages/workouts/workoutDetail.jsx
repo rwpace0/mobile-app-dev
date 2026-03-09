@@ -18,6 +18,7 @@ import workoutAPI from "../../API/workoutAPI";
 import exercisesAPI from "../../API/exercisesAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
+import { calculateExercisePR } from "../../utils/calculateExercisePRs";
 import { hapticLight } from "../../utils/hapticFeedback";
 import { formatDurationHuman, formatDate } from "../../utils/timerUtils";
 import ExerciseImage from "../../components/ExerciseImage";
@@ -62,65 +63,10 @@ const WorkoutDetail = () => {
                 );
                 histories[exercise.exercise_id] = history || [];
 
-                // Calculate PR for this exercise
-                let bestPerformance = 0;
-                let bestWorkoutId = null;
-                let bestSetIds = new Set();
-
-                // First pass: find the best performance value
-                history?.forEach((workout) => {
-                  workout.sets?.forEach((set) => {
-                    const performance =
-                      (set.weight || 0) *
-                      (set.reps || 0) *
-                      (set.rir !== null && set.rir !== undefined
-                        ? set.rir
-                        : 1);
-
-                    if (performance > bestPerformance) {
-                      bestPerformance = performance;
-                    }
-                  });
-                });
-
-                // Second pass: find the most recent workout that achieved this performance
-                if (history) {
-                  for (const workout of history) {
-                    if (workout.sets && workout.sets.length > 0) {
-                      const workoutHasPR = workout.sets.some((set) => {
-                        const performance =
-                          (set.weight || 0) *
-                          (set.reps || 0) *
-                          (set.rir !== null && set.rir !== undefined
-                            ? set.rir
-                            : 1);
-                        return performance === bestPerformance;
-                      });
-
-                      if (workoutHasPR) {
-                        bestWorkoutId = workout.workout_exercises_id;
-                        // Collect all set IDs in this workout that match the PR
-                        workout.sets.forEach((set) => {
-                          const performance =
-                            (set.weight || 0) *
-                            (set.reps || 0) *
-                            (set.rir !== null && set.rir !== undefined
-                              ? set.rir
-                              : 1);
-                          if (performance === bestPerformance) {
-                            bestSetIds.add(set.set_id);
-                          }
-                        });
-                        break; // Stop at the most recent workout with PR
-                      }
-                    }
-                  }
-                }
-
-                prs[exercise.exercise_id] = {
-                  performance: bestPerformance,
-                  workoutId: bestWorkoutId,
-                  setIds: bestSetIds,
+                prs[exercise.exercise_id] = calculateExercisePR(history) ?? {
+                  performance: 0,
+                  workoutId: null,
+                  setIds: new Set(),
                 };
               } catch (err) {
                 console.error(

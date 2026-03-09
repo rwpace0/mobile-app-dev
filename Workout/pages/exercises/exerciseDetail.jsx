@@ -39,6 +39,7 @@ import MultiLineChart from "../../components/charts/MultiLineChart";
 import { format, parseISO } from "date-fns";
 import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
 import { formatDate, capitalize } from "../../utils/timerUtils";
+import { calculateExercisePR } from "../../utils/calculateExercisePRs";
 
 const isPublic = (val) =>
   val === true || val === 1 || val === "true" || val === "1";
@@ -764,64 +765,7 @@ const ExerciseDetailPage = () => {
   };
 
   // Memoize PR calculation for the exercise
-  const exercisePR = useMemo(() => {
-    if (!history || history.length === 0) return null;
-
-    let bestPerformance = 0;
-    let bestWorkoutId = null;
-    let bestSetIds = new Set();
-
-    // First pass: find the best performance value
-    history.forEach((workout) => {
-      if (workout.sets && workout.sets.length > 0) {
-        workout.sets.forEach((set) => {
-          const performance =
-            (set.weight || 0) *
-            (set.reps || 0) *
-            (set.rir !== null && set.rir !== undefined ? set.rir : 1);
-
-          if (performance > bestPerformance) {
-            bestPerformance = performance;
-          }
-        });
-      }
-    });
-
-    // Second pass: find the most recent workout (first in history array) that achieved this performance
-    // and collect all set IDs in that workout that match the PR
-    for (const workout of history) {
-      if (workout.sets && workout.sets.length > 0) {
-        const workoutHasPR = workout.sets.some((set) => {
-          const performance =
-            (set.weight || 0) *
-            (set.reps || 0) *
-            (set.rir !== null && set.rir !== undefined ? set.rir : 1);
-          return performance === bestPerformance;
-        });
-
-        if (workoutHasPR) {
-          bestWorkoutId = workout.workout_exercises_id;
-          // Collect all set IDs in this workout that match the PR
-          workout.sets.forEach((set) => {
-            const performance =
-              (set.weight || 0) *
-              (set.reps || 0) *
-              (set.rir !== null && set.rir !== undefined ? set.rir : 1);
-            if (performance === bestPerformance) {
-              bestSetIds.add(set.set_id);
-            }
-          });
-          break; // Stop at the most recent workout with PR
-        }
-      }
-    }
-
-    return {
-      performance: bestPerformance,
-      workoutId: bestWorkoutId,
-      setIds: bestSetIds,
-    };
-  }, [history]);
+  const exercisePR = useMemo(() => calculateExercisePR(history), [history]);
 
   // Memoize heaviest weight and best performance records for navigation
   const exerciseRecords = useMemo(() => {

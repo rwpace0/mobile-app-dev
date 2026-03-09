@@ -24,6 +24,7 @@ import { useWeight } from "../../utils/useWeight";
 import { hapticSuccess } from "../../utils/hapticFeedback";
 import exercisesAPI from "../../API/exercisesAPI";
 import { formatDurationHuman } from "../../utils/timerUtils";
+import { checkCurrentWorkoutPR } from "../../utils/calculateExercisePRs";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -207,32 +208,7 @@ const WorkoutComplete = () => {
             );
             if (!history || history.length === 0) return;
 
-            // Find the overall best performance across all history
-            let bestPerformance = 0;
-            history.forEach((entry) => {
-              entry.sets?.forEach((set) => {
-                const perf =
-                  (set.weight || 0) *
-                  (set.reps || 0) *
-                  (set.rir !== null && set.rir !== undefined ? set.rir : 1);
-                if (perf > bestPerformance) bestPerformance = perf;
-              });
-            });
-
-            // The most recent entry is the workout we just saved
-            const currentEntry = history[0];
-            if (!currentEntry) return;
-
-            // Check if the current workout achieved the best performance
-            const currentHasPR = currentEntry.sets?.some((set) => {
-              const perf =
-                (set.weight || 0) *
-                (set.reps || 0) *
-                (set.rir !== null && set.rir !== undefined ? set.rir : 1);
-              return perf === bestPerformance && bestPerformance > 0;
-            });
-
-            if (currentHasPR) {
+            if (checkCurrentWorkoutPR(history)) {
               prs[exercise.exercise_id] = true;
               totalPRs++;
             }
