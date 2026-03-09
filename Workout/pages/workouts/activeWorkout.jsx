@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useReducer } from "react";
 import {
   View,
   Text,
@@ -48,6 +48,167 @@ const StatsBar = ({ duration, exerciseCount, totalSets, styles }) => (
   </View>
 );
 
+const initialWorkoutState = {
+  workoutName: "",
+  exercises: [],
+  exerciseStates: {},
+  exerciseTotals: {},
+  totalVolume: 0,
+  totalSets: 0,
+  processedExerciseStates: null,
+  routineChanges: {
+    addedExercises: 0,
+    removedExercises: 0,
+    addedSets: 0,
+    removedSets: 0,
+  },
+  revision: 0,
+};
+
+const workoutReducer = (state, action) => {
+  switch (action.type) {
+    case "INIT_FROM_ACTIVE_WORKOUT": {
+      const {
+        name,
+        exercises,
+        exerciseStates,
+        totalVolume,
+        totalSets,
+        exerciseTotals,
+      } = action.payload;
+      return {
+        ...state,
+        workoutName: name || getDefaultWorkoutName(),
+        exercises: exercises || [],
+        exerciseStates: exerciseStates || {},
+        totalVolume: totalVolume || 0,
+        totalSets: totalSets || 0,
+        exerciseTotals: exerciseTotals || {},
+        processedExerciseStates: null,
+        routineChanges: initialWorkoutState.routineChanges,
+        revision: 0,
+      };
+    }
+    case "INIT_NEW_WORKOUT": {
+      const { name, exercises } = action.payload;
+      return {
+        ...state,
+        workoutName: name || getDefaultWorkoutName(),
+        exercises: exercises || [],
+        exerciseStates: {},
+        totalVolume: 0,
+        totalSets: 0,
+        exerciseTotals: {},
+        processedExerciseStates: null,
+        routineChanges: initialWorkoutState.routineChanges,
+        revision: 0,
+      };
+    }
+    case "SET_WORKOUT_NAME": {
+      if (state.workoutName === action.payload) {
+        return state;
+      }
+      return {
+        ...state,
+        workoutName: action.payload,
+        revision: state.revision + 1,
+      };
+    }
+    case "ADD_EXERCISES": {
+      const newExercises = [...state.exercises, ...action.payload];
+      return {
+        ...state,
+        exercises: newExercises,
+        revision: state.revision + 1,
+      };
+    }
+    case "REMOVE_EXERCISE": {
+      const exerciseId = action.payload;
+      const newExercises = state.exercises.filter(
+        (ex) => ex.exercise_id !== exerciseId
+      );
+      if (newExercises.length === state.exercises.length) {
+        return state;
+      }
+      const { [exerciseId]: _total, ...remainingTotals } = state.exerciseTotals;
+      const { [exerciseId]: _state, ...remainingStates } = state.exerciseStates;
+      return {
+        ...state,
+        exercises: newExercises,
+        exerciseTotals: remainingTotals,
+        exerciseStates: remainingStates,
+        revision: state.revision + 1,
+      };
+    }
+    case "SET_EXERCISES_ORDER": {
+      return {
+        ...state,
+        exercises: action.payload,
+        revision: state.revision + 1,
+      };
+    }
+    case "SET_EXERCISE_STATE": {
+      const { exerciseId, state: exerciseState } = action.payload;
+      return {
+        ...state,
+        exerciseStates: {
+          ...state.exerciseStates,
+          [exerciseId]: exerciseState,
+        },
+        revision: state.revision + 1,
+      };
+    }
+    case "SET_EXERCISE_STATES_BULK": {
+      return {
+        ...state,
+        exerciseStates: action.payload,
+        revision: state.revision + 1,
+      };
+    }
+    case "SET_EXERCISE_TOTAL": {
+      const { exerciseId, volume, sets } = action.payload;
+      return {
+        ...state,
+        exerciseTotals: {
+          ...state.exerciseTotals,
+          [exerciseId]: { volume, sets },
+        },
+        revision: state.revision + 1,
+      };
+    }
+    case "SET_TOTALS": {
+      const { totalVolume, totalSets } = action.payload;
+      if (
+        state.totalVolume === totalVolume &&
+        state.totalSets === totalSets
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        totalVolume,
+        totalSets,
+        revision: state.revision + 1,
+      };
+    }
+    case "SET_PROCESSED_EXERCISE_STATES": {
+      return {
+        ...state,
+        processedExerciseStates: action.payload,
+        revision: state.revision + 1,
+      };
+    }
+    case "SET_ROUTINE_CHANGES": {
+      return {
+        ...state,
+        routineChanges: action.payload,
+      };
+    }
+    default:
+      return state;
+  }
+};
+
 const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -59,23 +220,24 @@ const ActiveWorkoutPage = () => {
     useActiveWorkout();
   const { templateId } = route.params || {};
 
-  const [exercises, setExercises] = useState([]);
-  const [totalVolume, setTotalVolume] = useState(0);
-  const [totalSets, setTotalSets] = useState(0);
-  const [exerciseStates, setExerciseStates] = useState({});
-  const [workoutName, setWorkoutName] = useState("");
-  const [exerciseTotals, setExerciseTotals] = useState({});
+  const [workoutState, dispatch] = useReducer(
+    workoutReducer,
+    initialWorkoutState
+  );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [originalTemplate, setOriginalTemplate] = useState(null);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [finishModalMode, setFinishModalMode] = useState(null);
-  const [routineChanges, setRoutineChanges] = useState({
-    addedExercises: 0,
-    removedExercises: 0,
-    addedSets: 0,
-    removedSets: 0,
-  });
-  const [processedExerciseStates, setProcessedExerciseStates] = useState(null);
+  const {
+    workoutName,
+    exercises,
+    exerciseStates,
+    exerciseTotals,
+    totalVolume,
+    totalSets,
+    processedExerciseStates,
+    routineChanges,
+  } = workoutState;
   const {
     alertState,
     showError,
@@ -97,17 +259,20 @@ const ActiveWorkoutPage = () => {
   useEffect(() => {
     // Prevent re-initialization if already done
     if (hasInitializedRef.current) return;
-    
+
     if (activeWorkout) {
       // Restore from existing workout context
-      setExercises(activeWorkout.exercises || []);
-      setExerciseStates(activeWorkout.exerciseStates || {});
-      setWorkoutName(
-        activeWorkout.name || getDefaultWorkoutName()
-      );
-      setTotalVolume(activeWorkout.totalVolume || 0);
-      setTotalSets(activeWorkout.totalSets || 0);
-      setExerciseTotals(activeWorkout.exerciseTotals || {});
+      dispatch({
+        type: "INIT_FROM_ACTIVE_WORKOUT",
+        payload: {
+          name: activeWorkout.name,
+          exercises: activeWorkout.exercises,
+          exerciseStates: activeWorkout.exerciseStates,
+          totalVolume: activeWorkout.totalVolume,
+          totalSets: activeWorkout.totalSets,
+          exerciseTotals: activeWorkout.exerciseTotals,
+        },
+      });
       // Use templateId from context if available, otherwise from route params
       if (activeWorkout.templateId && !templateId) {
         navigation.setParams({ templateId: activeWorkout.templateId });
@@ -120,9 +285,14 @@ const ActiveWorkoutPage = () => {
       const initialWorkoutName =
         route.params?.workoutName || defaultWorkoutName;
 
-      setExercises(initialExercises);
-      setWorkoutName(initialWorkoutName);
-      
+      dispatch({
+        type: "INIT_NEW_WORKOUT",
+        payload: {
+          name: initialWorkoutName,
+          exercises: initialExercises,
+        },
+      });
+
       // Set initialization flag before async call to prevent re-initialization
       hasInitializedRef.current = true;
 
@@ -178,17 +348,7 @@ const ActiveWorkoutPage = () => {
     loadOriginalTemplate();
   }, [templateId, activeWorkout?.templateId]);
 
-  // Use refs to track previous values and prevent unnecessary updates
-  const prevValuesRef = React.useRef({
-    workoutName: null,
-    exercises: null,
-    exerciseStates: null,
-    totalVolume: null,
-    totalSets: null,
-    exerciseTotals: null,
-  });
-
-  // Update workout in context when state changes - prevent infinite loops
+  // Update workout in context when state changes - optimized with revision counter
   useEffect(() => {
     // Don't update if we haven't initialized yet (prevents loop during initial setup)
     if (!hasInitializedRef.current || !activeWorkout) {
@@ -197,55 +357,26 @@ const ActiveWorkoutPage = () => {
 
     // Only update if there's actual data to save
     if (exercises.length > 0 || Object.keys(exerciseStates).length > 0) {
-      // Check if values have actually changed from previous update
-      const prev = prevValuesRef.current;
-      const hasChanges = 
-        prev.workoutName !== workoutName ||
-        prev.totalVolume !== totalVolume ||
-        prev.totalSets !== totalSets ||
-        JSON.stringify(prev.exercises) !== JSON.stringify(exercises) ||
-        JSON.stringify(prev.exerciseStates) !== JSON.stringify(exerciseStates) ||
-        JSON.stringify(prev.exerciseTotals) !== JSON.stringify(exerciseTotals);
-
-      if (hasChanges) {
-        // Update refs with current values
-        prevValuesRef.current = {
-          workoutName,
-          exercises: JSON.parse(JSON.stringify(exercises)), // Deep copy
-          exerciseStates: JSON.parse(JSON.stringify(exerciseStates)), // Deep copy
-          totalVolume,
-          totalSets,
-          exerciseTotals: JSON.parse(JSON.stringify(exerciseTotals)), // Deep copy
-        };
-
-        const workoutUpdate = {
-          name: workoutName || getDefaultWorkoutName(),
-          exercises: exercises,
-          exerciseStates: exerciseStates,
-          totalVolume: totalVolume,
-          totalSets: totalSets,
-          exerciseTotals: exerciseTotals,
-          // Don't override duration - let the timer handle it
-        };
-        updateWorkout(workoutUpdate);
-      }
+      const workoutUpdate = {
+        name: workoutName || getDefaultWorkoutName(),
+        exercises: exercises,
+        exerciseStates: exerciseStates,
+        totalVolume: totalVolume,
+        totalSets: totalSets,
+        exerciseTotals: exerciseTotals,
+        // Don't override duration - let the timer handle it
+      };
+      updateWorkout(workoutUpdate);
     }
-  }, [
-    workoutName,
-    exercises,
-    exerciseStates,
-    totalVolume,
-    totalSets,
-    exerciseTotals,
-  ]);
+  }, [workoutState.revision]);
 
   const handleAddExercise = () => {
     hapticLight();
     navigation.navigate("AddExercise", {
       onExercisesSelected: (selectedExercises) => {
-        setExercises((prev) => {
-          const newExercises = [...prev, ...selectedExercises];
-          return newExercises;
+        dispatch({
+          type: "ADD_EXERCISES",
+          payload: selectedExercises,
         });
       },
     });
@@ -253,22 +384,18 @@ const ActiveWorkoutPage = () => {
 
   const handleRemoveExercise = (exerciseId) => {
     hapticMedium();
-    setExercises(exercises.filter((ex) => ex.exercise_id !== exerciseId));
-    setExerciseTotals((prev) => {
-      const newTotals = { ...prev };
-      delete newTotals[exerciseId];
-      return newTotals;
-    });
-    setExerciseStates((prev) => {
-      const newStates = { ...prev };
-      delete newStates[exerciseId];
-      return newStates;
+    dispatch({
+      type: "REMOVE_EXERCISE",
+      payload: exerciseId,
     });
   };
 
   const handleDragEnd = ({ data }) => {
     hapticLight();
-    setExercises(data);
+    dispatch({
+      type: "SET_EXERCISES_ORDER",
+      payload: data,
+    });
   };
 
   const renderExerciseItem = ({ item: exercise, drag, isActive }) => {
@@ -307,10 +434,13 @@ const ActiveWorkoutPage = () => {
   };
 
   const handleExerciseStateChange = (exercise_id, { sets, notes }) => {
-    setExerciseStates((prev) => ({
-      ...prev,
-      [exercise_id]: { sets, notes },
-    }));
+    dispatch({
+      type: "SET_EXERCISE_STATE",
+      payload: {
+        exerciseId: exercise_id,
+        state: { sets, notes },
+      },
+    });
   };
 
   // Helper function to check for routine changes and show modal if needed
@@ -387,11 +517,14 @@ const ActiveWorkoutPage = () => {
       addedSetsCount > 0 ||
       removedSetsCount > 0
     ) {
-      setRoutineChanges({
-        addedExercises: addedExercisesCount,
-        removedExercises: removedExercisesCount,
-        addedSets: addedSetsCount,
-        removedSets: removedSetsCount,
+      dispatch({
+        type: "SET_ROUTINE_CHANGES",
+        payload: {
+          addedExercises: addedExercisesCount,
+          removedExercises: removedExercisesCount,
+          addedSets: addedSetsCount,
+          removedSets: removedSetsCount,
+        },
       });
       setFinishModalMode("routineUpdate");
       setShowFinishModal(true);
@@ -528,8 +661,14 @@ const ActiveWorkoutPage = () => {
         sets: updatedSets,
       };
     });
-    setExerciseStates(updatedStates);
-    setProcessedExerciseStates(updatedStates);
+    dispatch({
+      type: "SET_EXERCISE_STATES_BULK",
+      payload: updatedStates,
+    });
+    dispatch({
+      type: "SET_PROCESSED_EXERCISE_STATES",
+      payload: updatedStates,
+    });
     checkRoutineChangesAndFinish(updatedStates);
   };
 
@@ -546,8 +685,14 @@ const ActiveWorkoutPage = () => {
         sets: filteredSets,
       };
     });
-    setExerciseStates(updatedStates);
-    setProcessedExerciseStates(updatedStates);
+    dispatch({
+      type: "SET_EXERCISE_STATES_BULK",
+      payload: updatedStates,
+    });
+    dispatch({
+      type: "SET_PROCESSED_EXERCISE_STATES",
+      payload: updatedStates,
+    });
     checkRoutineChangesAndFinish(updatedStates);
   };
 
@@ -584,7 +729,10 @@ const ActiveWorkoutPage = () => {
 
       // Then finish workout using the processed states
       await finishWorkoutInternal(statesToUse);
-      setProcessedExerciseStates(null); // Clear processed states
+      dispatch({
+        type: "SET_PROCESSED_EXERCISE_STATES",
+        payload: null,
+      }); // Clear processed states
     } catch (error) {
       console.error("Failed to update routine:", error);
       showError("Error", "Failed to update routine. Please try again.");
@@ -596,14 +744,17 @@ const ActiveWorkoutPage = () => {
     // Use processed states if available (from set completion/discard), otherwise use current states
     const statesToUse = processedExerciseStates || exerciseStates;
     await finishWorkoutInternal(statesToUse);
-    setProcessedExerciseStates(null); // Clear processed states
+    dispatch({
+      type: "SET_PROCESSED_EXERCISE_STATES",
+      payload: null,
+    }); // Clear processed states
   };
 
   const updateTotals = (exerciseId, volume, sets) => {
-    setExerciseTotals((prev) => ({
-      ...prev,
-      [exerciseId]: { volume, sets },
-    }));
+    dispatch({
+      type: "SET_EXERCISE_TOTAL",
+      payload: { exerciseId, volume, sets },
+    });
   };
 
   useEffect(() => {
@@ -617,8 +768,13 @@ const ActiveWorkoutPage = () => {
       0
     );
 
-    setTotalVolume(newTotalVolume);
-    setTotalSets(newTotalSets);
+    dispatch({
+      type: "SET_TOTALS",
+      payload: {
+        totalVolume: newTotalVolume,
+        totalSets: newTotalSets,
+      },
+    });
   }, [exerciseTotals]);
 
   // Global rest timer effect
