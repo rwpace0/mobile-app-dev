@@ -113,27 +113,19 @@ const CreateExercise = () => {
 
     try {
       setLoading(true);
-      console.log(
-        `[CreateExercise] ${isEditing ? "Updating" : "Creating"} exercise:`,
-        formData,
-      );
 
       let exercise;
       if (isEditing && exerciseId) {
-        // Update existing exercise, syncing immediately if there's a new image
         exercise = await exercisesAPI.updateExercise(
           exerciseId,
           formData,
           newImageSelected,
         );
-        console.log("[CreateExercise] Exercise updated:", exercise);
       } else {
-        // Create new exercise, syncing immediately if there's a new image
         exercise = await exercisesAPI.createExercise(
           formData,
           newImageSelected,
         );
-        console.log("[CreateExercise] Exercise created locally:", exercise);
       }
 
       // Handle image upload if a new image was selected
@@ -141,21 +133,11 @@ const CreateExercise = () => {
         try {
           setUploadingMedia(true);
 
-          // The exercise is now synced (or pending immediate sync), we can use its ID to upload media
           const targetExerciseId = exercise.exercise_id;
-          console.log(
-            "[CreateExercise] Uploading media for exercise ID:",
-            targetExerciseId,
-          );
-
           const { mediaUrl, localPath } = await mediaAPI.uploadExerciseMedia(
             targetExerciseId,
             selectedImage,
           );
-          console.log("[CreateExercise] Media uploaded:", {
-            mediaUrl,
-            localPath,
-          });
         } catch (mediaError) {
           console.error("Failed to upload media:", mediaError);
           showWarning(

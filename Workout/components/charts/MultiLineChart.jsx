@@ -7,6 +7,7 @@ import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { FontSize } from "../../constants/theme";
 import { format, parseISO } from "date-fns";
+import { formatDateAxisLabel } from "../../utils/timerUtils";
 
 /**
  * MultiLineChart - Displays multiple line series on a single chart
@@ -159,7 +160,7 @@ const MultiLineChart = ({
               }
 
               // For all other periods, show abbreviated month + day (Dec 21)
-              return format(date, "MMM d");
+              return formatDateAxisLabel(dateStr);
             } catch {
               return "";
             }

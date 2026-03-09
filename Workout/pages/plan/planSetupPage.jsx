@@ -213,7 +213,7 @@ const PlanSetupPage = () => {
     navigation.goBack();
   };
 
-  const formatDate = (date) => {
+  const formatStartDate = (date) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
     return date.toLocaleDateString(undefined, options);
   };
@@ -388,7 +388,7 @@ const PlanSetupPage = () => {
               size={24}
               color={colors.primaryBlue}
             />
-            <Text style={styles.dateCardText}>{formatDate(startDate)}</Text>
+            <Text style={styles.dateCardText}>{formatStartDate(startDate)}</Text>
             <Ionicons
               name="chevron-forward"
               size={20}

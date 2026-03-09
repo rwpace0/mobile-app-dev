@@ -21,6 +21,19 @@ import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 import { hapticLight } from "../../utils/hapticFeedback";
 
+const DashboardItem = ({ icon, title, onPress, showBorder, colors, styles }) => (
+  <TouchableOpacity
+    style={[styles.dashboardItem, showBorder && styles.dashboardItemBorder]}
+    onPress={onPress}
+  >
+    <View style={styles.dashboardItemLeft}>
+      <Ionicons name={icon} size={24} color={colors.primaryBlue} />
+      <Text style={styles.dashboardItemText}>{title}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
+  </TouchableOpacity>
+);
+
 const Profile = ({ navigation }) => {
   const [workoutCount, setWorkoutCount] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState(null);
@@ -227,19 +240,6 @@ const Profile = ({ navigation }) => {
     }
   };
 
-  const DashboardItem = ({ icon, title, onPress, showBorder }) => (
-    <TouchableOpacity
-      style={[styles.dashboardItem, showBorder && styles.dashboardItemBorder]}
-      onPress={onPress}
-    >
-      <View style={styles.dashboardItemLeft}>
-        <Ionicons name={icon} size={24} color={colors.primaryBlue} />
-        <Text style={styles.dashboardItemText}>{title}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
-    </TouchableOpacity>
-  );
-
   const renderDashboard = () => (
     <View style={styles.dashboardSection}>
       <Text style={styles.dashboardTitle}>Dashboard</Text>
@@ -249,18 +249,24 @@ const Profile = ({ navigation }) => {
           title="Plan"
           onPress={() => handleDashboardPress("Plan")}
           showBorder={true}
+          colors={colors}
+          styles={styles}
         />
         <DashboardItem
           icon="stats-chart"
           title="Statistics"
           onPress={() => handleDashboardPress("Statistics")}
           showBorder={true}
+          colors={colors}
+          styles={styles}
         />
         <DashboardItem
           icon="barbell-outline"
           title="Exercises"
           onPress={() => handleDashboardPress("Exercises")}
           showBorder={false}
+          colors={colors}
+          styles={styles}
         />
       </View>
     </View>

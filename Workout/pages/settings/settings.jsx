@@ -77,7 +77,6 @@ const Settings = () => {
       await logout();
     } catch (error) {
       showError("Error", error.message || "Failed to logout");
-      console.log(error);
     }
   };
 

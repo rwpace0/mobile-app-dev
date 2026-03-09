@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  TextInput,
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -18,51 +17,7 @@ import { authAPI } from "../../../API/auth/authAPI";
 import { useAlertModal } from "../../../utils/useAlertModal";
 import AlertModal from "../../../components/modals/AlertModal";
 import { Ionicons } from "@expo/vector-icons";
-
-const AccountFormField = ({
-  title,
-  value,
-  onChangeText,
-  placeholder,
-  secureTextEntry = false,
-  editable = true,
-}) => {
-  const { isDark } = useTheme();
-  const colors = useThemeColors();
-  const styles = useMemo(() => createStyles(isDark), [isDark]);
-
-  return (
-    <View style={styles.formField}>
-      <Text style={styles.formFieldLabel}>{title}</Text>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={[
-            styles.formFieldInput,
-            !editable && styles.formFieldInputDisabled,
-          ]}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textFaded}
-          secureTextEntry={secureTextEntry}
-          editable={editable}
-        />
-        {value && value.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => onChangeText("")}
-          >
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
-};
+import AccountFormField from "../../../components/AccountFormField";
 
 const ChangeEmail = () => {
   const navigation = useNavigation();

@@ -6,19 +6,14 @@ import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { FontSize } from "../../constants/theme";
 import { format, parseISO } from "date-fns";
+import { formatDateAxisLabel } from "../../utils/timerUtils";
 
 const LineChart = ({
   data = [],
   yAccessor = "value",
   xAccessor = "date",
   formatYValue = (value) => value.toString(),
-  formatXLabel = (date) => {
-    try {
-      return format(parseISO(date), "MMM d");
-    } catch {
-      return date;
-    }
-  },
+  formatXLabel = (date) => formatDateAxisLabel(date),
   color,
   height = 180,
   period = "1m", // Add period prop for label formatting

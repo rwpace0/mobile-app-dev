@@ -27,7 +27,7 @@ import MultiLineChart from "../../components/charts/MultiLineChart";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import statisticsAPI from "../../API/statisticsAPI";
 import { hapticLight } from "../../utils/hapticFeedback";
-import { capitalize } from "../../utils/timerUtils";
+import { capitalize, formatDateAxisLabel } from "../../utils/timerUtils";
 
 // Muscle group color palette - Highly distinct colors
 const MUSCLE_COLORS = {
@@ -300,13 +300,10 @@ const WeeklySetsStatistics = () => {
   }, [dateRange, selectedDateRangeLabel, selectedTimePeriodLabel]);
 
   // Format date for breakdown display - memoized function
-  const formatBreakdownDate = useCallback((dateStr) => {
-    try {
-      return format(parseISO(dateStr), "MMM d");
-    } catch {
-      return dateStr;
-    }
-  }, []);
+  const formatBreakdownDate = useCallback(
+    (dateStr) => formatDateAxisLabel(dateStr),
+    [],
+  );
 
   // Prepare lines config for MultiLineChart - memoized to prevent re-renders
   const lines = useMemo(() => {

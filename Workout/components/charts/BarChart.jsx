@@ -6,6 +6,7 @@ import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { FontSize } from "../../constants/theme";
 import { format, parseISO } from "date-fns";
+import { formatDateAxisLabel } from "../../utils/timerUtils";
 
 const BarChart = ({
   data = [],
@@ -13,14 +14,10 @@ const BarChart = ({
   xAccessor = "label",
   formatYValue = (value) => value.toString(),
   formatXLabel = (label) => {
-    try {
-      if (typeof label === "string" && label.includes("-")) {
-        return format(parseISO(label), "MMM d");
-      }
-      return label;
-    } catch {
-      return label;
+    if (typeof label === "string" && label.includes("-")) {
+      return formatDateAxisLabel(label);
     }
+    return label;
   },
   color,
   height = 180,

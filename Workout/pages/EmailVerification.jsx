@@ -14,11 +14,13 @@ import { createStyles } from "../styles/login.styles";
 import AlertModal from "../components/modals/AlertModal";
 import { useAlertModal } from "../utils/useAlertModal";
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 const EmailVerification = ({ navigation, route }) => {
   const { isDark } = useTheme();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(RESEND_COOLDOWN_SECONDS);
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const { user, error, verifyEmail } = useAuth();
@@ -31,10 +33,6 @@ const EmailVerification = ({ navigation, route }) => {
       const type = route?.params?.type;
 
       if (token_hash && type) {
-        console.log("📧 Email verification deep link detected:", {
-          token_hash,
-          type,
-        });
         setIsVerifying(true);
 
         try {
@@ -87,7 +85,7 @@ const EmailVerification = ({ navigation, route }) => {
         throw new Error(data.error || "Failed to resend verification email");
       }
 
-      setCountdown(60);
+      setCountdown(RESEND_COOLDOWN_SECONDS);
       showSuccess("Success", "Verification email sent successfully!");
     } catch (error) {
       showError("Error", error.message);

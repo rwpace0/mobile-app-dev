@@ -4,6 +4,15 @@
 
 import { format, parseISO } from "date-fns";
 
+// "MMM d" axis label — used across chart components and statistics pages
+export const formatDateAxisLabel = (dateStr) => {
+  try {
+    return format(parseISO(dateStr), "MMM d");
+  } catch {
+    return dateStr;
+  }
+};
+
 export const capitalize = (str) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
