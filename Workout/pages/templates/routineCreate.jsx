@@ -21,6 +21,7 @@ import Header from "../../components/static/header";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 import { hapticLight, hapticSuccess } from "../../utils/hapticFeedback";
+import { MINI_PLAYER_SCROLL_PADDING } from "../../constants/layout";
 
 const RoutineCreate = () => {
   const navigation = useNavigation();
@@ -206,7 +207,7 @@ const RoutineCreate = () => {
       {exercises.length === 0 ? (
         <ScrollView
           style={styles.content}
-          contentContainerStyle={{ paddingBottom: 300 }}
+          contentContainerStyle={{ paddingBottom: MINI_PLAYER_SCROLL_PADDING }}
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={() => Keyboard.dismiss()}
         >
@@ -256,7 +257,7 @@ const RoutineCreate = () => {
           keyExtractor={(item) => item.exercise_id.toString()}
           onDragEnd={handleDragEnd}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 300 }}
+          contentContainerStyle={{ paddingBottom: MINI_PLAYER_SCROLL_PADDING }}
           keyboardShouldPersistTaps="handled"
           onScrollBeginDrag={() => Keyboard.dismiss()}
           ListHeaderComponent={RoutineNameHeader}

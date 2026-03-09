@@ -23,6 +23,7 @@ import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
 import { hapticSuccess } from "../../utils/hapticFeedback";
 import exercisesAPI from "../../API/exercisesAPI";
+import { formatDurationHuman } from "../../utils/timerUtils";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -55,15 +56,6 @@ const ordinalSuffix = (n) => {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
-const formatDuration = (seconds) => {
-  const totalMinutes = Math.round(seconds / 60);
-  if (totalMinutes >= 60) {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes}m`;
-  }
-  return `${totalMinutes}m`;
-};
 
 // Single confetti piece
 const ConfettiPiece = ({ color, startX, delay }) => {
@@ -337,7 +329,7 @@ const WorkoutComplete = () => {
                   color={colors.textPrimary}
                 />
               </View>
-              <Text style={styles.statText}>{formatDuration(duration)}</Text>
+              <Text style={styles.statText}>{formatDurationHuman(duration)}</Text>
             </View>
             <View style={styles.statItemWithIcon}>
               <View style={styles.statIconContainer}>

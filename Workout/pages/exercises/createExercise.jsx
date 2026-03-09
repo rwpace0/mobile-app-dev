@@ -27,31 +27,7 @@ import { useTheme } from "../../state/SettingsContext";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 import { hapticLight, hapticSelection, hapticSuccess } from "../../utils/hapticFeedback";
-
-const equipmentOptions = [
-  "Dumbbell",
-  "Cable",
-  "Machine",
-  "Barbell",
-  "Bodyweight",
-  "Kettlebell",
-  "Resistance Band",
-  "Other",
-];
-
-const muscleOptions = [
-  "Chest",
-  "Back",
-  "Shoulders",
-  "Biceps",
-  "Triceps",
-  "Abs",
-  "Glutes",
-  "Quads",
-  "Hamstrings",
-  "Calves",
-  "Forearms",
-];
+import { muscleOptions, equipmentOptions } from "../../constants/exerciseOptions";
 
 const CreateExercise = () => {
   const { isDark } = useTheme();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, TouchableOpacity, TextInput, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
@@ -8,8 +8,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
-import { getColors } from "../constants/colors";
-import { FontSize } from "../constants/theme";
+import { useThemeColors } from "../constants/useThemeColors";
+import { FontSize, DEFAULT_REST_TIME_SECONDS } from "../constants/theme";
 import { createStyles } from "../styles/activeExercise.styles";
 import { useTheme, useSettings } from "../state/SettingsContext";
 import RestTimerModal from "./modals/RestTimerModal";
@@ -34,8 +34,8 @@ const RoutineExerciseComponent = ({
 }) => {
   const { isDark } = useTheme();
   const { showRir } = useSettings();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
   const inputRefs = useRef({});
   const swipeListRef = useRef(null);
@@ -43,7 +43,7 @@ const RoutineExerciseComponent = ({
 
   const [sets, setSets] = useState([]);
   const [notes, setNotes] = useState("");
-  const [restTime, setRestTime] = useState(150); // 2:30 default
+  const [restTime, setRestTime] = useState(DEFAULT_REST_TIME_SECONDS);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [exerciseDetails, setExerciseDetails] = useState(null);

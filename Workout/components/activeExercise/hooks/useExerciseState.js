@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSettings } from "../../../state/SettingsContext";
 import { hapticLight, hapticMedium, hapticSuccess } from "../../../utils/hapticFeedback";
 import { parseTimeInput } from "../../../utils/timerUtils";
+import { DEFAULT_REST_TIME_SECONDS } from "../../../constants/theme";
 
 /**
  * Custom hook for managing exercise state (sets, notes, etc.)
@@ -59,7 +60,7 @@ export const useExerciseState = (
     return ensureSetKeys(initialSets);
   });
   const [notes, setNotes] = useState(initialState?.notes || "");
-  const [restTime, setRestTime] = useState(150); // 2:30 default
+  const [restTime, setRestTime] = useState(DEFAULT_REST_TIME_SECONDS);
   const [hasPrefilledData, setHasPrefilledData] = useState(!!initialState?.sets);
   const inputRefs = useRef({});
 

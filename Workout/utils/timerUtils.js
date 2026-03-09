@@ -2,6 +2,51 @@
  * Timer utility functions for formatting and parsing time values
  */
 
+import { format, parseISO } from "date-fns";
+
+export const capitalize = (str) =>
+  str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+
+export const getDefaultWorkoutName = () =>
+  `Workout on ${new Date().toLocaleDateString()}`;
+
+// "h:mm a, EEEE, MMM d, yyyy" — used across history/detail screens
+export const formatDate = (isoString) => {
+  try {
+    const date = parseISO(isoString);
+    return format(date, "h:mm a, EEEE, MMM d, yyyy");
+  } catch (err) {
+    console.error("Date formatting error:", err);
+    return "Invalid Date";
+  }
+};
+
+// HH:MM:SS / MM:SS clock-style — used in active/edit screens
+export const formatDurationClock = (seconds) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
+  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
+};
+
+// "Xh Ym" human-readable — used in history/complete screens
+export const formatDurationHuman = (seconds) => {
+  const totalMinutes = Math.round(seconds / 60);
+  if (totalMinutes >= 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+  }
+  return `${totalMinutes}m`;
+};
+
 /**
  * Format seconds to MM:SS format
  * @param {number} seconds - Time in seconds

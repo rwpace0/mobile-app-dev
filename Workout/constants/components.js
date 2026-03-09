@@ -1,6 +1,9 @@
 import { StyleSheet } from 'react-native';
 import { Spacing, BorderRadius, FontSize, Shadow } from './theme';
 import { getColors } from './colors';
+import { muscleOptions, equipmentOptions } from './exerciseOptions';
+
+export { muscleOptions, equipmentOptions };
 
 export const createComponentStyles = (isDark = true) => {
   const colors = getColors(isDark);

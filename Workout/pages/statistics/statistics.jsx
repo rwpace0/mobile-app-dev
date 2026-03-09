@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/statistics.styles";
 import Header from "../../components/static/header";
 import ChartContainer from "../../components/charts/ChartContainer";
@@ -20,12 +20,13 @@ import MetricSelector from "../../components/charts/MetricSelector";
 import BarChart from "../../components/charts/BarChart";
 import statisticsAPI from "../../API/statisticsAPI";
 import { hapticLight } from "../../utils/hapticFeedback";
+import { capitalize } from "../../utils/timerUtils";
 
 const StatisticsPage = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const [selectedMetric, setSelectedMetric] = useState("workouts");
   const [viewMode, setViewMode] = useState("week");
@@ -222,8 +223,7 @@ const StatisticsPage = () => {
             <View style={styles.chartSection}>
               <View style={styles.chartHeader}>
                 <Text style={styles.chartTitle}>
-                  {selectedMetric.charAt(0).toUpperCase() +
-                    selectedMetric.slice(1)}
+                  {capitalize(selectedMetric)}
                 </Text>
                 <ViewModeToggle
                   selectedMode={viewMode}

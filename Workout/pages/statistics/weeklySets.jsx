@@ -19,7 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { format, parseISO } from "date-fns";
 import { useTheme } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { createStyles } from "../../styles/statistics.styles";
 import Header from "../../components/static/header";
@@ -27,6 +27,7 @@ import MultiLineChart from "../../components/charts/MultiLineChart";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import statisticsAPI from "../../API/statisticsAPI";
 import { hapticLight } from "../../utils/hapticFeedback";
+import { capitalize } from "../../utils/timerUtils";
 
 // Muscle group color palette - Highly distinct colors
 const MUSCLE_COLORS = {
@@ -61,8 +62,8 @@ const TIME_PERIOD_OPTIONS = [
 
 const WeeklySetsStatistics = () => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const [dateRange, setDateRange] = useState("1m");
   const [timePeriod, setTimePeriod] = useState("week");
@@ -361,7 +362,7 @@ const WeeklySetsStatistics = () => {
         ) {
           muscleGroupsWithSets.push({
             name: key,
-            displayName: key.charAt(0).toUpperCase() + key.slice(1),
+            displayName: capitalize(key),
             sets: Number(value),
             color: MUSCLE_COLORS[key] || "#007AFF",
           });
@@ -649,7 +650,7 @@ const WeeklySetsStatistics = () => {
                   )}
                 </View>
                 <Text style={styles.muscleName}>
-                  {muscle.name.charAt(0).toUpperCase() + muscle.name.slice(1)}
+                  {capitalize(muscle.name)}
                 </Text>
               </View>
               <Text style={styles.muscleCount}>{muscle.total}</Text>

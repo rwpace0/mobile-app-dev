@@ -23,6 +23,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { useWeight } from "../../utils/useWeight";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
+import { formatDurationClock } from "../../utils/timerUtils";
 
 const { height: screenHeight } = Dimensions.get("window");
 
@@ -125,26 +126,9 @@ const WorkoutSelectionModal = ({
     }
   };
 
-  // Format duration from seconds to MM:SS or HH:MM:SS (same as active mini)
-  const formatDuration = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-    } else {
-      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-        .toString()
-        .padStart(2, "0")}`;
-    }
-  };
-
   // Render workout item
   const renderWorkoutItem = ({ item: workout, index }) => {
-    const duration = formatDuration(workout.duration || 0);
+    const duration = formatDurationClock(workout.duration || 0);
     const exerciseCount = workout.exercises?.length || 0;
     const totalSets =
       workout.exercises?.reduce((sum, exercise) => {

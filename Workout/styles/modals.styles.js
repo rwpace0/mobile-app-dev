@@ -116,7 +116,7 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.medium,
       textAlign: "center",
       paddingVertical: Spacing.xs,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.semiBold,
     },
     folderInput: {
       backgroundColor: colors.backgroundCard,
@@ -245,16 +245,6 @@ export const createStyles = (isDark = true) => {
       paddingVertical: Spacing.xs,
     },
 
-    // Alert Modal Icon Container Variants
-    alertIconContainer: {
-      width: 64,
-      height: 64,
-      borderRadius: BorderRadius.xxxl,
-      justifyContent: "center",
-      alignItems: "center",
-      alignSelf: "center",
-      marginBottom: Spacing.m,
-    },
     modalTitle: {
       color: colors.textPrimary,
       fontSize: FontSize.large,

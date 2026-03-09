@@ -16,29 +16,8 @@ import { getColors } from "../../constants/colors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { useWeight } from "../../utils/useWeight";
-import { format, parseISO } from "date-fns";
 import { hapticLight } from "../../utils/hapticFeedback";
-
-const formatDate = (isoString) => {
-  try {
-    const date = parseISO(isoString);
-    return format(date, "h:mm a, EEEE, MMM d, yyyy");
-  } catch (err) {
-    console.error("Date formatting error:", err);
-    return "Invalid Date";
-  }
-};
-
-const formatDuration = (seconds) => {
-  const totalMinutes = Math.round(seconds / 60);
-  if (totalMinutes >= 60) {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes}m`;
-  } else {
-    return `${totalMinutes}m`;
-  }
-};
+import { formatDurationHuman, formatDate } from "../../utils/timerUtils";
 
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();
@@ -172,7 +151,7 @@ const WorkoutHistoryPage = () => {
                   />
                 </View>
                 <Text style={styles.statText}>
-                  {formatDuration(workout.duration || 0)}
+                  {formatDurationHuman(workout.duration || 0)}
                 </Text>
               </View>
               <View style={styles.statItemWithIcon}>

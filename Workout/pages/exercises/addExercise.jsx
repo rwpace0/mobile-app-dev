@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,37 +17,14 @@ import exercisesAPI from "../../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../../components/static/header";
 import * as FileSystem from "expo-file-system/legacy";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/display.styles";
 import FilterModal from "../../components/modals/FilterModal";
 import { hapticLight, hapticSelection, hapticSuccess } from "../../utils/hapticFeedback";
-
-const muscleOptions = [
-  "Chest",
-  "Back",
-  "Shoulders",
-  "Biceps",
-  "Triceps",
-  "Abs",
-  "Glutes",
-  "Quads",
-  "Hamstrings",
-  "Calves",
-  "Forearms",
-];
-
-const equipmentOptions = [
-  "Dumbbell",
-  "Cable",
-  "Machine",
-  "Barbell",
-  "Bodyweight",
-  "Kettlebell",
-  "Resistance Band",
-  "Other",
-];
+import { muscleOptions, equipmentOptions } from "../../constants/exerciseOptions";
+import { capitalize } from "../../utils/timerUtils";
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style, highlightStyle }) => {
@@ -116,8 +93,7 @@ const ExerciseItem = React.memo(
               styles.exerciseMuscleGroup,
               isSelected && styles.selectedExerciseMuscleGroup
             ]}>
-              {item.muscle_group.charAt(0).toUpperCase() +
-                item.muscle_group.slice(1)}
+              {capitalize(item.muscle_group)}
             </Text>
           </View>
           <Ionicons
@@ -134,8 +110,8 @@ const ExerciseItem = React.memo(
 const AddExercisePage = ({ route }) => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -365,8 +341,7 @@ const AddExercisePage = ({ route }) => {
               ]}
             >
               {selectedMuscleGroup
-                ? selectedMuscleGroup.charAt(0).toUpperCase() +
-                  selectedMuscleGroup.slice(1)
+                ? capitalize(selectedMuscleGroup)
                 : "Any Body Part"}
             </Text>
           </TouchableOpacity>
@@ -387,8 +362,7 @@ const AddExercisePage = ({ route }) => {
               ]}
             >
               {selectedEquipment
-                ? selectedEquipment.charAt(0).toUpperCase() +
-                  selectedEquipment.slice(1)
+                ? capitalize(selectedEquipment)
                 : "Any Category"}
             </Text>
           </TouchableOpacity>

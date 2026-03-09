@@ -48,6 +48,7 @@ import WorkoutComplete from "./pages/workouts/workoutComplete";
 import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
 import { mediaAPI } from "./API/mediaAPI";
+import { getDefaultWorkoutName } from "./utils/timerUtils";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -55,13 +56,13 @@ const Stack = createNativeStackNavigator();
 // Create navigation reference for global navigation
 const navigationRef = createNavigationContainerRef();
 
-const IP = "192.168.1.85";
+const DEV_IP = process.env.EXPO_PUBLIC_DEV_IP;
 // Deep linking configuration
 const linking = {
   prefixes: [
     "workout://",
-    `exp://${IP}:8081`, // Development URL
-    `https://${IP}:8081`, // Alternative development URL
+    `exp://${DEV_IP}:8081`, // Development URL
+    `https://${DEV_IP}:8081`, // Alternative development URL
   ],
   config: {
     screens: {
@@ -314,8 +315,7 @@ const MainStack = () => {
           visible={true}
           onResume={handleResumeWorkout}
           workoutName={
-            activeWorkout.name ||
-            `Workout on ${new Date().toLocaleDateString()}`
+            activeWorkout.name || getDefaultWorkoutName()
           }
           duration={activeWorkout.duration || 0}
         />

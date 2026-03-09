@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,8 +14,8 @@ import DraggableFlatList from "react-native-draggable-flatlist";
 import ActiveExerciseComponent from "../../components/activeExercise";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
-import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/workoutPages.styles";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import { useActiveWorkout } from "../../state/ActiveWorkoutContext";
@@ -26,13 +26,34 @@ import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "../../u
 import ActiveRestTimer from "../../components/ActiveRestTimer";
 import FinishWorkoutModal from "../../components/modals/FinishWorkoutModal";
 import templateAPI from "../../API/templateAPI";
+import { formatDurationClock, getDefaultWorkoutName } from "../../utils/timerUtils";
+import { MINI_PLAYER_SCROLL_PADDING } from "../../constants/layout";
+
+const StatsBar = ({ duration, exerciseCount, totalSets, styles }) => (
+  <View style={styles.statsContainer}>
+    <View style={styles.statItem}>
+      <Text style={styles.statLabel}>Duration</Text>
+      <Text style={styles.statValue}>{formatDurationClock(duration)}</Text>
+    </View>
+    <View style={styles.statDivider} />
+    <View style={styles.statItem}>
+      <Text style={styles.statLabel}>Exercises</Text>
+      <Text style={styles.statValue}>{exerciseCount}</Text>
+    </View>
+    <View style={styles.statDivider} />
+    <View style={styles.statItem}>
+      <Text style={styles.statLabel}>Sets</Text>
+      <Text style={styles.statValue}>{totalSets}</Text>
+    </View>
+  </View>
+);
 
 const ActiveWorkoutPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
   const { activeWorkout, startWorkout, updateWorkout, endWorkout } =
     useActiveWorkout();
@@ -82,7 +103,7 @@ const ActiveWorkoutPage = () => {
       setExercises(activeWorkout.exercises || []);
       setExerciseStates(activeWorkout.exerciseStates || {});
       setWorkoutName(
-        activeWorkout.name || `Workout on ${new Date().toLocaleDateString()}`
+        activeWorkout.name || getDefaultWorkoutName()
       );
       setTotalVolume(activeWorkout.totalVolume || 0);
       setTotalSets(activeWorkout.totalSets || 0);
@@ -95,7 +116,7 @@ const ActiveWorkoutPage = () => {
     } else {
       // Handle initial exercises and workout name from template/routine start for new workout
       const initialExercises = route.params?.selectedExercises || [];
-      const defaultWorkoutName = `Workout on ${new Date().toLocaleDateString()}`;
+      const defaultWorkoutName = getDefaultWorkoutName();
       const initialWorkoutName =
         route.params?.workoutName || defaultWorkoutName;
 
@@ -198,7 +219,7 @@ const ActiveWorkoutPage = () => {
         };
 
         const workoutUpdate = {
-          name: workoutName || `Workout on ${new Date().toLocaleDateString()}`,
+          name: workoutName || getDefaultWorkoutName(),
           exercises: exercises,
           exerciseStates: exerciseStates,
           totalVolume: totalVolume,
@@ -217,22 +238,6 @@ const ActiveWorkoutPage = () => {
     totalSets,
     exerciseTotals,
   ]);
-
-  const formatDuration = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-    } else {
-      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-        .toString()
-        .padStart(2, "0")}`;
-    }
-  };
 
   const handleAddExercise = () => {
     hapticLight();
@@ -400,8 +405,7 @@ const ActiveWorkoutPage = () => {
     try {
       // Build workout name and date
       const now = new Date();
-      const finalWorkoutName =
-        workoutName || `Workout on ${now.toLocaleDateString()}`;
+      const finalWorkoutName = workoutName || getDefaultWorkoutName();
       const datePerformed = now.toISOString();
 
       // Use filtered states if provided, otherwise use current states
@@ -500,6 +504,15 @@ const ActiveWorkoutPage = () => {
     await finishWorkoutInternal();
   };
 
+  const checkRoutineChangesAndFinish = (updatedStates) => {
+    setTimeout(() => {
+      const hasChanges = checkAndShowRoutineUpdateModal(updatedStates);
+      if (!hasChanges) {
+        finishWorkoutInternal(updatedStates);
+      }
+    }, 100);
+  };
+
   const handleCompleteUnfinishedSets = async () => {
     // Mark all incomplete sets as completed
     const updatedStates = { ...exerciseStates };
@@ -518,15 +531,7 @@ const ActiveWorkoutPage = () => {
     });
     setExerciseStates(updatedStates);
     setProcessedExerciseStates(updatedStates);
-
-    // Wait a bit for state to update, then check for routine changes
-    setTimeout(() => {
-      const hasChanges = checkAndShowRoutineUpdateModal(updatedStates);
-      if (!hasChanges) {
-        // No routine changes, proceed with finish
-        finishWorkoutInternal(updatedStates);
-      }
-    }, 100);
+    checkRoutineChangesAndFinish(updatedStates);
   };
 
   const handleDiscardUnfinishedSets = async () => {
@@ -544,15 +549,7 @@ const ActiveWorkoutPage = () => {
     });
     setExerciseStates(updatedStates);
     setProcessedExerciseStates(updatedStates);
-
-    // Wait a bit for state to update, then check for routine changes
-    setTimeout(() => {
-      const hasChanges = checkAndShowRoutineUpdateModal(updatedStates);
-      if (!hasChanges) {
-        // No routine changes, proceed with finish
-        finishWorkoutInternal(updatedStates);
-      }
-    }, 100);
+    checkRoutineChangesAndFinish(updatedStates);
   };
 
   const handleUpdateRoutine = async () => {
@@ -679,37 +676,6 @@ const ActiveWorkoutPage = () => {
     setRemainingTime(0);
   };
 
-  // Example functions showing different alert types
-  const handleShowInfo = () => {
-    showInfo(
-      "Workout Tips",
-      "Remember to maintain proper form and take adequate rest between sets for optimal results."
-    );
-  };
-
-  const handleShowSuccess = () => {
-    showSuccess("Great Job!", "You've completed 5 sets. Keep up the momentum!");
-  };
-
-  const handleShowWarningWithConfirm = () => {
-    showWarning(
-      "Unsaved Changes",
-      "You have unsaved changes. Are you sure you want to leave?",
-      {
-        showCancel: true,
-        confirmText: "Leave",
-        cancelText: "Stay",
-        onConfirm: () => {
-          console.log("User chose to leave");
-          navigation.goBack();
-        },
-        onCancel: () => {
-          console.log("User chose to stay");
-        },
-      }
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <Header
@@ -731,7 +697,7 @@ const ActiveWorkoutPage = () => {
             style={styles.content}
             contentContainerStyle={[
               styles.exercisesContainer,
-              { paddingBottom: 300 },
+              { paddingBottom: MINI_PLAYER_SCROLL_PADDING },
             ]}
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={() => Keyboard.dismiss()}
@@ -749,24 +715,12 @@ const ActiveWorkoutPage = () => {
               </View>
             )} */}
 
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Duration</Text>
-                <Text style={styles.statValue}>
-                  {formatDuration(activeWorkout?.duration || 0)}
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Exercises</Text>
-                <Text style={styles.statValue}>{exercises.length}</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Sets</Text>
-                <Text style={styles.statValue}>{totalSets}</Text>
-              </View>
-            </View>
+            <StatsBar
+              duration={activeWorkout?.duration || 0}
+              exerciseCount={exercises.length}
+              totalSets={totalSets}
+              styles={styles}
+            />
 
             <View style={styles.emptyWorkoutContainer}>
               <View style={styles.iconContainer}>
@@ -825,7 +779,7 @@ const ActiveWorkoutPage = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[
               styles.exercisesContainer,
-              { paddingBottom: 300 },
+              { paddingBottom: MINI_PLAYER_SCROLL_PADDING },
             ]}
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={() => Keyboard.dismiss()}
@@ -844,24 +798,12 @@ const ActiveWorkoutPage = () => {
                   </View>
                 )} */}
 
-                <View style={styles.statsContainer}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Duration</Text>
-                    <Text style={styles.statValue}>
-                      {formatDuration(activeWorkout?.duration || 0)}
-                    </Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Exercises</Text>
-                    <Text style={styles.statValue}>{exercises.length}</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>Sets</Text>
-                    <Text style={styles.statValue}>{totalSets}</Text>
-                  </View>
-                </View>
+                <StatsBar
+                  duration={activeWorkout?.duration || 0}
+                  exerciseCount={exercises.length}
+                  totalSets={totalSets}
+                  styles={styles}
+                />
               </View>
             )}
             ListFooterComponent={() => (

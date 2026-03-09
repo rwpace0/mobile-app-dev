@@ -27,7 +27,7 @@ import { Video, ResizeMode } from "expo-av";
 import exercisesAPI from "../../API/exercisesAPI";
 import { createStyles } from "../../styles/exerciseDetail.styles";
 import * as FileSystem from "expo-file-system/legacy";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import Header from "../../components/static/header";
@@ -38,6 +38,10 @@ import statisticsAPI from "../../API/statisticsAPI";
 import MultiLineChart from "../../components/charts/MultiLineChart";
 import { format, parseISO } from "date-fns";
 import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
+import { formatDate, capitalize } from "../../utils/timerUtils";
+
+const isPublic = (val) =>
+  val === true || val === 1 || val === "true" || val === "1";
 
 // Date range options
 const DATE_RANGE_OPTIONS = [
@@ -51,8 +55,8 @@ const ExerciseDetailPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
   const [activeTab, setActiveTab] = useState("Summary");
   const [exercise, setExercise] = useState(null);
@@ -281,9 +285,7 @@ const ExerciseDetailPage = () => {
     } else {
       metricLabel = "heaviest weight";
     }
-    return `${
-      metricLabel.charAt(0).toUpperCase() + metricLabel.slice(1)
-    } per workout over the last ${dateRangeLower}`;
+    return `${capitalize(metricLabel)} per workout over the last ${dateRangeLower}`;
   }, [selectedDateRangeLabel, metric]);
 
   // Format date for breakdown display
@@ -460,12 +462,7 @@ const ExerciseDetailPage = () => {
     }
   };
 
-  // Check if exercise is public (handle different data types)
-  const isPublicExercise =
-    exercise?.is_public === true ||
-    exercise?.is_public === 1 ||
-    exercise?.is_public === "true" ||
-    exercise?.is_public === "1";
+  const isPublicExercise = isPublic(exercise?.is_public);
 
   const actions = isPublicExercise
     ? []
@@ -523,8 +520,7 @@ const ExerciseDetailPage = () => {
           <View style={styles.muscleGroupSection}>
             <Text style={styles.muscleGroupLabel}>Primary</Text>
             <Text style={styles.muscleGroupText}>
-              {exercise.muscle_group.charAt(0).toUpperCase() +
-                exercise.muscle_group.slice(1)}
+              {capitalize(exercise.muscle_group)}
             </Text>
           </View>
         )}
@@ -535,7 +531,7 @@ const ExerciseDetailPage = () => {
               <Text style={styles.muscleGroupLabel}>Secondary</Text>
               <Text style={styles.muscleGroupText}>
                 {exercise.secondary_muscle_groups
-                  .map((m) => m.charAt(0).toUpperCase() + m.slice(1))
+                  .map((m) => capitalize(m))
                   .join(", ")}
               </Text>
             </View>
@@ -912,15 +908,7 @@ const ExerciseDetailPage = () => {
               {workout.name || "Unnamed Workout"}
             </Text>
             <Text style={styles.workoutDate}>
-              {workout.date_performed
-                ? format(
-                    new Date(workout.date_performed),
-                    "h:mm a, EEEE, MMM d, yyyy"
-                  )
-                : format(
-                    new Date(workout.created_at),
-                    "h:mm a, EEEE, MMM d, yyyy"
-                  )}
+              {formatDate(workout.date_performed || workout.created_at)}
             </Text>
 
             <View style={styles.setsContainer}>

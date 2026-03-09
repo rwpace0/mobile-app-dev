@@ -104,6 +104,9 @@ export const Animation = {
   slow: 400,
 };
 
+// Default rest timer between sets (2:30)
+export const DEFAULT_REST_TIME_SECONDS = 150;
+
 export default {
   Spacing,
   FontSize,

@@ -21,6 +21,8 @@ import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
+import { formatDurationClock } from "../../utils/timerUtils";
+import { MINI_PLAYER_SCROLL_PADDING } from "../../constants/layout";
 
 const EditWorkoutPage = () => {
   const navigation = useNavigation();
@@ -117,22 +119,6 @@ const EditWorkoutPage = () => {
       navigation.goBack();
     } finally {
       setLoading(false);
-    }
-  };
-
-  const formatDuration = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-    } else {
-      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-        .toString()
-        .padStart(2, "0")}`;
     }
   };
 
@@ -265,7 +251,7 @@ const EditWorkoutPage = () => {
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={{ paddingBottom: 300 }}
+        contentContainerStyle={{ paddingBottom: MINI_PLAYER_SCROLL_PADDING }}
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={() => Keyboard.dismiss()}
       >
@@ -284,7 +270,7 @@ const EditWorkoutPage = () => {
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Duration</Text>
             <Text style={styles.statValue}>
-              {formatDuration(workoutDuration)}
+              {formatDurationClock(workoutDuration)}
             </Text>
           </View>
           <View style={styles.statItem}>

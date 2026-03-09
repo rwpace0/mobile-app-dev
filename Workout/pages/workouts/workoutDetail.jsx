@@ -7,72 +7,27 @@ import {
   ActivityIndicator,
   SafeAreaView,
   RefreshControl,
-  Image,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system/legacy";
 import { createStyles } from "../../styles/workoutHistory.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import workoutAPI from "../../API/workoutAPI";
 import exercisesAPI from "../../API/exercisesAPI";
 import Header from "../../components/static/header";
 import { useWeight } from "../../utils/useWeight";
-import { format, parseISO } from "date-fns";
 import { hapticLight } from "../../utils/hapticFeedback";
-
-const ExerciseImage = ({ exercise, colors, styles }) => {
-  const [imageError, setImageError] = useState(false);
-
-  const imagePath = exercise.local_media_path
-    ? `${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}`
-    : null;
-
-  return (
-    <View style={styles.exerciseIconContainer}>
-      {imagePath && !imageError ? (
-        <Image
-          source={{ uri: `file://${imagePath}` }}
-          style={styles.exerciseImage}
-          resizeMode="cover"
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <Ionicons name="barbell" size={24} color={colors.textPrimary} />
-      )}
-    </View>
-  );
-};
-
-const formatDate = (isoString) => {
-  try {
-    const date = parseISO(isoString);
-    return format(date, "h:mm a, EEEE, MMM d, yyyy");
-  } catch (err) {
-    console.error("Date formatting error:", err);
-    return "Invalid Date";
-  }
-};
-
-const formatDuration = (seconds) => {
-  const totalMinutes = Math.round(seconds / 60);
-  if (totalMinutes >= 60) {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes}m`;
-  } else {
-    return `${totalMinutes}m`;
-  }
-};
+import { formatDurationHuman, formatDate } from "../../utils/timerUtils";
+import ExerciseImage from "../../components/ExerciseImage";
 
 const WorkoutDetail = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
   const { workout_id } = route.params || {};
   const [workout, setWorkout] = useState(null);
@@ -276,7 +231,7 @@ const WorkoutDetail = () => {
                 />
               </View>
               <Text style={styles.statText}>
-                {formatDuration(workout.duration || 0)}
+                {formatDurationHuman(workout.duration || 0)}
               </Text>
             </View>
             <View style={styles.statItemWithIcon}>

@@ -2,6 +2,8 @@ import { StyleSheet } from 'react-native';
 import { Spacing } from './theme';
 import { getColors } from './colors';
 
+export const MINI_PLAYER_SCROLL_PADDING = 300;
+
 export const createLayoutStyles = (isDark = true) => {
   const colors = getColors(isDark);
   

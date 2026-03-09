@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,10 +17,11 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { createStyles } from "../../styles/settings.styles";
 import Header from "../../components/static/header";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { useSettings, useTheme } from "../../state/SettingsContext";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
+import { capitalize } from "../../utils/timerUtils";
 
 const SettingToggle = ({
   title,
@@ -30,8 +31,8 @@ const SettingToggle = ({
   IconComponent = Ionicons,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
     <View style={styles.settingsItem}>
@@ -65,11 +66,10 @@ const SettingDropdown = ({
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
-  // Capitalize first letter for display
-  const displayValue = value.charAt(0).toUpperCase() + value.slice(1);
+  const displayValue = capitalize(value);
 
   return (
     <>
@@ -109,8 +109,7 @@ const SettingDropdown = ({
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{title}</Text>
             {options.map((option) => {
-              const displayOption =
-                option.charAt(0).toUpperCase() + option.slice(1);
+              const displayOption = capitalize(option);
               return (
                 <TouchableOpacity
                   key={option}
@@ -160,13 +159,12 @@ const SettingDropdown = ({
 const ThemeSelector = ({ title, value, onSelect, icon }) => {
   const [showThemeModal, setShowThemeModal] = useState(false);
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const themeOptions = ["system", "light", "dark"];
 
-  // Capitalize first letter for display
-  const displayValue = value.charAt(0).toUpperCase() + value.slice(1);
+  const displayValue = capitalize(value);
 
   const getThemeIcon = (theme) => {
     switch (theme) {
@@ -242,8 +240,8 @@ const ThemeSelector = ({ title, value, onSelect, icon }) => {
 
 const SegmentedControl = ({ title, value, options, onSelect }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
     <View style={styles.unitSection}>
@@ -286,8 +284,8 @@ const SettingsPage = () => {
   const { type, subtype } = route.params || {};
   const { theme, changeTheme, isDark } = useTheme();
   const { settings, updateSetting } = useSettings();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const toggleSetting = (key) => {
     updateSetting(key, !settings[key]);

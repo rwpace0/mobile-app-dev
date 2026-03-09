@@ -14,6 +14,7 @@ import {
   cancelAllScheduledNotifications,
   scheduleActiveWorkoutNotification,
 } from "../utils/notifications";
+import { getDefaultWorkoutName } from "../utils/timerUtils";
 
 const ActiveWorkoutContext = createContext();
 
@@ -183,7 +184,7 @@ export const ActiveWorkoutProvider = ({ children }) => {
   const startWorkout = useCallback(async (workoutData) => {
     const now = Date.now();
     const newWorkout = {
-      name: workoutData.name || `Workout on ${new Date().toLocaleDateString()}`,
+      name: workoutData.name || getDefaultWorkoutName(),
       exercises: workoutData.exercises || [],
       exerciseStates: workoutData.exerciseStates || {},
       totalVolume: workoutData.totalVolume || 0,
