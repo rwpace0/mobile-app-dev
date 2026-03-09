@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
-import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { hapticLight, hapticWarning } from "../../utils/hapticFeedback";
 
@@ -12,8 +11,7 @@ const RoutineDeleteModal = ({
   routineName,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
     <Modal

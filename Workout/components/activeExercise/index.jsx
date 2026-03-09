@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
-import { useTheme, useSettings } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useSettings } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/activeExercise.styles";
 import RestTimerModal from "../modals/RestTimerModal";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
@@ -30,8 +29,7 @@ const ActiveExerciseComponent = ({
   onTimerStart,
 }) => {
   const { isDark, showNotes, restTimerEnabled, timerType } = useSettings();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   // Modal state
   const [showRestTimer, setShowRestTimer] = useState(false);
@@ -50,7 +48,7 @@ const ActiveExerciseComponent = ({
     const fetchExerciseDetails = async () => {
       try {
         const details = await exercisesAPI.getExerciseById(
-          exercise.exercise_id
+          exercise.exercise_id,
         );
         setExerciseDetails(details);
       } catch (error) {
@@ -70,7 +68,7 @@ const ActiveExerciseComponent = ({
   const previousPerformance = usePreviousPerformance(
     exercise,
     initialSets,
-    !!initialState?.sets
+    !!initialState?.sets,
   );
 
   const exerciseState = useExerciseState(
@@ -80,13 +78,17 @@ const ActiveExerciseComponent = ({
     onStateChange,
     onTimerStart,
     previousPerformance.previousWorkoutSets,
-    timerHandlers
+    timerHandlers,
   );
 
   // Initialize sets from previous workout if needed
   useEffect(() => {
     const initialSetsFromPrevious = previousPerformance.generateInitialSets();
-    if (initialSetsFromPrevious && exerciseState.sets.length === 0 && !exerciseState.hasPrefilledData) {
+    if (
+      initialSetsFromPrevious &&
+      exerciseState.sets.length === 0 &&
+      !exerciseState.hasPrefilledData
+    ) {
       exerciseState.initializeSets(initialSetsFromPrevious);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

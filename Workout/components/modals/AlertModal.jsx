@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
-import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 
@@ -13,11 +12,10 @@ const AlertModal = ({
   onConfirm,
   showCancel = false,
   cancelText = "Cancel",
-  onCancel
+  onCancel,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const handleConfirm = () => {
     hapticMedium();
@@ -69,4 +67,4 @@ const AlertModal = ({
   );
 };
 
-export default AlertModal; 
+export default AlertModal;

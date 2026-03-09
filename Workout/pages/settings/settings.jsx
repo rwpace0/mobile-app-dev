@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { createStyles } from "../../styles/settings.styles";
 import Header from "../../components/static/header";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { useTheme } from "../../state/SettingsContext";
 import { useAuth } from "../../API/auth/authContext";
 import AlertModal from "../../components/modals/AlertModal";
@@ -31,8 +31,8 @@ const SettingsItem = ({
   showBorder = true,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
     <TouchableOpacity
@@ -68,8 +68,8 @@ const Settings = () => {
   const { logout } = useAuth();
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { alertState, showError, hideAlert } = useAlertModal();
 
   const handleLogout = async () => {

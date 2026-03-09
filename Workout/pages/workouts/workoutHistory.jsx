@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
 import { createStyles } from "../../styles/workoutHistory.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { useWeight } from "../../utils/useWeight";
@@ -22,8 +22,8 @@ import { formatDurationHuman, formatDate } from "../../utils/timerUtils";
 const WorkoutHistoryPage = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +68,7 @@ const WorkoutHistoryPage = () => {
         setLoadingMore(false);
       }
     },
-    []
+    [],
   );
 
   const onRefresh = useCallback(() => {
@@ -89,7 +89,7 @@ const WorkoutHistoryPage = () => {
         // Clear workout cache when leaving the screen
         workoutAPI.cache.clearPattern("^workouts:");
       };
-    }, [fetchWorkouts])
+    }, [fetchWorkouts]),
   );
 
   const onViewableItemsChanged = useCallback(
@@ -112,7 +112,7 @@ const WorkoutHistoryPage = () => {
         workoutAPI.triggerSmartPrefetch(newVisibleWorkouts, workouts);
       }
     },
-    [workouts, visibleWorkouts]
+    [workouts, visibleWorkouts],
   );
 
   const viewabilityConfig = {
@@ -237,7 +237,7 @@ const WorkoutHistoryPage = () => {
         </TouchableOpacity>
       );
     },
-    [navigation, styles, colors, weight]
+    [navigation, styles, colors, weight],
   );
 
   const renderFooter = useCallback(() => {
@@ -287,7 +287,10 @@ const WorkoutHistoryPage = () => {
         data={workouts}
         renderItem={renderWorkoutCard}
         keyExtractor={(item) => item.workout_id}
-        contentContainerStyle={{ paddingTop: Spacing.xs, paddingBottom: Spacing.m }}
+        contentContainerStyle={{
+          paddingTop: Spacing.xs,
+          paddingBottom: Spacing.m,
+        }}
         onRefresh={onRefresh}
         refreshing={refreshing}
         onEndReached={loadMore}
@@ -305,10 +308,13 @@ const WorkoutHistoryPage = () => {
           <View style={styles.loadingContainer}>
             <Text style={styles.errorText}>{error || "No workouts found"}</Text>
             {error && (
-              <TouchableOpacity style={styles.retryButton} onPress={() => {
-                hapticLight();
-                onRefresh();
-              }}>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => {
+                  hapticLight();
+                  onRefresh();
+                }}
+              >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             )}

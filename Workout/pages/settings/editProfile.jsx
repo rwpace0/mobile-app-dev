@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,35 +7,39 @@ import {
   SafeAreaView,
   Image,
   TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../API/auth/authContext';
-import { createStyles } from '../../styles/editProfile.styles';
-import { getColors } from '../../constants/colors';
-import { useTheme } from '../../state/SettingsContext';
-import Header from '../../components/static/header';
-import { mediaAPI } from '../../API/mediaAPI';
-import { mediaCache } from '../../API/local/MediaCache';
-import { profileAPI } from '../../API/profileAPI';
-import { requestMediaLibraryPermission, validateImageFile } from '../../utils/permissions';
-import AlertModal from '../../components/modals/AlertModal';
-import { useAlertModal } from '../../utils/useAlertModal';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../../API/auth/authContext";
+import { createStyles } from "../../styles/editProfile.styles";
+import { useThemeColors } from "../../constants/useThemeColors";
+import { useTheme } from "../../state/SettingsContext";
+import Header from "../../components/static/header";
+import { mediaAPI } from "../../API/mediaAPI";
+import { mediaCache } from "../../API/local/MediaCache";
+import { profileAPI } from "../../API/profileAPI";
+import {
+  requestMediaLibraryPermission,
+  validateImageFile,
+} from "../../utils/permissions";
+import AlertModal from "../../components/modals/AlertModal";
+import { useAlertModal } from "../../utils/useAlertModal";
 
 const EditProfile = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [name, setName] = useState('');
-  const { alertState, showError, showSuccess, showWarning, hideAlert } = useAlertModal();
+  const [name, setName] = useState("");
+  const { alertState, showError, showSuccess, showWarning, hideAlert } =
+    useAlertModal();
 
   useEffect(() => {
     fetchProfileData();
@@ -45,20 +49,19 @@ const EditProfile = () => {
     if (user?.id) {
       try {
         setLoading(true);
-        
+
         // Fetch profile data from local cache first
         const profileData = await mediaCache.getLocalProfile(user.id);
-        
+
         // Update form data with profile information
-        setName(profileData.display_name || '');
+        setName(profileData.display_name || "");
 
         // Fetch avatar from cache
         const avatarPath = await mediaCache.getProfileAvatar(user.id);
         setProfileAvatar(avatarPath);
-        
       } catch (error) {
-        console.error('Error fetching profile data:', error);
-        showError('Error', 'Failed to load profile data');
+        console.error("Error fetching profile data:", error);
+        showError("Error", "Failed to load profile data");
       } finally {
         setLoading(false);
       }
@@ -80,20 +83,18 @@ const EditProfile = () => {
 
       if (!result.canceled) {
         const imageUri = result.assets[0].uri;
-        
+
         try {
           validateImageFile(imageUri, result.assets[0].fileSize);
           setSelectedImage(imageUri);
         } catch (error) {
-          showError('Error', error.message);
+          showError("Error", error.message);
         }
       }
     } catch (error) {
-      showError('Error', error.message);
+      showError("Error", error.message);
     }
   };
-
-
 
   const handleSave = async () => {
     if (saving) return;
@@ -102,13 +103,16 @@ const EditProfile = () => {
     try {
       // Update local profile first
       await mediaCache.updateLocalProfile(user.id, {
-        display_name: name
+        display_name: name,
       });
 
       // Then sync to backend
-      await profileAPI.updateProfile({
-        display_name: name
-      }, user.id);
+      await profileAPI.updateProfile(
+        {
+          display_name: name,
+        },
+        user.id,
+      );
 
       // Mark as synced
       await mediaCache.markProfileSynced(user.id);
@@ -116,21 +120,27 @@ const EditProfile = () => {
       // Upload selected image if there is one
       if (selectedImage) {
         try {
-          const { localPath } = await mediaAPI.uploadProfileAvatar(user.id, selectedImage);
+          const { localPath } = await mediaAPI.uploadProfileAvatar(
+            user.id,
+            selectedImage,
+          );
           setProfileAvatar(localPath);
           setSelectedImage(null); // Clear selected image after upload
         } catch (error) {
-          console.error('Avatar upload error:', error);
-          showWarning('Warning', 'Profile updated but failed to upload image. Please try again.');
+          console.error("Avatar upload error:", error);
+          showWarning(
+            "Warning",
+            "Profile updated but failed to upload image. Please try again.",
+          );
         }
       }
-      
-      showSuccess('Success', 'Profile updated successfully!', {
-        onConfirm: () => navigation.goBack()
+
+      showSuccess("Success", "Profile updated successfully!", {
+        onConfirm: () => navigation.goBack(),
       });
     } catch (error) {
-      console.error('Save profile error:', error);
-      showError('Error', 'Failed to save profile. Please try again.');
+      console.error("Save profile error:", error);
+      showError("Error", "Failed to save profile. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -138,7 +148,7 @@ const EditProfile = () => {
 
   const renderAvatarSection = () => (
     <View style={styles.avatarSection}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.avatarContainer}
         onPress={handleAvatarPress}
         disabled={saving}
@@ -152,18 +162,26 @@ const EditProfile = () => {
           />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person-outline" size={50} color={colors.textPrimary} />
+            <Ionicons
+              name="person-outline"
+              size={50}
+              color={colors.textPrimary}
+            />
           </View>
         )}
         {selectedImage && (
           <View style={styles.uploadingOverlay}>
-            <Ionicons name="image-outline" size={24} color={colors.textPrimary} />
+            <Ionicons
+              name="image-outline"
+              size={24}
+              color={colors.textPrimary}
+            />
           </View>
         )}
       </TouchableOpacity>
       <TouchableOpacity onPress={handleAvatarPress} disabled={saving}>
         <Text style={styles.changePictureText}>
-          {selectedImage ? 'Image Selected' : 'Change Picture'}
+          {selectedImage ? "Image Selected" : "Change Picture"}
         </Text>
       </TouchableOpacity>
     </View>
@@ -196,27 +214,20 @@ const EditProfile = () => {
     <SafeAreaView style={styles.container}>
       <Header
         title="Edit Profile"
-        leftComponent={{ type: 'back' }}
+        leftComponent={{ type: "back" }}
         rightComponent={{
-          type: 'button',
-          text: 'Save',
+          type: "button",
+          text: "Save",
           onPress: handleSave,
-          disabled: saving
+          disabled: saving,
         }}
       />
-      
+
       <ScrollView style={styles.scrollView}>
         {renderAvatarSection()}
-        
+
         <View style={styles.section}>
-          
-          
-          {renderFormField(
-            'Name',
-            name,
-            setName,
-            'Your full name'
-          )}
+          {renderFormField("Name", name, setName, "Your full name")}
         </View>
       </ScrollView>
 
@@ -236,4 +247,4 @@ const EditProfile = () => {
   );
 };
 
-export default EditProfile; 
+export default EditProfile;

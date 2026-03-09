@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
-import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
-import { hapticLight, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
+import {
+  hapticLight,
+  hapticSuccess,
+  hapticWarning,
+} from "../../utils/hapticFeedback";
 
 const FinishWorkoutModal = ({
   visible,
@@ -21,8 +24,7 @@ const FinishWorkoutModal = ({
   onKeepRoutineSame,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   if (mode === "incompleteSets") {
     return (
@@ -85,22 +87,22 @@ const FinishWorkoutModal = ({
   if (mode === "routineUpdate") {
     // Build change summary text
     const changeLines = [];
-    
+
     if (addedExercises > 0) {
       const text = addedExercises === 1 ? "exercise" : "exercises";
       changeLines.push(`Added ${addedExercises} ${text}`);
     }
-    
+
     if (removedExercises > 0) {
       const text = removedExercises === 1 ? "exercise" : "exercises";
       changeLines.push(`Removed ${removedExercises} ${text}`);
     }
-    
+
     if (addedSets > 0) {
       const text = addedSets === 1 ? "set" : "sets";
       changeLines.push(`Added ${addedSets} ${text}`);
     }
-    
+
     if (removedSets > 0) {
       const text = removedSets === 1 ? "set" : "sets";
       changeLines.push(`Removed ${removedSets} ${text}`);

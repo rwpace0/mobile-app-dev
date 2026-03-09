@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/activeExercise.styles";
 import { hapticLight } from "../../utils/hapticFeedback";
 import exercisesAPI from "../../API/exercisesAPI";
@@ -12,8 +12,8 @@ import exercisesAPI from "../../API/exercisesAPI";
 const ExerciseHeader = ({ exercise, drag, isActive, onDeletePress }) => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const [exerciseDetails, setExerciseDetails] = useState(null);
   const [imageError, setImageError] = useState(false);
 
@@ -21,7 +21,7 @@ const ExerciseHeader = ({ exercise, drag, isActive, onDeletePress }) => {
     const fetchExerciseDetails = async () => {
       try {
         const details = await exercisesAPI.getExerciseById(
-          exercise.exercise_id
+          exercise.exercise_id,
         );
         setExerciseDetails(details);
       } catch (error) {
@@ -65,10 +65,7 @@ const ExerciseHeader = ({ exercise, drag, isActive, onDeletePress }) => {
       </TouchableOpacity>
 
       {!isActive && (
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={onDeletePress}
-        >
+        <TouchableOpacity style={styles.deleteButton} onPress={onDeletePress}>
           <Ionicons name="trash-outline" size={24} color={colors.accentRed} />
         </TouchableOpacity>
       )}

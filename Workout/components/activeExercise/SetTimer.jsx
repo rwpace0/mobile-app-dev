@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TextInput } from "react-native";
 import Animated from "react-native-reanimated";
 import { useTheme } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/activeExercise.styles";
 import { parseTimeInput, formatSetTimerDisplay } from "../../utils/timerUtils";
 
@@ -17,8 +17,8 @@ const SetTimer = ({
   DEFAULT_SET_TIMER,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   if (!isActive && timerRemaining === undefined) {
     // Timer input - always visible when timer is not active

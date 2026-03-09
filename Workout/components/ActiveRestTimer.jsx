@@ -1,7 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { createStyles } from "../styles/activeRestTimer.styles";
-import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 import { hapticLight, hapticMedium } from "../utils/hapticFeedback";
 
@@ -13,8 +12,7 @@ const ActiveRestTimer = ({
   visible,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   // Animated value for progress bar
   const progressAnim = useRef(new Animated.Value(1)).current;

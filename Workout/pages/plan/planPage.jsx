@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,19 +15,23 @@ import ScrollableCalendar from "../../components/ScrollableCalendar";
 import VolumeStats from "../../components/VolumeStats";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/plan.styles";
 import { useTheme } from "../../state/SettingsContext";
 import { Spacing } from "../../constants/theme";
 import planAPI from "../../API/planAPI";
 import exercisesAPI from "../../API/exercisesAPI";
-import { hapticLight, hapticMedium, hapticSuccess } from "../../utils/hapticFeedback";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSuccess,
+} from "../../utils/hapticFeedback";
 
 const PlanPage = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const [activePlan, setActivePlan] = useState(null);
   const [templates, setTemplates] = useState([]);
@@ -47,7 +51,7 @@ const PlanPage = () => {
 
       // Get all templates, passing schedule for proper sorting
       const allTemplates = await planAPI.getAllTemplates(
-        plan?.schedule || null
+        plan?.schedule || null,
       );
 
       // Fetch exercise details for each template
@@ -58,17 +62,17 @@ const PlanPage = () => {
               (template.exercises || []).map(async (ex) => {
                 try {
                   const exercise = await exercisesAPI.getExerciseById(
-                    ex.exercise_id
+                    ex.exercise_id,
                   );
                   return { ...ex, ...exercise };
                 } catch (err) {
                   console.error(
                     `Failed to get exercise ${ex.exercise_id}:`,
-                    err
+                    err,
                   );
                   return ex;
                 }
-              })
+              }),
             );
 
             return {
@@ -78,11 +82,11 @@ const PlanPage = () => {
           } catch (err) {
             console.error(
               `Failed to process template ${template.template_id}:`,
-              err
+              err,
             );
             return template;
           }
-        })
+        }),
       );
 
       setTemplates(templatesWithExercises);
@@ -105,7 +109,7 @@ const PlanPage = () => {
   useFocusEffect(
     useCallback(() => {
       fetchPlanData();
-    }, [fetchPlanData])
+    }, [fetchPlanData]),
   );
 
   const handleRefresh = useCallback(() => {
@@ -150,7 +154,7 @@ const PlanPage = () => {
         });
       }
     },
-    [navigation]
+    [navigation],
   );
 
   const handleNewRoutine = useCallback(() => {

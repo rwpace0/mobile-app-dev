@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../API/auth/authContext";
 import { createStyles } from "../../styles/profile.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { useTheme } from "../../state/SettingsContext";
 import Header from "../../components/static/header";
 import workoutAPI from "../../API/workoutAPI";
@@ -28,8 +28,8 @@ const Profile = ({ navigation }) => {
   const [username, setUsername] = useState("");
   const { user } = useAuth();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { alertState, showInfo, hideAlert } = useAlertModal();
 
   const fetchWorkoutCount = async () => {
@@ -76,7 +76,7 @@ const Profile = ({ navigation }) => {
               // Only fetch from backend if we don't have cached data
               const backendProfile = await profileAPI.getProfile(
                 false,
-                user.id
+                user.id,
               );
 
               // Sync username to local database if it exists in backend
@@ -85,7 +85,7 @@ const Profile = ({ navigation }) => {
                 const { dbManager } = await import("../../API/local/dbManager");
                 const [existingUsernameProfile] = await dbManager.query(
                   "SELECT user_id FROM profiles WHERE username = ?",
-                  [backendProfile.username]
+                  [backendProfile.username],
                 );
 
                 if (
@@ -101,7 +101,7 @@ const Profile = ({ navigation }) => {
                       backendProfile.display_name || "",
                       "synced",
                       backendProfile.username,
-                    ]
+                    ],
                   );
                 } else {
                   // No conflict, proceed with normal update
@@ -161,7 +161,7 @@ const Profile = ({ navigation }) => {
         // Always refetch avatar on focus to catch updates from edit screen
         fetchProfileAvatar();
       }
-    }, [user])
+    }, [user]),
   );
 
   const renderProfile = () => (

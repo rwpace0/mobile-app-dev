@@ -1,25 +1,18 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { createStyles } from '../styles/activeMini.styles';
-import { getColors } from '../constants/colors';
-import { useTheme } from '../state/SettingsContext';
-import { formatDurationClock } from '../utils/timerUtils';
+import React, { useMemo } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { createStyles } from "../styles/activeMini.styles";
+import { useTheme } from "../state/SettingsContext";
+import { formatDurationClock } from "../utils/timerUtils";
 
-const ActiveMini = ({ 
-  visible, 
-  onResume, 
-  workoutName = "Active Workout",
-  duration = 0 
-}) => {
+const ActiveMini = ({ visible, onResume, duration = 0 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   if (!visible) return null;
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.content}
         onPress={onResume}
         activeOpacity={0.8}
@@ -30,4 +23,4 @@ const ActiveMini = ({
   );
 };
 
-export default ActiveMini; 
+export default ActiveMini;

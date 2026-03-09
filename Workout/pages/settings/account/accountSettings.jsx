@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -10,13 +10,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { createStyles } from "../../../styles/settings.styles";
 import Header from "../../../components/static/header";
-import { getColors } from "../../../constants/colors";
+import { useThemeColors } from "../../../constants/useThemeColors";
 import { useTheme } from "../../../state/SettingsContext";
 
-const AccountSettingItem = ({ title, icon, onPress, IconComponent = Ionicons }) => {
+const AccountSettingItem = ({
+  title,
+  icon,
+  onPress,
+  IconComponent = Ionicons,
+}) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
     <TouchableOpacity style={styles.settingsItem} onPress={onPress}>
@@ -39,19 +44,19 @@ const AccountSettingItem = ({ title, icon, onPress, IconComponent = Ionicons }) 
 const AccountSettings = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const navigateToChangeUsername = () => {
-    navigation.navigate('ChangeUsername');
+    navigation.navigate("ChangeUsername");
   };
 
   const navigateToChangeEmail = () => {
-    navigation.navigate('ChangeEmail');
+    navigation.navigate("ChangeEmail");
   };
 
   const navigateToChangePassword = () => {
-    navigation.navigate('ChangePassword');
+    navigation.navigate("ChangePassword");
   };
 
   return (
@@ -78,4 +83,4 @@ const AccountSettings = () => {
   );
 };
 
-export default AccountSettings; 
+export default AccountSettings;

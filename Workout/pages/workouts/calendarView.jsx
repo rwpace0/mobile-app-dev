@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,25 +7,25 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { CalendarList } from 'react-native-calendars';
+import { CalendarList } from "react-native-calendars";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
 import WorkoutSelectionModal from "../../components/modals/WorkoutSelectionModal";
 import { createStyles } from "../../styles/calendar.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { BorderRadius, FontWeight, FontSize } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { useWeight } from "../../utils/useWeight";
-import { format, parseISO, isToday, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, isToday, startOfMonth, endOfMonth } from "date-fns";
 
 const CalendarViewPage = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [workoutsData, setWorkoutsData] = useState({});
@@ -42,20 +42,28 @@ const CalendarViewPage = () => {
 
       // Get current date and calculate date range (12 months back, current month only)
       const today = new Date();
-      const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 12, 1);
-      const endOfCurrentMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      const twelveMonthsAgo = new Date(
+        today.getFullYear(),
+        today.getMonth() - 12,
+        1,
+      );
+      const endOfCurrentMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        0,
+      );
 
       // Fetch workouts for current and past months only
       const response = await workoutAPI.getWorkoutsCursor({
-        dateFrom: twelveMonthsAgo.toISOString().split('T')[0],
-        dateTo: endOfCurrentMonth.toISOString().split('T')[0],
+        dateFrom: twelveMonthsAgo.toISOString().split("T")[0],
+        dateTo: endOfCurrentMonth.toISOString().split("T")[0],
         limit: 500, // Get workouts for the past 12 months
       });
 
       // Group workouts by date
       const workoutsByDate = {};
-      response.workouts.forEach(workout => {
-        const dateKey = workout.date_performed.split('T')[0]; // YYYY-MM-DD format
+      response.workouts.forEach((workout) => {
+        const dateKey = workout.date_performed.split("T")[0]; // YYYY-MM-DD format
         if (!workoutsByDate[dateKey]) {
           workoutsByDate[dateKey] = [];
         }
@@ -66,7 +74,7 @@ const CalendarViewPage = () => {
 
       // Create marked dates for calendar - solid blue circles around workout day numbers
       const marked = {};
-      Object.keys(workoutsByDate).forEach(date => {
+      Object.keys(workoutsByDate).forEach((date) => {
         marked[date] = {
           customStyles: {
             container: {
@@ -74,8 +82,8 @@ const CalendarViewPage = () => {
               borderRadius: BorderRadius.round,
               width: 32,
               height: 32,
-              justifyContent: 'center',
-              alignItems: 'center',
+              justifyContent: "center",
+              alignItems: "center",
             },
             text: {
               color: colors.textWhite,
@@ -99,32 +107,35 @@ const CalendarViewPage = () => {
   useFocusEffect(
     useCallback(() => {
       loadWorkouts();
-    }, [loadWorkouts])
+    }, [loadWorkouts]),
   );
 
   // Handle day selection - smart interaction based on workout count
-  const onDayPress = useCallback((day) => {
-    const dateKey = day.dateString;
-    const dayWorkouts = workoutsData[dateKey] || [];
-    
-    if (dayWorkouts.length === 0) {
-      // No workouts on this day, do nothing
-      return;
-    }
-    
-    if (dayWorkouts.length === 1) {
-      // Single workout - navigate directly to workout detail
-      navigation.navigate("WorkoutDetail", { 
-        workout_id: dayWorkouts[0].workout_id 
-      });
-      return;
-    }
-    
-    // Multiple workouts - show modal
-    setSelectedDate(dateKey);
-    setSelectedDateWorkouts(dayWorkouts);
-    setModalVisible(true);
-  }, [workoutsData, markedDates, colors, navigation]);
+  const onDayPress = useCallback(
+    (day) => {
+      const dateKey = day.dateString;
+      const dayWorkouts = workoutsData[dateKey] || [];
+
+      if (dayWorkouts.length === 0) {
+        // No workouts on this day, do nothing
+        return;
+      }
+
+      if (dayWorkouts.length === 1) {
+        // Single workout - navigate directly to workout detail
+        navigation.navigate("WorkoutDetail", {
+          workout_id: dayWorkouts[0].workout_id,
+        });
+        return;
+      }
+
+      // Multiple workouts - show modal
+      setSelectedDate(dateKey);
+      setSelectedDateWorkouts(dayWorkouts);
+      setModalVisible(true);
+    },
+    [workoutsData, markedDates, colors, navigation],
+  );
 
   // Handle visible month change for stats
   const onVisibleMonthsChange = useCallback((months) => {
@@ -133,24 +144,29 @@ const CalendarViewPage = () => {
   }, []);
 
   // Navigate to workout detail
-  const navigateToWorkout = useCallback((workoutId) => {
-    navigation.navigate("WorkoutDetail", { workout_id: workoutId });
-  }, [navigation]);
+  const navigateToWorkout = useCallback(
+    (workoutId) => {
+      navigation.navigate("WorkoutDetail", { workout_id: workoutId });
+    },
+    [navigation],
+  );
 
   // Handle workout selection from modal
-  const handleWorkoutSelect = useCallback((workoutId) => {
-    navigateToWorkout(workoutId);
-  }, [navigateToWorkout]);
-
+  const handleWorkoutSelect = useCallback(
+    (workoutId) => {
+      navigateToWorkout(workoutId);
+    },
+    [navigateToWorkout],
+  );
 
   if (loading && !Object.keys(workoutsData).length) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header 
-          title="Calendar" 
+        <Header
+          title="Calendar"
           leftComponent={{
-            type: 'down',
-            onPress: () => navigation.goBack()
+            type: "down",
+            onPress: () => navigation.goBack(),
           }}
         />
         <View style={styles.loadingContainer}>
@@ -161,17 +177,16 @@ const CalendarViewPage = () => {
     );
   }
 
-
   return (
     <SafeAreaView style={styles.container}>
-      <Header 
-        title="Calendar" 
+      <Header
+        title="Calendar"
         leftComponent={{
-          type: 'down',
-          onPress: () => navigation.goBack()
+          type: "down",
+          onPress: () => navigation.goBack(),
         }}
       />
-      
+
       {/* Vertically Scrollable Calendar */}
       <View style={styles.calendarContainer}>
         <CalendarList

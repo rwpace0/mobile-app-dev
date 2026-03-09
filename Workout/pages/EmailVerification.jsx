@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { getColors } from "../constants/colors";
+import { useThemeColors } from "../constants/useThemeColors";
 import { useTheme } from "../state/SettingsContext";
 import { useAuth } from "../API/auth/authContext";
 import getBaseUrl from "../API/utils/getBaseUrl";
@@ -16,8 +16,8 @@ import { useAlertModal } from "../utils/useAlertModal";
 
 const EmailVerification = ({ navigation, route }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const [countdown, setCountdown] = useState(60);
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -31,20 +31,23 @@ const EmailVerification = ({ navigation, route }) => {
       const type = route?.params?.type;
 
       if (token_hash && type) {
-        console.log('📧 Email verification deep link detected:', { token_hash, type });
+        console.log("📧 Email verification deep link detected:", {
+          token_hash,
+          type,
+        });
         setIsVerifying(true);
-        
+
         try {
           await verifyEmail(token_hash, type);
           showSuccess(
-            "Success", 
+            "Success",
             "Email verified successfully! You are now logged in.",
             {
               onConfirm: () => navigation.replace("Main"),
-            }
+            },
           );
         } catch (error) {
-          console.error('Email verification failed:', error);
+          console.error("Email verification failed:", error);
           showError("Error", error.message || "Failed to verify email");
         } finally {
           setIsVerifying(false);
@@ -104,7 +107,9 @@ const EmailVerification = ({ navigation, route }) => {
         </View>
       ) : (
         <View style={styles.messageContainer}>
-          <Text style={styles.message}>We've sent a verification email to:</Text>
+          <Text style={styles.message}>
+            We've sent a verification email to:
+          </Text>
           <Text style={styles.email}>{user?.email}</Text>
           <Text style={styles.instructions}>
             Please check your email and click the verification link to continue.

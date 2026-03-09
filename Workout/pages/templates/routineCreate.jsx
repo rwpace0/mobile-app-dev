@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { createStyles } from "../../styles/workoutPages.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { useTheme } from "../../state/SettingsContext";
 import RoutineExerciseComponent from "../../components/routineExerciseCard";
 import templateAPI from "../../API/templateAPI";
@@ -27,8 +27,8 @@ const RoutineCreate = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
   const [totalSets, setTotalSets] = useState(0);
@@ -59,16 +59,16 @@ const RoutineCreate = () => {
   const handleUpdateSets = (exerciseId, numSets) => {
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.exercise_id === exerciseId ? { ...ex, sets: numSets } : ex
-      )
+        ex.exercise_id === exerciseId ? { ...ex, sets: numSets } : ex,
+      ),
     );
   };
 
   const handleUpdateValues = (exerciseId, values) => {
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.exercise_id === exerciseId ? { ...ex, ...values } : ex
-      )
+        ex.exercise_id === exerciseId ? { ...ex, ...values } : ex,
+      ),
     );
   };
 
@@ -107,12 +107,16 @@ const RoutineCreate = () => {
             style={styles.routineNameClearButton}
             onPress={() => setRoutineName("")}
           >
-            <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
       </View>
     ),
-    [routineName, styles, colors]
+    [routineName, styles, colors],
   );
 
   const handleSave = async () => {
@@ -169,7 +173,7 @@ const RoutineCreate = () => {
         "Error",
         error.response?.data?.error ||
           error.message ||
-          "Failed to save template. Please try again."
+          "Failed to save template. Please try again.",
       );
     } finally {
       setIsSaving(false);
@@ -224,7 +228,11 @@ const RoutineCreate = () => {
                 style={styles.routineNameClearButton}
                 onPress={() => setRoutineName("")}
               >
-                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={colors.textSecondary}
+                />
               </TouchableOpacity>
             )}
           </View>

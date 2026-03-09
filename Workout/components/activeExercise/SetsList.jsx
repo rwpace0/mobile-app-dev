@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useSettings } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/activeExercise.styles";
 import { useWeight } from "../../utils/useWeight";
 import SetRow from "./SetRow";
@@ -29,8 +29,8 @@ const SetsList = ({
 }) => {
   const { isDark } = useTheme();
   const { showPreviousPerformance, showRir } = useSettings();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
 
   return (

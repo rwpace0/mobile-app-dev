@@ -1,16 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createStyles } from "../../styles/modals.styles";
-import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 
 const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
-  
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
+
   return (
     <Modal
       visible={visible}
@@ -22,8 +20,8 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
         <View style={styles.deleteModalContent}>
           <Text style={styles.deleteModalText}>{title}</Text>
           <View style={styles.deleteModalButtons}>
-          <TouchableOpacity 
-              style={styles.deleteModalConfirmButton} 
+            <TouchableOpacity
+              style={styles.deleteModalConfirmButton}
               onPress={() => {
                 hapticMedium();
                 onConfirm();
@@ -32,8 +30,8 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
             >
               <Text style={styles.deleteModalConfirmText}>Delete</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.deleteModalCancelButton} 
+            <TouchableOpacity
+              style={styles.deleteModalCancelButton}
               onPress={() => {
                 hapticLight();
                 onClose();
@@ -41,7 +39,6 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
             >
               <Text style={styles.deleteModalCancelText}>Cancel</Text>
             </TouchableOpacity>
-           
           </View>
         </View>
       </View>
@@ -49,4 +46,4 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
   );
 };
 
-export default DeleteConfirmModal; 
+export default DeleteConfirmModal;

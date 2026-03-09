@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../API/auth/authContext";
 import { createStyles } from "../styles/login.styles";
-import { getColors } from "../constants/colors";
+import { useThemeColors } from "../constants/useThemeColors";
 import { useTheme } from "../state/SettingsContext";
 import AlertModal from "../components/modals/AlertModal";
 import { useAlertModal } from "../utils/useAlertModal";
@@ -19,8 +19,8 @@ const LoginPage = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { login, error } = useAuth();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { alertState, showError, hideAlert } = useAlertModal();
 
   const validateEmail = (email) => {

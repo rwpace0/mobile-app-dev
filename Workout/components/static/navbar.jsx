@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { createStyles } from "../../styles/navbar.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { useTheme } from "../../state/SettingsContext";
 import { useNavigationState } from "@react-navigation/native";
 
@@ -40,8 +40,8 @@ const VISIBLE_TABS = ["WorkoutHistory", "Start", "Profile"];
 
 const Navbar = ({ state, navigation }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   // Memoize current nested route calculation
   const currentNestedRoute = useMemo(() => {

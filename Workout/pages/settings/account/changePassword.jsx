@@ -11,7 +11,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { createStyles } from "../../../styles/settings.styles";
 import Header from "../../../components/static/header";
-import { getColors } from "../../../constants/colors";
+import { useThemeColors } from "../../../constants/useThemeColors";
 import { useTheme } from "../../../state/SettingsContext";
 import { authAPI } from "../../../API/auth/authAPI";
 import { useAlertModal } from "../../../utils/useAlertModal";
@@ -30,8 +30,8 @@ const AccountFormField = ({
   onTogglePassword,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
     <View style={styles.formField}>
@@ -57,7 +57,11 @@ const AccountFormField = ({
                 style={styles.clearButton}
                 onPress={() => onChangeText("")}
               >
-                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={colors.textSecondary}
+                />
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.eyeIcon} onPress={onTogglePassword}>
@@ -85,7 +89,11 @@ const AccountFormField = ({
               style={styles.clearButton}
               onPress={() => onChangeText("")}
             >
-              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -97,8 +105,8 @@ const AccountFormField = ({
 const ChangePassword = () => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { alertState, showSuccess, showError, hideAlert } = useAlertModal();
 
   const [formData, setFormData] = useState({
@@ -159,7 +167,7 @@ const ChangePassword = () => {
 
   const passwordStrength = useMemo(() => {
     const metRequirements = passwordRequirements.filter(
-      (req) => req.met
+      (req) => req.met,
     ).length;
     return (metRequirements / passwordRequirements.length) * 100;
   }, [passwordRequirements]);
@@ -197,7 +205,7 @@ const ChangePassword = () => {
     try {
       await authAPI.changePassword(
         formData.newPassword,
-        formData.confirmPassword
+        formData.confirmPassword,
       );
       showSuccess("Success", "Password changed successfully", {
         onConfirm: () => {

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -18,19 +18,25 @@ import Header from "../../components/static/header";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import AlertModal from "../../components/modals/AlertModal";
 import { SwipeListView } from "react-native-swipe-list-view";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/planSetup.styles";
 import { useTheme } from "../../state/SettingsContext";
 import { Spacing } from "../../constants/theme";
 import planAPI from "../../API/planAPI";
-import { hapticLight, hapticMedium, hapticSelection, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSelection,
+  hapticSuccess,
+  hapticWarning,
+} from "../../utils/hapticFeedback";
 
 const PlanSetupPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   // Check if editing existing plan
   const editingPlan = route.params?.plan || null;
@@ -39,10 +45,10 @@ const PlanSetupPage = () => {
   // Form state
   const [planName, setPlanName] = useState(editingPlan?.name || "");
   const [patternLength, setPatternLength] = useState(
-    editingPlan?.pattern_length?.toString() || "7"
+    editingPlan?.pattern_length?.toString() || "7",
   );
   const [startDate, setStartDate] = useState(
-    editingPlan?.start_date ? new Date(editingPlan.start_date) : new Date()
+    editingPlan?.start_date ? new Date(editingPlan.start_date) : new Date(),
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [schedule, setSchedule] = useState([]);
@@ -175,7 +181,7 @@ const PlanSetupPage = () => {
           await planAPI.updatePlanSchedule(
             editingPlan.plan_id,
             item.pattern_position,
-            item.template_id
+            item.template_id,
           );
         }
       } else {
@@ -359,7 +365,11 @@ const PlanSetupPage = () => {
               style={styles.nameInputClearButton}
               onPress={() => setPlanName("")}
             >
-              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           )}
         </View>

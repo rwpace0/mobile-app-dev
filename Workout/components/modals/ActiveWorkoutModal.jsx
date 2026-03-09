@@ -1,19 +1,21 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
-import { getColors } from "../../constants/colors";
 import { useTheme } from "../../state/SettingsContext";
-import { hapticLight, hapticMedium, hapticSuccess } from "../../utils/hapticFeedback";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSuccess,
+} from "../../utils/hapticFeedback";
 
 const ActiveWorkoutModal = ({
   visible,
   onClose,
   onResumeWorkout,
-  onStartNew
+  onStartNew,
 }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const handleResumeWorkout = () => {
     hapticSuccess();
@@ -54,14 +56,18 @@ const ActiveWorkoutModal = ({
               onPress={handleResumeWorkout}
               activeOpacity={0.7}
             >
-              <Text style={styles.activeWorkoutResumeButtonText}>Resume workout</Text>
+              <Text style={styles.activeWorkoutResumeButtonText}>
+                Resume workout
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.activeWorkoutStartNewButton}
               onPress={handleStartNew}
               activeOpacity={0.7}
             >
-              <Text style={styles.activeWorkoutStartNewButtonText}>Start new workout</Text>
+              <Text style={styles.activeWorkoutStartNewButtonText}>
+                Start new workout
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.activeWorkoutCancelButton}

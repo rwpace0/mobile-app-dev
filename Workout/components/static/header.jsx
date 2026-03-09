@@ -1,24 +1,24 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { createStyles } from '../../styles/header.styles';
-import { getColors } from '../../constants/colors';
-import { useTheme } from '../../state/SettingsContext';
-import { hapticLight } from '../../utils/hapticFeedback';
+import React, { useMemo } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { createStyles } from "../../styles/header.styles";
+import { useThemeColors } from "../../constants/useThemeColors";
+import { useTheme } from "../../state/SettingsContext";
+import { hapticLight } from "../../utils/hapticFeedback";
 
 const Header = ({ title, leftComponent, rightComponent }) => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const renderLeftComponent = () => {
     if (!leftComponent) {
       return <View style={styles.leftContainer} />;
     }
 
-    if (leftComponent.type === 'back') {
+    if (leftComponent.type === "back") {
       return (
         <View style={styles.leftContainer}>
           <TouchableOpacity
@@ -35,7 +35,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
       );
     }
 
-    if (leftComponent.type === 'custom') {
+    if (leftComponent.type === "custom") {
       return (
         <View style={styles.leftContainer}>
           <TouchableOpacity
@@ -55,7 +55,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
       );
     }
 
-    if (leftComponent.type === 'down') {
+    if (leftComponent.type === "down") {
       return (
         <View style={styles.leftContainer}>
           <TouchableOpacity
@@ -72,7 +72,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
       );
     }
 
-    if (leftComponent.type === 'button') {
+    if (leftComponent.type === "button") {
       return (
         <View style={styles.leftContainer}>
           <TouchableOpacity
@@ -83,10 +83,12 @@ const Header = ({ title, leftComponent, rightComponent }) => {
             }}
             disabled={leftComponent.disabled}
           >
-            <Text style={[
-              styles.buttonText,
-              leftComponent.disabled && styles.buttonTextDisabled
-            ]}>
+            <Text
+              style={[
+                styles.buttonText,
+                leftComponent.disabled && styles.buttonTextDisabled,
+              ]}
+            >
               {leftComponent.text}
             </Text>
           </TouchableOpacity>
@@ -100,7 +102,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
       return <View style={styles.rightContainer} />;
     }
 
-    if (rightComponent.type === 'icon') {
+    if (rightComponent.type === "icon") {
       return (
         <View style={styles.rightContainer}>
           <TouchableOpacity
@@ -117,7 +119,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
       );
     }
 
-    if (rightComponent.type === 'button') {
+    if (rightComponent.type === "button") {
       return (
         <View style={styles.rightContainer}>
           <TouchableOpacity
@@ -128,10 +130,12 @@ const Header = ({ title, leftComponent, rightComponent }) => {
             }}
             disabled={rightComponent.disabled}
           >
-            <Text style={[
-              styles.buttonText,
-              rightComponent.disabled && styles.buttonTextDisabled
-            ]}>
+            <Text
+              style={[
+                styles.buttonText,
+                rightComponent.disabled && styles.buttonTextDisabled,
+              ]}
+            >
               {rightComponent.text}
             </Text>
           </TouchableOpacity>
@@ -139,7 +143,7 @@ const Header = ({ title, leftComponent, rightComponent }) => {
       );
     }
 
-    if (rightComponent.type === 'text') {
+    if (rightComponent.type === "text") {
       return (
         <View style={styles.rightContainer}>
           <TouchableOpacity
@@ -150,10 +154,12 @@ const Header = ({ title, leftComponent, rightComponent }) => {
             }}
             disabled={rightComponent.disabled}
           >
-            <Text style={[
-              styles.buttonText,
-              rightComponent.disabled && styles.buttonTextDisabled
-            ]}>
+            <Text
+              style={[
+                styles.buttonText,
+                rightComponent.disabled && styles.buttonTextDisabled,
+              ]}
+            >
               {rightComponent.text}
             </Text>
           </TouchableOpacity>
@@ -173,4 +179,4 @@ const Header = ({ title, leftComponent, rightComponent }) => {
   );
 };
 
-export default Header; 
+export default Header;

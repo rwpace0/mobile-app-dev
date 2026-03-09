@@ -1,13 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { createStyles } from "../styles/login.styles";
-import { getColors } from "../constants/colors";
 import { useTheme } from "../state/SettingsContext";
 
 const WelcomePage = ({ navigation }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Workout</Text>

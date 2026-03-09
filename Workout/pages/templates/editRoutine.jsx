@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { createStyles } from "../../styles/workoutPages.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { useTheme } from "../../state/SettingsContext";
 import RoutineExerciseComponent from "../../components/routineExerciseCard";
 import templateAPI from "../../API/templateAPI";
@@ -29,8 +29,8 @@ const EditRoutine = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { template_id } = route.params || {};
 
   const [routineName, setRoutineName] = useState("");
@@ -66,7 +66,7 @@ const EditRoutine = () => {
         const exercisesWithDetails = await Promise.all(
           template.exercises.map(async (templateExercise) => {
             const exerciseDetails = await exercisesAPI.getExerciseById(
-              templateExercise.exercise_id
+              templateExercise.exercise_id,
             );
             return {
               exercise_id: templateExercise.exercise_id,
@@ -102,14 +102,14 @@ const EditRoutine = () => {
                   ? templateExercise.rir_range_max
                   : null,
             };
-          })
+          }),
         );
         setExercises(exercisesWithDetails);
 
         // Calculate total sets
         const total = exercisesWithDetails.reduce(
           (sum, ex) => sum + (ex.sets || 1),
-          0
+          0,
         );
         setTotalSets(total);
       }
@@ -140,13 +140,13 @@ const EditRoutine = () => {
       routineName !== (originalTemplate?.name || "") ||
       exercises.length !== (originalTemplate?.exercises?.length || 0) ||
       JSON.stringify(
-        exercises.map((ex) => ({ exercise_id: ex.exercise_id, sets: ex.sets }))
+        exercises.map((ex) => ({ exercise_id: ex.exercise_id, sets: ex.sets })),
       ) !==
         JSON.stringify(
           (originalTemplate?.exercises || []).map((ex) => ({
             exercise_id: ex.exercise_id,
             sets: ex.sets,
-          }))
+          })),
         );
 
     if (hasChanges) {
@@ -159,16 +159,16 @@ const EditRoutine = () => {
   const handleUpdateSets = (exerciseId, numSets) => {
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.exercise_id === exerciseId ? { ...ex, sets: numSets } : ex
-      )
+        ex.exercise_id === exerciseId ? { ...ex, sets: numSets } : ex,
+      ),
     );
   };
 
   const handleUpdateValues = (exerciseId, values) => {
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.exercise_id === exerciseId ? { ...ex, ...values } : ex
-      )
+        ex.exercise_id === exerciseId ? { ...ex, ...values } : ex,
+      ),
     );
   };
 
@@ -207,12 +207,16 @@ const EditRoutine = () => {
             style={styles.routineNameClearButton}
             onPress={() => setRoutineName("")}
           >
-            <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
       </View>
     ),
-    [routineName, styles, colors]
+    [routineName, styles, colors],
   );
 
   const handleSave = async () => {
@@ -263,7 +267,7 @@ const EditRoutine = () => {
       console.log("Updating template data:", templateData);
       const response = await templateAPI.updateTemplate(
         template_id,
-        templateData
+        templateData,
       );
       console.log("Template update response:", response);
 
@@ -276,7 +280,7 @@ const EditRoutine = () => {
         "Error",
         error.response?.data?.error ||
           error.message ||
-          "Failed to update routine. Please try again."
+          "Failed to update routine. Please try again.",
       );
     } finally {
       setIsSaving(false);
@@ -346,7 +350,11 @@ const EditRoutine = () => {
                 style={styles.routineNameClearButton}
                 onPress={() => setRoutineName("")}
               >
-                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={colors.textSecondary}
+                />
               </TouchableOpacity>
             )}
           </View>

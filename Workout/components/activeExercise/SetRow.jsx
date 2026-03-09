@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useSettings } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { FontSize } from "../../constants/theme";
 import { createStyles } from "../../styles/activeExercise.styles";
 import { useWeight } from "../../utils/useWeight";
@@ -23,8 +23,8 @@ const SetRow = ({
 }) => {
   const { isDark } = useTheme();
   const { showPreviousPerformance, showRir } = useSettings();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
 
   // Use set.key if available for stable React keys
@@ -71,16 +71,15 @@ const SetRow = ({
                         : ""
                     }`
                   : loadingPrevious
-                  ? "-"
-                  : "-"}
+                    ? "-"
+                    : "-"}
               </Text>
             </View>
           )}
           <View style={styles.weightHeaderCell}>
             <TextInput
               ref={(ref) => {
-                if (!inputRefs.current[set.id])
-                  inputRefs.current[set.id] = {};
+                if (!inputRefs.current[set.id]) inputRefs.current[set.id] = {};
                 inputRefs.current[set.id].weight = ref;
               }}
               style={[
@@ -130,8 +129,8 @@ const SetRow = ({
                 exercise.rep_range_max !== undefined
                   ? `${exercise.rep_range_min}-${exercise.rep_range_max}`
                   : showPreviousPerformance && correspondingPreviousSet
-                  ? correspondingPreviousSet.reps.toString()
-                  : "0"
+                    ? correspondingPreviousSet.reps.toString()
+                    : "0"
               }
               placeholderTextColor={colors.textSecondary}
               selectTextOnFocus={true}
@@ -164,11 +163,11 @@ const SetRow = ({
                   exercise.rir_range_max !== undefined
                     ? `${exercise.rir_range_min}-${exercise.rir_range_max}`
                     : showPreviousPerformance && correspondingPreviousSet
-                    ? correspondingPreviousSet.rir !== null &&
-                      correspondingPreviousSet.rir !== undefined
-                      ? correspondingPreviousSet.rir.toString()
+                      ? correspondingPreviousSet.rir !== null &&
+                        correspondingPreviousSet.rir !== undefined
+                        ? correspondingPreviousSet.rir.toString()
+                        : "0"
                       : "0"
-                    : "0"
                 }
                 placeholderTextColor={colors.textSecondary}
                 selectTextOnFocus={true}

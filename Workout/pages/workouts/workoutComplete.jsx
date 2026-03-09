@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { createStyles } from "../../styles/workoutHistory.styles";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import {
   Spacing,
   FontSize,
@@ -55,7 +55,6 @@ const ordinalSuffix = (n) => {
   const v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
-
 
 // Single confetti piece
 const ConfettiPiece = ({ color, startX, delay }) => {
@@ -166,8 +165,8 @@ const WorkoutComplete = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
 
   const {
@@ -329,7 +328,9 @@ const WorkoutComplete = () => {
                   color={colors.textPrimary}
                 />
               </View>
-              <Text style={styles.statText}>{formatDurationHuman(duration)}</Text>
+              <Text style={styles.statText}>
+                {formatDurationHuman(duration)}
+              </Text>
             </View>
             <View style={styles.statItemWithIcon}>
               <View style={styles.statIconContainer}>

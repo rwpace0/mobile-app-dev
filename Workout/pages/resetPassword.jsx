@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { createStyles } from "../styles/login.styles";
-import { getColors } from "../constants/colors";
+import { useThemeColors } from "../constants/useThemeColors";
 import { useTheme } from "../state/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import AlertModal from "../components/modals/AlertModal";
@@ -27,8 +27,8 @@ const ResetPassword = ({ navigation, route }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const {
     requestPasswordReset,
     resetPasswordWithToken,
@@ -64,7 +64,7 @@ const ResetPassword = ({ navigation, route }) => {
           await storage.setTokens(
             accessToken,
             refreshToken,
-            parseInt(expiresIn)
+            parseInt(expiresIn),
           );
 
           // Set up the component state for password reset
@@ -75,7 +75,7 @@ const ResetPassword = ({ navigation, route }) => {
           console.error("Recovery session setup failed:", error);
           showError(
             "Error",
-            "Failed to set up recovery session. Please try again."
+            "Failed to set up recovery session. Please try again.",
           );
         }
       };
@@ -117,7 +117,7 @@ const ResetPassword = ({ navigation, route }) => {
 
   const passwordStrength = useMemo(() => {
     const metRequirements = passwordRequirements.filter(
-      (req) => req.met
+      (req) => req.met,
     ).length;
     return (metRequirements / passwordRequirements.length) * 100;
   }, [passwordRequirements]);
@@ -146,12 +146,12 @@ const ResetPassword = ({ navigation, route }) => {
         "Password reset email sent successfully. Please check your email and click the reset link.",
         {
           onConfirm: () => navigation.navigate("Login"),
-        }
+        },
       );
     } catch (error) {
       showError(
         "Error",
-        error.message || "Failed to send password reset email"
+        error.message || "Failed to send password reset email",
       );
     } finally {
       setLoading(false);
@@ -177,19 +177,19 @@ const ResetPassword = ({ navigation, route }) => {
         await updateUserPassword(
           password,
           route.params.access_token,
-          route.params.refresh_token
+          route.params.refresh_token,
         );
 
         showSuccess(
           "Success",
-          "Password updated successfully! You are now logged in. Redirecting to app..."
+          "Password updated successfully! You are now logged in. Redirecting to app...",
         );
       } else {
         // Fallback to old method if needed
         await resetPasswordWithToken(token_hash, type, password);
         showSuccess(
           "Success",
-          "Password reset successfully! You are now logged in. Redirecting to app..."
+          "Password reset successfully! You are now logged in. Redirecting to app...",
         );
       }
     } catch (error) {

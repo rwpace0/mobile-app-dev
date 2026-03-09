@@ -1,15 +1,20 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useSettings } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/activeExercise.styles";
 import { formatTime } from "../../utils/timerUtils";
 
-const RestTimerButton = ({ restTime, onPress, restTimerEnabled, timerType }) => {
+const RestTimerButton = ({
+  restTime,
+  onPress,
+  restTimerEnabled,
+  timerType,
+}) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   if (!restTimerEnabled || timerType !== "exercise") return null;
 
@@ -21,10 +26,7 @@ const RestTimerButton = ({ restTime, onPress, restTimerEnabled, timerType }) => 
         color={restTime === 0 ? colors.textFaded : colors.primaryBlue}
       />
       <Text
-        style={[
-          styles.restTimerText,
-          restTime === 0 && styles.timerOffText,
-        ]}
+        style={[styles.restTimerText, restTime === 0 && styles.timerOffText]}
       >
         {`Rest Timer: ${formatTime(restTime)}`}
       </Text>

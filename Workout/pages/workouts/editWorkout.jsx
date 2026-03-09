@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,14 +13,19 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import ActiveExerciseComponent from "../../components/activeExercise";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { useTheme } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/workoutPages.styles";
 import { useWeight } from "../../utils/useWeight";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
-import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from "../../utils/hapticFeedback";
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSuccess,
+  hapticWarning,
+} from "../../utils/hapticFeedback";
 import { formatDurationClock } from "../../utils/timerUtils";
 import { MINI_PLAYER_SCROLL_PADDING } from "../../constants/layout";
 
@@ -28,8 +33,8 @@ const EditWorkoutPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const weight = useWeight();
   const { workout_id } = route.params || {};
 
@@ -190,13 +195,13 @@ const EditWorkoutPage = () => {
 
       // Filter out exercises with no sets
       const validExercises = exercisesPayload.filter(
-        (ex) => ex.sets.length > 0
+        (ex) => ex.sets.length > 0,
       );
 
       if (validExercises.length === 0) {
         showWarning(
           "No Sets Recorded",
-          "Please add at least one set with weight and reps before saving the workout."
+          "Please add at least one set with weight and reps before saving the workout.",
         );
         return;
       }

@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { useAuth } from "../API/auth/authContext";
 import { authAPI } from "../API/auth/authAPI";
 import { createStyles } from "../styles/login.styles";
-import { getColors } from "../constants/colors";
+import { useThemeColors } from "../constants/useThemeColors";
 import { useTheme } from "../state/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import debounce from "lodash/debounce";
@@ -18,8 +18,8 @@ const SignUpPage = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const [emailError, setEmailError] = useState(false);
   const [emailAvailabilityError, setEmailAvailabilityError] = useState("");
   const [usernameError, setUsernameError] = useState(false);
@@ -39,7 +39,7 @@ const SignUpPage = ({ navigation }) => {
         const result = await authAPI.checkAvailability(username, "");
         setIsUsernameAvailable(result.available);
         setAvailabilityError(
-          result.available ? "" : "Username is already taken"
+          result.available ? "" : "Username is already taken",
         );
       } catch (error) {
         console.error("Availability check failed:", error);
@@ -49,7 +49,7 @@ const SignUpPage = ({ navigation }) => {
         setIsCheckingUsername(false);
       }
     }, 800),
-    []
+    [],
   );
 
   const validateEmail = (email) => {
@@ -104,7 +104,7 @@ const SignUpPage = ({ navigation }) => {
 
   const passwordStrength = useMemo(() => {
     const metRequirements = passwordRequirements.filter(
-      (req) => req.met
+      (req) => req.met,
     ).length;
     return (metRequirements / passwordRequirements.length) * 100;
   }, [passwordRequirements]);
@@ -143,7 +143,7 @@ const SignUpPage = ({ navigation }) => {
       setUsernameError(true);
       showError(
         "Error",
-        "Username must be 3-20 characters and can only contain letters, numbers, underscores, and hyphens"
+        "Username must be 3-20 characters and can only contain letters, numbers, underscores, and hyphens",
       );
       return;
     }
@@ -174,7 +174,7 @@ const SignUpPage = ({ navigation }) => {
         "Registration successful! Please check your email to verify your account.",
         {
           onConfirm: () => navigation.navigate("Login"),
-        }
+        },
       );
     } catch (error) {
       showError("Error", error.message || "Failed to sign up");

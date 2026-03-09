@@ -1,13 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, TextInput } from "react-native";
 import { useTheme } from "../../state/SettingsContext";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/activeExercise.styles";
 
 const NotesInput = ({ notes, onNotesChange, showNotes }) => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   if (!showNotes) return null;
 

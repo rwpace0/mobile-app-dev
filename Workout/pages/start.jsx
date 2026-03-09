@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -17,7 +17,7 @@ import exercisesAPI from "../API/exercisesAPI";
 import planAPI from "../API/planAPI";
 import Header from "../components/static/header";
 import ScrollableCalendar from "../components/ScrollableCalendar";
-import { getColors } from "../constants/colors";
+import { useThemeColors } from "../constants/useThemeColors";
 import { createStyles } from "../styles/start.styles";
 import { useTheme } from "../state/SettingsContext";
 import { useActiveWorkout } from "../state/ActiveWorkoutContext";
@@ -35,8 +35,8 @@ const WorkoutStartPage = () => {
   const navigation = useNavigation();
   const weight = useWeight();
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { activeWorkout, isWorkoutActive, endWorkout } = useActiveWorkout();
   const [templates, setTemplates] = useState([]);
   const [todaysWorkout, setTodaysWorkout] = useState(null);
@@ -73,17 +73,17 @@ const WorkoutStartPage = () => {
               (todayTemplate.exercises || []).map(async (ex) => {
                 try {
                   const exercise = await exercisesAPI.getExerciseById(
-                    ex.exercise_id
+                    ex.exercise_id,
                   );
                   return { ...ex, ...exercise };
                 } catch (err) {
                   console.error(
                     `Failed to get exercise ${ex.exercise_id}:`,
-                    err
+                    err,
                   );
                   return ex;
                 }
-              })
+              }),
             );
             setTodaysWorkout({
               ...todayTemplate,
@@ -111,7 +111,7 @@ const WorkoutStartPage = () => {
           try {
             // Filter out null exercises and ensure no duplicates by exercise_id
             const uniqueExercises = template.exercises.filter(
-              (ex) => ex && ex.exercise_id
+              (ex) => ex && ex.exercise_id,
             );
             const exerciseMap = new Map();
             uniqueExercises.forEach((ex) => {
@@ -128,7 +128,7 @@ const WorkoutStartPage = () => {
                   const { dbManager } = await import("../API/local/dbManager");
                   const [exerciseData] = await dbManager.query(
                     'SELECT name, muscle_group FROM exercises WHERE exercise_id = ? AND sync_status NOT IN ("pending_delete")',
-                    [exercise.exercise_id]
+                    [exercise.exercise_id],
                   );
                   return {
                     ...exercise,
@@ -138,7 +138,7 @@ const WorkoutStartPage = () => {
                 } catch (err) {
                   console.error(
                     `Failed to fetch minimal exercise data ${exercise.exercise_id}:`,
-                    err
+                    err,
                   );
                   return {
                     ...exercise,
@@ -146,12 +146,12 @@ const WorkoutStartPage = () => {
                     muscle_group: "",
                   };
                 }
-              })
+              }),
             );
 
             // Sort exercises by their original order
             exercisesWithMinimalDetails.sort(
-              (a, b) => a.exercise_order - b.exercise_order
+              (a, b) => a.exercise_order - b.exercise_order,
             );
 
             return {
@@ -161,11 +161,11 @@ const WorkoutStartPage = () => {
           } catch (err) {
             console.error(
               `Failed to process template ${template.template_id}:`,
-              err
+              err,
             );
             return template;
           }
-        })
+        }),
       );
 
       setTemplates(templatesWithMinimalExercises);
@@ -186,7 +186,7 @@ const WorkoutStartPage = () => {
         // Clear template cache when leaving the screen
         templateAPI.cache.clearPattern("^templates:");
       };
-    }, [fetchTemplates])
+    }, [fetchTemplates]),
   );
 
   const handleRefresh = useCallback(() => {
@@ -231,7 +231,7 @@ const WorkoutStartPage = () => {
       setLoading(true);
       await templateAPI.duplicateTemplate(
         selectedTemplate.template_id,
-        `${selectedTemplate.name} (Copy)`
+        `${selectedTemplate.name} (Copy)`,
       );
 
       // Refresh the templates list
@@ -295,7 +295,7 @@ const WorkoutStartPage = () => {
         template.exercises.map(async (exercise) => {
           try {
             const fullDetails = await exercisesAPI.getExerciseById(
-              exercise.exercise_id
+              exercise.exercise_id,
             );
             return {
               ...exercise,
@@ -306,11 +306,11 @@ const WorkoutStartPage = () => {
           } catch (err) {
             console.error(
               `Failed to fetch full exercise details ${exercise.exercise_id}:`,
-              err
+              err,
             );
             return exercise;
           }
-        })
+        }),
       );
 
       const templateWithFullDetails = {
@@ -380,7 +380,7 @@ const WorkoutStartPage = () => {
                     completed: false,
                   })),
               };
-            }
+            },
           );
 
           // Navigate to activeWorkout with the exercises and template ID
@@ -449,7 +449,7 @@ const WorkoutStartPage = () => {
                   completed: false,
                 })),
             };
-          }
+          },
         );
 
         // Navigate to activeWorkout with the exercises and template ID
@@ -460,7 +460,7 @@ const WorkoutStartPage = () => {
         });
       }
     },
-    [navigation, isWorkoutActive]
+    [navigation, isWorkoutActive],
   );
 
   const handleTemplatePress = useCallback(
@@ -469,7 +469,7 @@ const WorkoutStartPage = () => {
         template_id: template.template_id,
       });
     },
-    [navigation]
+    [navigation],
   );
 
   const handleResumeWorkout = useCallback(() => {
@@ -509,7 +509,7 @@ const WorkoutStartPage = () => {
         });
       }
     },
-    [navigation]
+    [navigation],
   );
 
   const renderTodaysWorkout = useCallback(() => {
@@ -694,7 +694,7 @@ const WorkoutStartPage = () => {
     },
     (prevProps, nextProps) => {
       return prevProps.template.template_id === nextProps.template.template_id;
-    }
+    },
   );
 
   const renderTemplateItem = useCallback(
@@ -716,7 +716,7 @@ const WorkoutStartPage = () => {
       handleStartRoutine,
       styles,
       colors,
-    ]
+    ],
   );
 
   const renderTemplateList = useCallback(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -21,18 +21,25 @@ import {
   validateImageFile,
 } from "../../utils/permissions";
 import Header from "../../components/static/header";
-import { getColors } from "../../constants/colors";
+import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
-import { hapticLight, hapticSelection, hapticSuccess } from "../../utils/hapticFeedback";
-import { muscleOptions, equipmentOptions } from "../../constants/exerciseOptions";
+import {
+  hapticLight,
+  hapticSelection,
+  hapticSuccess,
+} from "../../utils/hapticFeedback";
+import {
+  muscleOptions,
+  equipmentOptions,
+} from "../../constants/exerciseOptions";
 
 const CreateExercise = () => {
   const { isDark } = useTheme();
-  const colors = getColors(isDark);
-  const styles = createStyles(isDark);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -67,7 +74,7 @@ const CreateExercise = () => {
         equipment: exerciseToEdit.equipment || "",
         muscle_group: exerciseToEdit.muscle_group || "",
         secondary_muscle_groups: Array.isArray(
-          exerciseToEdit.secondary_muscle_groups
+          exerciseToEdit.secondary_muscle_groups,
         )
           ? exerciseToEdit.secondary_muscle_groups
           : [],
@@ -77,7 +84,7 @@ const CreateExercise = () => {
       // Set existing image if available
       if (exerciseToEdit.local_media_path) {
         setSelectedImage(
-          `file://${FileSystem.cacheDirectory}app_media/exercises/${exerciseToEdit.local_media_path}`
+          `file://${FileSystem.cacheDirectory}app_media/exercises/${exerciseToEdit.local_media_path}`,
         );
       }
     }
@@ -108,7 +115,7 @@ const CreateExercise = () => {
       setLoading(true);
       console.log(
         `[CreateExercise] ${isEditing ? "Updating" : "Creating"} exercise:`,
-        formData
+        formData,
       );
 
       let exercise;
@@ -117,14 +124,14 @@ const CreateExercise = () => {
         exercise = await exercisesAPI.updateExercise(
           exerciseId,
           formData,
-          newImageSelected
+          newImageSelected,
         );
         console.log("[CreateExercise] Exercise updated:", exercise);
       } else {
         // Create new exercise, syncing immediately if there's a new image
         exercise = await exercisesAPI.createExercise(
           formData,
-          newImageSelected
+          newImageSelected,
         );
         console.log("[CreateExercise] Exercise created locally:", exercise);
       }
@@ -138,12 +145,12 @@ const CreateExercise = () => {
           const targetExerciseId = exercise.exercise_id;
           console.log(
             "[CreateExercise] Uploading media for exercise ID:",
-            targetExerciseId
+            targetExerciseId,
           );
 
           const { mediaUrl, localPath } = await mediaAPI.uploadExerciseMedia(
             targetExerciseId,
-            selectedImage
+            selectedImage,
           );
           console.log("[CreateExercise] Media uploaded:", {
             mediaUrl,
@@ -155,7 +162,7 @@ const CreateExercise = () => {
             "Warning",
             `Exercise ${
               isEditing ? "updated" : "created"
-            } but failed to upload image. You can try adding the image later.`
+            } but failed to upload image. You can try adding the image later.`,
           );
         } finally {
           setUploadingMedia(false);
@@ -166,12 +173,12 @@ const CreateExercise = () => {
     } catch (error) {
       console.error(
         `Failed to ${isEditing ? "update" : "create"} exercise:`,
-        error
+        error,
       );
       showError(
         "Error",
         error.response?.data?.error ||
-          `Failed to ${isEditing ? "update" : "create"} exercise`
+          `Failed to ${isEditing ? "update" : "create"} exercise`,
       );
     } finally {
       setLoading(false);
@@ -239,10 +246,10 @@ const CreateExercise = () => {
                 ? "Updating..."
                 : "Creating..."
               : uploadingMedia
-              ? "Uploading..."
-              : isEditing
-              ? "Update"
-              : "Create"}
+                ? "Uploading..."
+                : isEditing
+                  ? "Update"
+                  : "Create"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -462,7 +469,7 @@ const CreateExercise = () => {
                             return {
                               ...prev,
                               secondary_muscle_groups: currentSelection.filter(
-                                (m) => m !== option
+                                (m) => m !== option,
                               ),
                             };
                           } else {
