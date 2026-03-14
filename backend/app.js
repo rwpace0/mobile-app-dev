@@ -38,9 +38,14 @@ app.use(express.static(path.join(__dirname, "public")));
 // Security middleware
 app.use(helmet()); // Adds various HTTP headers for security
 
-// Configure CORS
+// Configure CORS: in dev, allow Expo (8081) and this server (3000) from DEV_HOST; in prod, use FRONTEND_URL
+const devHost = process.env.DEV_HOST || "localhost";
+const corsOrigin = process.env.NODE_ENV === "production"
+  ? process.env.FRONTEND_URL
+  : [`http://${devHost}:8081`, `http://${devHost}:3000`];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || process.env.BACKEND_URL || process.env.IOS,
+  origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true

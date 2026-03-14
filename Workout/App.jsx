@@ -49,6 +49,7 @@ import ActiveMini from "./components/activeMini";
 import { useActiveWorkout } from "./state/ActiveWorkoutContext";
 import { mediaAPI } from "./API/mediaAPI";
 import { getDefaultWorkoutName } from "./utils/timerUtils";
+import { DEV_HOST } from "@env";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -56,13 +57,13 @@ const Stack = createNativeStackNavigator();
 // Create navigation reference for global navigation
 const navigationRef = createNavigationContainerRef();
 
-const DEV_IP = process.env.EXPO_PUBLIC_DEV_IP;
 // Deep linking configuration
+const devHost = DEV_HOST || "localhost";
 const linking = {
   prefixes: [
     "workout://",
-    `exp://${DEV_IP}:8081`, // Development URL
-    `https://${DEV_IP}:8081`, // Alternative development URL
+    `exp://${devHost}:8081`, // Development URL
+    `https://${devHost}:8081`, // Alternative development URL
   ],
   config: {
     screens: {

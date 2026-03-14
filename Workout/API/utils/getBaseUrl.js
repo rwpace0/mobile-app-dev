@@ -1,17 +1,11 @@
-import { Platform } from "react-native";
-import { BACKEND_URL, IOS } from "@env";
+import { DEV_HOST, BACKEND_URL } from "@env";
 
 const getBaseUrl = () => {
   if (__DEV__) {
-    if (Platform.OS === "ios") {
-      return `${IOS}`;
-    } else {
-      // For web
-      return `${BACKEND_URL}`;
-    }
-  } else {
-    return `${BACKEND_URL}`;
+    const host = DEV_HOST || "localhost";
+    return `http://${host}:3000`;
   }
+  return `${BACKEND_URL}`;
 };
 
 export default getBaseUrl;

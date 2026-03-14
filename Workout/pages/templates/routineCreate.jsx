@@ -98,7 +98,7 @@ const RoutineCreate = () => {
         <TextInput
           style={styles.routineNameInput}
           placeholder="Routine Name"
-          placeholderTextColor={colors.placeholder}
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
           value={routineName}
           onChangeText={setRoutineName}
         />
@@ -120,6 +120,7 @@ const RoutineCreate = () => {
   );
 
   const handleSave = async () => {
+    console.log("Save button pressed");
     hapticSuccess();
 
     // Validate routine name
@@ -135,6 +136,7 @@ const RoutineCreate = () => {
 
     try {
       setIsSaving(true);
+      console.log("Current exercises:", exercises);
 
       // Transform exercises to match backend format
       const exercisesPayload = exercises.map((exercise, index) => ({
@@ -154,13 +156,17 @@ const RoutineCreate = () => {
           exercise.rir_range_max !== undefined ? exercise.rir_range_max : null,
       }));
 
+      console.log("Exercises payload:", exercisesPayload);
+
       const templateData = {
-        name: routineName.trim(),
+        name: routineName.trim(), // Make sure name is properly set
         is_public: false,
         exercises: exercisesPayload,
       };
 
-      await templateAPI.createTemplate(templateData);
+      console.log("Sending template data:", templateData);
+      const response = await templateAPI.createTemplate(templateData);
+      console.log("Template save response:", response);
     } catch (error) {
       console.error("Failed to save template:", error);
       showError(
@@ -213,7 +219,7 @@ const RoutineCreate = () => {
             <TextInput
               style={styles.routineNameInput}
               placeholder="Routine Name"
-              placeholderTextColor={colors.placeholder}
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={routineName}
               onChangeText={setRoutineName}
             />

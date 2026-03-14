@@ -1,6 +1,9 @@
 // URL configuration for deep linking
 // This handles both development (Expo Go) and production URLs
-const IP = "192.168.1.85";
+// Set DEV_HOST in .env to your machine's local IP (same as App.jsx linking and getBaseUrl)
+import { DEV_HOST } from "@env";
+
+const IP = DEV_HOST || "localhost";
 
 const isDevelopment = __DEV__;
 

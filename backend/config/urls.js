@@ -1,7 +1,7 @@
 // URL configuration for backend - easily switch between dev/production
 // This file centralizes all URL configuration for email redirects
-// change in supabase
-const IP = "192.168.1.85";
+// Set DEV_HOST in .env to your machine's local IP (used for Expo email links and CORS)
+const IP = process.env.DEV_HOST || "localhost";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
