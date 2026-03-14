@@ -1,8 +1,10 @@
 import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { View, Text, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { useTheme } from "../../state/SettingsContext";
-import { hapticLight, hapticWarning } from "../../utils/hapticFeedback";
+import { Button } from "../ui/Button";
+import { hapticWarning } from "../../utils/hapticFeedback";
+import { Spacing } from "../../constants/theme";
 
 const RoutineDeleteModal = ({
   visible,
@@ -27,25 +29,22 @@ const RoutineDeleteModal = ({
             This routine and all its exercises will be permanently deleted.
           </Text>
           <View style={styles.deleteModalButtons}>
-            <TouchableOpacity
-              style={styles.deleteModalConfirmButton}
+            <Button
+              variant="danger"
+              title="Delete Routine"
               onPress={() => {
                 hapticWarning();
                 onDeleteRoutine();
                 onClose();
               }}
-            >
-              <Text style={styles.deleteModalConfirmText}>Delete Routine</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteModalCancelButton}
-              onPress={() => {
-                hapticLight();
-                onClose();
-              }}
-            >
-              <Text style={styles.deleteModalCancelText}>Cancel</Text>
-            </TouchableOpacity>
+              style={{ width: "100%", marginBottom: Spacing.xs }}
+            />
+            <Button
+              variant="secondary"
+              title="Cancel"
+              onPress={onClose}
+              style={{ width: "100%" }}
+            />
           </View>
         </View>
       </View>

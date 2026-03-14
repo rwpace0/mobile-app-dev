@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { View, Text, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { useTheme } from "../../state/SettingsContext";
+import { Button } from "../ui/Button";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 
 const AlertModal = ({
@@ -45,21 +46,19 @@ const AlertModal = ({
           <Text style={styles.alertModalText}>{message}</Text>
           <View style={styles.alertModalButtons}>
             {showCancel && (
-              <TouchableOpacity
-                style={styles.alertModalButton}
+              <Button
+                variant="secondary"
+                title={cancelText}
                 onPress={handleCancel}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.alertModalButtonText}>{cancelText}</Text>
-              </TouchableOpacity>
+                style={{ flex: 1 }}
+              />
             )}
-            <TouchableOpacity
-              style={styles.alertModalButton}
+            <Button
+              variant="primary"
+              title={confirmText}
               onPress={handleConfirm}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.alertModalButtonText}>{confirmText}</Text>
-            </TouchableOpacity>
+              style={{ flex: 1 }}
+            />
           </View>
         </View>
       </View>

@@ -11,6 +11,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import { createStyles } from "../../styles/workoutHistory.styles";
 import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
@@ -308,15 +309,11 @@ const WorkoutHistoryPage = () => {
           <View style={styles.loadingContainer}>
             <Text style={styles.errorText}>{error || "No workouts found"}</Text>
             {error && (
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={() => {
-                  hapticLight();
-                  onRefresh();
-                }}
-              >
-                <Text style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
+              <Button
+                variant="primary"
+                title="Retry"
+                onPress={onRefresh}
+              />
             )}
           </View>
         }

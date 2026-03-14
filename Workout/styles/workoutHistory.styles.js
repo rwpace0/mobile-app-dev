@@ -298,20 +298,6 @@ export const createStyles = (isDark = true) => {
       padding: Spacing.l,
     },
 
-    retryButton: {
-      marginTop: Spacing.m,
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.l,
-      backgroundColor: colors.primaryBlue,
-      borderRadius: BorderRadius.md,
-    },
-
-    retryText: {
-      color: colors.textWhite,
-      fontSize: FontSize.base,
-      fontWeight: FontWeight.semiBold,
-    },
-
     footerRetry: {
       paddingVertical: Spacing.m,
       alignItems: "center",
@@ -341,19 +327,6 @@ export const createStyles = (isDark = true) => {
     },
 
     // Start Routine Button
-    startRoutineButton: {
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      alignItems: "center",
-      marginTop: Spacing.m,
-    },
-    startRoutineText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
-    },
   });
 };
 

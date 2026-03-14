@@ -9,8 +9,9 @@ import { useTheme } from "../state/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import debounce from "lodash/debounce";
 import AlertModal from "../components/modals/AlertModal";
+import { Button } from "../components/ui/Button";
 import { useAlertModal } from "../utils/useAlertModal";
-import { hapticLight, hapticMedium } from "../utils/hapticFeedback";
+import { hapticLight } from "../utils/hapticFeedback";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -275,22 +276,14 @@ const SignUpPage = ({ navigation }) => {
         </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.button,
-          (!canSubmit || loading) && styles.buttonDisabled,
-        ]}
-        activeOpacity={0.8}
-        onPress={() => {
-          hapticMedium();
-          handleSignup();
-        }}
+      <Button
+        variant="primary"
+        title="Sign Up"
+        onPress={handleSignup}
         disabled={!canSubmit || loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "Signing up..." : "Sign Up"}
-        </Text>
-      </TouchableOpacity>
+        loading={loading}
+        style={{ width: "100%" }}
+      />
 
       <TouchableOpacity
         style={styles.googleButton}

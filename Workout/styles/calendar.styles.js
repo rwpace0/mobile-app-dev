@@ -200,19 +200,6 @@ export const createStyles = (isDark = true) => {
       marginBottom: Spacing.s,
     },
 
-    retryButton: {
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.s,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-    },
-
-    retryButtonText: {
-      color: colors.textWhite,
-      fontSize: FontSize.base,
-      fontWeight: FontWeight.semiBold,
-      textAlign: "center",
-    },
   });
 };
 

@@ -11,6 +11,7 @@ import { CalendarList } from "react-native-calendars";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import WorkoutSelectionModal from "../../components/modals/WorkoutSelectionModal";
 import { createStyles } from "../../styles/calendar.styles";
 import { useThemeColors } from "../../constants/useThemeColors";
@@ -219,12 +220,11 @@ const CalendarViewPage = () => {
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
+          <Button
+            variant="primary"
+            title="Retry"
             onPress={() => loadWorkouts()}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+          />
         </View>
       )}
     </SafeAreaView>

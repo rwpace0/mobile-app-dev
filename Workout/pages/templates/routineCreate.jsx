@@ -18,6 +18,7 @@ import RoutineExerciseComponent from "../../components/routineExerciseCard";
 import templateAPI from "../../API/templateAPI";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 import { hapticLight, hapticSuccess } from "../../utils/hapticFeedback";
@@ -249,13 +250,12 @@ const RoutineCreate = () => {
               Add an exercise to create your routine
             </Text>
 
-            <TouchableOpacity
-              style={styles.addExerciseButton}
+            <Button
+              variant="primary"
+              title="Add Exercise"
               onPress={handleAddExercise}
-            >
-              <Ionicons name="add" size={20} color={colors.textPrimary} />
-              <Text style={styles.addExerciseText}>Add Exercise</Text>
-            </TouchableOpacity>
+              style={styles.addExerciseButton}
+            />
           </View>
         </ScrollView>
       ) : (
@@ -270,13 +270,12 @@ const RoutineCreate = () => {
           onScrollBeginDrag={() => Keyboard.dismiss()}
           ListHeaderComponent={RoutineNameHeader}
           ListFooterComponent={() => (
-            <TouchableOpacity
-              style={styles.addExerciseButton}
+            <Button
+              variant="primary"
+              title="Add Exercise"
               onPress={handleAddExercise}
-            >
-              <Ionicons name="add" size={20} color={colors.textPrimary} />
-              <Text style={styles.addExerciseText}>Add Exercise</Text>
-            </TouchableOpacity>
+              style={styles.addExerciseButton}
+            />
           )}
         />
       )}

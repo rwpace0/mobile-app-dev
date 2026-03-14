@@ -57,36 +57,6 @@ export const createStyles = (isDark = true) => {
     folderDeleteButtons: {
       width: "100%",
     },
-    deleteModalCancelButton: {
-      width: "100%",
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.backgroundCard,
-      marginTop: Spacing.xs,
-    },
-    deleteModalConfirmButton: {
-      width: "100%",
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.backgroundCard,
-      borderWidth: 1,
-      borderColor: colors.accentRed,
-      marginBottom: Spacing.xs,
-    },
-    deleteModalCancelText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      textAlign: "center",
-      paddingVertical: Spacing.xs,
-    },
-    deleteModalConfirmText: {
-      color: colors.accentRed,
-      fontSize: FontSize.medium,
-      textAlign: "center",
-      paddingVertical: Spacing.xs,
-    },
     folderDeleteOnlyButton: {
       width: "100%",
       paddingVertical: Spacing.xs,
@@ -102,21 +72,6 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.medium,
       textAlign: "center",
       paddingVertical: Spacing.xs,
-    },
-    primaryModalButton: {
-      width: "100%",
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.primaryBlue,
-      marginBottom: Spacing.xs,
-    },
-    primaryModalButtonText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      textAlign: "center",
-      paddingVertical: Spacing.xs,
-      fontWeight: FontWeight.semiBold,
     },
     folderInput: {
       backgroundColor: colors.backgroundCard,
@@ -167,21 +122,6 @@ export const createStyles = (isDark = true) => {
       width: "100%",
       gap: Spacing.m,
     },
-    alertModalButton: {
-      backgroundColor: colors.primaryBlue,
-      flex: 1,
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      alignItems: "center",
-    },
-    alertModalButtonText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
-      textAlign: "center",
-      width: "100%",
-    },
 
     // Active Workout Modal Styles
     activeWorkoutModalContent: {
@@ -200,49 +140,6 @@ export const createStyles = (isDark = true) => {
     },
     activeWorkoutModalButtons: {
       width: "100%",
-    },
-    activeWorkoutResumeButton: {
-      width: "100%",
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.primaryBlue,
-      marginBottom: Spacing.xs,
-    },
-    activeWorkoutResumeButtonText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      textAlign: "center",
-      paddingVertical: Spacing.xs,
-    },
-    activeWorkoutStartNewButton: {
-      width: "100%",
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.backgroundCard,
-      borderWidth: 1,
-      borderColor: colors.accentRed,
-      marginBottom: Spacing.xs,
-    },
-    activeWorkoutStartNewButtonText: {
-      color: colors.accentRed,
-      fontSize: FontSize.medium,
-      textAlign: "center",
-      paddingVertical: Spacing.xs,
-    },
-    activeWorkoutCancelButton: {
-      width: "100%",
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.backgroundCard,
-    },
-    activeWorkoutCancelButtonText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      textAlign: "center",
-      paddingVertical: Spacing.xs,
     },
 
     modalTitle: {

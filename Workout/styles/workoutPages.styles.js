@@ -143,25 +143,9 @@ export const createStyles = (isDark = true) => {
     },
 
     addExerciseButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.s,
-      paddingHorizontal: Spacing.xxxs,
-      borderRadius: BorderRadius.md,
       marginTop: Spacing.m,
-      alignSelf: "center",
-      ...Shadow.medium,
       width: "100%",
-    },
-
-    addExerciseText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.medium,
-      marginLeft: Spacing.s,
-      textAlign: "center",
+      alignSelf: "center",
     },
 
     buttonContainer: {

@@ -73,21 +73,6 @@ export const createStyles = (isDark = true) => {
       lineHeight: 24,
     },
 
-    createPlanButton: {
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.xl,
-      borderRadius: BorderRadius.md,
-      ...Shadow.medium,
-    },
-
-    createPlanButtonText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
-      textAlign: "center",
-    },
-
     // Template Container - Flat design matching workout history/routine detail
     templateContainer: {
       paddingTop: Spacing.m,

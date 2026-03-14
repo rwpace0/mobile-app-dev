@@ -16,6 +16,7 @@ import templateAPI from "../API/templateAPI";
 import exercisesAPI from "../API/exercisesAPI";
 import planAPI from "../API/planAPI";
 import Header from "../components/static/header";
+import { Button } from "../components/ui/Button";
 import ScrollableCalendar from "../components/ScrollableCalendar";
 import { useThemeColors } from "../constants/useThemeColors";
 import { createStyles } from "../styles/start.styles";
@@ -585,17 +586,14 @@ const WorkoutStartPage = () => {
               <Text style={styles.templateExercises}>
                 {todaysWorkout.exercises.map((ex) => ex.name).join(" • ")}
               </Text>
-              <TouchableOpacity
-                style={styles.startRoutineButton}
+              <Button
+                variant="primary"
+                title="Start Today's Workout"
                 onPress={(e) => {
-                  e.stopPropagation();
+                  e?.stopPropagation?.();
                   handleStartRoutine(todaysWorkout);
                 }}
-              >
-                <Text style={styles.startRoutineText}>
-                  Start Today's Workout
-                </Text>
-              </TouchableOpacity>
+              />
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -679,15 +677,14 @@ const WorkoutStartPage = () => {
             <Text style={itemStyles.templateExercises}>
               {template.exercises.map((ex) => ex.name).join(" • ")}
             </Text>
-            <TouchableOpacity
-              style={itemStyles.startRoutineButton}
+            <Button
+              variant="primary"
+              title="Start Routine"
               onPress={(e) => {
-                e.stopPropagation();
+                e?.stopPropagation?.();
                 onStart(template);
               }}
-            >
-              <Text style={itemStyles.startRoutineText}>Start Routine</Text>
-            </TouchableOpacity>
+            />
           </TouchableOpacity>
         </Animated.View>
       );
@@ -732,15 +729,11 @@ const WorkoutStartPage = () => {
       return (
         <View style={styles.emptyRoutinesContainer}>
           <Text style={styles.emptyRoutinesText}>"Error loading routines"</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => {
-              hapticLight();
-              fetchTemplates();
-            }}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          <Button
+            variant="primary"
+            title="Retry"
+            onPress={fetchTemplates}
+          />
         </View>
       );
     }
@@ -819,14 +812,11 @@ const WorkoutStartPage = () => {
             />
           </TouchableOpacity>
           {isQuickStartExpanded && (
-            <TouchableOpacity
-              style={styles.startEmptyWorkoutButton}
+            <Button
+              variant="primary"
+              title="Start Empty Workout"
               onPress={handleStartEmptyWorkout}
-            >
-              <Text style={styles.startEmptyWorkoutText}>
-                Start Empty Workout
-              </Text>
-            </TouchableOpacity>
+            />
           )}
         </View>
 

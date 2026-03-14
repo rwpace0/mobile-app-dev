@@ -37,18 +37,6 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
       marginBottom: Spacing.m,
     },
-    retryButton: {
-      paddingVertical: Spacing.s,
-      paddingHorizontal: Spacing.l,
-      backgroundColor: colors.primaryBlue,
-      borderRadius: BorderRadius.md,
-    },
-    retryText: {
-      fontSize: FontSize.base,
-      fontWeight: FontWeight.semiBold,
-      color: colors.textWhite,
-    },
-
     // Period Selector Section
     periodSelectorContainer: {
       marginHorizontal: Spacing.m,

@@ -6,8 +6,9 @@ import { createStyles } from "../styles/login.styles";
 import { useThemeColors } from "../constants/useThemeColors";
 import { useTheme } from "../state/SettingsContext";
 import AlertModal from "../components/modals/AlertModal";
+import { Button } from "../components/ui/Button";
 import { useAlertModal } from "../utils/useAlertModal";
-import { hapticLight, hapticMedium } from "../utils/hapticFeedback";
+import { hapticLight } from "../utils/hapticFeedback";
 
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -161,19 +162,14 @@ const LoginPage = ({ navigation }) => {
         </View>
       )}
 
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        activeOpacity={0.8}
-        onPress={() => {
-          hapticMedium();
-          handleLogin();
-        }}
+      <Button
+        variant="primary"
+        title="Log In"
+        onPress={handleLogin}
         disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "Logging in..." : "Log In"}
-        </Text>
-      </TouchableOpacity>
+        loading={loading}
+        style={{ width: "100%" }}
+      />
 
       <TouchableOpacity
         style={styles.googleButton}

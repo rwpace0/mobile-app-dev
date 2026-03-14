@@ -11,6 +11,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { createStyles } from "../../../styles/settings.styles";
 import Header from "../../../components/static/header";
+import { Button } from "../../../components/ui/Button";
 import { useThemeColors } from "../../../constants/useThemeColors";
 import { useTheme } from "../../../state/SettingsContext";
 import { authAPI } from "../../../API/auth/authAPI";
@@ -178,17 +179,13 @@ const ChangePassword = () => {
           <Text style={styles.errorText}>Passwords do not match</Text>
         )}
 
-        <TouchableOpacity
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+        <Button
+          variant="primary"
+          title="Save Changes"
           onPress={handleSave}
           disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.textPrimary} />
-          ) : (
-            <Text style={styles.saveButtonText}>Save Changes</Text>
-          )}
-        </TouchableOpacity>
+          loading={loading}
+        />
       </ScrollView>
 
       <AlertModal

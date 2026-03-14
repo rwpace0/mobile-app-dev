@@ -193,21 +193,6 @@ export const createStyles = (isDark = true) => {
       paddingHorizontal: 8,
       paddingVertical: Spacing.m,
     },
-    saveButton: {
-      backgroundColor: colors.primaryBlue,
-      marginHorizontal: Spacing.m,
-      marginTop: Spacing.l,
-      paddingVertical: Spacing.m,
-      borderRadius: BorderRadius.md,
-      alignItems: "center",
-    },
-    saveButtonText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
-      textAlign: "center",
-    },
-
     // Segmented Control styles
     unitSection: {
       paddingHorizontal: Spacing.m,
@@ -290,9 +275,6 @@ export const createStyles = (isDark = true) => {
     },
     formFieldInputError: {
       borderBottomColor: colors.accentRed,
-    },
-    saveButtonDisabled: {
-      opacity: 0.7,
     },
     scrollView: {
       flex: 1,

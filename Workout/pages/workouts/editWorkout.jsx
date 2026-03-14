@@ -13,6 +13,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import ActiveExerciseComponent from "../../components/activeExercise";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import { useThemeColors } from "../../constants/useThemeColors";
 import { useTheme } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/workoutPages.styles";
@@ -302,13 +303,12 @@ const EditWorkoutPage = () => {
               Add an exercise to continue editing
             </Text>
 
-            <TouchableOpacity
-              style={styles.addExerciseButton}
+            <Button
+              variant="primary"
+              title="Add Exercise"
               onPress={handleAddExercise}
-            >
-              <Ionicons name="add" size={20} color={colors.textPrimary} />
-              <Text style={styles.addExerciseText}>Add Exercise</Text>
-            </TouchableOpacity>
+              style={styles.addExerciseButton}
+            />
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity
@@ -353,13 +353,12 @@ const EditWorkoutPage = () => {
               />
             ))}
 
-            <TouchableOpacity
-              style={styles.addExerciseButton}
+            <Button
+              variant="primary"
+              title="Add Exercise"
               onPress={handleAddExercise}
-            >
-              <Ionicons name="add" size={20} color={colors.textPrimary} />
-              <Text style={styles.addExerciseText}>Add Exercise</Text>
-            </TouchableOpacity>
+              style={styles.addExerciseButton}
+            />
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity

@@ -237,20 +237,6 @@ export const createStyles = (isDark = true) => {
       paddingBottom: Spacing.s,
     },
 
-    addButton: {
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      alignItems: "center",
-    },
-
-    addButtonText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
-      textAlign: "center",
-    },
   });
 };
 

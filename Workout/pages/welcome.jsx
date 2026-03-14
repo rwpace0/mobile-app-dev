@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { createStyles } from "../styles/login.styles";
 import { useTheme } from "../state/SettingsContext";
+import { Button } from "../components/ui/Button";
 
 const WelcomePage = ({ navigation }) => {
   const { isDark } = useTheme();
@@ -12,13 +13,12 @@ const WelcomePage = ({ navigation }) => {
       <Text style={styles.subtitle}>subtitle</Text>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.8}
+        <Button
+          variant="primary"
+          title="Sign Up"
           onPress={() => navigation.navigate("SignUp")}
-        >
-          <Text style={styles.buttonText}>Sign Up</Text>
-        </TouchableOpacity>
+          style={{ width: "100%" }}
+        />
 
         <TouchableOpacity
           style={[styles.button, styles.googleButton]}

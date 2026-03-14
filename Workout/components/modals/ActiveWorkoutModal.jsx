@@ -1,12 +1,13 @@
 import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { View, Text, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { useTheme } from "../../state/SettingsContext";
+import { Button } from "../ui/Button";
 import {
-  hapticLight,
   hapticMedium,
   hapticSuccess,
 } from "../../utils/hapticFeedback";
+import { Spacing } from "../../constants/theme";
 
 const ActiveWorkoutModal = ({
   visible,
@@ -33,11 +34,6 @@ const ActiveWorkoutModal = ({
     onClose();
   };
 
-  const handleCancel = () => {
-    hapticLight();
-    onClose();
-  };
-
   return (
     <Modal
       visible={visible}
@@ -51,31 +47,24 @@ const ActiveWorkoutModal = ({
             You have a workout in progress
           </Text>
           <View style={styles.activeWorkoutModalButtons}>
-            <TouchableOpacity
-              style={styles.activeWorkoutResumeButton}
+            <Button
+              variant="primary"
+              title="Resume workout"
               onPress={handleResumeWorkout}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.activeWorkoutResumeButtonText}>
-                Resume workout
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.activeWorkoutStartNewButton}
+              style={{ width: "100%", marginBottom: Spacing.xs }}
+            />
+            <Button
+              variant="danger"
+              title="Start new workout"
               onPress={handleStartNew}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.activeWorkoutStartNewButtonText}>
-                Start new workout
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.activeWorkoutCancelButton}
-              onPress={handleCancel}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.activeWorkoutCancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+              style={{ width: "100%", marginBottom: Spacing.xs }}
+            />
+            <Button
+              variant="secondary"
+              title="Cancel"
+              onPress={onClose}
+              style={{ width: "100%" }}
+            />
           </View>
         </View>
       </View>

@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { useTheme } from "../../state/SettingsContext";
-import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
+import { Button } from "../ui/Button";
+import { Spacing } from "../../constants/theme";
+import { hapticMedium } from "../../utils/hapticFeedback";
 
 const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
   const { isDark } = useTheme();
@@ -20,25 +21,22 @@ const DeleteConfirmModal = ({ visible, onClose, onConfirm, title }) => {
         <View style={styles.deleteModalContent}>
           <Text style={styles.deleteModalText}>{title}</Text>
           <View style={styles.deleteModalButtons}>
-            <TouchableOpacity
-              style={styles.deleteModalConfirmButton}
+            <Button
+              variant="danger"
+              title="Delete"
               onPress={() => {
                 hapticMedium();
                 onConfirm();
                 onClose();
               }}
-            >
-              <Text style={styles.deleteModalConfirmText}>Delete</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteModalCancelButton}
-              onPress={() => {
-                hapticLight();
-                onClose();
-              }}
-            >
-              <Text style={styles.deleteModalCancelText}>Cancel</Text>
-            </TouchableOpacity>
+              style={{ width: "100%", marginBottom: Spacing.xs }}
+            />
+            <Button
+              variant="secondary"
+              title="Cancel"
+              onPress={onClose}
+              style={{ width: "100%" }}
+            />
           </View>
         </View>
       </View>

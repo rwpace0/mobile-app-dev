@@ -14,6 +14,7 @@ import DraggableFlatList from "react-native-draggable-flatlist";
 import ActiveExerciseComponent from "../../components/activeExercise";
 import workoutAPI from "../../API/workoutAPI";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import { useTheme } from "../../state/SettingsContext";
 import { useThemeColors } from "../../constants/useThemeColors";
 import { createStyles } from "../../styles/workoutPages.styles";
@@ -877,13 +878,12 @@ const ActiveWorkoutPage = () => {
                 Add an exercise to start your workout
               </Text>
 
-              <TouchableOpacity
-                style={styles.addExerciseButton}
+              <Button
+                variant="primary"
+                title="Add Exercise"
                 onPress={handleAddExercise}
-              >
-                <Ionicons name="add" size={20} color={colors.textWhite} />
-                <Text style={styles.addExerciseText}>Add Exercise</Text>
-              </TouchableOpacity>
+                style={styles.addExerciseButton}
+              />
 
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
@@ -937,13 +937,12 @@ const ActiveWorkoutPage = () => {
             )}
             ListFooterComponent={() => (
               <View>
-                <TouchableOpacity
-                  style={styles.addExerciseButton}
+                <Button
+                  variant="primary"
+                  title="Add Exercise"
                   onPress={handleAddExercise}
-                >
-                  <Ionicons name="add" size={20} color={colors.textWhite} />
-                  <Text style={styles.addExerciseText}>Add Exercise</Text>
-                </TouchableOpacity>
+                  style={styles.addExerciseButton}
+                />
 
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity

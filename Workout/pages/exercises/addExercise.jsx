@@ -16,6 +16,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import exercisesAPI from "../../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import * as FileSystem from "expo-file-system/legacy";
 import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
@@ -420,16 +421,12 @@ const AddExercisePage = ({ route }) => {
             },
           ]}
         >
-          <TouchableOpacity
-            style={styles.addButton}
+          <Button
+            variant="primary"
+            title={`Add ${selectedExercises.length} exercise${selectedExercises.length !== 1 ? "s" : ""}`}
             onPress={handleAddSelected}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.addButtonText}>
-              Add {selectedExercises.length} exercise
-              {selectedExercises.length !== 1 ? "s" : ""}
-            </Text>
-          </TouchableOpacity>
+            style={{ width: "100%" }}
+          />
         </View>
       )}
     </View>

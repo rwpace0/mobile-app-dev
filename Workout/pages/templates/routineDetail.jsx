@@ -19,6 +19,7 @@ import workoutAPI from "../../API/workoutAPI";
 import templateAPI from "../../API/templateAPI";
 import exercisesAPI from "../../API/exercisesAPI";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import { useWeight } from "../../utils/useWeight";
 import ActiveWorkoutModal from "../../components/modals/ActiveWorkoutModal";
 import { hapticLight, hapticSuccess } from "../../utils/hapticFeedback";
@@ -274,15 +275,11 @@ const RoutineDetail = () => {
           <Text style={styles.errorText}>
             {error || "Failed to load routine data"}
           </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => {
-              hapticLight();
-              fetchRoutineDetails();
-            }}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          <Button
+            variant="primary"
+            title="Retry"
+            onPress={fetchRoutineDetails}
+          />
         </View>
       </SafeAreaView>
     );
@@ -370,12 +367,11 @@ const RoutineDetail = () => {
               <Text style={styles.statText}>{totalSets} sets</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.startRoutineButton}
+          <Button
+            variant="primary"
+            title="Start Routine"
             onPress={handleStartWorkout}
-          >
-            <Text style={styles.startRoutineText}>Start Routine</Text>
-          </TouchableOpacity>
+          />
         </View>
 
         {/* Always display template exercises (the actual routine structure) */}

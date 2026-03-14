@@ -31,6 +31,7 @@ import { useThemeColors } from "../../constants/useThemeColors";
 import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import DeleteConfirmModal from "../../components/modals/DeleteConfirmModal";
 import { useWeight } from "../../utils/useWeight";
@@ -993,15 +994,11 @@ const ExerciseDetailPage = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => {
-              hapticLight();
-              fetchData();
-            }}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          <Button
+            variant="primary"
+            title="Retry"
+            onPress={fetchData}
+          />
         </View>
       </SafeAreaView>
     );

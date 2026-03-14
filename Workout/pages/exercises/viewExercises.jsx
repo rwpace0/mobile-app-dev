@@ -18,6 +18,7 @@ import { mediaCache } from "../../API/local/MediaCache";
 import { useTheme } from "../../state/SettingsContext";
 import { useThemeColors } from "../../constants/useThemeColors";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import FilterModal from "../../components/modals/FilterModal";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 import { muscleOptions, equipmentOptions } from "../../constants/exerciseOptions";
@@ -265,15 +266,11 @@ const ViewExercisesPage = () => {
     return (
       <View style={styles.centerContent}>
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => {
-            hapticLight();
-            loadExercises();
-          }}
-        >
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
+        <Button
+          variant="primary"
+          title="Retry"
+          onPress={loadExercises}
+        />
       </View>
     );
   }

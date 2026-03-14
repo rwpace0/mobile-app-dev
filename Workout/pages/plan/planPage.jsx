@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import ScrollableCalendar from "../../components/ScrollableCalendar";
 import VolumeStats from "../../components/VolumeStats";
 import BottomSheetModal from "../../components/modals/bottomModal";
@@ -167,12 +168,11 @@ const PlanPage = () => {
         Create a workout plan to schedule your routines throughout the week and
         track your weekly volume.
       </Text>
-      <TouchableOpacity
-        style={styles.createPlanButton}
+      <Button
+        variant="primary"
+        title="Create Plan"
         onPress={handleCreatePlan}
-      >
-        <Text style={styles.createPlanButtonText}>Create Plan</Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 

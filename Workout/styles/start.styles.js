@@ -53,20 +53,6 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.semiBold,
     },
 
-    startEmptyWorkoutButton: {
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      alignItems: "center",
-    },
-
-    startEmptyWorkoutText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      textAlign: "center",
-    },
-
     routineActionButtons: {
       flexDirection: "row",
       marginBottom: Spacing.m,
@@ -131,35 +117,6 @@ export const createStyles = (isDark = true) => {
       fontSize: FontSize.base,
       marginBottom: Spacing.m,
       lineHeight: 22,
-    },
-
-    startRoutineButton: {
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      alignItems: "center",
-    },
-
-    startRoutineText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
-      textAlign: "center",
-    },
-
-    retryButton: {
-      marginTop: Spacing.m,
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.s,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-    },
-
-    retryText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.semiBold,
     },
 
     todayWorkoutContainer: {

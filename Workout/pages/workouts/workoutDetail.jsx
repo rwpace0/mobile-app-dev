@@ -17,6 +17,7 @@ import { useTheme } from "../../state/SettingsContext";
 import workoutAPI from "../../API/workoutAPI";
 import exercisesAPI from "../../API/exercisesAPI";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import { useWeight } from "../../utils/useWeight";
 import { calculateExercisePR } from "../../utils/calculateExercisePRs";
 import { hapticLight } from "../../utils/hapticFeedback";
@@ -126,12 +127,11 @@ const WorkoutDetail = () => {
         <Header title="Workout Detail" leftComponent={{ type: "back" }} />
         <View style={styles.loadingContainer}>
           <Text style={styles.errorText}>{error || "Workout not found"}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
+          <Button
+            variant="primary"
+            title="Retry"
             onPress={() => fetchWorkoutDetails()}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          />
         </View>
       </SafeAreaView>
     );

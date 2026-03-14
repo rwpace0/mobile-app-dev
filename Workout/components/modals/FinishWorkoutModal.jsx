@@ -1,10 +1,11 @@
 import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { View, Text, Modal } from "react-native";
 import { createStyles } from "../../styles/modals.styles";
 import { useTheme } from "../../state/SettingsContext";
+import { Button } from "../ui/Button";
+import { Spacing } from "../../constants/theme";
 import {
   hapticLight,
-  hapticSuccess,
   hapticWarning,
 } from "../../utils/hapticFeedback";
 
@@ -44,39 +45,31 @@ const FinishWorkoutModal = ({
               do?
             </Text>
             <View style={styles.deleteModalButtons}>
-              <TouchableOpacity
-                style={styles.primaryModalButton}
+              <Button
+                variant="primary"
+                title="Complete Unfinished Sets"
                 onPress={() => {
-                  hapticSuccess();
                   if (onCompleteSets) onCompleteSets();
                   onClose();
                 }}
-              >
-                <Text style={styles.primaryModalButtonText}>
-                  Complete Unfinished Sets
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteModalConfirmButton}
+                style={{ width: "100%", marginBottom: Spacing.xs }}
+              />
+              <Button
+                variant="danger"
+                title="Discard Unfinished Sets"
                 onPress={() => {
                   hapticWarning();
                   if (onDiscardSets) onDiscardSets();
                   onClose();
                 }}
-              >
-                <Text style={styles.deleteModalConfirmText}>
-                  Discard Unfinished Sets
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteModalCancelButton}
-                onPress={() => {
-                  hapticLight();
-                  onClose();
-                }}
-              >
-                <Text style={styles.deleteModalCancelText}>Cancel</Text>
-              </TouchableOpacity>
+                style={{ width: "100%", marginBottom: Spacing.xs }}
+              />
+              <Button
+                variant="secondary"
+                title="Cancel"
+                onPress={onClose}
+                style={{ width: "100%" }}
+              />
             </View>
           </View>
         </View>
@@ -127,39 +120,31 @@ const FinishWorkoutModal = ({
               the same?
             </Text>
             <View style={styles.deleteModalButtons}>
-              <TouchableOpacity
-                style={styles.primaryModalButton}
+              <Button
+                variant="primary"
+                title="Update Routine"
                 onPress={() => {
-                  hapticSuccess();
                   if (onUpdateRoutine) onUpdateRoutine();
                   onClose();
                 }}
-              >
-                <Text style={styles.primaryModalButtonText}>
-                  Update Routine
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteModalConfirmButton}
+                style={{ width: "100%", marginBottom: Spacing.xs }}
+              />
+              <Button
+                variant="danger"
+                title="Keep Routine Same"
                 onPress={() => {
                   hapticLight();
                   if (onKeepRoutineSame) onKeepRoutineSame();
                   onClose();
                 }}
-              >
-                <Text style={styles.deleteModalConfirmText}>
-                  Keep Routine Same
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteModalCancelButton}
-                onPress={() => {
-                  hapticLight();
-                  onClose();
-                }}
-              >
-                <Text style={styles.deleteModalCancelText}>Cancel</Text>
-              </TouchableOpacity>
+                style={{ width: "100%", marginBottom: Spacing.xs }}
+              />
+              <Button
+                variant="secondary"
+                title="Cancel"
+                onPress={onClose}
+                style={{ width: "100%" }}
+              />
             </View>
           </View>
         </View>
