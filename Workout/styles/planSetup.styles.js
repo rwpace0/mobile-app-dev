@@ -88,7 +88,7 @@ export const createStyles = (isDark = true) => {
     addDayButton: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "flex-start",
+      justifyContent: "center",
       backgroundColor: colors.primaryBlue,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.l,
@@ -104,24 +104,8 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.semiBold,
     },
 
-    // Add routine button
-    addRoutineButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      backgroundColor: colors.backgroundCard,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.l,
-      borderRadius: BorderRadius.md,
-      ...Shadow.small,
-    },
-
-    addRoutineText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      marginLeft: Spacing.s,
-      fontWeight: FontWeight.semiBold,
-    },
+    // Add routine button (layout only; Button provides variant styles)
+    addRoutineButton: {},
 
     // Days list container
     daysListContainer: {
@@ -181,12 +165,12 @@ export const createStyles = (isDark = true) => {
     },
 
     deleteButton: {
-      backgroundColor: "#FF3B30",
       justifyContent: "center",
       alignItems: "center",
       width: 75,
       borderTopRightRadius: BorderRadius.md,
       borderBottomRightRadius: BorderRadius.md,
+      // Background from Button variant="danger" (colors.accentRed)
     },
 
     // Calendar Modal

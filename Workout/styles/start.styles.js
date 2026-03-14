@@ -59,22 +59,9 @@ export const createStyles = (isDark = true) => {
       width: "100%",
     },
 
-    // New Routine CTA
+    // New Routine CTA (layout only; Button provides variant styles)
     newRoutineButton: {
       flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.backgroundCard,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.m,
-      borderRadius: BorderRadius.md,
-      ...Shadow.medium,
-    },
-
-    newRoutineText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      marginLeft: Spacing.s,
     },
 
     emptyRoutinesContainer: {

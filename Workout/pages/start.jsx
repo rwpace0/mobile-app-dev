@@ -843,17 +843,18 @@ const WorkoutStartPage = () => {
             <>
               {/* New Routine button */}
               <View style={styles.routineActionButtons}>
-                <TouchableOpacity
-                  style={styles.newRoutineButton}
+                <Button
+                  variant="secondary"
+                  title="New Routine"
+                  leftIcon={
+                    <Ionicons name="add" size={20} color={colors.textPrimary} />
+                  }
                   onPress={() => {
                     hapticMedium();
                     handleNewRoutine();
                   }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="add" size={20} color={colors.textPrimary} />
-                  <Text style={styles.newRoutineText}>New Routine</Text>
-                </TouchableOpacity>
+                  style={styles.newRoutineButton}
+                />
               </View>
 
               {/* Templates List */}

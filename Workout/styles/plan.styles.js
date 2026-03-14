@@ -270,23 +270,9 @@ export const createStyles = (isDark = true) => {
       textAlign: "center",
     },
 
-    // New Routine Button
+    // New Routine Button (layout only; Button provides variant styles)
     newRoutineButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.primaryBlue,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.l,
-      borderRadius: BorderRadius.md,
       marginBottom: Spacing.l,
-      ...Shadow.small,
-    },
-
-    newRoutineText: {
-      color: colors.textWhite,
-      fontSize: FontSize.medium,
-      marginLeft: Spacing.s,
     },
 
     // Volume Stats Section

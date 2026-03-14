@@ -886,29 +886,18 @@ const ActiveWorkoutPage = () => {
               />
 
               <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                  style={styles.settingsButton}
+                <Button
+                  variant="outline"
+                  title="Settings"
                   onPress={handleSettings}
-                >
-                  <Ionicons
-                    name="settings-outline"
-                    size={20}
-                    color={colors.textPrimary}
-                  />
-                  <Text style={styles.settingsText}>Settings</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.discardButton}
+                  style={styles.settingsButton}
+                />
+                <Button
+                  variant="danger"
+                  title="Discard"
                   onPress={handleDiscard}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={20}
-                    color={colors.accentRed}
-                  />
-                  <Text style={styles.discardText}>Discard</Text>
-                </TouchableOpacity>
+                  style={styles.discardButton}
+                />
               </View>
             </View>
           </ScrollView>
@@ -945,29 +934,18 @@ const ActiveWorkoutPage = () => {
                 />
 
                 <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.settingsButton}
+                  <Button
+                    variant="outline"
+                    title="Workout Settings"
                     onPress={handleSettings}
-                  >
-                    <Ionicons
-                      name="settings-outline"
-                      size={20}
-                      color={colors.textPrimary}
-                    />
-                    <Text style={styles.settingsText}>Workout Settings</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.discardButton}
+                    style={styles.settingsButton}
+                  />
+                  <Button
+                    variant="danger"
+                    title="Discard Workout"
                     onPress={handleDiscard}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={20}
-                      color={colors.accentRed}
-                    />
-                    <Text style={styles.discardText}>Discard Workout</Text>
-                  </TouchableOpacity>
+                    style={styles.discardButton}
+                  />
                 </View>
               </View>
             )}

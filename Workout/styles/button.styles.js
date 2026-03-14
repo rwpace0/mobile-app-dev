@@ -51,6 +51,23 @@ export const createButtonStyles = (isDark = true) => {
       opacity: 0.6,
     },
     danger: {
+      backgroundColor: colors.accentRed,
+      paddingVertical: Spacing.m,
+      paddingHorizontal: Spacing.m,
+      borderRadius: BorderRadius.md,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    dangerText: {
+      color: colors.textWhite,
+      fontSize: FontSize.medium,
+      fontWeight: FontWeight.semiBold,
+      textAlign: "center",
+    },
+    dangerDisabled: {
+      opacity: 0.6,
+    },
+    outline: {
       backgroundColor: colors.backgroundCard,
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.m,
@@ -58,15 +75,15 @@ export const createButtonStyles = (isDark = true) => {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: colors.accentRed,
+      borderColor: colors.borderColor,
     },
-    dangerText: {
-      color: colors.accentRed,
+    outlineText: {
+      color: colors.textPrimary,
       fontSize: FontSize.medium,
       fontWeight: FontWeight.semiBold,
       textAlign: "center",
     },
-    dangerDisabled: {
+    outlineDisabled: {
       opacity: 0.6,
     },
   });

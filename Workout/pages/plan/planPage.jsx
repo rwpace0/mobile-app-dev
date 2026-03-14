@@ -368,13 +368,15 @@ const PlanPage = () => {
           </View>
 
           <View style={{ paddingHorizontal: Spacing.m }}>
-            <TouchableOpacity
-              style={styles.newRoutineButton}
+            <Button
+              variant="primary"
+              title="New Routine"
+              leftIcon={
+                <Ionicons name="add" size={20} color={colors.textWhite} />
+              }
               onPress={handleNewRoutine}
-            >
-              <Ionicons name="add" size={20} color={colors.textWhite} />
-              <Text style={styles.newRoutineText}>New Routine</Text>
-            </TouchableOpacity>
+              style={styles.newRoutineButton}
+            />
           </View>
 
           {renderTemplates()}

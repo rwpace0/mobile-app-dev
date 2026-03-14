@@ -156,44 +156,10 @@ export const createStyles = (isDark = true) => {
 
     settingsButton: {
       flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.backgroundCard,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.s,
-      borderRadius: BorderRadius.md,
-      borderWidth: 1,
-      borderColor: colors.borderColor,
-      ...Shadow.small,
-    },
-
-    settingsText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.medium,
-      marginLeft: Spacing.xs,
     },
 
     discardButton: {
       flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.backgroundCard,
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.s,
-      borderRadius: BorderRadius.md,
-      borderWidth: 1,
-      borderColor: colors.accentRed,
-      ...Shadow.small,
-    },
-
-    discardText: {
-      color: colors.accentRed,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.medium,
-      marginLeft: Spacing.xs,
     },
 
     statsContainer: {

@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Calendar } from "react-native-calendars";
 import Header from "../../components/static/header";
+import { Button } from "../../components/ui/Button";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import AlertModal from "../../components/modals/AlertModal";
 import { SwipeListView } from "react-native-swipe-list-view";
@@ -320,16 +321,17 @@ const PlanSetupPage = () => {
 
   const renderHiddenItem = ({ item, index }) => (
     <View style={styles.hiddenItemContainer}>
-      <TouchableOpacity
-        style={styles.deleteButton}
+      <Button
+        variant="danger"
+        leftIcon={
+          <Ionicons name="trash" size={24} color={colors.textWhite} />
+        }
         onPress={() => {
           hapticWarning();
           handleRemoveDay(index);
         }}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="trash" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
+        style={styles.deleteButton}
+      />
     </View>
   );
 
@@ -400,14 +402,15 @@ const PlanSetupPage = () => {
         {/* Pattern Configuration */}
         <View style={styles.section}>
           <View style={{ paddingHorizontal: Spacing.m }}>
-            <TouchableOpacity
-              style={styles.addRoutineButton}
+            <Button
+              variant="secondary"
+              title="New Routine"
+              leftIcon={
+                <Ionicons name="add" size={20} color={colors.textPrimary} />
+              }
               onPress={handleAddRoutine}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={20} color={colors.textPrimary} />
-              <Text style={styles.addRoutineText}>New Routine</Text>
-            </TouchableOpacity>
+              style={styles.addRoutineButton}
+            />
           </View>
 
           <View style={{ paddingHorizontal: Spacing.m, marginTop: Spacing.l }}>

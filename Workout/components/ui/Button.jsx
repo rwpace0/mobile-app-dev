@@ -1,16 +1,18 @@
 import React, { useMemo } from "react";
-import { Pressable, Text, ActivityIndicator } from "react-native";
+import { Pressable, Text, View, ActivityIndicator } from "react-native";
 import { useTheme } from "../../state/SettingsContext";
 import { createButtonStyles } from "../../styles/button.styles";
 import { hapticLight } from "../../utils/hapticFeedback";
+import { Spacing } from "../../constants/theme";
 
-const VALID_VARIANTS = ["primary", "secondary", "danger"];
+const VALID_VARIANTS = ["primary", "secondary", "danger", "outline"];
 
 /**
- * Variant-based Button. Supports primary, secondary, and danger.
- * @param {string} variant - "primary" | "secondary" | "danger"
+ * Variant-based Button. Supports primary, secondary, danger, and outline.
+ * @param {string} variant - "primary" | "secondary" | "danger" | "outline"
  * @param {string} [title] - Button label (prefer over children)
  * @param {React.ReactNode} [children] - Alternative to title
+ * @param {React.ReactNode} [leftIcon] - Optional icon before label (or only content when no title)
  * @param {function} [onPress]
  * @param {boolean} [disabled]
  * @param {boolean} [loading]
@@ -21,6 +23,7 @@ export function Button({
   variant = "primary",
   title,
   children,
+  leftIcon,
   onPress,
   disabled = false,
   loading = false,
@@ -44,6 +47,30 @@ export function Button({
 
   const label = title ?? children;
   const isDisabled = disabled || loading;
+  const hasLabel = label != null && label !== "";
+  const iconOnly = leftIcon && !hasLabel;
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <ActivityIndicator color={labelStyle?.color} size="small" />
+      );
+    }
+    if (iconOnly) {
+      return leftIcon;
+    }
+    if (leftIcon && hasLabel) {
+      return (
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {leftIcon}
+          <Text style={[labelStyle, textStyle, { marginLeft: Spacing.xs }]}>
+            {label}
+          </Text>
+        </View>
+      );
+    }
+    return <Text style={[labelStyle, textStyle]}>{label}</Text>;
+  };
 
   return (
     <Pressable
@@ -56,11 +83,7 @@ export function Button({
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={labelStyle?.color} size="small" />
-      ) : (
-        <Text style={[labelStyle, textStyle]}>{label}</Text>
-      )}
+      {renderContent()}
     </Pressable>
   );
 }
