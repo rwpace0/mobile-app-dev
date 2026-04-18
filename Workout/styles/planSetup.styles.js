@@ -34,35 +34,30 @@ export const createStyles = (isDark = true) => {
       marginBottom: Spacing.m,
     },
 
-    // Name input - matching routine name field
+    // Name input - matching routine name field (border on row so line runs under text + clear)
     nameInput: {
       color: colors.textPrimary,
       fontSize: FontSize.large,
       fontWeight: FontWeight.medium,
       paddingHorizontal: 0,
-      paddingRight: 32,
-      paddingVertical: Spacing.xs,
       paddingTop: Spacing.m,
-      marginBottom: 0,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.borderColor,
+      paddingBottom: Spacing.xs,
       flex: 1,
+      minWidth: 0,
     },
     nameInputContainer: {
-      position: "relative",
-      width: "100%",
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-end",
       marginHorizontal: Spacing.m,
+      alignSelf: "stretch",
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
     },
     nameInputClearButton: {
-      position: "absolute",
-      right: 0,
-      height: "100%",
       justifyContent: "center",
       alignItems: "center",
-      paddingHorizontal: Spacing.xs,
-      paddingVertical: Spacing.xs,
+      padding: Spacing.xs,
+      marginLeft: Spacing.s,
     },
 
     // Date card

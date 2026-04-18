@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import AlertModal from "../../components/modals/AlertModal";
 import { useAlertModal } from "../../utils/useAlertModal";
 import { hapticLight } from "../../utils/hapticFeedback";
+import planAPI from "../../API/planAPI";
 
 const DashboardItem = ({ icon, title, onPress, showBorder, colors, styles }) => (
   <TouchableOpacity
@@ -223,6 +224,20 @@ const Profile = ({ navigation }) => {
     </View>
   );
 
+  const handlePlanPress = useCallback(async () => {
+    try {
+      const plan = await planAPI.getActivePlan();
+      if (plan) {
+        navigation.navigate("PlanPage");
+      } else {
+        navigation.navigate("PlanSetup");
+      }
+    } catch (err) {
+      console.error("Failed to check active plan:", err);
+      navigation.navigate("PlanPage");
+    }
+  }, [navigation]);
+
   const handleDashboardPress = (screen) => {
     switch (screen) {
       case "Exercises":
@@ -234,9 +249,6 @@ const Profile = ({ navigation }) => {
       case "Statistics":
         navigation.navigate("StatisticsMain");
         break;
-      case "Plan":
-        navigation.navigate("PlanPage");
-        break;
     }
   };
 
@@ -247,7 +259,7 @@ const Profile = ({ navigation }) => {
         <DashboardItem
           icon="calendar-outline"
           title="Plan"
-          onPress={() => handleDashboardPress("Plan")}
+          onPress={handlePlanPress}
           showBorder={true}
           colors={colors}
           styles={styles}

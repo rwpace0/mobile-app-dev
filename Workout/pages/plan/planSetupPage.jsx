@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -38,6 +44,7 @@ const PlanSetupPage = () => {
   const { isDark } = useTheme();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
+  const planNameInputRef = useRef(null);
 
   // Check if editing existing plan
   const editingPlan = route.params?.plan || null;
@@ -45,6 +52,13 @@ const PlanSetupPage = () => {
 
   // Form state
   const [planName, setPlanName] = useState(editingPlan?.name || "");
+
+  const handleClearPlanName = useCallback(() => {
+    setPlanName("");
+    requestAnimationFrame(() => {
+      planNameInputRef.current?.focus();
+    });
+  }, []);
   const [patternLength, setPatternLength] = useState(
     editingPlan?.pattern_length?.toString() || "7",
   );
@@ -198,7 +212,14 @@ const PlanSetupPage = () => {
         });
       }
 
-      navigation.goBack();
+      if (isEditMode) {
+        navigation.goBack();
+      } else {
+        navigation.navigate("Tabs", {
+          screen: "Profile",
+          params: { screen: "PlanPage" },
+        });
+      }
     } catch (error) {
       console.error("Failed to save plan:", error);
       setAlertModal({
@@ -352,10 +373,12 @@ const PlanSetupPage = () => {
         style={styles.content}
         nestedScrollEnabled={true}
         scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Plan Name */}
         <View style={styles.nameInputContainer}>
           <TextInput
+            ref={planNameInputRef}
             style={styles.nameInput}
             value={planName}
             onChangeText={setPlanName}
@@ -365,7 +388,7 @@ const PlanSetupPage = () => {
           {planName && planName.length > 0 && (
             <TouchableOpacity
               style={styles.nameInputClearButton}
-              onPress={() => setPlanName("")}
+              onPress={handleClearPlanName}
             >
               <Ionicons
                 name="close-circle"

@@ -1,4 +1,9 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import {
   View,
   Text,
@@ -113,14 +118,19 @@ const PlanPage = () => {
     }, [fetchPlanData]),
   );
 
+  useLayoutEffect(() => {
+    if (!loading && !activePlan) {
+      // Open setup on root stack, then leave PlanPage so closing setup returns to
+      // ProfileMain — avoids loop (PlanPage would re-open setup on every focus).
+      navigation.navigate("PlanSetup");
+      navigation.goBack();
+    }
+  }, [loading, activePlan, navigation]);
+
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     fetchPlanData(false);
   }, [fetchPlanData]);
-
-  const handleCreatePlan = useCallback(() => {
-    navigation.navigate("PlanSetup");
-  }, [navigation]);
 
   const handleEditPlan = useCallback(() => {
     if (!activePlan) return;
@@ -161,20 +171,6 @@ const PlanPage = () => {
   const handleNewRoutine = useCallback(() => {
     navigation.navigate("RoutineCreate");
   }, [navigation]);
-
-  const renderEmptyState = () => (
-    <View style={styles.emptyStateContainer}>
-      <Text style={styles.emptyStateText}>
-        Create a workout plan to schedule your routines throughout the week and
-        track your weekly volume.
-      </Text>
-      <Button
-        variant="primary"
-        title="Create Plan"
-        onPress={handleCreatePlan}
-      />
-    </View>
-  );
 
   const renderPlanOptionsModal = () => {
     const planActions = [
@@ -325,7 +321,9 @@ const PlanPage = () => {
     return (
       <SafeAreaView style={styles.container}>
         <Header title="Plan" leftComponent={{ type: "back" }} />
-        {renderEmptyState()}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primaryBlue} />
+        </View>
       </SafeAreaView>
     );
   }
