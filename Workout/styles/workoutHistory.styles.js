@@ -85,6 +85,7 @@ export const createStyles = (isDark = true) => {
       flexDirection: "row",
       alignItems: "center",
       marginTop: Spacing.s,
+      marginBottom: Spacing.m,
     },
     statItemWithIcon: {
       flexDirection: "row",

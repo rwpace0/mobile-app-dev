@@ -322,7 +322,9 @@ const RoutineDetail = () => {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        <View style={styles.detailHeader}>
+        <View
+          style={[styles.detailHeader, { marginBottom: Spacing.m }]}
+        >
           <Text style={styles.detailTitle}>{displayData.name}</Text>
 
           {hasMeaningfulWorkout ? (
