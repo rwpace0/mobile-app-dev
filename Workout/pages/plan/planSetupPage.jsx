@@ -191,14 +191,14 @@ const PlanSetupPage = () => {
           patternLength: length,
         });
 
-        // Delete existing schedule and recreate
-        for (const item of schedule) {
-          await planAPI.updatePlanSchedule(
-            editingPlan.plan_id,
-            item.pattern_position,
-            item.template_id,
-          );
-        }
+        // Replace full schedule
+        await planAPI.updatePlanSchedule(
+          editingPlan.plan_id,
+          schedule.map((item) => ({
+            pattern_position: item.pattern_position,
+            template_id: item.template_id,
+          })),
+        );
       } else {
         // Create new plan
         await planAPI.createPlan({

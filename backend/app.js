@@ -19,6 +19,7 @@ import authRoutes from './routes/auth.js';
 import templatesRouter from './routes/templates.js';
 import mediaRouter from './routes/media.js';
 import profileRouter from './routes/profile.js';
+import plansRouter from './routes/plans.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +77,7 @@ app.use('/workouts', workoutsRouter);
 app.use('/templates', templatesRouter);
 app.use('/media', mediaRouter);
 app.use('/profile', profileRouter);
+app.use('/plans', plansRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
