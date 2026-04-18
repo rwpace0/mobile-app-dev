@@ -7,14 +7,13 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
-  Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { createStyles } from "../../styles/display.styles";
 import exercisesAPI from "../../API/exercisesAPI";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
-import { mediaCache } from "../../API/local/MediaCache";
 import { useTheme } from "../../state/SettingsContext";
 import { useThemeColors } from "../../constants/useThemeColors";
 import Header from "../../components/static/header";
@@ -23,6 +22,9 @@ import FilterModal from "../../components/modals/FilterModal";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
 import { muscleOptions, equipmentOptions } from "../../constants/exerciseOptions";
 import { capitalize } from "../../utils/timerUtils";
+
+// Fixed row height: 50px icon + 16px paddingVertical * 2 = 82px
+const ITEM_HEIGHT = 82;
 
 // highlight matching text in search results
 const HighlightText = ({ text, highlight, style, highlightStyle }) => {
@@ -50,21 +52,24 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
   const { isDark } = useTheme();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
-  const [imageError, setImageError] = useState(false);
 
-  const imagePath = item.local_media_path
-    ? `${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}`
-    : null;
+  const imageUri = item.local_media_path
+    ? `file://${FileSystem.cacheDirectory}app_media/exercises/${item.local_media_path}`
+    : item.image_url || null;
 
   return (
     <TouchableOpacity style={styles.exerciseItem} onPress={() => onPress(item)}>
       <View style={styles.exerciseRow}>
         <View style={styles.exerciseIconContainer}>
-          {imagePath && !imageError ? (
+          {imageUri ? (
             <Image
-              source={{ uri: `file://${imagePath}` }}
+              source={{ uri: imageUri }}
               style={styles.exerciseImage}
-              onError={() => setImageError(true)}
+              contentFit="cover"
+              cachePolicy="disk"
+              autoplay={false}
+              recyclingKey={item.exercise_id}
+              transition={0}
             />
           ) : (
             <Ionicons name="barbell" size={28} color={colors.textPrimary} />
@@ -119,41 +124,6 @@ const ViewExercisesPage = () => {
       setExercises(sortedData);
       setFilteredExercises(sortedData);
 
-      // Download media for exercises that have media_url but no local_media_path
-      if (exercisesData && exercisesData.length > 0) {
-        const exercisesNeedingMedia = exercisesData.filter(
-          (ex) => ex.media_url && !ex.local_media_path
-        );
-
-        if (exercisesNeedingMedia.length > 0) {
-          // Download media in the background for better performance
-          setTimeout(async () => {
-            for (const exercise of exercisesNeedingMedia) {
-              try {
-                await exercisesAPI.downloadExerciseMedia(
-                  exercise.exercise_id,
-                  exercise.media_url
-                );
-              } catch (mediaError) {
-                console.warn(
-                  `[ViewExercises] Failed to download media for exercise ${exercise.exercise_id}:`,
-                  mediaError
-                );
-              }
-            }
-
-            // Refresh the exercises list to show the updated local_media_path
-            const updatedExercises = await exercisesAPI.getExercises();
-            if (updatedExercises) {
-              const sortedUpdatedData = updatedExercises.sort((a, b) =>
-                a.name.localeCompare(b.name)
-              );
-              setExercises(sortedUpdatedData);
-              setFilteredExercises(sortedUpdatedData);
-            }
-          }, 1000); // Delay to avoid blocking the UI
-        }
-      }
     } catch (err) {
       console.error("Error loading exercises:", err);
       setError(err.message || "Failed to load exercises");
@@ -391,13 +361,16 @@ const ViewExercisesPage = () => {
           contentContainerStyle={styles.listContentContainer}
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          // Performance optimizations
           removeClippedSubviews={true}
-          initialNumToRender={10}
-          maxToRenderPerBatch={5}
-          windowSize={10}
-          updateCellsBatchingPeriod={50}
-          getItemLayout={null} // Will be added if we have fixed height items
+          initialNumToRender={8}
+          maxToRenderPerBatch={3}
+          windowSize={3}
+          updateCellsBatchingPeriod={100}
+          getItemLayout={(_, index) => ({
+            length: ITEM_HEIGHT,
+            offset: ITEM_HEIGHT * index,
+            index,
+          })}
           ListEmptyComponent={
             <View style={styles.emptyListContainer}>
               <Text style={styles.emptyListText}>

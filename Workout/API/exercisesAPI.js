@@ -32,11 +32,20 @@ class ExercisesAPI extends APIBase {
             try {
               await this._fetchFromServer();
               console.log("[ExercisesAPI] Initial data fetch completed");
+              // Start background media queue after metadata is stored
+              import("./local/MediaDownloadQueue").then(({ mediaDownloadQueue }) => {
+                mediaDownloadQueue.start();
+              }).catch(() => {});
               return; // Skip the normal sync process since we just fetched everything
             } catch (error) {
               console.error("[ExercisesAPI] Initial data fetch failed:", error);
               // Continue with normal sync process
             }
+          } else {
+            // Rows already exist — resume any pending media jobs from a previous session
+            import("./local/MediaDownloadQueue").then(({ mediaDownloadQueue }) => {
+              mediaDownloadQueue.start();
+            }).catch(() => {});
           }
         }
         try {
@@ -887,7 +896,6 @@ class ExercisesAPI extends APIBase {
   }
 
   async _fetchFromServer() {
-    //console.log('[ExercisesAPI] Fetching exercises from server for initial population');
     try {
       const response = await this.makeAuthenticatedRequest({
         method: "GET",
@@ -895,49 +903,16 @@ class ExercisesAPI extends APIBase {
       });
 
       if (response.data && Array.isArray(response.data)) {
-        //console.log(`[ExercisesAPI] Retrieved ${response.data.length} exercises from server`);
+        console.log(
+          `[ExercisesAPI] Retrieved ${response.data.length} exercises from server — storing metadata`
+        );
 
-        // Store each exercise locally
+        const { mediaDownloadQueue } = await import("./local/MediaDownloadQueue");
+
+        // Phase 1: persist all metadata rows (no media calls)
         for (const exercise of response.data) {
           try {
             await this.storeLocally(exercise, "synced");
-            //console.log(`[ExercisesAPI] Stored exercise ${exercise.exercise_id} locally`);
-
-            // Download exercise image if it exists
-            if (exercise.image_url) {
-              try {
-                const { mediaCache } = await import("./local/MediaCache");
-                await mediaCache.downloadExerciseMediaIfNeeded(
-                  exercise.exercise_id,
-                  exercise.image_url
-                );
-                //console.log(`[ExercisesAPI] Downloaded image for exercise ${exercise.exercise_id}`);
-              } catch (mediaError) {
-                console.warn(
-                  `[ExercisesAPI] Failed to download image for exercise ${exercise.exercise_id}:`,
-                  mediaError
-                );
-                // Don't fail the entire sync for media download issues
-              }
-            }
-
-            // Download exercise video if it exists
-            if (exercise.video_url) {
-              try {
-                const { mediaCache } = await import("./local/MediaCache");
-                await mediaCache.downloadExerciseVideoIfNeeded(
-                  exercise.exercise_id,
-                  exercise.video_url
-                );
-                //console.log(`[ExercisesAPI] Downloaded video for exercise ${exercise.exercise_id}`);
-              } catch (videoError) {
-                console.warn(
-                  `[ExercisesAPI] Failed to download video for exercise ${exercise.exercise_id}:`,
-                  videoError
-                );
-                // Don't fail the entire sync for video download issues
-              }
-            }
           } catch (error) {
             console.error(
               `[ExercisesAPI] Failed to store exercise ${exercise.exercise_id}:`,
@@ -946,6 +921,34 @@ class ExercisesAPI extends APIBase {
           }
         }
 
+        // Phase 2: enqueue media downloads — non-blocking, queue drains in background
+        for (const exercise of response.data) {
+          try {
+            if (exercise.image_url) {
+              await mediaDownloadQueue.enqueueIfNeeded(
+                exercise.exercise_id,
+                exercise.image_url,
+                "image"
+              );
+            }
+            if (exercise.video_url) {
+              await mediaDownloadQueue.enqueueIfNeeded(
+                exercise.exercise_id,
+                exercise.video_url,
+                "video"
+              );
+            }
+          } catch (enqueueError) {
+            console.warn(
+              `[ExercisesAPI] Failed to enqueue media for exercise ${exercise.exercise_id}:`,
+              enqueueError
+            );
+          }
+        }
+
+        console.log(
+          "[ExercisesAPI] Metadata sync complete. Media will download in background."
+        );
         return response.data;
       }
 

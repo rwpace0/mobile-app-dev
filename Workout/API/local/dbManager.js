@@ -613,6 +613,45 @@ class DatabaseManager {
         }
       }
 
+      if (currentVersion < 9) {
+        console.log("[DatabaseManager] Updating to database version 9");
+
+        try {
+          await this.db.execAsync(`
+            CREATE TABLE IF NOT EXISTS media_download_jobs (
+              job_id TEXT PRIMARY KEY,
+              exercise_id TEXT NOT NULL,
+              url TEXT NOT NULL,
+              media_type TEXT NOT NULL DEFAULT 'image',
+              status TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'in_progress', 'failed')),
+              attempts INTEGER NOT NULL DEFAULT 0,
+              last_error TEXT,
+              created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+              updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_media_jobs_status ON media_download_jobs(status);
+            CREATE INDEX IF NOT EXISTS idx_media_jobs_exercise ON media_download_jobs(exercise_id);
+          `);
+          console.log("[DatabaseManager] Created media_download_jobs table");
+        } catch (e) {
+          console.log(
+            "[DatabaseManager] media_download_jobs table already exists or failed to create:",
+            e.message
+          );
+        }
+
+        const version9Results = await this.db.getAllAsync(
+          "SELECT 1 FROM db_version WHERE version = 9"
+        );
+        if (version9Results.length === 0) {
+          await this.db.execAsync(
+            "INSERT INTO db_version (version) VALUES (9)"
+          );
+          console.log("[DatabaseManager] Database version updated to 9");
+        }
+      }
+
       // Force check for secondary_muscle_groups column and add if missing (regardless of version)
       try {
         const tableInfo = await this.db.getAllAsync(
@@ -762,6 +801,7 @@ class DatabaseManager {
           "workout_summaries",
           "workout_plans",
           "plan_schedule",
+          "media_download_jobs",
         ];
 
         const missingTables = requiredTables.filter(
@@ -978,6 +1018,21 @@ class DatabaseManager {
                 CREATE INDEX IF NOT EXISTS idx_workouts_user_date ON workouts(user_id, date_performed DESC);
                 -- For exercise statistics
                 CREATE INDEX IF NOT EXISTS idx_sets_exercise ON sets(workout_exercises_id, weight, reps);
+
+                CREATE TABLE IF NOT EXISTS media_download_jobs (
+                    job_id TEXT PRIMARY KEY,
+                    exercise_id TEXT NOT NULL,
+                    url TEXT NOT NULL,
+                    media_type TEXT NOT NULL DEFAULT 'image',
+                    status TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending', 'in_progress', 'failed')),
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    last_error TEXT,
+                    created_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+                    updated_at DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+                );
+                CREATE INDEX IF NOT EXISTS idx_media_jobs_status ON media_download_jobs(status);
+                CREATE INDEX IF NOT EXISTS idx_media_jobs_exercise ON media_download_jobs(exercise_id);
             `);
           console.log(
             "[DatabaseManager] Successfully recreated missing tables"
@@ -1079,6 +1134,3 @@ class DatabaseManager {
 }
 
 export const dbManager = new DatabaseManager();
-
-// Force a database reload when the module is imported
-dbManager.reload().catch(console.error);

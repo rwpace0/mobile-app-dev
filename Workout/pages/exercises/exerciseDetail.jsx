@@ -13,10 +13,10 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
-  Image,
   FlatList,
   Dimensions,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import {
   useNavigation,
@@ -44,6 +44,40 @@ import { calculateExercisePR } from "../../utils/calculateExercisePRs";
 
 const isPublic = (val) =>
   val === true || val === 1 || val === "true" || val === "1";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+// Renders the exercise GIF at its natural aspect ratio, animated.
+const ExerciseGif = ({ uri }) => {
+  const [imageHeight, setImageHeight] = useState(null);
+
+  return (
+    <View
+      style={{
+        width: SCREEN_WIDTH,
+        height: imageHeight ?? 250,
+        marginBottom: 24,
+        backgroundColor: "transparent",
+      }}
+    >
+      <Image
+        source={{ uri }}
+        style={{ width: SCREEN_WIDTH, height: imageHeight ?? 250 }}
+        contentFit="contain"
+        cachePolicy="disk"
+        autoplay={true}
+        allowDownscaling={false}
+        transition={0}
+        onLoad={(e) => {
+          const { width, height } = e.source;
+          if (width > 0 && height > 0) {
+            setImageHeight(Math.round((SCREEN_WIDTH * height) / width));
+          }
+        }}
+      />
+    </View>
+  );
+};
 
 // Date range options
 const DATE_RANGE_OPTIONS = [
@@ -131,54 +165,6 @@ const ExerciseDetailPage = () => {
         }
 
         setExercise(exerciseData);
-
-        // Download exercise image if it exists on server but not locally
-        if (exerciseData.image_url && !exerciseData.local_media_path) {
-          try {
-            await exercisesAPI.downloadExerciseMedia(
-              exerciseData.exercise_id,
-              exerciseData.image_url
-            );
-
-            // Refresh the exercise data to get the updated local_media_path
-            const updatedExercise = await exercisesAPI.getExerciseById(
-              exerciseId
-            );
-            if (updatedExercise) {
-              setExercise(updatedExercise);
-            }
-          } catch (mediaError) {
-            console.warn(
-              "[ExerciseDetail] Failed to download exercise image:",
-              mediaError
-            );
-            // Don't fail the entire page load for image download issues
-          }
-        }
-
-        // Download exercise video if it exists on server but not locally
-        if (exerciseData.video_url && !exerciseData.local_video_path) {
-          try {
-            await exercisesAPI.downloadExerciseVideo(
-              exerciseData.exercise_id,
-              exerciseData.video_url
-            );
-
-            // Refresh the exercise data to get the updated local_video_path
-            const updatedExercise = await exercisesAPI.getExerciseById(
-              exerciseId
-            );
-            if (updatedExercise) {
-              setExercise(updatedExercise);
-            }
-          } catch (videoError) {
-            console.warn(
-              "[ExerciseDetail] Failed to download exercise video:",
-              videoError
-            );
-            // Don't fail the entire page load for video download issues
-          }
-        }
 
         // Fetch workout history for this exercise
         const historyData = await exercisesAPI.getExerciseHistory(exerciseId);
@@ -501,16 +487,15 @@ const ExerciseDetailPage = () => {
             shouldPlay={false}
           />
         </View>
-      ) : exercise?.local_media_path ? (
-        <View style={styles.imageContainer}>
-          <Image
-            source={{
-              uri: `file://${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}`,
-            }}
-            style={styles.exerciseImage}
-            resizeMode="cover"
-          />
-        </View>
+      ) : exercise?.local_media_path || exercise?.image_url ? (
+        <ExerciseGif
+          key={exercise.exercise_id}
+          uri={
+            exercise.local_media_path
+              ? `file://${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}`
+              : exercise.image_url
+          }
+        />
       ) : null}
 
       <View style={styles.summaryContent}>
