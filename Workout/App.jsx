@@ -1,12 +1,17 @@
 import * as React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+} from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createNavigationContainerRef } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Linking from "expo-linking";
 import { AuthProvider, useAuth } from "./API/auth/authContext";
-import { SettingsProvider } from "./state/SettingsContext";
+import { SettingsProvider, useTheme } from "./state/SettingsContext";
+import { getColors } from "./constants/colors";
 import { ActiveWorkoutProvider } from "./state/ActiveWorkoutContext";
 import WelcomePage from "./pages/welcome";
 import LoginPage from "./pages/login";
@@ -232,19 +237,33 @@ const stackScreens = {
 };
 
 // Generic stack creator - reduces code duplication
-const createStackNavigator = (screens) => () =>
-  (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {screens.map(({ name, component, options = {} }) => (
-        <Stack.Screen
-          key={name}
-          name={name}
-          component={component}
-          options={options}
-        />
-      ))}
-    </Stack.Navigator>
-  );
+const createStackNavigator = (screens) => {
+  function StackNavigator() {
+    const { isDark } = useTheme();
+    const colors = getColors(isDark);
+    const screenOptions = React.useMemo(
+      () => ({
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.backgroundPrimary },
+      }),
+      [colors.backgroundPrimary]
+    );
+
+    return (
+      <Stack.Navigator screenOptions={screenOptions}>
+        {screens.map(({ name, component, options = {} }) => (
+          <Stack.Screen
+            key={name}
+            name={name}
+            component={component}
+            options={options}
+          />
+        ))}
+      </Stack.Navigator>
+    );
+  }
+  return StackNavigator;
+};
 
 // Create stack navigators using the generic creator
 const ProfileStack = createStackNavigator(stackScreens.profile);
@@ -252,14 +271,26 @@ const WorkoutHistoryStack = createStackNavigator(stackScreens.workoutHistory);
 const StartStack = createStackNavigator(stackScreens.start);
 
 // Auth Stack
-const AuthStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Welcome" component={WelcomePage} />
-    <Stack.Screen name="Login" component={LoginPage} />
-    <Stack.Screen name="SignUp" component={SignUpPage} />
-    <Stack.Screen name="ResetPassword" component={ResetPassword} />
-  </Stack.Navigator>
-);
+const AuthStack = () => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const screenOptions = React.useMemo(
+    () => ({
+      headerShown: false,
+      contentStyle: { backgroundColor: colors.backgroundPrimary },
+    }),
+    [colors.backgroundPrimary]
+  );
+
+  return (
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen name="Welcome" component={WelcomePage} />
+      <Stack.Screen name="Login" component={LoginPage} />
+      <Stack.Screen name="SignUp" component={SignUpPage} />
+      <Stack.Screen name="ResetPassword" component={ResetPassword} />
+    </Stack.Navigator>
+  );
+};
 
 // Tab Navigator
 const TabNavigator = () => (
@@ -292,6 +323,15 @@ const modalScreens = [
 // Main Stack Navigator
 const MainStack = () => {
   const { activeWorkout } = useActiveWorkout();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const screenOptions = React.useMemo(
+    () => ({
+      headerShown: false,
+      contentStyle: { backgroundColor: colors.backgroundPrimary },
+    }),
+    [colors.backgroundPrimary]
+  );
 
   const handleResumeWorkout = React.useCallback(() => {
     if (navigationRef.isReady()) {
@@ -301,7 +341,7 @@ const MainStack = () => {
 
   return (
     <>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={screenOptions}>
         <Stack.Screen name="Tabs" component={TabNavigator} />
 
         {/* Modal screens */}
@@ -332,6 +372,15 @@ const MainStack = () => {
 // Root Navigator with memoization
 const RootNavigator = React.memo(() => {
   const { user, loading } = useAuth();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const rootStackScreenOptions = React.useMemo(
+    () => ({
+      headerShown: false,
+      contentStyle: { backgroundColor: colors.backgroundPrimary },
+    }),
+    [colors.backgroundPrimary]
+  );
   const [initialURL, setInitialURL] = React.useState(null);
 
   // Handle initial deep link
@@ -472,7 +521,7 @@ const RootNavigator = React.memo(() => {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={rootStackScreenOptions}>
       {user ? (
         user.isAuthenticated ? (
           <Stack.Screen name="Main" component={MainStack} />
@@ -499,18 +548,48 @@ const RootNavigator = React.memo(() => {
   );
 });
 
+function AppContent() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const navigationTheme = React.useMemo(
+    () => ({
+      ...(isDark ? DarkTheme : DefaultTheme),
+      colors: {
+        ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+        primary: colors.primaryBlue,
+        background: colors.backgroundPrimary,
+        card: colors.backgroundPrimary,
+        text: colors.textPrimary,
+        border: colors.borderColor,
+        notification: colors.accentRed,
+      },
+    }),
+    [isDark, colors]
+  );
+
+  return (
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: colors.backgroundPrimary }}
+    >
+      <AuthProvider>
+        <ActiveWorkoutProvider>
+          <NavigationContainer
+            ref={navigationRef}
+            linking={linking}
+            theme={navigationTheme}
+          >
+            <RootNavigator />
+          </NavigationContainer>
+        </ActiveWorkoutProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
+  );
+}
+
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SettingsProvider>
-        <AuthProvider>
-          <ActiveWorkoutProvider>
-            <NavigationContainer ref={navigationRef} linking={linking}>
-              <RootNavigator />
-            </NavigationContainer>
-          </ActiveWorkoutProvider>
-        </AuthProvider>
-      </SettingsProvider>
-    </GestureHandlerRootView>
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 }
