@@ -188,6 +188,11 @@ const stackScreens = {
       options: slideFromRightOptions,
     },
     {
+      name: "PlanSetup",
+      component: PlanSetupPage,
+      options: slideFromRightOptions,
+    },
+    {
       name: "RoutineDetail",
       component: RoutineDetail,
       options: slideFromRightOptions,
@@ -281,7 +286,6 @@ const modalScreens = [
   { name: "WorkoutDetail", component: WorkoutDetail },
   { name: "ExerciseDetail", component: ExerciseDetail },
   { name: "editWorkout", component: editWorkout },
-  { name: "PlanSetup", component: PlanSetupPage },
   { name: "WorkoutComplete", component: WorkoutComplete },
 ];
 

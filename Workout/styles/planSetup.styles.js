@@ -22,9 +22,9 @@ export const createStyles = (isDark = true) => {
       paddingBottom: Spacing.xl,
     },
 
-    // Section styling
+    // Section styling — same vertical step as inner blocks (days list, add day row)
     section: {
-      marginTop: Spacing.xl,
+      marginTop: Spacing.l,
     },
 
     sectionTitle: {
@@ -88,8 +88,13 @@ export const createStyles = (isDark = true) => {
       paddingVertical: Spacing.m,
       paddingHorizontal: Spacing.l,
       borderRadius: BorderRadius.md,
-      marginBottom: Spacing.l,
+      marginBottom: Spacing.m,
       ...Shadow.small,
+    },
+
+    addDayRow: {
+      paddingHorizontal: Spacing.m,
+      marginTop: Spacing.l,
     },
 
     addDayText: {
@@ -100,6 +105,10 @@ export const createStyles = (isDark = true) => {
     },
 
     // Add routine button (layout only; Button provides variant styles)
+    addRoutineRow: {
+      paddingHorizontal: Spacing.m,
+    },
+
     addRoutineButton: {},
 
     // Days list container
@@ -117,6 +126,10 @@ export const createStyles = (isDark = true) => {
       marginBottom: Spacing.m,
       overflow: "visible",
       ...Shadow.small,
+    },
+
+    dayCardLast: {
+      marginBottom: 0,
     },
 
     dayCardPressed: {

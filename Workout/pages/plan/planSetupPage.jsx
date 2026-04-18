@@ -215,10 +215,7 @@ const PlanSetupPage = () => {
       if (isEditMode) {
         navigation.goBack();
       } else {
-        navigation.navigate("Tabs", {
-          screen: "Profile",
-          params: { screen: "PlanPage" },
-        });
+        navigation.replace("PlanPage");
       }
     } catch (error) {
       console.error("Failed to save plan:", error);
@@ -315,6 +312,7 @@ const PlanSetupPage = () => {
     <Pressable
       style={({ pressed }) => [
         styles.dayCard,
+        index === schedule.length - 1 && styles.dayCardLast,
         pressed && styles.dayCardPressed,
       ]}
       onPress={() => handleSelectTemplate(index)}
@@ -424,7 +422,7 @@ const PlanSetupPage = () => {
 
         {/* Pattern Configuration */}
         <View style={styles.section}>
-          <View style={{ paddingHorizontal: Spacing.m }}>
+          <View style={styles.addRoutineRow}>
             <Button
               variant="secondary"
               title="New Routine"
@@ -434,17 +432,6 @@ const PlanSetupPage = () => {
               onPress={handleAddRoutine}
               style={styles.addRoutineButton}
             />
-          </View>
-
-          <View style={{ paddingHorizontal: Spacing.m, marginTop: Spacing.l }}>
-            <TouchableOpacity
-              style={styles.addDayButton}
-              onPress={handleAddDay}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={20} color={colors.textWhite} />
-              <Text style={styles.addDayText}>Add Day</Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.daysListContainer} pointerEvents="box-none">
@@ -457,6 +444,17 @@ const PlanSetupPage = () => {
               scrollEnabled={false}
               keyExtractor={(item, index) => `day-${index}`}
             />
+          </View>
+
+          <View style={styles.addDayRow}>
+            <TouchableOpacity
+              style={styles.addDayButton}
+              onPress={handleAddDay}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={20} color={colors.textWhite} />
+              <Text style={styles.addDayText}>Add Day</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
