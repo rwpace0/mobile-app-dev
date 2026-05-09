@@ -5,7 +5,7 @@ import { syncManager } from './syncManager';
 
 class MediaCache {
   constructor() {
-    this.cache = new Cache('media', 25); // Reduced from 50 to 25
+    this.cache = new Cache({ maxSize: 250 });
     this.baseDir = `${FileSystem.cacheDirectory}app_media/`;
     this.maxFileSize = 10 * 1024 * 1024; // 10MB max file size
     this.init();
@@ -141,13 +141,7 @@ class MediaCache {
         // Now download the actual media from the URL
         downloadResult = await FileSystem.downloadAsync(mediaUrl, localPath);
       } else {
-        // For non-avatar files, use the original direct download
-        const fileSize = await this.getRemoteFileSize(url);
-        if (fileSize > this.maxFileSize) {
-          console.warn(`[MediaCache] File too large (${(fileSize / 1024 / 1024).toFixed(2)}MB), skipping download`);
-          return null;
-        }
-        
+        // For non-avatar files, download directly — size is validated post-download
         downloadResult = await FileSystem.downloadAsync(url, localPath);
       }
       
@@ -170,10 +164,15 @@ class MediaCache {
         throw new Error('Downloaded file does not exist');
       }
       
-      // Validate file size
+      // Validate file size — too small means corrupted/error body; too large is rejected
       if (fileInfo.size < 100) {
         await FileSystem.deleteAsync(localPath);
         throw new Error(`Downloaded file is too small (${fileInfo.size} bytes), likely corrupted or error response`);
+      }
+      if (fileInfo.size > this.maxFileSize) {
+        await FileSystem.deleteAsync(localPath);
+        console.warn(`[MediaCache] File too large (${(fileInfo.size / 1024 / 1024).toFixed(2)}MB), discarding`);
+        return null;
       }
       
       // For images, verify it's actually an image file by checking file signature
@@ -252,14 +251,17 @@ class MediaCache {
 
       // Extract just the filename from the local path
       const filename = localPath.split('/').pop();
-      
+
       // Clean up the media URL to prevent SQL injection
       const cleanMediaUrl = mediaUrl.split('?')[0]; // Remove query parameters
-      
+
       await dbManager.execute(
         'UPDATE exercises SET image_url = ?, local_media_path = ?, updated_at = datetime("now") WHERE exercise_id = ?',
         [cleanMediaUrl, filename, exerciseId]
       );
+
+      // Invalidate the in-memory path cache so next getExerciseMedia call reflects the new file
+      this.cache.delete(`media_path_${exerciseId}`);
     } catch (error) {
       console.error('Failed to update exercise media:', error);
       throw error;
@@ -352,6 +354,7 @@ class MediaCache {
           'UPDATE exercises SET image_url = NULL, local_media_path = NULL, updated_at = datetime("now") WHERE exercise_id = ?',
           [exerciseId]
         );
+        this.cache.delete(`media_path_${exerciseId}`);
       }
     } catch (error) {
       console.error('Failed to clear exercise media:', error);
@@ -425,6 +428,10 @@ class MediaCache {
 
   async getExerciseMedia(exerciseId) {
     try {
+      const cacheKey = `media_path_${exerciseId}`;
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+
       const [exercise] = await dbManager.query(
         'SELECT local_media_path FROM exercises WHERE exercise_id = ?',
         [exerciseId]
@@ -436,12 +443,14 @@ class MediaCache {
 
       const localPath = `${this.baseDir}exercises/${exercise.local_media_path}`;
       const fileInfo = await FileSystem.getInfoAsync(localPath);
-      
-      if (fileInfo.exists && fileInfo.size > 100) { // Basic validation that file exists and has content
-        // Return path with file:// prefix for React Native Image component
-        return `file://${localPath}`;
+
+      if (fileInfo.exists && fileInfo.size > 100) {
+        const result = `file://${localPath}`;
+        // Cache for 24 hours — the file lives on disk until explicitly deleted
+        this.cache.set(cacheKey, result, 24 * 60 * 60 * 1000);
+        return result;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Failed to get exercise media:', error);
@@ -788,40 +797,40 @@ class MediaCache {
         
         if (!fileInfo.exists) continue;
         
-        const shouldDelete = 
-          !referencedFiles.has(file) || // Orphaned file
-          (fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo); // File older than 7 days
-        
+        const shouldDelete =
+          !referencedFiles.has(file) && // Orphaned file
+          fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo; // File older than 7 days
+
         if (shouldDelete) {
           await this.deleteFile(filePath);
         }
       }
 
-      // Delete unreferenced video files and files older than 30 days (videos are larger, keep longer)
+      // Delete unreferenced video files older than 30 days (videos are larger, keep longer)
       for (const file of videoFiles) {
         const filePath = `${this.baseDir}exercise-videos/${file}`;
         const fileInfo = await FileSystem.getInfoAsync(filePath);
-        
+
         if (!fileInfo.exists) continue;
-        
+
         const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
-        
-        if (!referencedFiles.has(file) || (fileInfo.modificationTime && fileInfo.modificationTime * 1000 < thirtyDaysAgo)) {
+
+        if (!referencedFiles.has(file) && fileInfo.modificationTime && fileInfo.modificationTime * 1000 < thirtyDaysAgo) {
           await FileSystem.deleteAsync(filePath);
         }
       }
 
-      // Delete unreferenced avatar files and files older than 7 days
+      // Delete unreferenced avatar files older than 7 days
       for (const file of avatarFiles) {
         const filePath = `${this.baseDir}avatars/${file}`;
         const fileInfo = await FileSystem.getInfoAsync(filePath);
-        
+
         if (!fileInfo.exists) continue;
-        
-        const shouldDelete = 
-          !referencedFiles.has(file) || // Orphaned file
-          (fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo); // File older than 7 days
-        
+
+        const shouldDelete =
+          !referencedFiles.has(file) && // Orphaned file
+          fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo; // File older than 7 days
+
         if (shouldDelete) {
           await this.deleteFile(filePath);
         }

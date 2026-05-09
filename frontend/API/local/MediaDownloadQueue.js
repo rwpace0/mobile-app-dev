@@ -4,6 +4,7 @@ import { dbManager } from './dbManager';
 const MAX_ATTEMPTS = 5;
 const WORKER_INTERVAL_MS = 1500;
 const BASE_BACKOFF_MS = 2000;
+const CONCURRENT_JOBS = 5;
 
 // Matches any direct public HTTPS URL that is NOT a backend /media/ route.
 // Public catalog image_url values are served from R2/CDN and need no server resolver.
@@ -25,6 +26,9 @@ class MediaDownloadQueue {
     this._running = false;
     this._backoffUntil = 0;
     this.baseDir = `${FileSystem.cacheDirectory}app_media/`;
+    // Per-subdirectory flags so makeDirectoryAsync is only called once per session
+    this._exerciseDirReady = false;
+    this._videoDirReady = false;
   }
 
   // ---------------------------------------------------------------------------
@@ -72,9 +76,13 @@ class MediaDownloadQueue {
   /** Start the background ticker (idempotent). */
   start() {
     if (this._timer) return;
+    // Reset jobs stranded as in_progress from a previous crashed session so they are retried
+    dbManager.execute(
+      `UPDATE media_download_jobs SET status = 'pending' WHERE status = 'in_progress'`
+    ).catch(() => {});
     console.log('[MediaDownloadQueue] Starting background media queue');
     this._timer = setInterval(() => this._tick(), WORKER_INTERVAL_MS);
-    // Kick off immediately so the first job doesn't wait a full interval
+    // Kick off immediately so the first batch doesn't wait a full interval
     this._tick();
   }
 
@@ -107,31 +115,38 @@ class MediaDownloadQueue {
   }
 
   async _processNext() {
-    // Pick the oldest pending job
+    // Pick the oldest pending jobs up to CONCURRENT_JOBS at a time
     const jobs = await dbManager.query(
       `SELECT * FROM media_download_jobs
        WHERE status = 'pending' AND attempts < ?
-       ORDER BY created_at ASC LIMIT 1`,
+       ORDER BY created_at ASC LIMIT ${CONCURRENT_JOBS}`,
       [MAX_ATTEMPTS]
     );
 
     if (!jobs || jobs.length === 0) return;
 
-    const job = jobs[0];
-
-    // Mark in_progress
-    await dbManager.execute(
-      `UPDATE media_download_jobs
-       SET status = 'in_progress', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-       WHERE job_id = ?`,
-      [job.job_id]
+    // Mark all selected jobs as in_progress before kicking off concurrent downloads
+    await Promise.all(
+      jobs.map(job =>
+        dbManager.execute(
+          `UPDATE media_download_jobs
+           SET status = 'in_progress', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+           WHERE job_id = ?`,
+          [job.job_id]
+        )
+      )
     );
 
+    // Process all jobs concurrently; errors are handled per-job so one failure
+    // doesn't cancel the others
+    await Promise.allSettled(jobs.map(job => this._processJob(job)));
+  }
+
+  async _processJob(job) {
     try {
       const localPath = await this._download(job);
 
       if (localPath) {
-        // Update exercises table
         const filename = localPath.split('/').pop();
         if (job.media_type === 'video') {
           const cleanUrl = job.url.split('?')[0];
@@ -162,6 +177,11 @@ class MediaDownloadQueue {
              WHERE exercise_id = ?`,
             [cleanUrl, filename, job.exercise_id]
           );
+          // Invalidate the MediaCache LRU entry so the new path is picked up
+          try {
+            const { mediaCache } = await import('./MediaCache');
+            mediaCache.cache.delete(`media_path_${job.exercise_id}`);
+          } catch (_) {}
         }
       }
 
@@ -179,8 +199,8 @@ class MediaDownloadQueue {
         `[MediaDownloadQueue] Job ${job.job_id} attempt ${newAttempts}/${MAX_ATTEMPTS} failed: ${errMsg}`
       );
 
-      // Apply backoff on 429 or 5xx
-      if (errMsg.includes('429') || errMsg.includes('5')) {
+      // Apply backoff on 429 or genuine 5xx status codes only
+      if (errMsg.includes('429') || /\b5\d{2}\b/.test(errMsg)) {
         const delay = BASE_BACKOFF_MS * Math.pow(2, newAttempts - 1);
         this._backoffUntil = Date.now() + Math.min(delay, 60000);
         console.log(
@@ -202,10 +222,14 @@ class MediaDownloadQueue {
     const { url, exercise_id: exerciseId, media_type: mediaType } = job;
     const subDir = mediaType === 'video' ? 'exercise-videos' : 'exercises';
 
-    // Ensure directory exists
-    await FileSystem.makeDirectoryAsync(`${this.baseDir}${subDir}/`, {
-      intermediates: true,
-    });
+    // Ensure the subdirectory exists — only incur the filesystem call once per session
+    if (subDir === 'exercises' && !this._exerciseDirReady) {
+      await FileSystem.makeDirectoryAsync(`${this.baseDir}exercises/`, { intermediates: true });
+      this._exerciseDirReady = true;
+    } else if (subDir === 'exercise-videos' && !this._videoDirReady) {
+      await FileSystem.makeDirectoryAsync(`${this.baseDir}exercise-videos/`, { intermediates: true });
+      this._videoDirReady = true;
+    }
 
     const cleanUrl = url.split('?')[0].split('#')[0];
     // Extract extension from the URL path only (ignore domain dots)
