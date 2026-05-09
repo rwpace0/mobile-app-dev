@@ -788,50 +788,39 @@ class MediaCache {
         ...(profiles || []).map(p => p.local_avatar_path).filter(Boolean)
       ]);
 
-      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
-
-      // Delete unreferenced exercise files and files older than 7 days
+      // Delete orphaned exercise files
       for (const file of exerciseFiles) {
         const filePath = `${this.baseDir}exercises/${file}`;
         const fileInfo = await FileSystem.getInfoAsync(filePath);
         
         if (!fileInfo.exists) continue;
         
-        const shouldDelete =
-          !referencedFiles.has(file) && // Orphaned file
-          fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo; // File older than 7 days
-
-        if (shouldDelete) {
+        // Delete any orphaned file immediately — no age requirement
+        if (!referencedFiles.has(file)) {
           await this.deleteFile(filePath);
         }
       }
 
-      // Delete unreferenced video files older than 30 days (videos are larger, keep longer)
+      // Delete unreferenced video files (orphaned files are removed regardless of age)
       for (const file of videoFiles) {
         const filePath = `${this.baseDir}exercise-videos/${file}`;
         const fileInfo = await FileSystem.getInfoAsync(filePath);
 
         if (!fileInfo.exists) continue;
 
-        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
-
-        if (!referencedFiles.has(file) && fileInfo.modificationTime && fileInfo.modificationTime * 1000 < thirtyDaysAgo) {
+        if (!referencedFiles.has(file)) {
           await FileSystem.deleteAsync(filePath);
         }
       }
 
-      // Delete unreferenced avatar files older than 7 days
+      // Delete unreferenced avatar files (orphaned files are removed regardless of age)
       for (const file of avatarFiles) {
         const filePath = `${this.baseDir}avatars/${file}`;
         const fileInfo = await FileSystem.getInfoAsync(filePath);
 
         if (!fileInfo.exists) continue;
 
-        const shouldDelete =
-          !referencedFiles.has(file) && // Orphaned file
-          fileInfo.modificationTime && fileInfo.modificationTime * 1000 < sevenDaysAgo; // File older than 7 days
-
-        if (shouldDelete) {
+        if (!referencedFiles.has(file)) {
           await this.deleteFile(filePath);
         }
       }
