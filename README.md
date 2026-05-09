@@ -98,7 +98,7 @@ A React Native (Expo) workout app with a Node.js/Express API backed by Supabase 
 
 ```
 mobile-app-dev/
-├── Workout/                    # Expo app
+├── frontend/                   # Expo app
 │   ├── App.jsx                 # Navigation, linking, providers
 │   ├── components/             # UI, charts, modals, active workout pieces
 │   ├── pages/
