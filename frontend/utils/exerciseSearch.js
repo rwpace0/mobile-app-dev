@@ -1,6 +1,7 @@
 /**
  * Exercise search: token-wise AND matching so queries like "bicep curl"
- * match "Biceps Curl" (each token must appear somewhere in searchable text).
+ * match "Biceps Curl". Short tokens use substring matching on the haystack;
+ * otherwise tokens can fuzzy-match individual words (e.g. "crl" → "curl").
  */
 
 export function tokenizeSearch(query) {
@@ -28,11 +29,71 @@ export function exerciseSearchHaystack(exercise) {
     .toLowerCase();
 }
 
+/** Max Levenshtein edits allowed between a query token and a word (by token length). */
+function maxEditsForToken(tokenLength) {
+  if (tokenLength <= 2) return 0;
+  if (tokenLength <= 5) return 1;
+  return 2;
+}
+
+function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const row = new Array(n + 1);
+  for (let j = 0; j <= n; j++) row[j] = j;
+  for (let i = 1; i <= m; i++) {
+    let prev = row[0];
+    row[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const tmp = row[j];
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + cost);
+      prev = tmp;
+    }
+  }
+  return row[n];
+}
+
+function collectExerciseWords(exercise) {
+  const parts = [
+    exercise?.name,
+    exercise?.muscle_group,
+    exercise?.equipment,
+    exercise?.instruction,
+    ...(Array.isArray(exercise?.secondary_muscle_groups)
+      ? exercise.secondary_muscle_groups
+      : []),
+  ];
+  const words = new Set();
+  for (const p of parts) {
+    if (p == null || String(p).length === 0) continue;
+    const found = String(p).toLowerCase().match(/\w+/g);
+    if (found) {
+      for (const w of found) words.add(w);
+    }
+  }
+  return [...words];
+}
+
+export function tokenMatchesExercise(token, exercise) {
+  const haystack = exerciseSearchHaystack(exercise);
+  if (haystack.includes(token)) return true;
+
+  const maxD = maxEditsForToken(token.length);
+  if (maxD === 0) return false;
+
+  const t = token.toLowerCase();
+  return collectExerciseWords(exercise).some(
+    (w) => levenshtein(w, t) <= maxD,
+  );
+}
+
 export function exerciseMatchesSearch(exercise, searchText) {
   const tokens = tokenizeSearch(searchText);
   if (tokens.length === 0) return true;
-  const haystack = exerciseSearchHaystack(exercise);
-  return tokens.every((token) => haystack.includes(token));
+  return tokens.every((token) => tokenMatchesExercise(token, exercise));
 }
 
 /** Left-to-right non-overlapping occurrences of token in text (case-insensitive). */
@@ -52,6 +113,36 @@ export function findTokenHighlightRanges(text, token) {
   return ranges;
 }
 
+/**
+ * If there is no substring hit for `token`, highlight the single word in `text`
+ * with the smallest Levenshtein distance to `token` within the edit budget.
+ */
+export function findFuzzyWordHighlightRange(text, token) {
+  const maxD = maxEditsForToken(token.length);
+  if (!token?.length || maxD === 0) return null;
+
+  const t = token.toLowerCase();
+  const re = /\w+/g;
+  let m = re.exec(text);
+  let best = null;
+
+  while (m !== null) {
+    const rawWord = m[0];
+    const w = rawWord.toLowerCase();
+    const d = levenshtein(w, t);
+    if (d <= maxD && (!best || d < best.dist)) {
+      best = {
+        dist: d,
+        start: m.index,
+        end: m.index + rawWord.length,
+      };
+    }
+    m = re.exec(text);
+  }
+
+  return best ? [best.start, best.end] : null;
+}
+
 function mergeIntervals(intervals) {
   if (!intervals.length) return [];
   const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
@@ -69,6 +160,15 @@ function mergeIntervals(intervals) {
 export function highlightRangesForQuery(text, query) {
   const tokens = tokenizeSearch(query);
   if (!tokens.length) return [];
-  const all = tokens.flatMap((t) => findTokenHighlightRanges(text, t));
+  const all = [];
+  for (const t of tokens) {
+    const exact = findTokenHighlightRanges(text, t);
+    if (exact.length > 0) {
+      all.push(...exact);
+    } else {
+      const fuzzy = findFuzzyWordHighlightRange(text, t);
+      if (fuzzy) all.push(fuzzy);
+    }
+  }
   return mergeIntervals(all);
 }

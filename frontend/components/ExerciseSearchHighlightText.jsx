@@ -3,8 +3,9 @@ import { Text } from "react-native";
 import { highlightRangesForQuery } from "../utils/exerciseSearch";
 
 /**
- * Highlights every whitespace-separated token from `highlight` inside `text`
- * (case-insensitive substring matches), merging overlapping ranges.
+ * Highlights each whitespace-separated token from `highlight` in `text`:
+ * exact case-insensitive substring hits, otherwise the closest matching word
+ * within a small edit distance (e.g. "crl" highlights "curl").
  */
 export default function ExerciseSearchHighlightText({
   text,
