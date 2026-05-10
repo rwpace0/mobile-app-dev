@@ -20,33 +20,16 @@ import Header from "../../components/static/header";
 import { Button } from "../../components/ui/Button";
 import FilterModal from "../../components/modals/FilterModal";
 import { hapticLight, hapticMedium } from "../../utils/hapticFeedback";
-import { muscleOptions, equipmentOptions } from "../../constants/exerciseOptions";
+import {
+  muscleOptions,
+  equipmentOptions,
+} from "../../constants/exerciseOptions";
 import { capitalize } from "../../utils/timerUtils";
+import { exerciseMatchesSearch } from "../../utils/exerciseSearch";
+import ExerciseSearchHighlightText from "../../components/ExerciseSearchHighlightText";
 
 // Fixed row height: 50px icon + 16px paddingVertical * 2 = 82px
 const ITEM_HEIGHT = 82;
-
-// highlight matching text in search results
-const HighlightText = ({ text, highlight, style, highlightStyle }) => {
-  if (!highlight.trim()) {
-    return <Text style={style}>{text}</Text>;
-  }
-
-  const parts = text.split(new RegExp(`(${highlight})`, "gi"));
-  return (
-    <Text style={style}>
-      {parts.map((part, index) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <Text key={index} style={[style, highlightStyle]}>
-            {part}
-          </Text>
-        ) : (
-          <Text key={index}>{part}</Text>
-        )
-      )}
-    </Text>
-  );
-};
 
 const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
   const { isDark } = useTheme();
@@ -76,7 +59,7 @@ const ExerciseItem = React.memo(({ item, onPress, searchText }) => {
           )}
         </View>
         <View style={styles.exerciseDetails}>
-          <HighlightText
+          <ExerciseSearchHighlightText
             text={item.name}
             highlight={searchText}
             style={styles.exerciseName}
@@ -119,11 +102,10 @@ const ViewExercisesPage = () => {
     try {
       const exercisesData = await exercisesAPI.getExercises();
       const sortedData = (exercisesData || []).sort((a, b) =>
-        a.name.localeCompare(b.name)
+        a.name.localeCompare(b.name),
       );
       setExercises(sortedData);
       setFilteredExercises(sortedData);
-
     } catch (err) {
       console.error("Error loading exercises:", err);
       setError(err.message || "Failed to load exercises");
@@ -137,7 +119,7 @@ const ViewExercisesPage = () => {
   useFocusEffect(
     useCallback(() => {
       loadExercises();
-    }, [loadExercises])
+    }, [loadExercises]),
   );
 
   // Handle pull-to-refresh
@@ -152,7 +134,7 @@ const ViewExercisesPage = () => {
         exerciseId: exercise.exercise_id,
       });
     },
-    [navigation]
+    [navigation],
   );
 
   const renderExerciseItem = useCallback(
@@ -165,49 +147,26 @@ const ViewExercisesPage = () => {
         />
       );
     },
-    [handleExercisePress, searchText]
+    [handleExercisePress, searchText],
   );
 
   // search and filter function that properly filters results
   useEffect(() => {
     let filtered = exercises;
 
-    // Apply search filter
+    // Apply search filter (token-wise AND across name, muscles, equipment, instructions)
     if (searchText.trim()) {
-      const searchTermLower = searchText.toLowerCase();
-      filtered = filtered.filter((exercise) => {
-        const nameMatch = exercise.name
-          ?.toLowerCase()
-          .includes(searchTermLower);
-        const muscleGroupMatch = exercise.muscle_group
-          ?.toLowerCase()
-          .includes(searchTermLower);
-        const instructionMatch = exercise.instruction
-          ?.toLowerCase()
-          .includes(searchTermLower);
-
-        // Check if any secondary muscle group matches
-        const secondaryMuscleMatch =
-          exercise.secondary_muscle_groups &&
-          Array.isArray(exercise.secondary_muscle_groups) &&
-          exercise.secondary_muscle_groups.some((muscle) =>
-            muscle?.toLowerCase().includes(searchTermLower)
-          );
-
-        return (
-          nameMatch ||
-          muscleGroupMatch ||
-          instructionMatch ||
-          secondaryMuscleMatch
-        );
-      });
+      filtered = filtered.filter((exercise) =>
+        exerciseMatchesSearch(exercise, searchText),
+      );
     }
 
     // Apply muscle group filter
     if (selectedMuscleGroup) {
       filtered = filtered.filter(
         (exercise) =>
-          exercise.muscle_group?.toLowerCase() === selectedMuscleGroup.toLowerCase()
+          exercise.muscle_group?.toLowerCase() ===
+          selectedMuscleGroup.toLowerCase(),
       );
     }
 
@@ -215,13 +174,11 @@ const ViewExercisesPage = () => {
     if (selectedEquipment) {
       filtered = filtered.filter(
         (exercise) =>
-          exercise.equipment?.toLowerCase() === selectedEquipment.toLowerCase()
+          exercise.equipment?.toLowerCase() === selectedEquipment.toLowerCase(),
       );
     }
 
-    setFilteredExercises(
-      filtered.sort((a, b) => a.name.localeCompare(b.name))
-    );
+    setFilteredExercises(filtered.sort((a, b) => a.name.localeCompare(b.name)));
   }, [searchText, exercises, selectedMuscleGroup, selectedEquipment]);
 
   if (loading && !refreshing) {
@@ -236,11 +193,7 @@ const ViewExercisesPage = () => {
     return (
       <View style={styles.centerContent}>
         <Text style={styles.errorText}>{error}</Text>
-        <Button
-          variant="primary"
-          title="Retry"
-          onPress={loadExercises}
-        />
+        <Button variant="primary" title="Retry" onPress={loadExercises} />
       </View>
     );
   }
@@ -326,9 +279,7 @@ const ViewExercisesPage = () => {
               selectedEquipment && styles.filterTextActive,
             ]}
           >
-            {selectedEquipment
-              ? capitalize(selectedEquipment)
-              : "Any Category"}
+            {selectedEquipment ? capitalize(selectedEquipment) : "Any Category"}
           </Text>
         </TouchableOpacity>
       </View>

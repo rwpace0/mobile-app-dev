@@ -23,31 +23,18 @@ import { Spacing } from "../../constants/theme";
 import { useTheme } from "../../state/SettingsContext";
 import { createStyles } from "../../styles/display.styles";
 import FilterModal from "../../components/modals/FilterModal";
-import { hapticLight, hapticSelection, hapticSuccess } from "../../utils/hapticFeedback";
-import { muscleOptions, equipmentOptions } from "../../constants/exerciseOptions";
+import {
+  hapticLight,
+  hapticSelection,
+  hapticSuccess,
+} from "../../utils/hapticFeedback";
+import {
+  muscleOptions,
+  equipmentOptions,
+} from "../../constants/exerciseOptions";
 import { capitalize } from "../../utils/timerUtils";
-
-// highlight matching text in search results
-const HighlightText = ({ text, highlight, style, highlightStyle }) => {
-  if (!highlight.trim()) {
-    return <Text style={style}>{text}</Text>;
-  }
-
-  const parts = text.split(new RegExp(`(${highlight})`, "gi"));
-  return (
-    <Text style={style}>
-      {parts.map((part, index) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <Text key={index} style={[style, highlightStyle]}>
-            {part}
-          </Text>
-        ) : (
-          <Text key={index}>{part}</Text>
-        )
-      )}
-    </Text>
-  );
-};
+import { exerciseMatchesSearch } from "../../utils/exerciseSearch";
+import ExerciseSearchHighlightText from "../../components/ExerciseSearchHighlightText";
 
 const ExerciseItem = React.memo(
   ({ item, onPress, searchText, isSelected, styles, colors }) => {
@@ -65,10 +52,12 @@ const ExerciseItem = React.memo(
         }}
       >
         <View style={styles.exerciseRow}>
-          <View style={[
-            styles.exerciseIconContainer,
-            isSelected && styles.selectedExerciseIconContainer
-          ]}>
+          <View
+            style={[
+              styles.exerciseIconContainer,
+              isSelected && styles.selectedExerciseIconContainer,
+            ]}
+          >
             {imagePath && !imageError ? (
               <Image
                 source={{ uri: `file://${imagePath}` }}
@@ -81,19 +70,21 @@ const ExerciseItem = React.memo(
             )}
           </View>
           <View style={styles.exerciseDetails}>
-            <HighlightText
+            <ExerciseSearchHighlightText
               text={item.name}
               highlight={searchText}
               style={[
                 styles.exerciseName,
-                isSelected && styles.selectedExerciseName
+                isSelected && styles.selectedExerciseName,
               ]}
               highlightStyle={styles.highlightedText}
             />
-            <Text style={[
-              styles.exerciseMuscleGroup,
-              isSelected && styles.selectedExerciseMuscleGroup
-            ]}>
+            <Text
+              style={[
+                styles.exerciseMuscleGroup,
+                isSelected && styles.selectedExerciseMuscleGroup,
+              ]}
+            >
               {capitalize(item.muscle_group)}
             </Text>
           </View>
@@ -105,7 +96,7 @@ const ExerciseItem = React.memo(
         </View>
       </TouchableOpacity>
     );
-  }
+  },
 );
 
 const AddExercisePage = ({ route }) => {
@@ -130,31 +121,39 @@ const AddExercisePage = ({ route }) => {
       setLoading(true);
       const data = await exercisesAPI.getExercises();
       const sortedData = (data || []).sort((a, b) =>
-        a.name.localeCompare(b.name)
+        a.name.localeCompare(b.name),
       );
       setExercises(sortedData);
       setFilteredExercises(sortedData);
-      
+
       // Download media for exercises that have media_url but no local_media_path
       if (data && data.length > 0) {
-        const exercisesNeedingMedia = data.filter(ex => ex.media_url && !ex.local_media_path);
-        
+        const exercisesNeedingMedia = data.filter(
+          (ex) => ex.media_url && !ex.local_media_path,
+        );
+
         if (exercisesNeedingMedia.length > 0) {
           // Download media in the background for better performance
           setTimeout(async () => {
             for (const exercise of exercisesNeedingMedia) {
               try {
-                await exercisesAPI.downloadExerciseMedia(exercise.exercise_id, exercise.media_url);
+                await exercisesAPI.downloadExerciseMedia(
+                  exercise.exercise_id,
+                  exercise.media_url,
+                );
               } catch (mediaError) {
-                console.warn(`[AddExercise] Failed to download media for exercise ${exercise.exercise_id}:`, mediaError);
+                console.warn(
+                  `[AddExercise] Failed to download media for exercise ${exercise.exercise_id}:`,
+                  mediaError,
+                );
               }
             }
-            
+
             // Refresh the exercises list to show the updated local_media_path
             const updatedExercises = await exercisesAPI.getExercises();
             if (updatedExercises) {
               const sortedUpdatedData = updatedExercises.sort((a, b) =>
-                a.name.localeCompare(b.name)
+                a.name.localeCompare(b.name),
               );
               setExercises(sortedUpdatedData);
               setFilteredExercises(sortedUpdatedData);
@@ -162,7 +161,6 @@ const AddExercisePage = ({ route }) => {
           }, 1000); // Delay to avoid blocking the UI
         }
       }
-      
     } catch (err) {
       console.error("Failed to load exercises:", err);
     } finally {
@@ -179,13 +177,13 @@ const AddExercisePage = ({ route }) => {
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (event) => {
         setKeyboardHeight(event.endCoordinates.height);
-      }
+      },
     );
     const keyboardWillHideListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         setKeyboardHeight(0);
-      }
+      },
     );
 
     return () => {
@@ -198,29 +196,19 @@ const AddExercisePage = ({ route }) => {
   useEffect(() => {
     let filtered = exercises;
 
-    // Apply search filter
+    // Apply search filter (token-wise AND across name, muscles, equipment, instructions)
     if (searchText.trim()) {
-      const searchTermLower = searchText.toLowerCase();
-      filtered = filtered.filter((exercise) => {
-        const nameMatch = exercise.name
-          ?.toLowerCase()
-          .includes(searchTermLower);
-        const muscleGroupMatch = exercise.muscle_group
-          ?.toLowerCase()
-          .includes(searchTermLower);
-        const instructionMatch = exercise.instruction
-          ?.toLowerCase()
-          .includes(searchTermLower);
-
-        return nameMatch || muscleGroupMatch || instructionMatch;
-      });
+      filtered = filtered.filter((exercise) =>
+        exerciseMatchesSearch(exercise, searchText),
+      );
     }
 
     // Apply muscle group filter
     if (selectedMuscleGroup) {
       filtered = filtered.filter(
         (exercise) =>
-          exercise.muscle_group?.toLowerCase() === selectedMuscleGroup.toLowerCase()
+          exercise.muscle_group?.toLowerCase() ===
+          selectedMuscleGroup.toLowerCase(),
       );
     }
 
@@ -228,7 +216,7 @@ const AddExercisePage = ({ route }) => {
     if (selectedEquipment) {
       filtered = filtered.filter(
         (exercise) =>
-          exercise.equipment?.toLowerCase() === selectedEquipment.toLowerCase()
+          exercise.equipment?.toLowerCase() === selectedEquipment.toLowerCase(),
       );
     }
 
@@ -238,7 +226,7 @@ const AddExercisePage = ({ route }) => {
   const handleExerciseSelect = (exercise) => {
     setSelectedExercises((prev) => {
       const isSelected = prev.some(
-        (e) => e.exercise_id === exercise.exercise_id
+        (e) => e.exercise_id === exercise.exercise_id,
       );
       if (isSelected) {
         return prev.filter((e) => e.exercise_id !== exercise.exercise_id);
@@ -265,7 +253,7 @@ const AddExercisePage = ({ route }) => {
 
   const renderExerciseItem = ({ item }) => {
     const isSelected = selectedExercises.some(
-      (e) => e.exercise_id === item.exercise_id
+      (e) => e.exercise_id === item.exercise_id,
     );
 
     return (
@@ -287,12 +275,12 @@ const AddExercisePage = ({ route }) => {
           title="Add Exercise"
           leftComponent={{
             type: "down",
-            onPress: () => navigation.goBack()
+            onPress: () => navigation.goBack(),
           }}
           rightComponent={{
             type: "button",
             text: "Create",
-            onPress: () => navigation.navigate("CreateExercise")
+            onPress: () => navigation.navigate("CreateExercise"),
           }}
         />
 
