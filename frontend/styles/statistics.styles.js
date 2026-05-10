@@ -7,9 +7,11 @@ import {
   BorderRadius,
   Shadow,
 } from "../constants/theme";
+import { createListGroupStyleSheet } from "./listGroup.styles";
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
+  const lg = createListGroupStyleSheet(colors);
 
   return StyleSheet.create({
     container: {
@@ -133,39 +135,12 @@ export const createStyles = (isDark = true) => {
     sectionsContainer: {
       marginTop: Spacing.m,
     },
-    sectionsGroup: {
-      backgroundColor: colors.backgroundPrimary,
-      marginBottom: Spacing.l,
-      overflow: "hidden",
-    },
-    sectionItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: Spacing.l,
-      paddingHorizontal: Spacing.m,
-      backgroundColor: colors.backgroundPrimary,
-    },
-    sectionItemBorder: {
-      borderBottomWidth: 0.5,
-      borderBottomColor: colors.borderColor,
-    },
-    sectionLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    sectionIcon: {
-      marginRight: Spacing.m,
-      width: Spacing.l,
-      height: Spacing.l,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    sectionTitle: {
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.regular,
-      color: colors.textPrimary,
-    },
+    sectionsGroup: lg.listGroup,
+    sectionItem: lg.listRow,
+    sectionItemBorder: lg.listRowBorder,
+    sectionLeft: lg.listRowLeft,
+    sectionIconWrap: lg.listIconWrap,
+    sectionTitle: lg.listRowTitle,
 
     // Selection Buttons (matching start page button style)
     selectionButtonsContainer: {

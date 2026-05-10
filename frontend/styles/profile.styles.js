@@ -7,9 +7,11 @@ import {
   FontWeight,
   Shadow,
 } from "../constants/theme";
+import { createListGroupStyleSheet } from "./listGroup.styles";
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
+  const lg = createListGroupStyleSheet(colors);
 
   return StyleSheet.create({
     container: {
@@ -38,70 +40,106 @@ export const createStyles = (isDark = true) => {
       padding: Spacing.xs,
     },
 
-    profileCard: {
-      backgroundColor: colors.backgroundSecondary,
-      paddingTop: Spacing.l,
-      paddingBottom: Spacing.l,
-      marginHorizontal: Spacing.m,
-      marginTop: Spacing.m,
-      borderRadius: BorderRadius.lg,
+    profileSection: {
+      paddingTop: Spacing.xl,
+      paddingBottom: Spacing.m,
+      paddingHorizontal: Spacing.m,
     },
 
     avatarContainer: {
       alignItems: "center",
+      marginBottom: Spacing.xl,
+    },
+
+    avatarRing: {
+      padding: 3,
+      borderRadius: 999,
+      borderWidth: 2,
+      borderColor: isDark
+        ? "rgba(64, 156, 255, 0.45)"
+        : "rgba(0, 122, 255, 0.35)",
       marginBottom: Spacing.m,
+      ...Shadow.small,
     },
 
     avatar: {
-      width: 100,
-      height: 100,
-      borderRadius: BorderRadius.round,
+      width: 104,
+      height: 104,
+      borderRadius: 52,
       backgroundColor: colors.backgroundCard,
       justifyContent: "center",
       alignItems: "center",
-      marginBottom: Spacing.m,
-      ...Shadow.medium,
+      overflow: "hidden",
     },
 
     avatarImage: {
-      width: 100,
-      height: 100,
-      borderRadius: BorderRadius.round,
+      width: 104,
+      height: 104,
+      borderRadius: 52,
     },
 
     displayName: {
+      color: colors.textPrimary,
+      fontSize: FontSize.xxlarge,
+      fontWeight: FontWeight.bold,
+      marginBottom: Spacing.xxs,
+      letterSpacing: -0.5,
+      textAlign: "center",
+    },
+
+    username: {
+      color: colors.textFaded,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.regular,
+      textAlign: "center",
+      maxWidth: "92%",
+    },
+
+    statsCard: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: BorderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
+      paddingVertical: Spacing.l,
+      paddingHorizontal: Spacing.xs,
+      overflow: "hidden",
+    },
+
+    statCell: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: Spacing.xxs,
+    },
+
+    statDivider: {
+      width: 1,
+      alignSelf: "stretch",
+      backgroundColor: colors.borderColor,
+      marginVertical: Spacing.xs,
+      opacity: 0.85,
+    },
+
+    statIconWrap: {
+      marginBottom: Spacing.xs,
+    },
+
+    statValue: {
       color: colors.textPrimary,
       fontSize: FontSize.xlarge,
       fontWeight: FontWeight.bold,
       marginBottom: Spacing.xxs,
     },
 
-    username: {
-      color: colors.textSecondary,
-      fontSize: FontSize.base,
-      fontWeight: FontWeight.regular,
-    },
-
-    statsContainer: {
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: Spacing.xl,
-    },
-
-    statItem: {
-      alignItems: "center",
-    },
-
-    statValue: {
-      color: colors.textPrimary,
-      fontSize: FontSize.large,
-      fontWeight: FontWeight.bold,
-      marginBottom: Spacing.xxs,
-    },
-
     statLabel: {
-      color: colors.textSecondary,
-      fontSize: FontSize.base,
+      color: colors.textFaded,
+      fontSize: FontSize.tiny,
+      fontWeight: FontWeight.semiBold,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      textAlign: "center",
     },
 
     graphSection: {
@@ -166,51 +204,33 @@ export const createStyles = (isDark = true) => {
     },
 
     dashboardSection: {
-      marginTop: Spacing.m,
+      marginTop: 0,
     },
 
     dashboardTitle: {
       color: colors.textFaded,
-      fontSize: FontSize.base,
+      fontSize: FontSize.caption,
       paddingHorizontal: Spacing.m,
-      paddingTop: Spacing.l,
-      paddingBottom: Spacing.xs,
+      paddingTop: Spacing.s,
+      paddingBottom: Spacing.s,
       fontWeight: FontWeight.semiBold,
       textTransform: "uppercase",
+      letterSpacing: 1,
     },
 
-    dashboardList: {
-      backgroundColor: colors.backgroundSecondary,
-      marginHorizontal: Spacing.m,
-      borderRadius: BorderRadius.lg,
-      overflow: "hidden",
-    },
+    dashboardList: lg.listGroup,
 
-    dashboardItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.s,
-      backgroundColor: colors.backgroundSecondary,
-    },
+    dashboardIconWrap: lg.listIconWrap,
 
-    dashboardItemBorder: {
-      borderBottomWidth: 0.5,
-      borderBottomColor: colors.borderColor,
-    },
+    dashboardItem: lg.listRow,
 
-    dashboardItemLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.m,
-    },
+    dashboardItemBorder: lg.listRowBorder,
 
-    dashboardItemText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.medium,
-      fontWeight: FontWeight.regular,
-    },
+    dashboardItemLeft: lg.listRowLeft,
+
+    dashboardItemText: lg.listRowTitle,
+
+    scrollContent: lg.listScrollContentPadding,
   });
 };
 

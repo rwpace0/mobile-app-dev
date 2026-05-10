@@ -26,17 +26,22 @@ const DashboardItem = ({ icon, title, onPress, showBorder, colors, styles }) => 
   <TouchableOpacity
     style={[styles.dashboardItem, showBorder && styles.dashboardItemBorder]}
     onPress={onPress}
+    activeOpacity={0.65}
   >
     <View style={styles.dashboardItemLeft}>
-      <Ionicons name={icon} size={24} color={colors.primaryBlue} />
+      <View style={styles.dashboardIconWrap}>
+        <Ionicons name={icon} size={22} color={colors.primaryBlue} />
+      </View>
       <Text style={styles.dashboardItemText}>{title}</Text>
     </View>
-    <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
+    <Ionicons name="chevron-forward" size={20} color={colors.textFaded} />
   </TouchableOpacity>
 );
 
 const Profile = ({ navigation }) => {
   const [workoutCount, setWorkoutCount] = useState(0);
+  const [workoutsThisWeek, setWorkoutsThisWeek] = useState(0);
+  const [workoutStreak, setWorkoutStreak] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -46,13 +51,21 @@ const Profile = ({ navigation }) => {
   const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { alertState, showInfo, hideAlert } = useAlertModal();
 
-  const fetchWorkoutCount = async () => {
+  const fetchWorkoutStats = async () => {
     try {
-      const count = await workoutAPI.getTotalWorkoutCount();
-      setWorkoutCount(count);
+      const [total, thisWeek, streak] = await Promise.all([
+        workoutAPI.getTotalWorkoutCount(),
+        workoutAPI.getWorkoutCountThisWeek(),
+        workoutAPI.getWorkoutStreakDays(),
+      ]);
+      setWorkoutCount(total);
+      setWorkoutsThisWeek(thisWeek);
+      setWorkoutStreak(streak);
     } catch (error) {
-      console.error("Error fetching workout count:", error);
+      console.error("Error fetching workout stats:", error);
       setWorkoutCount(0);
+      setWorkoutsThisWeek(0);
+      setWorkoutStreak(0);
     }
   };
 
@@ -152,7 +165,7 @@ const Profile = ({ navigation }) => {
 
   useEffect(() => {
     if (user?.isAuthenticated) {
-      fetchWorkoutCount();
+      fetchWorkoutStats();
       fetchProfileAvatar();
       fetchDisplayName();
 
@@ -171,7 +184,7 @@ const Profile = ({ navigation }) => {
   useFocusEffect(
     React.useCallback(() => {
       if (user?.isAuthenticated) {
-        fetchWorkoutCount();
+        fetchWorkoutStats();
         // Always refetch avatar on focus to catch updates from edit screen
         fetchProfileAvatar();
       }
@@ -179,45 +192,71 @@ const Profile = ({ navigation }) => {
   );
 
   const renderProfile = () => (
-    <View style={styles.profileCard}>
+    <View style={styles.profileSection}>
       <View style={styles.avatarContainer}>
-        <TouchableOpacity
-          style={styles.avatar}
-          onPress={() => {
-            hapticLight();
-            navigation.navigate("EditProfile");
-          }}
-        >
-          {profileAvatar ? (
-            <Image
-              key={profileAvatar}
-              source={{ uri: profileAvatar }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-              onError={() => setProfileAvatar(null)}
-            />
-          ) : (
-            <Ionicons
-              name="person-outline"
-              size={50}
-              color={colors.textPrimary}
-            />
-          )}
-        </TouchableOpacity>
+        <View style={styles.avatarRing}>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => {
+              hapticLight();
+              navigation.navigate("EditProfile");
+            }}
+            activeOpacity={0.85}
+          >
+            {profileAvatar ? (
+              <Image
+                key={profileAvatar}
+                source={{ uri: profileAvatar }}
+                style={styles.avatarImage}
+                resizeMode="cover"
+                onError={() => setProfileAvatar(null)}
+              />
+            ) : (
+              <Ionicons
+                name="person-outline"
+                size={48}
+                color={colors.textSecondary}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
         <Text style={styles.displayName}>{displayName}</Text>
-        <Text style={styles.username}>{username}</Text>
+        {username ? (
+          <Text style={styles.username} numberOfLines={1}>
+            {username.includes("@") ? username : `@${username}`}
+          </Text>
+        ) : null}
       </View>
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
+      <View style={styles.statsCard}>
+        <View style={styles.statCell}>
+          <View style={styles.statIconWrap}>
+            <Ionicons
+              name="barbell-outline"
+              size={20}
+              color={colors.primaryBlue}
+            />
+          </View>
           <Text style={styles.statValue}>{workoutCount}</Text>
           <Text style={styles.statLabel}>Workouts</Text>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>This Week</Text>
+        <View style={styles.statDivider} />
+        <View style={styles.statCell}>
+          <View style={styles.statIconWrap}>
+            <Ionicons
+              name="calendar-outline"
+              size={20}
+              color={colors.primaryBlue}
+            />
+          </View>
+          <Text style={styles.statValue}>{workoutsThisWeek}</Text>
+          <Text style={styles.statLabel}>This week</Text>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>0</Text>
+        <View style={styles.statDivider} />
+        <View style={styles.statCell}>
+          <View style={styles.statIconWrap}>
+            <Ionicons name="flame-outline" size={20} color={colors.primaryBlue} />
+          </View>
+          <Text style={styles.statValue}>{workoutStreak}</Text>
           <Text style={styles.statLabel}>Streak</Text>
         </View>
       </View>
@@ -302,7 +341,10 @@ const Profile = ({ navigation }) => {
           onPress: () => navigation.navigate("Settings"),
         }}
       />
-      <ScrollView>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {renderProfile()}
         {renderDashboard()}
       </ScrollView>

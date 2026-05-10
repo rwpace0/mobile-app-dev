@@ -1022,6 +1022,67 @@ class WorkoutAPI extends APIBase {
     }
   }
 
+  /**
+   * Local calendar week (Mon 00:00 → next Mon 00:00) workout count.
+   */
+  async getWorkoutCountThisWeek() {
+    try {
+      await this.ensureInitialized();
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const daysSinceMonday = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - daysSinceMonday);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 7);
+      const result = await this.db.query(
+        `SELECT COUNT(*) as count
+         FROM workouts
+         WHERE sync_status != 'pending_delete'
+           AND date_performed >= ?
+           AND date_performed < ?`,
+        [start.toISOString(), end.toISOString()]
+      );
+      return result.length > 0 ? Number(result[0].count) : 0;
+    } catch (error) {
+      console.error("Get workout count this week error:", error);
+      return 0;
+    }
+  }
+
+  /**
+   * Consecutive local calendar days with at least one workout,
+   * counting backward from the most recent workout day.
+   */
+  async getWorkoutStreakDays() {
+    try {
+      await this.ensureInitialized();
+      const rows = await this.db.query(
+        `SELECT date_performed FROM workouts
+         WHERE sync_status != 'pending_delete'`
+      );
+      const daySet = new Set();
+      const ymd = (d) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      for (const row of rows) {
+        daySet.add(ymd(new Date(row.date_performed)));
+      }
+      if (daySet.size === 0) return 0;
+
+      const sorted = Array.from(daySet).sort();
+      const [y, m, day] = sorted[sorted.length - 1].split("-").map(Number);
+      let cur = new Date(y, m - 1, day);
+      let streak = 0;
+      while (daySet.has(ymd(cur))) {
+        streak++;
+        cur.setDate(cur.getDate() - 1);
+      }
+      return streak;
+    } catch (error) {
+      console.error("Get workout streak error:", error);
+      return 0;
+    }
+  }
+
   async getUserId() {
     const accessToken = await tokenManager.getValidToken();
     if (!accessToken) throw new Error("No auth token found");

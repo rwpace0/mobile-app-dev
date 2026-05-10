@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Switch,
   Modal,
+  Platform,
 } from "react-native";
 import {
   Ionicons,
@@ -14,7 +15,11 @@ import {
   FontAwesome5,
   Feather,
 } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { createStyles } from "../../styles/settings.styles";
 import Header from "../../components/static/header";
 import { useThemeColors } from "../../constants/useThemeColors";
@@ -22,6 +27,10 @@ import { useSettings, useTheme } from "../../state/SettingsContext";
 import BottomSheetModal from "../../components/modals/bottomModal";
 import { hapticLight, hapticSelection } from "../../utils/hapticFeedback";
 import { capitalize } from "../../utils/timerUtils";
+import {
+  getNotificationsAuthorized,
+  requestNotificationPermission,
+} from "../../utils/notifications";
 
 const SettingToggle = ({
   title,
@@ -29,20 +38,20 @@ const SettingToggle = ({
   onValueChange,
   icon,
   IconComponent = Ionicons,
+  showBorder = true,
 }) => {
   const { isDark } = useTheme();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
-    <View style={styles.settingsItem}>
+    <View
+      style={[styles.settingsItem, showBorder && styles.settingsItemBorder]}
+    >
       <View style={styles.settingsItemLeft}>
-        <IconComponent
-          name={icon}
-          size={24}
-          color={colors.textPrimary}
-          style={styles.icon}
-        />
+        <View style={styles.settingsIconWrap}>
+          <IconComponent name={icon} size={22} color={colors.primaryBlue} />
+        </View>
         <Text style={styles.settingsItemText}>{title}</Text>
       </View>
       <Switch
@@ -79,14 +88,12 @@ const SettingDropdown = ({
           hapticLight();
           setModalVisible(true);
         }}
+        activeOpacity={0.65}
       >
         <View style={styles.settingsItemLeft}>
-          <IconComponent
-            name={icon}
-            size={24}
-            color={colors.textPrimary}
-            style={styles.icon}
-          />
+          <View style={styles.settingsIconWrap}>
+            <IconComponent name={icon} size={22} color={colors.primaryBlue} />
+          </View>
           <Text style={styles.settingsItemText}>{title}</Text>
         </View>
         <View style={styles.dropdownValue}>
@@ -207,14 +214,12 @@ const ThemeSelector = ({ title, value, onSelect, icon }) => {
           hapticLight();
           setShowThemeModal(true);
         }}
+        activeOpacity={0.65}
       >
         <View style={styles.settingsItemLeft}>
-          <Ionicons
-            name={icon}
-            size={24}
-            color={colors.textPrimary}
-            style={styles.icon}
-          />
+          <View style={styles.settingsIconWrap}>
+            <Ionicons name={icon} size={22} color={colors.primaryBlue} />
+          </View>
           <Text style={styles.settingsItemText}>{title}</Text>
         </View>
         <View style={styles.dropdownValue}>
@@ -284,8 +289,31 @@ const SettingsPage = () => {
   const { type, subtype } = route.params || {};
   const { theme, changeTheme, isDark } = useTheme();
   const { settings, updateSetting } = useSettings();
-  const colors = useThemeColors();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
+  const [systemNotificationsOn, setSystemNotificationsOn] = useState(false);
+
+  const refreshNotificationPermission = useCallback(async () => {
+    const on = await getNotificationsAuthorized();
+    setSystemNotificationsOn(on);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshNotificationPermission();
+    }, [refreshNotificationPermission]),
+  );
+
+  const handleNotificationToggle = useCallback(
+    async (wantOn) => {
+      hapticLight();
+      if (!wantOn) {
+        return;
+      }
+      await requestNotificationPermission();
+      await refreshNotificationPermission();
+    },
+    [refreshNotificationPermission],
+  );
 
   const toggleSetting = (key) => {
     updateSetting(key, !settings[key]);
@@ -309,8 +337,56 @@ const SettingsPage = () => {
   const getPageContent = () => {
     switch (type) {
       case "workouts":
+        if (settings.restTimerEnabled) {
+          return (
+            <>
+              <View style={styles.settingsGroup}>
+                <SettingToggle
+                  title="Show Previous Performance"
+                  value={settings.showPreviousPerformance}
+                  onValueChange={() => toggleSetting("showPreviousPerformance")}
+                  icon="analytics-outline"
+                />
+                <SettingToggle
+                  title="Auto Rest Timer"
+                  value={settings.autoRestTimer}
+                  onValueChange={() => toggleSetting("autoRestTimer")}
+                  icon="timer-outline"
+                />
+                <SettingToggle
+                  title="Rest Timer Enabled"
+                  value={settings.restTimerEnabled}
+                  onValueChange={() => toggleSetting("restTimerEnabled")}
+                  icon="time-outline"
+                  showBorder={false}
+                />
+              </View>
+              <SegmentedControl
+                title="Timer Type"
+                value={settings.timerType}
+                options={["exercise", "set"]}
+                onSelect={(value) => updateSetting("timerType", value)}
+              />
+              <View style={styles.settingsGroup}>
+                <SettingToggle
+                  title="Show RIR"
+                  value={settings.showRir}
+                  onValueChange={() => toggleSetting("showRir")}
+                  icon="fitness-outline"
+                />
+                <SettingToggle
+                  title="Show Notes"
+                  value={settings.showNotes}
+                  onValueChange={() => toggleSetting("showNotes")}
+                  icon="document-text-outline"
+                  showBorder={false}
+                />
+              </View>
+            </>
+          );
+        }
         return (
-          <>
+          <View style={styles.settingsGroup}>
             <SettingToggle
               title="Show Previous Performance"
               value={settings.showPreviousPerformance}
@@ -329,14 +405,6 @@ const SettingsPage = () => {
               onValueChange={() => toggleSetting("restTimerEnabled")}
               icon="time-outline"
             />
-            {settings.restTimerEnabled && (
-              <SegmentedControl
-                title="Timer Type"
-                value={settings.timerType}
-                options={["exercise", "set"]}
-                onSelect={(value) => updateSetting("timerType", value)}
-              />
-            )}
             <SettingToggle
               title="Show RIR"
               value={settings.showRir}
@@ -348,12 +416,13 @@ const SettingsPage = () => {
               value={settings.showNotes}
               onValueChange={() => toggleSetting("showNotes")}
               icon="document-text-outline"
+              showBorder={false}
             />
-          </>
+          </View>
         );
       case "privacy":
         return (
-          <>
+          <View style={styles.settingsGroup}>
             <SettingToggle
               title="Share Workouts"
               value={settings.shareWorkouts}
@@ -372,8 +441,9 @@ const SettingsPage = () => {
               value={settings.allowComments}
               onValueChange={() => toggleSetting("allowComments")}
               icon="chatbubble-outline"
+              showBorder={false}
             />
-          </>
+          </View>
         );
       case "units":
         return (
@@ -400,14 +470,28 @@ const SettingsPage = () => {
         );
       case "theme":
         return (
-          <>
+          <View style={styles.settingsGroup}>
             <ThemeSelector
               title="Theme"
               value={theme}
               onSelect={(value) => changeTheme(value)}
               icon="moon-outline"
             />
-          </>
+          </View>
+        );
+      case "notifications":
+        return (
+          <View>
+            <View style={styles.settingsGroup}>
+              <SettingToggle
+                title="Allow Notifications"
+                value={systemNotificationsOn}
+                onValueChange={handleNotificationToggle}
+                icon="notifications-outline"
+                showBorder={false}
+              />
+            </View>
+          </View>
         );
       default:
         return null;
@@ -424,6 +508,8 @@ const SettingsPage = () => {
         return "Select Units";
       case "theme":
         return "Theme";
+      case "notifications":
+        return "Notifications";
       default:
         return "Settings";
     }
@@ -432,7 +518,9 @@ const SettingsPage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header title={getPageTitle()} leftComponent={getHeaderLeftComponent()} />
-      <ScrollView>{getPageContent()}</ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {getPageContent()}
+      </ScrollView>
     </SafeAreaView>
   );
 };

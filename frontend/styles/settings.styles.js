@@ -6,9 +6,11 @@ import {
   FontSize,
   FontWeight,
 } from "../constants/theme";
+import { createListGroupStyleSheet } from "./listGroup.styles";
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
+  const lg = createListGroupStyleSheet(colors);
 
   return StyleSheet.create({
     container: {
@@ -30,49 +32,13 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.semiBold,
       color: colors.textPrimary,
     },
-    sectionHeader: {
-      fontSize: FontSize.base,
-      color: colors.textFaded,
-      paddingHorizontal: Spacing.m,
-      paddingTop: Spacing.l,
-      paddingBottom: Spacing.xs,
-      fontWeight: FontWeight.semiBold,
-    },
-    settingsGroup: {
-      backgroundColor: colors.backgroundSecondary,
-      marginHorizontal: Spacing.m,
-      marginBottom: Spacing.m,
-      borderRadius: BorderRadius.lg,
-      overflow: "hidden",
-    },
-    settingsItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.s,
-      backgroundColor: colors.backgroundSecondary,
-    },
-    settingsItemBorder: {
-      borderBottomWidth: 0.5,
-      borderBottomColor: colors.borderColor,
-    },
-    settingsItemLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    icon: {
-      marginRight: Spacing.m,
-      width: Spacing.l,
-      height: Spacing.l,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    settingsItemText: {
-      fontSize: FontSize.medium,
-      color: colors.textPrimary,
-      fontWeight: FontWeight.regular,
-    },
+    sectionHeader: lg.listSectionTitle,
+    settingsGroup: lg.listGroup,
+    settingsItem: lg.listRow,
+    settingsItemBorder: lg.listRowBorder,
+    settingsItemLeft: lg.listRowLeft,
+    settingsIconWrap: lg.listIconWrap,
+    settingsItemText: lg.listRowTitle,
 
     dropdownValue: {
       flexDirection: "row",
@@ -279,6 +245,14 @@ export const createStyles = (isDark = true) => {
     scrollView: {
       flex: 1,
     },
+    settingsFootnote: {
+      fontSize: FontSize.caption,
+      color: colors.textFaded,
+      paddingHorizontal: Spacing.m,
+      marginTop: Spacing.m,
+      lineHeight: 20,
+    },
+    scrollContent: lg.listScrollContentPadding,
   });
 };
 
