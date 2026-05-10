@@ -37,6 +37,8 @@ const DashboardItem = ({ icon, title, onPress, showBorder, colors, styles }) => 
 
 const Profile = ({ navigation }) => {
   const [workoutCount, setWorkoutCount] = useState(0);
+  const [workoutsThisWeek, setWorkoutsThisWeek] = useState(0);
+  const [workoutStreak, setWorkoutStreak] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -46,13 +48,21 @@ const Profile = ({ navigation }) => {
   const styles = useMemo(() => createStyles(isDark), [isDark]);
   const { alertState, showInfo, hideAlert } = useAlertModal();
 
-  const fetchWorkoutCount = async () => {
+  const fetchWorkoutStats = async () => {
     try {
-      const count = await workoutAPI.getTotalWorkoutCount();
-      setWorkoutCount(count);
+      const [total, thisWeek, streak] = await Promise.all([
+        workoutAPI.getTotalWorkoutCount(),
+        workoutAPI.getWorkoutCountThisWeek(),
+        workoutAPI.getWorkoutStreakDays(),
+      ]);
+      setWorkoutCount(total);
+      setWorkoutsThisWeek(thisWeek);
+      setWorkoutStreak(streak);
     } catch (error) {
-      console.error("Error fetching workout count:", error);
+      console.error("Error fetching workout stats:", error);
       setWorkoutCount(0);
+      setWorkoutsThisWeek(0);
+      setWorkoutStreak(0);
     }
   };
 
@@ -152,7 +162,7 @@ const Profile = ({ navigation }) => {
 
   useEffect(() => {
     if (user?.isAuthenticated) {
-      fetchWorkoutCount();
+      fetchWorkoutStats();
       fetchProfileAvatar();
       fetchDisplayName();
 
@@ -171,7 +181,7 @@ const Profile = ({ navigation }) => {
   useFocusEffect(
     React.useCallback(() => {
       if (user?.isAuthenticated) {
-        fetchWorkoutCount();
+        fetchWorkoutStats();
         // Always refetch avatar on focus to catch updates from edit screen
         fetchProfileAvatar();
       }
@@ -213,11 +223,11 @@ const Profile = ({ navigation }) => {
           <Text style={styles.statLabel}>Workouts</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>0</Text>
+          <Text style={styles.statValue}>{workoutsThisWeek}</Text>
           <Text style={styles.statLabel}>This Week</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>0</Text>
+          <Text style={styles.statValue}>{workoutStreak}</Text>
           <Text style={styles.statLabel}>Streak</Text>
         </View>
       </View>
