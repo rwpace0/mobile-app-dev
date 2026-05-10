@@ -107,7 +107,7 @@ const Settings = () => {
           <SettingsItem
             icon="notifications-outline"
             title="Notifications"
-            onPress={() => navigateToSettings("account")}
+            onPress={() => navigateToSettings("notifications")}
             showBorder={false}
           />
         </View>

@@ -245,6 +245,13 @@ export const createStyles = (isDark = true) => {
     scrollView: {
       flex: 1,
     },
+    settingsFootnote: {
+      fontSize: FontSize.caption,
+      color: colors.textFaded,
+      paddingHorizontal: Spacing.m,
+      marginTop: Spacing.m,
+      lineHeight: 20,
+    },
     scrollContent: lg.listScrollContentPadding,
   });
 };

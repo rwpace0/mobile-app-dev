@@ -1,6 +1,19 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 
+const permissionIsOn = (perm) =>
+  Boolean(
+    perm?.granted ||
+      perm?.status === "granted" ||
+      perm?.status === "provisional"
+  );
+
+/** Reflects iOS/Android authorization (including iOS provisional delivery). */
+export const getNotificationsAuthorized = async () => {
+  const perm = await Notifications.getPermissionsAsync();
+  return permissionIsOn(perm);
+};
+
 // Ensure notifications are displayed when the app is foregrounded
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -22,11 +35,7 @@ const ensureDefaultChannelAsync = async () => {
 
 export const requestNotificationPermission = async () => {
   const existing = await Notifications.getPermissionsAsync();
-  if (
-    existing.granted ||
-    existing.status === "granted" ||
-    existing.status === "provisional"
-  ) {
+  if (permissionIsOn(existing)) {
     return true;
   }
 
@@ -35,11 +44,7 @@ export const requestNotificationPermission = async () => {
   }
 
   const requested = await Notifications.requestPermissionsAsync();
-  return (
-    requested.granted ||
-    requested.status === "granted" ||
-    requested.status === "provisional"
-  );
+  return permissionIsOn(requested);
 };
 
 export const scheduleActiveWorkoutNotification = async (workoutName) => {
