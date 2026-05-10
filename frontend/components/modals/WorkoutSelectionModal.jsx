@@ -256,7 +256,7 @@ const WorkoutSelectionModal = ({
               renderItem={renderWorkoutItem}
               keyExtractor={(item) => item.workout_id}
               showsVerticalScrollIndicator={false}
-              scrollEnabled={workouts.length > 4} // Only scroll if more than 4 items
+              scrollEnabled={workouts.length > 4}
             />
           </View>
 

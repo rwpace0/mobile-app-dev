@@ -264,20 +264,21 @@ const StatisticsPage = () => {
                 <TouchableOpacity
                   style={[styles.sectionItem, styles.sectionItemBorder]}
                   onPress={() => handleSectionPress("StatisticsWeeklySets")}
-                  activeOpacity={0.7}
+                  activeOpacity={0.65}
                 >
                   <View style={styles.sectionLeft}>
-                    <Ionicons
-                      name="stats-chart"
-                      size={24}
-                      color={colors.primaryBlue}
-                      style={styles.sectionIcon}
-                    />
+                    <View style={styles.sectionIconWrap}>
+                      <Ionicons
+                        name="stats-chart"
+                        size={22}
+                        color={colors.primaryBlue}
+                      />
+                    </View>
                     <Text style={styles.sectionTitle}>Sets</Text>
                   </View>
                   <Ionicons
                     name="chevron-forward"
-                    size={24}
+                    size={20}
                     color={colors.textFaded}
                   />
                 </TouchableOpacity>
@@ -286,44 +287,46 @@ const StatisticsPage = () => {
                 <TouchableOpacity
                   style={[styles.sectionItem, styles.sectionItemBorder]}
                   onPress={() => handleSectionPress("StatisticsRecentBests")}
-                  activeOpacity={0.7}
+                  activeOpacity={0.65}
                 >
                   <View style={styles.sectionLeft}>
-                    <Ionicons
-                      name="trending-up"
-                      size={24}
-                      color={colors.primaryBlue}
-                      style={styles.sectionIcon}
-                    />
+                    <View style={styles.sectionIconWrap}>
+                      <Ionicons
+                        name="trending-up"
+                        size={22}
+                        color={colors.primaryBlue}
+                      />
+                    </View>
                     <Text style={styles.sectionTitle}>Progression</Text>
                   </View>
                   <Ionicons
                     name="chevron-forward"
-                    size={24}
+                    size={20}
                     color={colors.textFaded}
                   />
                 </TouchableOpacity>
 
                 {/* Frequency Section */}
                 <TouchableOpacity
-                  style={[styles.sectionItem, styles.sectionItemBorder]}
+                  style={styles.sectionItem}
                   onPress={() =>
                     handleSectionPress("StatisticsWorkoutFrequency")
                   }
-                  activeOpacity={0.7}
+                  activeOpacity={0.65}
                 >
                   <View style={styles.sectionLeft}>
-                    <Ionicons
-                      name="calendar"
-                      size={24}
-                      color={colors.primaryBlue}
-                      style={styles.sectionIcon}
-                    />
+                    <View style={styles.sectionIconWrap}>
+                      <Ionicons
+                        name="calendar"
+                        size={22}
+                        color={colors.primaryBlue}
+                      />
+                    </View>
                     <Text style={styles.sectionTitle}>Frequency</Text>
                   </View>
                   <Ionicons
                     name="chevron-forward"
-                    size={24}
+                    size={20}
                     color={colors.textFaded}
                   />
                 </TouchableOpacity>

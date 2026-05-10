@@ -7,9 +7,11 @@ import {
   FontWeight,
   Shadow,
 } from "../constants/theme";
+import { createListGroupStyleSheet } from "./listGroup.styles";
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
+  const lg = createListGroupStyleSheet(colors);
 
   return StyleSheet.create({
     container: {
@@ -216,54 +218,19 @@ export const createStyles = (isDark = true) => {
       letterSpacing: 1,
     },
 
-    dashboardList: {
-      backgroundColor: colors.backgroundSecondary,
-      marginHorizontal: Spacing.m,
-      borderRadius: BorderRadius.xl,
-      borderWidth: 1,
-      borderColor: colors.borderColor,
-      overflow: "hidden",
-    },
+    dashboardList: lg.listGroup,
 
-    dashboardIconWrap: {
-      width: 40,
-      height: 40,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.backgroundCard,
-      justifyContent: "center",
-      alignItems: "center",
-    },
+    dashboardIconWrap: lg.listIconWrap,
 
-    dashboardItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: Spacing.m + 2,
-      paddingHorizontal: Spacing.m,
-      backgroundColor: colors.backgroundSecondary,
-    },
+    dashboardItem: lg.listRow,
 
-    dashboardItemBorder: {
-      borderBottomWidth: 0.5,
-      borderBottomColor: colors.borderColor,
-    },
+    dashboardItemBorder: lg.listRowBorder,
 
-    dashboardItemLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.m,
-      flex: 1,
-    },
+    dashboardItemLeft: lg.listRowLeft,
 
-    dashboardItemText: {
-      color: colors.textPrimary,
-      fontSize: FontSize.base,
-      fontWeight: FontWeight.medium,
-    },
+    dashboardItemText: lg.listRowTitle,
 
-    scrollContent: {
-      paddingBottom: Spacing.xxxl,
-    },
+    scrollContent: lg.listScrollContentPadding,
   });
 };
 

@@ -6,9 +6,11 @@ import {
   FontSize,
   FontWeight,
 } from "../constants/theme";
+import { createListGroupStyleSheet } from "./listGroup.styles";
 
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
+  const lg = createListGroupStyleSheet(colors);
 
   return StyleSheet.create({
     container: {
@@ -30,55 +32,13 @@ export const createStyles = (isDark = true) => {
       fontWeight: FontWeight.semiBold,
       color: colors.textPrimary,
     },
-    sectionHeader: {
-      fontSize: FontSize.caption,
-      color: colors.textFaded,
-      paddingHorizontal: Spacing.m,
-      paddingTop: Spacing.m,
-      paddingBottom: Spacing.s,
-      fontWeight: FontWeight.semiBold,
-      letterSpacing: 1,
-    },
-    settingsGroup: {
-      backgroundColor: colors.backgroundSecondary,
-      marginHorizontal: Spacing.m,
-      marginBottom: Spacing.m,
-      borderRadius: BorderRadius.xl,
-      borderWidth: 1,
-      borderColor: colors.borderColor,
-      overflow: "hidden",
-    },
-    settingsItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: Spacing.m + 2,
-      paddingHorizontal: Spacing.m,
-      backgroundColor: colors.backgroundSecondary,
-    },
-    settingsItemBorder: {
-      borderBottomWidth: 0.5,
-      borderBottomColor: colors.borderColor,
-    },
-    settingsItemLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.m,
-      flex: 1,
-    },
-    settingsIconWrap: {
-      width: 40,
-      height: 40,
-      borderRadius: BorderRadius.md,
-      backgroundColor: colors.backgroundCard,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    settingsItemText: {
-      fontSize: FontSize.base,
-      color: colors.textPrimary,
-      fontWeight: FontWeight.medium,
-    },
+    sectionHeader: lg.listSectionTitle,
+    settingsGroup: lg.listGroup,
+    settingsItem: lg.listRow,
+    settingsItemBorder: lg.listRowBorder,
+    settingsItemLeft: lg.listRowLeft,
+    settingsIconWrap: lg.listIconWrap,
+    settingsItemText: lg.listRowTitle,
 
     dropdownValue: {
       flexDirection: "row",
@@ -285,9 +245,7 @@ export const createStyles = (isDark = true) => {
     scrollView: {
       flex: 1,
     },
-    scrollContent: {
-      paddingBottom: Spacing.xxxl,
-    },
+    scrollContent: lg.listScrollContentPadding,
   });
 };
 

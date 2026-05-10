@@ -105,7 +105,7 @@ const BottomSheetModal = ({
   const renderAction = (action, index) => {
     const isDestructive = action.destructive;
     const isDisabled = action.disabled;
-    
+
     return (
       <TouchableOpacity
         key={index}
@@ -114,7 +114,7 @@ const BottomSheetModal = ({
           isDestructive && styles.destructiveAction,
           isDisabled && styles.disabledAction,
           index === 0 && styles.firstAction,
-          index === actions.length - 1 && styles.lastAction
+          index === actions.length - 1 && styles.lastAction,
         ]}
         onPress={() => {
           if (!isDisabled && action.onPress) {
@@ -128,33 +128,33 @@ const BottomSheetModal = ({
       >
         <View style={styles.actionContent}>
           {action.icon && (
-            <Ionicons 
-              name={action.icon} 
-              size={22} 
+            <Ionicons
+              name={action.icon}
+              size={22}
               color={
-                isDisabled 
-                  ? colors.textDisabled 
-                  : isDestructive 
-                    ? colors.accentRed 
+                isDisabled
+                  ? colors.textDisabled
+                  : isDestructive
+                    ? colors.accentRed
                     : colors.textPrimary
-              } 
+              }
             />
           )}
-          <Text 
+          <Text
             style={[
               styles.actionText,
               isDestructive && styles.destructiveText,
-              isDisabled && styles.disabledText
+              isDisabled && styles.disabledText,
             ]}
           >
             {action.title}
           </Text>
         </View>
         {action.showChevron && (
-          <Ionicons 
-            name="chevron-forward" 
-            size={18} 
-            color={colors.textSecondary} 
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={colors.textSecondary}
           />
         )}
       </TouchableOpacity>
