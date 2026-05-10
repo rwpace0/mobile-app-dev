@@ -38,13 +38,11 @@ export const createStyles = (isDark = true) => {
       padding: Spacing.xs,
     },
 
-    profileCard: {
-      backgroundColor: colors.backgroundSecondary,
+    profileSection: {
       paddingTop: Spacing.l,
       paddingBottom: Spacing.l,
-      marginHorizontal: Spacing.m,
+      paddingHorizontal: Spacing.m,
       marginTop: Spacing.m,
-      borderRadius: BorderRadius.lg,
     },
 
     avatarContainer: {

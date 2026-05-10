@@ -179,7 +179,7 @@ const Profile = ({ navigation }) => {
   );
 
   const renderProfile = () => (
-    <View style={styles.profileCard}>
+    <View style={styles.profileSection}>
       <View style={styles.avatarContainer}>
         <TouchableOpacity
           style={styles.avatar}

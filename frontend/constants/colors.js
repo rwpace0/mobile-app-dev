@@ -1,11 +1,11 @@
 // Dark theme colors (current)
 const darkTheme = {
   // base theme colors
-  backgroundPrimary: "#121212", // main background
-  backgroundSecondary: "#1A1A1A", // secondary background
-  backgroundInput: "#1E1E1E", // input background
-  backgroundCard: "#242424", // card background
-  borderColor: "#2A2A2A", // divider lines
+  backgroundPrimary: "#000000", // main background
+  backgroundSecondary: "#101010", // secondary background
+  backgroundInput: "#141414", // input background
+  backgroundCard: "#181818", // card background
+  borderColor: "#252525", // divider lines
 
   // primary colors
   primaryBlue: "#007AFF", // iOS blue
