@@ -1,7 +1,8 @@
 /**
- * Exercise search: token-wise AND matching so queries like "bicep curl"
- * match "Biceps Curl". Short tokens use substring matching on the haystack;
- * otherwise tokens can fuzzy-match individual words (e.g. "crl" → "curl").
+ * Exercise search: token-wise AND matching (e.g. "bicep curl" → "Biceps Curl").
+ * Substring match on a compact haystack; fuzzy match compares tokens to words in
+ * those same fields. Instructions are excluded — they repeat generic words like
+ * "split" / "stance" and cause unrelated exercises to match.
  */
 
 export function tokenizeSearch(query) {
@@ -13,17 +14,20 @@ export function tokenizeSearch(query) {
     .filter((t) => t.length > 0);
 }
 
-export function exerciseSearchHaystack(exercise) {
-  const parts = [
+/** Fields used for matching (keep narrow to avoid noise from long prose). */
+function exerciseSearchParts(exercise) {
+  return [
     exercise?.name,
     exercise?.muscle_group,
     exercise?.equipment,
-    exercise?.instruction,
     ...(Array.isArray(exercise?.secondary_muscle_groups)
       ? exercise.secondary_muscle_groups
       : []),
   ];
-  return parts
+}
+
+export function exerciseSearchHaystack(exercise) {
+  return exerciseSearchParts(exercise)
     .filter((p) => p != null && String(p).length > 0)
     .join(" ")
     .toLowerCase();
@@ -57,17 +61,8 @@ function levenshtein(a, b) {
 }
 
 function collectExerciseWords(exercise) {
-  const parts = [
-    exercise?.name,
-    exercise?.muscle_group,
-    exercise?.equipment,
-    exercise?.instruction,
-    ...(Array.isArray(exercise?.secondary_muscle_groups)
-      ? exercise.secondary_muscle_groups
-      : []),
-  ];
   const words = new Set();
-  for (const p of parts) {
+  for (const p of exerciseSearchParts(exercise)) {
     if (p == null || String(p).length === 0) continue;
     const found = String(p).toLowerCase().match(/\w+/g);
     if (found) {
