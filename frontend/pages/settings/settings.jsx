@@ -38,21 +38,23 @@ const SettingsItem = ({
     <TouchableOpacity
       style={[styles.settingsItem, showBorder && styles.settingsItemBorder]}
       onPress={onPress}
+      activeOpacity={0.65}
     >
       <View style={styles.settingsItemLeft}>
-        <IconComponent
-          name={icon}
-          size={24}
-          color={iconColor || colors.primaryBlue}
-          style={styles.icon}
-        />
+        <View style={styles.settingsIconWrap}>
+          <IconComponent
+            name={icon}
+            size={22}
+            color={iconColor || colors.primaryBlue}
+          />
+        </View>
         <Text
           style={[styles.settingsItemText, textColor && { color: textColor }]}
         >
           {title}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
+      <Ionicons name="chevron-forward" size={20} color={colors.textFaded} />
     </TouchableOpacity>
   );
 };
@@ -87,7 +89,7 @@ const Settings = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Settings" leftComponent={{ type: "back" }} />
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <SectionHeader title="Account" />
         <View style={styles.settingsGroup}>
           <SettingsItem

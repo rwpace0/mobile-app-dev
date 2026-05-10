@@ -18,25 +18,25 @@ const AccountSettingItem = ({
   icon,
   onPress,
   IconComponent = Ionicons,
+  showBorder = true,
 }) => {
   const { isDark } = useTheme();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   return (
-    <TouchableOpacity style={styles.settingsItem} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.settingsItem, showBorder && styles.settingsItemBorder]}
+      onPress={onPress}
+      activeOpacity={0.65}
+    >
       <View style={styles.settingsItemLeft}>
-        <IconComponent
-          name={icon}
-          size={24}
-          color={colors.textPrimary}
-          style={styles.icon}
-        />
-        <View>
-          <Text style={styles.settingsItemText}>{title}</Text>
+        <View style={styles.settingsIconWrap}>
+          <IconComponent name={icon} size={22} color={colors.primaryBlue} />
         </View>
+        <Text style={styles.settingsItemText}>{title}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={24} color={colors.textFaded} />
+      <Ionicons name="chevron-forward" size={20} color={colors.textFaded} />
     </TouchableOpacity>
   );
 };
@@ -62,22 +62,25 @@ const AccountSettings = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Account Settings" leftComponent={{ type: "back" }} />
-      <ScrollView>
-        <AccountSettingItem
-          title="Change Username"
-          icon="person-outline"
-          onPress={navigateToChangeUsername}
-        />
-        <AccountSettingItem
-          title="Change Email"
-          icon="mail-outline"
-          onPress={navigateToChangeEmail}
-        />
-        <AccountSettingItem
-          title="Change Password"
-          icon="lock-closed-outline"
-          onPress={navigateToChangePassword}
-        />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.settingsGroup}>
+          <AccountSettingItem
+            title="Change Username"
+            icon="person-outline"
+            onPress={navigateToChangeUsername}
+          />
+          <AccountSettingItem
+            title="Change Email"
+            icon="mail-outline"
+            onPress={navigateToChangeEmail}
+          />
+          <AccountSettingItem
+            title="Change Password"
+            icon="lock-closed-outline"
+            onPress={navigateToChangePassword}
+            showBorder={false}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

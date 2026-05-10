@@ -31,26 +31,29 @@ export const createStyles = (isDark = true) => {
       color: colors.textPrimary,
     },
     sectionHeader: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.caption,
       color: colors.textFaded,
       paddingHorizontal: Spacing.m,
-      paddingTop: Spacing.l,
-      paddingBottom: Spacing.xs,
+      paddingTop: Spacing.m,
+      paddingBottom: Spacing.s,
       fontWeight: FontWeight.semiBold,
+      letterSpacing: 1,
     },
     settingsGroup: {
       backgroundColor: colors.backgroundSecondary,
       marginHorizontal: Spacing.m,
       marginBottom: Spacing.m,
-      borderRadius: BorderRadius.lg,
+      borderRadius: BorderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.borderColor,
       overflow: "hidden",
     },
     settingsItem: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingVertical: Spacing.m,
-      paddingHorizontal: Spacing.s,
+      paddingVertical: Spacing.m + 2,
+      paddingHorizontal: Spacing.m,
       backgroundColor: colors.backgroundSecondary,
     },
     settingsItemBorder: {
@@ -60,18 +63,21 @@ export const createStyles = (isDark = true) => {
     settingsItemLeft: {
       flexDirection: "row",
       alignItems: "center",
+      gap: Spacing.m,
+      flex: 1,
     },
-    icon: {
-      marginRight: Spacing.m,
-      width: Spacing.l,
-      height: Spacing.l,
-      alignItems: "center",
+    settingsIconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: BorderRadius.md,
+      backgroundColor: colors.backgroundCard,
       justifyContent: "center",
+      alignItems: "center",
     },
     settingsItemText: {
-      fontSize: FontSize.medium,
+      fontSize: FontSize.base,
       color: colors.textPrimary,
-      fontWeight: FontWeight.regular,
+      fontWeight: FontWeight.medium,
     },
 
     dropdownValue: {
@@ -278,6 +284,9 @@ export const createStyles = (isDark = true) => {
     },
     scrollView: {
       flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: Spacing.xxxl,
     },
   });
 };
