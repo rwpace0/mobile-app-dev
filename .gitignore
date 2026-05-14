@@ -6,6 +6,10 @@
 .env
 MEMORY_OPTIMIZATION_REPORT.md
 
+# Exercise pipeline — local CSV and asset folder (not committed)
+#/exercises_updated.csv
+#/assets_names/
+
 # User-specific files
 *.rsuser
 *.suo

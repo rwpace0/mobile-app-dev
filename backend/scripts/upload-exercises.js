@@ -1,30 +1,41 @@
 /**
  * upload-exercises.js
  *
- * Uploads GIFs from assets_uuid/ to R2 (default-exercises/images/<uuid>.gif),
- * then upserts all exercises from exercises_updated.csv into Supabase with
- * the correct image_url.
+ * Upserts all exercises from exercises_updated.csv into Supabase.
  *
- * Run from the backend/ directory:
- *   node scripts/upload-exercises.js
+ * Media URLs (source of truth: CSV after running the media pipeline):
+ *   - image_url / video_url: if the CSV cell is a non-empty https URL, it is upserted as-is.
+ *   - Otherwise, if assets_uuid/<exercise_id>.gif exists, uploads the GIF to R2 at
+ *     images/<exercise_id>.gif and sets image_url to the public URL (legacy path).
+ *
+ * Prerequisite: install dependencies from backend/package.json; configure .env
+ * (see backend/.env.example): SUPABASE_*, R2_*, R2_PUBLIC_URL.
+ *
+ * Recommended order (from backend/):
+ *   1. node scripts/process-exercise-media.js   # ffmpeg + R2 poster/mp4 + rewrite CSV
+ *   2. node scripts/upload-exercises.js         # Supabase upsert from CSV
  */
 
-import 'dotenv/config';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
-import { createClient } from '@supabase/supabase-js';
+import "dotenv/config";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import {
+  S3Client,
+  PutObjectCommand,
+  HeadObjectCommand,
+} from "@aws-sdk/client-s3";
+import { createClient } from "@supabase/supabase-js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(__dirname, '../../');
+const REPO_ROOT = path.resolve(__dirname, "../../");
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const R2_BUCKET = 'default-exercises';
-const R2_PREFIX = 'images';
-const ASSETS_DIR = path.join(REPO_ROOT, 'assets_uuid');
-const CSV_PATH = path.join(REPO_ROOT, 'exercises_updated.csv');
+const R2_BUCKET = "default-exercises";
+const R2_PREFIX = "images";
+const ASSETS_DIR = path.join(REPO_ROOT, "assets_uuid");
+const CSV_PATH = path.join(REPO_ROOT, "exercises_updated.csv");
 
 const {
   SUPABASE_URL,
@@ -35,14 +46,27 @@ const {
   R2_PUBLIC_URL,
 } = process.env;
 
-for (const [k, v] of Object.entries({ SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL })) {
-  if (!v) { console.error(`Missing env var: ${k}`); process.exit(1); }
+for (const [k, v] of Object.entries({
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
+  R2_ACCOUNT_ID,
+  R2_ACCESS_KEY_ID,
+  R2_SECRET_ACCESS_KEY,
+  R2_PUBLIC_URL,
+})) {
+  if (!v) {
+    console.error(`Missing env var: ${k}`);
+    process.exit(1);
+  }
 }
 
 const r2 = new S3Client({
-  region: 'auto',
+  region: "auto",
   endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: { accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY },
+  credentials: {
+    accessKeyId: R2_ACCESS_KEY_ID,
+    secretAccessKey: R2_SECRET_ACCESS_KEY,
+  },
 });
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -56,7 +80,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
  * Returns an array of objects keyed by the header row.
  */
 function parseCSV(raw) {
-  const lines = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const rows = [];
   let i = 0;
 
@@ -64,7 +88,7 @@ function parseCSV(raw) {
     if (lines[i] === '"') {
       // Quoted field
       i++; // skip opening quote
-      let val = '';
+      let val = "";
       while (i < lines.length) {
         if (lines[i] === '"' && lines[i + 1] === '"') {
           val += '"';
@@ -79,8 +103,8 @@ function parseCSV(raw) {
       return val;
     } else {
       // Unquoted field
-      let val = '';
-      while (i < lines.length && lines[i] !== ',' && lines[i] !== '\n') {
+      let val = "";
+      while (i < lines.length && lines[i] !== "," && lines[i] !== "\n") {
         val += lines[i++];
       }
       return val;
@@ -89,20 +113,23 @@ function parseCSV(raw) {
 
   function parseRow() {
     const fields = [];
-    while (i < lines.length && lines[i] !== '\n') {
+    while (i < lines.length && lines[i] !== "\n") {
       fields.push(parseField());
-      if (i < lines.length && lines[i] === ',') i++; // skip comma
+      if (i < lines.length && lines[i] === ",") i++; // skip comma
     }
-    if (lines[i] === '\n') i++; // skip newline
+    if (lines[i] === "\n") i++; // skip newline
     return fields;
   }
 
   const headers = parseRow();
   while (i < lines.length) {
     const fields = parseRow();
-    if (fields.length === 0 || (fields.length === 1 && fields[0] === '')) continue;
+    if (fields.length === 0 || (fields.length === 1 && fields[0] === ""))
+      continue;
     const obj = {};
-    headers.forEach((h, idx) => { obj[h.trim()] = fields[idx] ?? ''; });
+    headers.forEach((h, idx) => {
+      obj[h.trim()] = fields[idx] ?? "";
+    });
     rows.push(obj);
   }
   return rows;
@@ -113,13 +140,18 @@ function parseCSV(raw) {
  * Returns a JS array, or [] on failure.
  */
 function parseArrayField(val) {
-  if (!val || val.trim() === '' || val.trim() === '[]') return [];
+  if (!val || val.trim() === "" || val.trim() === "[]") return [];
   try {
     const parsed = JSON.parse(val);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
+}
+
+function isHttpsUrl(s) {
+  const t = (s || "").trim();
+  return t.startsWith("https://");
 }
 
 // ── R2 helpers ────────────────────────────────────────────────────────────────
@@ -140,56 +172,80 @@ async function uploadGif(exerciseId, gifPath) {
     return { key, skipped: true };
   }
   const body = fs.readFileSync(gifPath);
-  await r2.send(new PutObjectCommand({
-    Bucket: R2_BUCKET,
-    Key: key,
-    Body: body,
-    ContentType: 'image/gif',
-    CacheControl: 'public, max-age=31536000, immutable',
-  }));
+  await r2.send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: "image/gif",
+      CacheControl: "public, max-age=31536000, immutable",
+    }),
+  );
   return { key, skipped: false };
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('Reading CSV…');
-  const raw = fs.readFileSync(CSV_PATH, 'utf-8');
+  console.log("Reading CSV…");
+  const raw = fs.readFileSync(CSV_PATH, "utf-8");
   const exercises = parseCSV(raw);
   console.log(`Parsed ${exercises.length} exercises.\n`);
 
   let uploaded = 0;
   let skipped = 0;
   let noGif = 0;
+  let usedCsvMedia = 0;
   let errors = 0;
 
   for (let idx = 0; idx < exercises.length; idx++) {
     const row = exercises[idx];
-    const { name, instruction, muscle_group, equipment, secondary_muscle_group, exercise_id, alias } = row;
+    const {
+      name,
+      instruction,
+      muscle_group,
+      equipment,
+      secondary_muscle_group,
+      exercise_id,
+      alias,
+    } = row;
+    const csvImage = (row.image_url ?? "").trim();
+    const csvVideo = (row.video_url ?? "").trim();
     const prefix = `[${idx + 1}/${exercises.length}] ${name}`;
 
-    // Determine image_url
-    const gifPath = path.join(ASSETS_DIR, `${exercise_id}.gif`);
-    let image_url = null;
+    let image_url = isHttpsUrl(csvImage) ? csvImage : null;
+    let video_url = isHttpsUrl(csvVideo) ? csvVideo : null;
 
-    if (fs.existsSync(gifPath)) {
-      try {
-        const { key, skipped: wasSkipped } = await uploadGif(exercise_id, gifPath);
-        image_url = `${R2_PUBLIC_URL.replace(/\/$/, '')}/${key}`;
-        if (wasSkipped) {
-          console.log(`${prefix} — GIF already in R2, skipped upload`);
-          skipped++;
-        } else {
-          console.log(`${prefix} — GIF uploaded`);
-          uploaded++;
-        }
-      } catch (err) {
-        console.error(`${prefix} — R2 upload FAILED: ${err.message}`);
-        errors++;
-      }
+    if (image_url) {
+      usedCsvMedia++;
+      console.log(`${prefix} — using CSV image_url (skip GIF upload)`);
     } else {
-      console.log(`${prefix} — no GIF found, image_url will be null`);
-      noGif++;
+      const gifPath = path.join(ASSETS_DIR, `${exercise_id}.gif`);
+
+      if (fs.existsSync(gifPath)) {
+        try {
+          const { key, skipped: wasSkipped } = await uploadGif(
+            exercise_id,
+            gifPath,
+          );
+          image_url = `${R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
+          if (wasSkipped) {
+            console.log(`${prefix} — GIF already in R2, skipped upload`);
+            skipped++;
+          } else {
+            console.log(`${prefix} — GIF uploaded`);
+            uploaded++;
+          }
+        } catch (err) {
+          console.error(`${prefix} — R2 upload FAILED: ${err.message}`);
+          errors++;
+        }
+      } else {
+        console.log(
+          `${prefix} — no CSV poster URL and no GIF, image_url will be null`,
+        );
+        noGif++;
+      }
     }
 
     // Build upsert payload
@@ -202,12 +258,13 @@ async function main() {
       secondary_muscle_groups: parseArrayField(secondary_muscle_group),
       alias: parseArrayField(alias),
       image_url,
+      video_url,
       is_public: true,
     };
 
     const { error } = await supabase
-      .from('exercises')
-      .upsert(payload, { onConflict: 'exercise_id' });
+      .from("exercises")
+      .upsert(payload, { onConflict: "exercise_id" });
 
     if (error) {
       console.error(`  Supabase upsert FAILED: ${error.message}`);
@@ -215,16 +272,17 @@ async function main() {
     }
   }
 
-  console.log('\n─────────────────────────────────');
+  console.log("\n─────────────────────────────────");
   console.log(`Done!`);
+  console.log(`  Rows with CSV https image_url (GIF skipped): ${usedCsvMedia}`);
   console.log(`  GIFs uploaded:      ${uploaded}`);
   console.log(`  GIFs already in R2: ${skipped}`);
-  console.log(`  No GIF found:       ${noGif}`);
+  console.log(`  No image source:    ${noGif}`);
   console.log(`  Errors:             ${errors}`);
-  console.log('─────────────────────────────────');
+  console.log("─────────────────────────────────");
 }
 
 main().catch((err) => {
-  console.error('Fatal:', err);
+  console.error("Fatal:", err);
   process.exit(1);
 });
