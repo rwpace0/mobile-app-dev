@@ -1,7 +1,7 @@
+// Exercise/media rate limiters are defined below but not wired on routes (see routes/exercises.js, routes/media.js).
 import rateLimit from "express-rate-limit";
 
-const MS_PER_MINUTE = 60 * 1000;
-const RATE_LIMIT_WINDOW_MINUTES = 15;
+const MS_PER_MINUTE = 60 * 1000;const RATE_LIMIT_WINDOW_MINUTES = 15;
 const RATE_LIMIT_WINDOW_MS = RATE_LIMIT_WINDOW_MINUTES * MS_PER_MINUTE;
 
 // High cap for /exercises (list, sync, CRUD). Keyed by JWT sub or IP for public GETs.
@@ -46,12 +46,14 @@ function createPerUserLimiter({
   });
 }
 
+// Not in use — re-enable via router.use(exerciseLimiter) in routes/exercises.js.
 // 500 requests per 15 minutes per user (or per IP when unauthenticated).
 export const exerciseLimiter = createPerUserLimiter({
   max: EXERCISES_MAX_REQUESTS_PER_WINDOW,
   message: "Too many exercise requests. Please try again later.",
 });
 
+// Not in use — re-enable via router.use(mediaLimiter) in routes/media.js (after verifyToken).
 // 800 requests per 15 minutes per authenticated user (runs after verifyToken).
 export const mediaLimiter = createPerUserLimiter({
   max: MEDIA_MAX_REQUESTS_PER_WINDOW,

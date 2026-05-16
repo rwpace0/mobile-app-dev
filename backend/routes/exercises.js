@@ -1,11 +1,11 @@
 import express from 'express';
 import { getExercises, createExercise, getExerciseById, updateExercise, deleteExercise } from '../controller/exercisesController.js';
 import { getSetsForExercise } from '../controller/setsController.js';
-import { exerciseLimiter } from '../middleware/rateLimiters.js';
+// Rate limiting disabled for now — see middleware/rateLimiters.js (exerciseLimiter).
+// import { exerciseLimiter } from '../middleware/rateLimiters.js';
+// router.use(exerciseLimiter);
 
 const router = express.Router();
-
-router.use(exerciseLimiter);
 
 router.get('/', getExercises);
 router.get('/:exerciseId', getExerciseById);
