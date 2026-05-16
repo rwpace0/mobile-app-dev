@@ -15,6 +15,8 @@ class ExercisesAPI extends APIBase {
       },
     });
 
+    this._exercisesListStale = false;
+
     // Register sync function with sync manager
     syncManager.registerSyncFunction(
       "exercises",
@@ -311,6 +313,16 @@ class ExercisesAPI extends APIBase {
     return result;
   }
 
+  markExercisesListStale() {
+    this._exercisesListStale = true;
+  }
+
+  consumeExercisesListStale() {
+    const stale = this._exercisesListStale;
+    this._exercisesListStale = false;
+    return stale;
+  }
+
   async getExercises() {
     try {
       await this.ensureInitialized();
@@ -495,6 +507,7 @@ class ExercisesAPI extends APIBase {
       // Clear cache to ensure fresh data on next fetch
       this.clearExerciseCache(exerciseId);
       this.cache.clear("exercises:all");
+      this.markExercisesListStale();
 
       let finalExerciseId = exerciseId;
 
@@ -627,6 +640,8 @@ class ExercisesAPI extends APIBase {
         //console.log('[ExercisesAPI] Exercise updated locally, will sync in background');
       }
 
+      this.markExercisesListStale();
+
       // Return updated exercise
       return await this.getExerciseById(exerciseId);
     } catch (error) {
@@ -713,6 +728,7 @@ class ExercisesAPI extends APIBase {
         //console.log('[ExercisesAPI] Exercise deletion complete, clearing caches');
         this.clearExerciseCache(exerciseId);
         this.cache.clear("exercises:all");
+        this.markExercisesListStale();
 
         return { success: true, message: "Exercise deleted successfully" };
       } catch (error) {

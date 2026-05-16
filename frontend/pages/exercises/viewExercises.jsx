@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -94,6 +94,7 @@ const ViewExercisesPage = () => {
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [showMuscleGroupModal, setShowMuscleGroupModal] = useState(false);
   const [showEquipmentModal, setShowEquipmentModal] = useState(false);
+  const hasLoadedOnce = useRef(false);
 
   const loadExercises = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -105,20 +106,26 @@ const ViewExercisesPage = () => {
         a.name.localeCompare(b.name),
       );
       setExercises(sortedData);
-      setFilteredExercises(sortedData);
     } catch (err) {
       console.error("Error loading exercises:", err);
       setError(err.message || "Failed to load exercises");
     } finally {
       if (showLoading) setLoading(false);
       setRefreshing(false);
+      hasLoadedOnce.current = true;
     }
   }, []);
 
-  // Load exercises when the screen comes into focus
+  // Initial load + silent refresh only after create/update/delete
   useFocusEffect(
     useCallback(() => {
-      loadExercises();
+      if (exercisesAPI.consumeExercisesListStale()) {
+        loadExercises(!hasLoadedOnce.current);
+        return;
+      }
+      if (!hasLoadedOnce.current) {
+        loadExercises(true);
+      }
     }, [loadExercises]),
   );
 
