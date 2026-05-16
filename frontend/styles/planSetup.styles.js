@@ -22,7 +22,7 @@ export const createStyles = (isDark = true) => {
       paddingBottom: Spacing.xl,
     },
 
-    // Section styling — same vertical step as inner blocks (days list, add day row)
+    // Section styling, same vertical step as inner blocks (days list, add day row)
     section: {
       marginTop: Spacing.l,
     },

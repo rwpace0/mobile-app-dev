@@ -111,7 +111,7 @@ class PlanAPI {
             },
           });
 
-          // Schedule sync — plan is now guaranteed to exist on server
+          // Schedule sync, plan is now guaranteed to exist on server
           await this._makeRequest({
             method: "PUT",
             url: `${this.baseUrl}/${plan.plan_id}/schedule`,
@@ -157,7 +157,7 @@ class PlanAPI {
     }
   }
 
-  // Fire-and-forget background sync — never blocks the caller, deduplicated
+  // Fire-and-forget background sync, never blocks the caller, deduplicated
   _syncInBackground() {
     if (this._syncInFlight) return;
     this._syncInFlight = true;
@@ -253,7 +253,7 @@ class PlanAPI {
       const localPlan = await this._getLocalActivePlan(userId);
 
       // If nothing local, do a one-time blocking pull (first-ever launch / new device)
-      // but only if online — never blocks if offline
+      // but only if online, never blocks if offline
       if (!localPlan) {
         const online = await this._isOnline();
         if (online) {

@@ -185,7 +185,7 @@ class MediaDownloadQueue {
         }
       }
 
-      // Job complete — remove from queue
+      // Job complete, remove from queue
       await dbManager.execute(
         `DELETE FROM media_download_jobs WHERE job_id = ?`,
         [job.job_id]
@@ -222,7 +222,7 @@ class MediaDownloadQueue {
     const { url, exercise_id: exerciseId, media_type: mediaType } = job;
     const subDir = mediaType === 'video' ? 'exercise-videos' : 'exercises';
 
-    // Ensure the subdirectory exists — only incur the filesystem call once per session
+    // Ensure the subdirectory exists, only incur the filesystem call once per session
     if (subDir === 'exercises' && !this._exerciseDirReady) {
       await FileSystem.makeDirectoryAsync(`${this.baseDir}exercises/`, { intermediates: true });
       this._exerciseDirReady = true;
@@ -249,7 +249,7 @@ class MediaDownloadQueue {
     const localPath = `${this.baseDir}${subDir}/${exerciseId}_${Date.now()}.${ext}`;
 
     if (isPublicCatalogUrl(url)) {
-      // Direct download — no backend round-trip
+      // Direct download, no backend round-trip
       const result = await FileSystem.downloadAsync(url, localPath);
       if (result.status >= 400) {
         try { await FileSystem.deleteAsync(localPath, { idempotent: true }); } catch (_) {}

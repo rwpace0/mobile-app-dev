@@ -1,7 +1,7 @@
 import express from 'express';
 import { getExercises, createExercise, getExerciseById, updateExercise, deleteExercise } from '../controller/exercisesController.js';
 import { getSetsForExercise } from '../controller/setsController.js';
-// Rate limiting disabled for now — see middleware/rateLimiters.js (exerciseLimiter).
+// Rate limiting disabled for now, see middleware/rateLimiters.js (exerciseLimiter).
 // import { exerciseLimiter } from '../middleware/rateLimiters.js';
 // router.use(exerciseLimiter);
 

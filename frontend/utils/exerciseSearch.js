@@ -1,7 +1,7 @@
 /**
  * Exercise search: token-wise AND matching (e.g. "bicep curl" → "Biceps Curl").
  * Substring match on a compact haystack; fuzzy match compares tokens to words in
- * those same fields. Instructions are excluded — they repeat generic words like
+ * those same fields. Instructions are excluded; they repeat generic words like
  * "split" / "stance" and cause unrelated exercises to match.
  */
 

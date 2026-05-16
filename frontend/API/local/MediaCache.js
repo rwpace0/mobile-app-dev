@@ -191,7 +191,7 @@ class MediaCache {
         throw new Error('Downloaded file does not exist');
       }
 
-      // Validate file size — too small means corrupted/error body; too large is rejected
+      // Validate file size, too small means corrupted/error body; too large is rejected
       if (fileInfo.size < 100) {
         await FileSystem.deleteAsync(localPath);
         throw new Error(`Downloaded file is too small (${fileInfo.size} bytes), likely corrupted or error response`);
@@ -468,7 +468,7 @@ class MediaCache {
 
       if (fileInfo.exists && fileInfo.size > 100) {
         const result = `file://${localPath}`;
-        // Cache for 24 hours — the file lives on disk until explicitly deleted
+        // Cache for 24 hours, the file lives on disk until explicitly deleted
         this.cache.set(cacheKey, result, 24 * 60 * 60 * 1000);
         return result;
       }
@@ -848,7 +848,7 @@ class MediaCache {
         
         if (!fileInfo.exists) continue;
         
-        // Delete any orphaned file immediately — no age requirement
+        // Delete any orphaned file immediately, no age requirement
         if (!referencedFiles.has(file)) {
           await this.deleteFile(filePath);
         }

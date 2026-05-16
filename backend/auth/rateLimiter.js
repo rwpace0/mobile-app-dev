@@ -8,10 +8,10 @@ const RATE_LIMIT_WINDOW_MS = RATE_LIMIT_WINDOW_MINUTES * MS_PER_MINUTE;
 // Signup and logout (low abuse risk, moderate cap).
 const AUTH_GENERAL_MAX_REQUESTS_PER_WINDOW = 20;
 
-// Login only — tighter to slow credential stuffing (~0.7/min avg over 15 min).
+// Login only, tighter to slow credential stuffing (~0.7/min avg over 15 min).
 const LOGIN_MAX_REQUESTS_PER_WINDOW = 15;
 
-// Token refresh — higher cap; app may refresh on 401 without sharing login bucket.
+// Token refresh, higher cap; app may refresh on 401 without sharing login bucket.
 const REFRESH_MAX_REQUESTS_PER_WINDOW = 60;
 
 const EMAIL_VERIFICATION_MAX_REQUESTS_PER_HOUR = 5;

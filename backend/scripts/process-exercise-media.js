@@ -9,7 +9,7 @@
  *
  * Prerequisites:
  *   - Platform ffmpeg/ffprobe from npm (backend deps): @ffmpeg-installer/ffmpeg,
- *     @ffprobe-installer/ffprobe — no system PATH required. Run npm install in backend/.
+ *     @ffprobe-installer/ffprobe, no system PATH required. Run npm install in backend/.
  *   - Same R2 env vars as upload-exercises.js (no Supabase required here)
  *
  * Run from backend/:

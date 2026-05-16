@@ -121,7 +121,7 @@ const PlanPage = () => {
   useLayoutEffect(() => {
     if (!loading && !activePlan) {
       // Open setup on root stack, then leave PlanPage so closing setup returns to
-      // ProfileMain — avoids loop (PlanPage would re-open setup on every focus).
+      // ProfileMain, avoids loop (PlanPage would re-open setup on every focus).
       navigation.navigate("PlanSetup");
       navigation.goBack();
     }

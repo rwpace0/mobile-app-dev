@@ -113,7 +113,7 @@ export async function createPlan(req, res) {
       return res.status(500).json({ error: "Failed to deactivate existing plans" });
     }
 
-    // Create new plan — honour client-provided plan_id so local and server UUIDs stay in sync
+    // Create new plan, honour client-provided plan_id so local and server UUIDs stay in sync
     const planRow = {
       user_id: user.id,
       name,
@@ -202,12 +202,12 @@ export async function updatePlan(req, res) {
       return res.status(500).json({ error: "Failed to update plan" });
     }
 
-    // Row exists and was updated — return it
+    // Row exists and was updated, return it
     if (updateRows && updateRows.length > 0) {
       return res.status(200).json(updateRows[0]);
     }
 
-    // 0 rows updated — plan doesn't exist on server yet (local-first pending_sync)
+    // 0 rows updated, plan doesn't exist on server yet (local-first pending_sync)
     // Use upsert so concurrent syncs don't race into duplicate key errors
     const { data: upsertRows, error: upsertError } = await db
       .from("workout_plans")

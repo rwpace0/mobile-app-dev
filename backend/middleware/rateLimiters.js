@@ -46,14 +46,14 @@ function createPerUserLimiter({
   });
 }
 
-// Not in use — re-enable via router.use(exerciseLimiter) in routes/exercises.js.
+// Not in use, re-enable via router.use(exerciseLimiter) in routes/exercises.js.
 // 500 requests per 15 minutes per user (or per IP when unauthenticated).
 export const exerciseLimiter = createPerUserLimiter({
   max: EXERCISES_MAX_REQUESTS_PER_WINDOW,
   message: "Too many exercise requests. Please try again later.",
 });
 
-// Not in use — re-enable via router.use(mediaLimiter) in routes/media.js (after verifyToken).
+// Not in use, re-enable via router.use(mediaLimiter) in routes/media.js (after verifyToken).
 // 800 requests per 15 minutes per authenticated user (runs after verifyToken).
 export const mediaLimiter = createPerUserLimiter({
   max: MEDIA_MAX_REQUESTS_PER_WINDOW,

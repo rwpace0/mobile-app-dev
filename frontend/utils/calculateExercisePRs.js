@@ -12,8 +12,8 @@ export function calculateSetPerformance(set) {
 /**
  * Two-pass PR calculation over a full exercise history array.
  *
- * Pass 1 — find the highest performance value across all history.
- * Pass 2 — find the most recent workout entry that achieved that value and
+ * Pass 1: find the highest performance value across all history.
+ * Pass 2: find the most recent workout entry that achieved that value and
  *           collect every set_id within it that matched.
  *
  * @param {Array} history - Array of workout entries, each with a `sets` array.

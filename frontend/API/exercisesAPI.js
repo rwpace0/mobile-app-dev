@@ -44,7 +44,7 @@ class ExercisesAPI extends APIBase {
               // Continue with normal sync process
             }
           } else {
-            // Rows already exist — resume any pending media jobs from a previous session
+            // Rows already exist, resume any pending media jobs from a previous session
             import("./local/MediaDownloadQueue").then(({ mediaDownloadQueue }) => {
               mediaDownloadQueue.start();
             }).catch(() => {});
@@ -937,7 +937,7 @@ class ExercisesAPI extends APIBase {
           }
         }
 
-        // Phase 2: enqueue image downloads — non-blocking, queue drains in background.
+        // Phase 2: enqueue image downloads, non-blocking, queue drains in background.
         // Videos are NOT enqueued here; they download on demand when a user opens exercise detail.
         for (const exercise of response.data) {
           try {

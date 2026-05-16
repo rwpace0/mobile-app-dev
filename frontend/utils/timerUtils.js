@@ -4,7 +4,7 @@
 
 import { format, parseISO } from "date-fns";
 
-// "MMM d" axis label — used across chart components and statistics pages
+// "MMM d" axis label, used across chart components and statistics pages
 export const formatDateAxisLabel = (dateStr) => {
   try {
     return format(parseISO(dateStr), "MMM d");
@@ -19,7 +19,7 @@ export const capitalize = (str) =>
 export const getDefaultWorkoutName = () =>
   `Workout on ${new Date().toLocaleDateString()}`;
 
-// "h:mm a, EEEE, MMM d, yyyy" — used across history/detail screens
+// "h:mm a, EEEE, MMM d, yyyy", used across history/detail screens
 export const formatDate = (isoString) => {
   try {
     const date = parseISO(isoString);
@@ -30,7 +30,7 @@ export const formatDate = (isoString) => {
   }
 };
 
-// HH:MM:SS / MM:SS clock-style — used in active/edit screens
+// HH:MM:SS / MM:SS clock-style, used in active/edit screens
 export const formatDurationClock = (seconds) => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -45,7 +45,7 @@ export const formatDurationClock = (seconds) => {
     .padStart(2, "0")}`;
 };
 
-// "Xh Ym" human-readable — used in history/complete screens
+// "Xh Ym" human-readable, used in history/complete screens
 export const formatDurationHuman = (seconds) => {
   const totalMinutes = Math.round(seconds / 60);
   if (totalMinutes >= 60) {
