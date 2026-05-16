@@ -233,7 +233,7 @@ class MediaDownloadQueue {
 
     const cleanUrl = url.split('?')[0].split('#')[0];
     // Extract extension from the URL path only (ignore domain dots)
-    let ext = 'gif';
+    let ext = 'jpg';
     try {
       const pathname = new URL(cleanUrl).pathname;
       const lastSegment = pathname.split('/').pop() || '';
@@ -241,7 +241,7 @@ class MediaDownloadQueue {
       if (dotIndex !== -1) {
         const candidate = lastSegment.slice(dotIndex + 1).toLowerCase();
         // Only accept known image/video extensions
-        if (/^(gif|jpg|jpeg|png|webp|mp4|mov|m4v)$/.test(candidate)) {
+        if (/^(jpg|jpeg|png|webp|mp4|mov|m4v)$/.test(candidate)) {
           ext = candidate;
         }
       }
@@ -258,17 +258,24 @@ class MediaDownloadQueue {
       await this._validateFile(localPath);
       return localPath;
     } else {
-      // Private / user-uploaded media: delegate to MediaCache which uses backend resolver
       const { mediaCache } = await import('./MediaCache');
-      const resultPath = await mediaCache.downloadAndCacheFile(
-        url,
-        subDir,
-        exerciseId,
-        false,
-        true
-      );
-      if (!resultPath) throw new Error('MediaCache returned null');
-      return resultPath;
+      if (mediaType === 'video') {
+        // Private video: use the dedicated video resolver (backend ?type=video)
+        const resultPath = await mediaCache.downloadExerciseVideoIfNeeded(exerciseId, url);
+        if (!resultPath) throw new Error('MediaCache returned null for video');
+        return resultPath;
+      } else {
+        // Private image: use the backend ?type=image resolver
+        const resultPath = await mediaCache.downloadAndCacheFile(
+          url,
+          subDir,
+          exerciseId,
+          false,
+          true
+        );
+        if (!resultPath) throw new Error('MediaCache returned null');
+        return resultPath;
+      }
     }
   }
 

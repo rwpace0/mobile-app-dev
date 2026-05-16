@@ -47,8 +47,8 @@ const isPublic = (val) =>
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
-// Renders the exercise GIF at its natural aspect ratio, animated.
-const ExerciseGif = ({ uri }) => {
+// Renders the exercise poster image at its natural aspect ratio (static, no animation).
+const ExercisePoster = ({ uri }) => {
   const [imageHeight, setImageHeight] = useState(null);
 
   return (
@@ -65,7 +65,7 @@ const ExerciseGif = ({ uri }) => {
         style={{ width: SCREEN_WIDTH, height: imageHeight ?? 250 }}
         contentFit="contain"
         cachePolicy="disk"
-        autoplay={true}
+        autoplay={false}
         allowDownscaling={false}
         transition={0}
         onLoad={(e) => {
@@ -131,6 +131,30 @@ const ExerciseDetailPage = () => {
       setShowDateRangeModal(false);
     };
   }, []);
+
+  // Trigger video download on mount / screen focus if video_url is present but not yet cached
+  useFocusEffect(
+    useCallback(() => {
+      if (!exercise?.video_url || exercise?.local_video_path) return;
+
+      let cancelled = false;
+      exercisesAPI.downloadExerciseVideo(exercise.exercise_id, exercise.video_url)
+        .then(() => {
+          if (cancelled || !isMountedRef.current) return;
+          // Re-fetch exercise so local_video_path is populated and Video renders
+          exercisesAPI.getExerciseById(exercise.exercise_id).then((updated) => {
+            if (!cancelled && isMountedRef.current && updated) {
+              setExercise(updated);
+            }
+          });
+        })
+        .catch(() => {
+          // Video download is non-critical; poster continues to show
+        });
+
+      return () => { cancelled = true; };
+    }, [exercise?.exercise_id, exercise?.video_url, exercise?.local_video_path])
+  );
 
   // Aggressive cleanup on blur/unmount to prevent memory leaks
   useFocusEffect(
@@ -473,13 +497,20 @@ const ExerciseDetailPage = () => {
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
     >
-      {/* Show video if available, otherwise show image */}
+      {/* Show video if available, otherwise show poster image */}
       {exercise?.local_video_path ? (
         <View style={styles.videoContainer}>
           <Video
             source={{
               uri: `file://${FileSystem.cacheDirectory}app_media/exercise-videos/${exercise.local_video_path}`,
             }}
+            posterSource={
+              exercise.local_media_path
+                ? { uri: `file://${FileSystem.cacheDirectory}app_media/exercises/${exercise.local_media_path}` }
+                : exercise.image_url
+                ? { uri: exercise.image_url }
+                : undefined
+            }
             style={styles.exerciseVideo}
             useNativeControls
             resizeMode={ResizeMode.CONTAIN}
@@ -488,7 +519,7 @@ const ExerciseDetailPage = () => {
           />
         </View>
       ) : exercise?.local_media_path || exercise?.image_url ? (
-        <ExerciseGif
+        <ExercisePoster
           key={exercise.exercise_id}
           uri={
             exercise.local_media_path

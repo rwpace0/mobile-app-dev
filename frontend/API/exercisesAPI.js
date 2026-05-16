@@ -921,7 +921,8 @@ class ExercisesAPI extends APIBase {
           }
         }
 
-        // Phase 2: enqueue media downloads — non-blocking, queue drains in background
+        // Phase 2: enqueue image downloads — non-blocking, queue drains in background.
+        // Videos are NOT enqueued here; they download on demand when a user opens exercise detail.
         for (const exercise of response.data) {
           try {
             if (exercise.image_url) {
@@ -929,13 +930,6 @@ class ExercisesAPI extends APIBase {
                 exercise.exercise_id,
                 exercise.image_url,
                 "image"
-              );
-            }
-            if (exercise.video_url) {
-              await mediaDownloadQueue.enqueueIfNeeded(
-                exercise.exercise_id,
-                exercise.video_url,
-                "video"
               );
             }
           } catch (enqueueError) {

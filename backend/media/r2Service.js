@@ -1,7 +1,6 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
-import path from 'path';
 
 dotenv.config();
 
@@ -158,24 +157,18 @@ export class R2Service {
   static async uploadExerciseImage(userId, buffer, filename, isPublic = false) {
     try {
       const timestamp = Date.now();
-      const extension = path.extname(filename).toLowerCase();
-      const finalExtension = extension !== '.gif' ? '.jpg' : extension;
-      
+
       let bucket, key;
 
       if (isPublic) {
-        // Default/public exercises go to default-exercises bucket
         bucket = BUCKETS.DEFAULT_EXERCISES;
-        key = `images/${userId}_${timestamp}${finalExtension}`;
+        key = `images/${userId}_${timestamp}.jpg`;
       } else {
-        // User exercises go to user-media bucket
         bucket = BUCKETS.USER_MEDIA;
-        key = `exercise-images/${userId}/${timestamp}${finalExtension}`;
+        key = `exercise-images/${userId}/${timestamp}.jpg`;
       }
 
-      const contentType = finalExtension === '.gif' ? 'image/gif' : 'image/jpeg';
-      
-      await this.uploadFile(bucket, key, buffer, contentType);
+      await this.uploadFile(bucket, key, buffer, 'image/jpeg');
 
       return { bucket, key };
     } catch (error) {
@@ -217,14 +210,10 @@ export class R2Service {
   static async uploadAvatar(userId, buffer, filename) {
     try {
       const timestamp = Date.now();
-      const extension = path.extname(filename).toLowerCase();
-      const finalExtension = extension !== '.gif' ? '.jpg' : extension;
-      
       const bucket = BUCKETS.USER_MEDIA;
-      const key = `avatars/${userId}/${timestamp}${finalExtension}`;
-      const contentType = finalExtension === '.gif' ? 'image/gif' : 'image/jpeg';
+      const key = `avatars/${userId}/${timestamp}.jpg`;
 
-      await this.uploadFile(bucket, key, buffer, contentType);
+      await this.uploadFile(bucket, key, buffer, 'image/jpeg');
 
       return { bucket, key };
     } catch (error) {

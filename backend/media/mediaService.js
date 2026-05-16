@@ -14,14 +14,13 @@ export class MediaService {
   
   static async compressImage(file, options = {}) {
     const {
-      maxWidth = 1920,
-      maxHeight = 1080,
+      maxWidth = 800,
+      maxHeight = 600,
       quality = 80,
       isAvatar = false
     } = options;
 
     if (isAvatar) {
-      // For avatars, create a smaller square image
       return sharp(file.buffer)
         .resize(300, 300, {
           fit: 'cover',
@@ -31,7 +30,7 @@ export class MediaService {
         .toBuffer();
     }
 
-    // For exercise images, maintain aspect ratio but limit size
+    // Exercise poster images: maintain aspect ratio, JPEG output
     return sharp(file.buffer)
       .resize(maxWidth, maxHeight, {
         fit: 'inside',
@@ -43,17 +42,16 @@ export class MediaService {
 
   static async compressVideo(file) {
     const outputPath = `${file.path}_compressed.mp4`;
-    
+
     return new Promise((resolve, reject) => {
       ffmpeg(file.path)
-        .size('?x720')  // Scale to 720p height while maintaining aspect ratio
-        .videoBitrate('2000k')  // 2 Mbps bitrate
+        .size('?x480')  // Scale to 480p for short demo clips
+        .videoBitrate('500k')  // Lower bitrate suits small demo clips
         .videoCodec('libx264')
-        .audioCodec('aac')
-        .audioBitrate('128k')
+        .noAudio()
         .outputOptions([
-          '-preset medium',  // Compression preset
-          '-movflags faststart'  // Enable fast start for web playback
+          '-preset fast',
+          '-movflags faststart'
         ])
         .on('end', async () => {
           try {
@@ -79,7 +77,6 @@ export class MediaService {
     const ext = path.extname(fileName).toLowerCase();
     const contentType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
                        ext === '.png' ? 'image/png' :
-                       ext === '.gif' ? 'image/gif' :
                        ext === '.mp4' ? 'video/mp4' :
                        ext === '.mov' ? 'video/quicktime' :
                        'application/octet-stream';
@@ -102,14 +99,13 @@ export class MediaService {
   static generateFileName(originalName, userId, type, prefix = '') {
     const timestamp = Date.now();
     const extension = path.extname(originalName).toLowerCase();
-    
-    // For images: always save as jpeg (except gifs)
-    // For videos: keep original extension
+
+    // Images are always stored as JPEG; videos keep their extension (MOV → MP4)
     let finalExtension;
     if (type === 'video') {
       finalExtension = extension === '.mov' ? '.mp4' : extension;
     } else {
-      finalExtension = extension !== '.gif' ? '.jpg' : extension;
+      finalExtension = '.jpg';
     }
     
     if (prefix) {

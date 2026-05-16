@@ -7,7 +7,8 @@ class MediaCache {
   constructor() {
     this.cache = new Cache({ maxSize: 250 });
     this.baseDir = `${FileSystem.cacheDirectory}app_media/`;
-    this.maxFileSize = 10 * 1024 * 1024; // 10MB max file size
+    this.maxFileSize = 10 * 1024 * 1024; // 10MB ceiling for images
+    this.maxVideoFileSize = 5 * 1024 * 1024; // 5MB ceiling for video clips
     this.init();
 
     // Register sync function with sync manager
@@ -45,24 +46,24 @@ class MediaCache {
     return `${this.baseDir}${type}/${id}_${timestamp}.${ext}`;
   }
 
-  async downloadAndCacheFile(url, type, id, isAvatar = false, isExerciseMedia = false) {
+  async downloadAndCacheFile(url, type, id, isAvatar = false, isExerciseMedia = false, isExerciseVideo = false) {
     try {
       const localPath = this.generateLocalPath(type, id, url);
-      
+
       let downloadResult;
-      
+
       if (isAvatar) {
         // For avatars, use the backend endpoint to get the URL, then download the image
         const { tokenManager } = await import('../utils/tokenManager');
         const accessToken = await tokenManager.getValidToken();
-        
+
         if (!accessToken) {
           throw new Error('No access token available for avatar download');
         }
-        
+
         // Convert the URL or userId to backend avatar endpoint
         let avatarUserId = id;
-        
+
         // If we have a Supabase URL, extract the user ID from it
         if (url.includes('supabase.co') && url.includes('avatars/')) {
           const urlParts = url.split('/');
@@ -71,80 +72,103 @@ class MediaCache {
             avatarUserId = urlParts[avatarsIndex + 1];
           }
         }
-        
+
         const backendEndpoint = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/avatar/${avatarUserId}`;
-        
-        // First, fetch the JSON response to get the actual image URL
+
         const response = await fetch(backendEndpoint, {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
         });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Backend returned ${response.status}: ${errorText}`);
         }
-        
+
         const data = await response.json();
         const imageUrl = data.url;
-        
+
         if (!imageUrl) {
           throw new Error('Backend did not return an image URL');
         }
-        
-        // Now download the actual image from the URL
+
         downloadResult = await FileSystem.downloadAsync(imageUrl, localPath);
-      } else if (isExerciseMedia) {
-        // For exercise media, use the backend endpoint instead of direct Supabase URL
+      } else if (isExerciseVideo) {
+        // For exercise videos, use the backend ?type=video resolver (same auth pattern as images)
         const { tokenManager } = await import('../utils/tokenManager');
         const accessToken = await tokenManager.getValidToken();
-        
+
+        if (!accessToken) {
+          throw new Error('No access token available for exercise video download');
+        }
+
+        const backendEndpoint = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/exercise/${id}`;
+
+        const response = await fetch(`${backendEndpoint}?type=video`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Backend returned ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        const videoUrl = data.url;
+
+        if (!videoUrl) {
+          throw new Error('Backend did not return a video URL');
+        }
+
+        downloadResult = await FileSystem.downloadAsync(videoUrl, localPath);
+      } else if (isExerciseMedia) {
+        // For exercise images, use the backend ?type=image resolver
+        const { tokenManager } = await import('../utils/tokenManager');
+        const accessToken = await tokenManager.getValidToken();
+
         if (!accessToken) {
           throw new Error('No access token available for exercise media download');
         }
-        
-        // Extract exercise ID from the URL or use the provided id
+
         let exerciseId = id;
-        
+
         // If we have a Supabase URL, extract the exercise ID from it
         if (url.includes('supabase.co') && url.includes('exercise-media/')) {
           const urlParts = url.split('/');
           const mediaIndex = urlParts.findIndex(part => part === 'exercise-media');
           if (mediaIndex !== -1 && urlParts[mediaIndex + 1]) {
-            // The exercise ID might be in the URL path, but we'll use the provided id parameter
             exerciseId = id;
           }
         }
-        
+
         const backendEndpoint = `${await import('../utils/getBaseUrl').then(m => m.default())}/media/exercise/${exerciseId}`;
-        
-        // First, fetch the JSON response to get the actual media URL
+
         const response = await fetch(`${backendEndpoint}?type=image`, {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
         });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Backend returned ${response.status}: ${errorText}`);
         }
-        
+
         const data = await response.json();
         const mediaUrl = data.url;
-        
+
         if (!mediaUrl) {
           throw new Error('Backend did not return a media URL');
         }
-        
-        // Now download the actual media from the URL
+
         downloadResult = await FileSystem.downloadAsync(mediaUrl, localPath);
       } else {
-        // For non-avatar files, download directly — size is validated post-download
         downloadResult = await FileSystem.downloadAsync(url, localPath);
       }
-      
+
       // Check if download failed with HTTP error
       if (downloadResult.status >= 400) {
         try {
@@ -152,59 +176,57 @@ class MediaCache {
         } catch (e) {
           // Ignore deletion errors
         }
-        
-        const errorType = isAvatar ? 'Backend avatar endpoint' : isExerciseMedia ? 'Backend exercise media endpoint' : 'URL';
+
+        const errorType = isAvatar ? 'Backend avatar endpoint'
+          : isExerciseVideo ? 'Backend exercise video endpoint'
+          : isExerciseMedia ? 'Backend exercise media endpoint'
+          : 'URL';
         throw new Error(`Download failed with HTTP ${downloadResult.status}. ${errorType} may be unavailable.`);
       }
-      
+
       // Verify the downloaded file
       const fileInfo = await FileSystem.getInfoAsync(localPath);
-      
+
       if (!fileInfo.exists) {
         throw new Error('Downloaded file does not exist');
       }
-      
+
       // Validate file size — too small means corrupted/error body; too large is rejected
       if (fileInfo.size < 100) {
         await FileSystem.deleteAsync(localPath);
         throw new Error(`Downloaded file is too small (${fileInfo.size} bytes), likely corrupted or error response`);
       }
-      if (fileInfo.size > this.maxFileSize) {
+
+      const sizeLimit = isExerciseVideo ? this.maxVideoFileSize : this.maxFileSize;
+      if (fileInfo.size > sizeLimit) {
         await FileSystem.deleteAsync(localPath);
         console.warn(`[MediaCache] File too large (${(fileInfo.size / 1024 / 1024).toFixed(2)}MB), discarding`);
         return null;
       }
-      
-      // For images, verify it's actually an image file by checking file signature
+
+      // For images, validate JPEG or PNG magic bytes
       if (isAvatar || isExerciseMedia) {
         try {
-          // Read first few bytes to check file signature
-          // Read as base64 and convert to check magic bytes
           const base64Content = await FileSystem.readAsStringAsync(localPath, {
             encoding: FileSystem.EncodingType.Base64,
-            length: 20 // Just first 20 bytes
+            length: 20
           });
-          
-          // Convert base64 to binary string to check magic bytes
-          // In React Native, we can use atob to decode base64
+
           const binaryString = atob(base64Content);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
           }
-          
-          // Check for common image file signatures
+
           const isJPEG = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
           const isPNG = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47;
-          const isGIF = bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46;
-          
-          if (!isJPEG && !isPNG && !isGIF) {
+
+          if (!isJPEG && !isPNG) {
             await FileSystem.deleteAsync(localPath);
-            throw new Error('Downloaded file is not a valid image file');
+            throw new Error('Downloaded file is not a valid JPEG or PNG image');
           }
         } catch (validationError) {
           console.error(`[MediaCache] Error validating image file:`, validationError);
-          // If validation fails, delete the file
           try {
             await FileSystem.deleteAsync(localPath);
           } catch (e) {
@@ -213,10 +235,10 @@ class MediaCache {
           throw validationError;
         }
       }
-      
+
       // Add to LRU cache
       this.cache.set(url, localPath);
-      
+
       return localPath;
     } catch (error) {
       console.error('Failed to download and cache file:', error);
@@ -715,15 +737,13 @@ class MediaCache {
         'SELECT local_video_path FROM exercises WHERE exercise_id = ?',
         [exerciseId]
       );
-      
+
       if (existingExercise?.local_video_path) {
         const localPath = `${this.baseDir}exercise-videos/${existingExercise.local_video_path}`;
         const fileInfo = await FileSystem.getInfoAsync(localPath);
-        if (fileInfo.exists && fileInfo.size > 1000) { // Videos should be larger
-          // Return path with file:// prefix for React Native Video component
+        if (fileInfo.exists && fileInfo.size > 1000) {
           return `file://${localPath}`;
         } else if (fileInfo.exists && fileInfo.size <= 1000) {
-          // Delete corrupted file
           try {
             await FileSystem.deleteAsync(localPath);
           } catch (e) {
@@ -731,38 +751,71 @@ class MediaCache {
           }
         }
       }
-      
+
       // Check if download is already in progress
       const cacheKey = `downloading_video_${exerciseId}`;
       if (this.cache.get(cacheKey)) {
         return null;
       }
-      
-      // Set download in progress flag
+
       this.cache.set(cacheKey, true, 600); // 10 minute timeout for videos
-      
+
       try {
-        // For R2 signed URLs, download directly (no backend endpoint needed for videos yet)
+        // For public CDN URLs (no /media/ path), download directly.
+        // For private R2 keys, resolve through the backend ?type=video endpoint.
+        let resolvedUrl = videoUrl;
+        const isPublicCdn = videoUrl.startsWith('https://') && !videoUrl.includes('/media/');
+
+        if (!isPublicCdn) {
+          const { tokenManager } = await import('../utils/tokenManager');
+          const accessToken = await tokenManager.getValidToken();
+
+          if (!accessToken) {
+            throw new Error('No access token available for exercise video download');
+          }
+
+          const baseUrl = await import('../utils/getBaseUrl').then(m => m.default());
+          const response = await fetch(`${baseUrl}/media/exercise/${exerciseId}?type=video`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+
+          if (!response.ok) {
+            throw new Error(`Backend returned ${response.status} for video URL`);
+          }
+
+          const data = await response.json();
+          if (!data.url) {
+            throw new Error('Backend did not return a video URL');
+          }
+          resolvedUrl = data.url;
+        }
+
         const localPath = this.generateLocalPath('exercise-videos', exerciseId, videoUrl);
-        
-        // Download video directly from R2 signed URL
-        const downloadResult = await FileSystem.downloadAsync(videoUrl, localPath);
-        
+
+        const downloadResult = await FileSystem.downloadAsync(resolvedUrl, localPath);
+
         if (downloadResult.status === 200) {
-          // Update local exercise with the new video path
+          const fileInfo = await FileSystem.getInfoAsync(localPath);
+          if (!fileInfo.exists || fileInfo.size < 1000) {
+            try { await FileSystem.deleteAsync(localPath); } catch (e) {}
+            return null;
+          }
+          if (fileInfo.size > this.maxVideoFileSize) {
+            try { await FileSystem.deleteAsync(localPath); } catch (e) {}
+            console.warn(`[MediaCache] Video too large (${(fileInfo.size / 1024 / 1024).toFixed(2)}MB), discarding`);
+            return null;
+          }
           const fileName = localPath.split('/').pop();
           await this.updateExerciseVideo(exerciseId, videoUrl, fileName);
           return localPath;
         }
-        
+
         return null;
       } finally {
-        // Clear download in progress flag
         this.cache.delete(cacheKey);
       }
     } catch (error) {
       console.error(`[MediaCache] Failed to download exercise video for exercise ${exerciseId}:`, error);
-      // Don't throw error - exercise video download is not critical
       return null;
     }
   }
