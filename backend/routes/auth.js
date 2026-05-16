@@ -7,7 +7,16 @@ import { resetPassword, requestPasswordReset, updateUserPassword } from '../auth
 import { verifyEmail } from '../auth/verifyEmail.js';
 import { resendVerification } from '../auth/resendVerification.js';
 import { getMe } from '../auth/me.js';
-import { authLimiter, emailVerificationLimiter, authMeLimiter, verificationLimiter, passwordResetLimiter, accountChangeLimiter } from '../auth/rateLimiter.js';
+import {
+  authLimiter,
+  loginLimiter,
+  refreshLimiter,
+  emailVerificationLimiter,
+  authMeLimiter,
+  verificationLimiter,
+  passwordResetLimiter,
+  accountChangeLimiter,
+} from '../auth/rateLimiter.js';
 import { changeUsername} from '../auth/changeUsername.js';
 import { checkAvailability } from '../auth/signup.js';
 import { changeEmail } from '../auth/changeEmail.js';
@@ -17,9 +26,9 @@ const router = express.Router();
 
 // Auth routes with specific rate limiters
 router.post('/signup', authLimiter, signup);
-router.post('/login', authLimiter, login);
+router.post('/login', loginLimiter, login);
 router.post('/logout', authLimiter, logout);
-router.post('/refresh', authLimiter, refreshToken);
+router.post('/refresh', refreshLimiter, refreshToken);
 router.post('/request-password-reset', passwordResetLimiter, requestPasswordReset);
 router.post('/reset-password', passwordResetLimiter, resetPassword);
 router.post('/update-password', passwordResetLimiter, updateUserPassword);
