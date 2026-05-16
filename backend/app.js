@@ -7,7 +7,6 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import dotenv from "dotenv";
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import workoutsRouter from './routes/workouts.js';
 dotenv.config();
 
@@ -51,22 +50,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later'
-});
-
-// Apply rate limiting to all routes except auth routes
-app.use((req, res, next) => {
-  if (!req.path.startsWith('/auth')) {
-    limiter(req, res, next);
-  } else {
-    next();
-  }
-});
 
 // set routes
 app.use("/", indexRouter);

@@ -1,8 +1,11 @@
 import express from 'express';
 import { getExercises, createExercise, getExerciseById, updateExercise, deleteExercise } from '../controller/exercisesController.js';
 import { getSetsForExercise } from '../controller/setsController.js';
+import { exerciseLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
+
+router.use(exerciseLimiter);
 
 router.get('/', getExercises);
 router.get('/:exerciseId', getExerciseById);

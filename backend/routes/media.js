@@ -2,11 +2,12 @@ import express from 'express';
 import { uploadAvatar, uploadExerciseMedia, uploadExerciseVideo, deleteMedia, getAvatar, getExerciseMedia } from '../controller/mediaController.js';
 import { uploadAvatar as avatarMiddleware, uploadExerciseMedia as exerciseMediaMiddleware, uploadExerciseVideo as exerciseVideoMiddleware, handleMulterError } from '../media/fileValidation.js';
 import { verifyToken } from '../auth/verifyToken.js';
+import { mediaLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
 router.use(verifyToken);
+router.use(mediaLimiter);
 
 // Handle avatar uploads
 router.post('/avatar', avatarMiddleware, handleMulterError, uploadAvatar);
