@@ -34,13 +34,13 @@ const downloadUserAvatarOnce = async (userId) => {
     if (localProfile?.avatar_url) {
       await mediaCache.downloadUserAvatarIfNeeded(
         userId,
-        localProfile.avatar_url
+        localProfile.avatar_url,
       );
     } else {
       // Even if no URL in local DB, try downloading using backend endpoint
       await mediaCache.downloadUserAvatarIfNeeded(
         userId,
-        `backend://avatar/${userId}`
+        `backend://avatar/${userId}`,
       );
     }
   } catch (error) {
@@ -100,9 +100,8 @@ export const AuthProvider = ({ children }) => {
             return;
           } else if (refreshToken) {
             try {
-              const newAccessToken = await tokenManager.refreshAccessToken(
-                refreshToken
-              );
+              const newAccessToken =
+                await tokenManager.refreshAccessToken(refreshToken);
               if (newAccessToken) {
                 setUser({
                   ...userData,
@@ -321,14 +320,14 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.resetPasswordWithToken(
         token_hash,
         type,
-        password
+        password,
       );
       // If password reset is successful, store the session tokens
       if (response.session?.access_token) {
         await storage.setTokens(
           response.session.access_token,
           response.session.refresh_token,
-          response.session.expires_in
+          response.session.expires_in,
         );
         // Update user state
         setUser({ ...response.user, isAuthenticated: true });
@@ -384,7 +383,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.updateUserPassword(
         password,
         access_token,
-        refresh_token
+        refresh_token,
       );
 
       // If password update is successful, the user is now logged in
@@ -392,7 +391,7 @@ export const AuthProvider = ({ children }) => {
         await storage.setTokens(
           response.session.access_token,
           response.session.refresh_token,
-          response.session.expires_in
+          response.session.expires_in,
         );
 
         // Update user state with new session
@@ -401,7 +400,7 @@ export const AuthProvider = ({ children }) => {
         // Cache the updated user data
         await storage.setItem(
           "cached_user_data",
-          JSON.stringify(response.user)
+          JSON.stringify(response.user),
         );
       }
 

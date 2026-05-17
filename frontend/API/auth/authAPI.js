@@ -1,6 +1,6 @@
-import axios from 'axios';
-import { storage } from '../local/tokenStorage';
-import { tokenManager } from '../utils/tokenManager';
+import axios from "axios";
+import { storage } from "../local/tokenStorage";
+import { tokenManager } from "../utils/tokenManager";
 import getBaseUrl from "../utils/getBaseUrl";
 
 const API_URL = `${getBaseUrl()}/auth`;
@@ -9,7 +9,7 @@ const API_URL = `${getBaseUrl()}/auth`;
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   timeout: 10000, // 10 second timeout
 });
@@ -27,11 +27,11 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error("API Error:", error.response?.data || error.message);
     if (!error.response) {
-      throw new Error('Network error - please check your connection');
+      throw new Error("Network error - please check your connection");
     }
-    
+
     // Handle 401 errors with token refresh
     if (error.response.status === 401) {
       try {
@@ -44,33 +44,35 @@ api.interceptors.response.use(
           return axios(originalRequest);
         }
       } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
+        console.error("Token refresh failed:", refreshError);
         // Clear all tokens if refresh fails
         await tokenManager.clearTokens();
-        throw new Error('Session expired. Please login again.');
+        throw new Error("Session expired. Please login again.");
       }
     }
-    
+
     // Handle specific error codes
-    if (error.response.data?.code === 'EXPIRED_LINK') {
-      throw new Error('Verification link has expired. Please request a new one.');
+    if (error.response.data?.code === "EXPIRED_LINK") {
+      throw new Error(
+        "Verification link has expired. Please request a new one.",
+      );
     }
-    if (error.response.data?.code === 'VERIFICATION_FAILED') {
-      throw new Error('Email verification failed. Please try again.');
+    if (error.response.data?.code === "VERIFICATION_FAILED") {
+      throw new Error("Email verification failed. Please try again.");
     }
     throw error.response.data || error.message;
-  }
+  },
 );
 
 export const authAPI = {
   // Sign up new user
   signup: async (email, password, username) => {
     try {
-      const response = await api.post('/signup', { email, password, username });
-      
+      const response = await api.post("/signup", { email, password, username });
+
       return response.data;
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error("Signup error:", error);
       throw error;
     }
   },
@@ -78,19 +80,19 @@ export const authAPI = {
   // Login user
   login: async (email, password) => {
     try {
-      const response = await api.post('/login', { email, password });
-      
+      const response = await api.post("/login", { email, password });
+
       if (response.data.session?.access_token) {
         await storage.setTokens(
           response.data.session.access_token,
           response.data.session.refresh_token,
-          response.data.session.expires_in
+          response.data.session.expires_in,
         );
       }
-      
+
       return response.data;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   },
@@ -98,10 +100,10 @@ export const authAPI = {
   // Logout user
   logout: async () => {
     try {
-      await api.post('/logout');
+      await api.post("/logout");
       await storage.clearTokens();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       // Still remove tokens even if logout fails
       await storage.clearTokens();
       throw error;
@@ -111,7 +113,7 @@ export const authAPI = {
   // Request password reset
   requestPasswordReset: async (email) => {
     try {
-      const response = await api.post('/request-password-reset', { email });
+      const response = await api.post("/request-password-reset", { email });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -121,7 +123,11 @@ export const authAPI = {
   // Reset password with token
   resetPasswordWithToken: async (token_hash, type, password) => {
     try {
-      const response = await api.post('/reset-password', { token_hash, type, password });
+      const response = await api.post("/reset-password", {
+        token_hash,
+        type,
+        password,
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -131,15 +137,15 @@ export const authAPI = {
   // Verify email
   verifyEmail: async (token_hash, type) => {
     try {
-      const response = await api.get('/verify-email', {
-        params: { token_hash, type }
+      const response = await api.get("/verify-email", {
+        params: { token_hash, type },
       });
       // If verification is successful, store the session tokens
       if (response.data.session?.access_token) {
         await storage.setTokens(
           response.data.session.access_token,
           response.data.session.refresh_token,
-          response.data.session.expires_in
+          response.data.session.expires_in,
         );
       }
       return response.data;
@@ -153,7 +159,7 @@ export const authAPI = {
     try {
       return await tokenManager.isAuthenticated();
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.error("Auth check error:", error);
       return false;
     }
   },
@@ -161,10 +167,10 @@ export const authAPI = {
   // Change username
   changeUsername: async (username) => {
     try {
-      const response = await api.post('/change-username', { username });
+      const response = await api.post("/change-username", { username });
       return response.data;
     } catch (error) {
-      console.error('Change username error:', error);
+      console.error("Change username error:", error);
       throw error;
     }
   },
@@ -172,10 +178,10 @@ export const authAPI = {
   // Change email
   changeEmail: async (newEmail) => {
     try {
-      const response = await api.post('/change-email', { newEmail });
+      const response = await api.post("/change-email", { newEmail });
       return response.data;
     } catch (error) {
-      console.error('Change email error:', error);
+      console.error("Change email error:", error);
       throw error;
     }
   },
@@ -183,13 +189,13 @@ export const authAPI = {
   // Change password
   changePassword: async (newPassword, confirmPassword) => {
     try {
-      const response = await api.post('/change-password', { 
-        newPassword, 
-        confirmPassword 
+      const response = await api.post("/change-password", {
+        newPassword,
+        confirmPassword,
       });
       return response.data;
     } catch (error) {
-      console.error('Change password error:', error);
+      console.error("Change password error:", error);
       throw error;
     }
   },
@@ -197,10 +203,12 @@ export const authAPI = {
   // Refresh token
   refreshToken: async (refreshToken) => {
     try {
-      const response = await api.post('/refresh', { refresh_token: refreshToken });
+      const response = await api.post("/refresh", {
+        refresh_token: refreshToken,
+      });
       return response.data;
     } catch (error) {
-      console.error('Token refresh error:', error);
+      console.error("Token refresh error:", error);
       throw error;
     }
   },
@@ -208,16 +216,16 @@ export const authAPI = {
   checkAvailability: async (username, email) => {
     try {
       const response = await fetch(`${getBaseUrl()}/auth/check-availability`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, email }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to check availability');
+        throw new Error(error.error || "Failed to check availability");
       }
 
       return await response.json();
@@ -231,31 +239,34 @@ export const authAPI = {
     try {
       // Don't use the api instance with automatic token injection for recovery sessions
       // Use direct axios call since the user is not authenticated yet
-      const response = await axios.post(`${getBaseUrl()}/auth/update-password`, {
-        password,
-        access_token,
-        refresh_token
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        `${getBaseUrl()}/auth/update-password`,
+        {
+          password,
+          access_token,
+          refresh_token,
         },
-        timeout: 10000,
-      });
-      
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 10000,
+        },
+      );
+
       // Store new session tokens if provided
       if (response.data.session?.access_token) {
         await storage.setTokens(
           response.data.session.access_token,
           response.data.session.refresh_token,
-          response.data.session.expires_in
+          response.data.session.expires_in,
         );
       }
-      
+
       return response.data;
     } catch (error) {
-      console.error('Update password error:', error);
+      console.error("Update password error:", error);
       throw error.response?.data || error.message;
     }
   },
-
-}; 
+};

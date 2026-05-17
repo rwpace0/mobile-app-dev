@@ -19,6 +19,7 @@ const PASSWORD_RESET_MAX_REQUESTS_PER_HOUR = 3;
 const VERIFICATION_MAX_REQUESTS_PER_WINDOW = 10;
 const AUTH_ME_MAX_REQUESTS_PER_MINUTE = 60;
 const ACCOUNT_CHANGE_MAX_REQUESTS_PER_HOUR = 10;
+const DELETE_ACCOUNT_MAX_REQUESTS_PER_HOUR = 3;
 
 export const emailVerificationLimiter = rateLimit({
   windowMs: MS_PER_HOUR,
@@ -96,6 +97,16 @@ export const accountChangeLimiter = rateLimit({
   max: ACCOUNT_CHANGE_MAX_REQUESTS_PER_HOUR,
   message: {
     error: "Too many account change requests. Please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const deleteAccountLimiter = rateLimit({
+  windowMs: MS_PER_HOUR,
+  max: DELETE_ACCOUNT_MAX_REQUESTS_PER_HOUR,
+  message: {
+    error: "Too many account deletion attempts. Please try again later.",
   },
   standardHeaders: true,
   legacyHeaders: false,

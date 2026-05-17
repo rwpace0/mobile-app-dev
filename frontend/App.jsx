@@ -246,7 +246,7 @@ const createStackNavigator = (screens) => {
         headerShown: false,
         contentStyle: { backgroundColor: colors.backgroundPrimary },
       }),
-      [colors.backgroundPrimary]
+      [colors.backgroundPrimary],
     );
 
     return (
@@ -279,7 +279,7 @@ const AuthStack = () => {
       headerShown: false,
       contentStyle: { backgroundColor: colors.backgroundPrimary },
     }),
-    [colors.backgroundPrimary]
+    [colors.backgroundPrimary],
   );
 
   return (
@@ -330,7 +330,7 @@ const MainStack = () => {
       headerShown: false,
       contentStyle: { backgroundColor: colors.backgroundPrimary },
     }),
-    [colors.backgroundPrimary]
+    [colors.backgroundPrimary],
   );
 
   const handleResumeWorkout = React.useCallback(() => {
@@ -359,9 +359,7 @@ const MainStack = () => {
         <ActiveMini
           visible={true}
           onResume={handleResumeWorkout}
-          workoutName={
-            activeWorkout.name || getDefaultWorkoutName()
-          }
+          workoutName={activeWorkout.name || getDefaultWorkoutName()}
           duration={activeWorkout.duration || 0}
         />
       )}
@@ -379,7 +377,7 @@ const RootNavigator = React.memo(() => {
       headerShown: false,
       contentStyle: { backgroundColor: colors.backgroundPrimary },
     }),
-    [colors.backgroundPrimary]
+    [colors.backgroundPrimary],
   );
   const [initialURL, setInitialURL] = React.useState(null);
 
@@ -489,7 +487,7 @@ const RootNavigator = React.memo(() => {
         return;
       }
     },
-    [parseURLFragments]
+    [parseURLFragments],
   );
 
   // Handle initial URL when navigation is ready
@@ -564,7 +562,7 @@ function AppContent() {
         notification: colors.accentRed,
       },
     }),
-    [isDark, colors]
+    [isDark, colors],
   );
 
   return (
