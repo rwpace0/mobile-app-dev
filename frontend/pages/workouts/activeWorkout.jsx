@@ -934,31 +934,35 @@ const ActiveWorkoutPage = () => {
                 />
               </View>
             )}
-            ListFooterComponent={() => (
-              <View>
-                <Button
-                  variant="primary"
-                  title="Add Exercise"
-                  onPress={handleAddExercise}
-                  style={styles.addExerciseButton}
-                />
+            ListFooterComponent={
+              isReordering
+                ? null
+                : () => (
+                    <View>
+                      <Button
+                        variant="primary"
+                        title="Add Exercise"
+                        onPress={handleAddExercise}
+                        style={styles.addExerciseButton}
+                      />
 
-                <View style={styles.buttonContainer}>
-                  <Button
-                    variant="outline"
-                    title="Workout Settings"
-                    onPress={handleSettings}
-                    style={styles.settingsButton}
-                  />
-                  <Button
-                    variant="danger"
-                    title="Discard Workout"
-                    onPress={handleDiscard}
-                    style={styles.discardButton}
-                  />
-                </View>
-              </View>
-            )}
+                      <View style={styles.buttonContainer}>
+                        <Button
+                          variant="outline"
+                          title="Workout Settings"
+                          onPress={handleSettings}
+                          style={styles.settingsButton}
+                        />
+                        <Button
+                          variant="danger"
+                          title="Discard Workout"
+                          onPress={handleDiscard}
+                          style={styles.discardButton}
+                        />
+                      </View>
+                    </View>
+                  )
+            }
           />
         )}
       </View>
