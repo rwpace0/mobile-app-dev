@@ -8,6 +8,10 @@ import {
   Shadow,
 } from "../constants/theme";
 
+// Collapsed row height during reorder (header + container padding only)
+export const EXERCISE_COLLAPSED_HEIGHT =
+  Spacing.s * 2 + 40 + Spacing.xs;
+
 export const createStyles = (isDark = true) => {
   const colors = getColors(isDark);
 
@@ -16,6 +20,10 @@ export const createStyles = (isDark = true) => {
       paddingTop: Spacing.s,
       paddingBottom: Spacing.s,
       width: "100%",
+    },
+    containerCollapsed: {
+      height: EXERCISE_COLLAPSED_HEIGHT,
+      overflow: "hidden",
     },
     header: {
       flexDirection: "row",

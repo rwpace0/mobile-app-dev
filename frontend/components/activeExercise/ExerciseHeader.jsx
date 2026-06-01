@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image, InteractionManager } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { useNavigation } from "@react-navigation/native";
@@ -9,7 +9,14 @@ import { createStyles } from "../../styles/activeExercise.styles";
 import { hapticLight } from "../../utils/hapticFeedback";
 import exercisesAPI from "../../API/exercisesAPI";
 
-const ExerciseHeader = ({ exercise, drag, isActive, onDeletePress }) => {
+const ExerciseHeader = ({
+  exercise,
+  drag,
+  isActive,
+  isReordering,
+  onDeletePress,
+  onPrepareDrag,
+}) => {
   const navigation = useNavigation();
   const { isDark } = useTheme();
   const colors = useThemeColors();
@@ -32,11 +39,21 @@ const ExerciseHeader = ({ exercise, drag, isActive, onDeletePress }) => {
     fetchExerciseDetails();
   }, [exercise.exercise_id]);
 
+  const handleLongPress = () => {
+    if (!drag) return;
+    onPrepareDrag?.();
+    InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        drag();
+      });
+    });
+  };
+
   return (
     <View style={styles.header}>
       <TouchableOpacity
         style={styles.exerciseTitleRow}
-        onLongPress={drag || undefined}
+        onLongPress={drag ? handleLongPress : undefined}
         onPress={() => {
           hapticLight();
           navigation.navigate("ExerciseDetail", {
@@ -59,7 +76,12 @@ const ExerciseHeader = ({ exercise, drag, isActive, onDeletePress }) => {
             <Ionicons name="barbell" size={24} color={colors.textPrimary} />
           )}
         </View>
-        <Text style={[styles.exerciseName, isActive && { opacity: 0.5 }]}>
+        <Text
+          style={[
+            styles.exerciseName,
+            isActive && !isReordering && { opacity: 0.5 },
+          ]}
+        >
           {exerciseDetails?.name || ""}
         </Text>
       </TouchableOpacity>

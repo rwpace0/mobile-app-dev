@@ -26,6 +26,8 @@ const ActiveExerciseComponent = ({
   initialState,
   drag,
   isActive,
+  isReordering,
+  onPrepareDrag,
   onTimerStart,
 }) => {
   const { isDark, showNotes, restTimerEnabled, timerType } = useSettings();
@@ -94,15 +96,20 @@ const ActiveExerciseComponent = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previousPerformance.previousWorkoutSets.length]);
 
+  const collapsed = isReordering || isActive;
+
   // Update animation values when content height changes
   useEffect(() => {
-    if (contentHeight > 0) {
+    if (contentHeight > 0 && !collapsed) {
       animatedHeight.value = withTiming(contentHeight, { duration: 100 });
     }
-  }, [contentHeight]);
+  }, [contentHeight, collapsed]);
 
-  // Handle drag animation
+  // Animate expand/collapse only outside reorder (reorder uses instant layout)
   useEffect(() => {
+    if (isReordering) {
+      return;
+    }
     if (isActive) {
       animatedHeight.value = withTiming(0, { duration: 200 });
       animatedOpacity.value = withTiming(0, { duration: 200 });
@@ -111,7 +118,7 @@ const ActiveExerciseComponent = ({
       animatedHeight.value = withTiming(targetHeight, { duration: 200 });
       animatedOpacity.value = withTiming(1, { duration: 200 });
     }
-  }, [isActive, contentHeight]);
+  }, [isActive, isReordering, contentHeight]);
 
   // Trigger remeasurement when sets change
   useEffect(() => {
@@ -148,7 +155,8 @@ const ActiveExerciseComponent = ({
     <View
       style={[
         styles.container,
-        isActive && { opacity: 0.8, transform: [{ scale: 1.02 }] },
+        collapsed && styles.containerCollapsed,
+        isActive && !isReordering && { opacity: 0.8, transform: [{ scale: 1.02 }] },
       ]}
     >
       {/* Always visible header */}
@@ -156,46 +164,50 @@ const ActiveExerciseComponent = ({
         exercise={exercise}
         drag={drag}
         isActive={isActive}
+        isReordering={isReordering}
+        onPrepareDrag={onPrepareDrag}
         onDeletePress={() => setShowDeleteConfirm(true)}
       />
 
-      {/* Collapsible content */}
-      <Animated.View style={animatedContentStyle}>
-        <View onLayout={handleContentLayout}>
-          <NotesInput
-            notes={exerciseState.notes}
-            onNotesChange={exerciseState.setNotes}
-            showNotes={showNotes}
-          />
+      {/* Content hidden during reorder so list heights stay stable for DraggableFlatList */}
+      {!collapsed && (
+        <Animated.View style={animatedContentStyle}>
+          <View onLayout={handleContentLayout}>
+            <NotesInput
+              notes={exerciseState.notes}
+              onNotesChange={exerciseState.setNotes}
+              showNotes={showNotes}
+            />
 
-          <RestTimerButton
-            restTime={exerciseState.restTime}
-            onPress={() => setShowRestTimer(true)}
-            restTimerEnabled={restTimerEnabled}
-            timerType={timerType}
-          />
+            <RestTimerButton
+              restTime={exerciseState.restTime}
+              onPress={() => setShowRestTimer(true)}
+              restTimerEnabled={restTimerEnabled}
+              timerType={timerType}
+            />
 
-          <SetsList
-            sets={exerciseState.sets}
-            exercise={exercise}
-            onWeightChange={exerciseState.handleWeightChange}
-            onRepsChange={exerciseState.handleRepsChange}
-            onRirChange={exerciseState.handleRirChange}
-            onToggleCompletion={exerciseState.toggleSetCompletion}
-            onDeleteSet={exerciseState.handleDeleteSet}
-            onAddSet={exerciseState.handleAddSet}
-            previousWorkoutSets={previousPerformance.previousWorkoutSets}
-            loadingPrevious={previousPerformance.loadingPrevious}
-            inputRefs={exerciseState.inputRefs}
-            timerType={timerType}
-            setTimers={timerHandlers.setTimers}
-            activeSetTimer={timerHandlers.activeSetTimer}
-            setTimerRemaining={timerHandlers.setTimerRemaining}
-            onSetTimerChange={timerHandlers.handleSetTimerChange}
-            DEFAULT_SET_TIMER={timerHandlers.DEFAULT_SET_TIMER}
-          />
-        </View>
-      </Animated.View>
+            <SetsList
+              sets={exerciseState.sets}
+              exercise={exercise}
+              onWeightChange={exerciseState.handleWeightChange}
+              onRepsChange={exerciseState.handleRepsChange}
+              onRirChange={exerciseState.handleRirChange}
+              onToggleCompletion={exerciseState.toggleSetCompletion}
+              onDeleteSet={exerciseState.handleDeleteSet}
+              onAddSet={exerciseState.handleAddSet}
+              previousWorkoutSets={previousPerformance.previousWorkoutSets}
+              loadingPrevious={previousPerformance.loadingPrevious}
+              inputRefs={exerciseState.inputRefs}
+              timerType={timerType}
+              setTimers={timerHandlers.setTimers}
+              activeSetTimer={timerHandlers.activeSetTimer}
+              setTimerRemaining={timerHandlers.setTimerRemaining}
+              onSetTimerChange={timerHandlers.handleSetTimerChange}
+              DEFAULT_SET_TIMER={timerHandlers.DEFAULT_SET_TIMER}
+            />
+          </View>
+        </Animated.View>
+      )}
 
       <RestTimerModal
         visible={showRestTimer}

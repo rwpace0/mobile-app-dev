@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useReducer } from "react";
+import React, { useState, useEffect, useMemo, useReducer, useCallback } from "react";
 import {
   View,
   Text,
@@ -229,6 +229,7 @@ const ActiveWorkoutPage = () => {
   const [originalTemplate, setOriginalTemplate] = useState(null);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [finishModalMode, setFinishModalMode] = useState(null);
+  const [isReordering, setIsReordering] = useState(false);
   const {
     workoutName,
     exercises,
@@ -393,11 +394,16 @@ const ActiveWorkoutPage = () => {
 
   const handleDragEnd = ({ data }) => {
     hapticLight();
+    setIsReordering(false);
     dispatch({
       type: "SET_EXERCISES_ORDER",
       payload: data,
     });
   };
+
+  const handlePrepareDrag = useCallback(() => {
+    setIsReordering(true);
+  }, []);
 
   const renderExerciseItem = ({ item: exercise, drag, isActive }) => {
     return (
@@ -413,6 +419,8 @@ const ActiveWorkoutPage = () => {
         onTimerStart={handleTimerStart}
         drag={drag}
         isActive={isActive}
+        isReordering={isReordering}
+        onPrepareDrag={handlePrepareDrag}
       />
     );
   };
@@ -904,9 +912,11 @@ const ActiveWorkoutPage = () => {
         ) : (
           <DraggableFlatList
             data={exercises}
+            extraData={isReordering}
             renderItem={renderExerciseItem}
             keyExtractor={(item) => item.exercise_id.toString()}
             onDragEnd={handleDragEnd}
+            dragItemOverflow
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[
               styles.exercisesContainer,
