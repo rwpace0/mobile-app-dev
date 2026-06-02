@@ -86,7 +86,7 @@ const ExerciseHeader = ({
         </Text>
       </TouchableOpacity>
 
-      {!isActive && (
+      {!isActive && !isReordering && (
         <TouchableOpacity style={styles.deleteButton} onPress={onDeletePress}>
           <Ionicons name="trash-outline" size={24} color={colors.accentRed} />
         </TouchableOpacity>
